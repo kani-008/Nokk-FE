@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ClipboardList, ArrowRight, Eye, Calendar, DollarSign, User, MapPin, Check, FileDown, X } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 import Breadcrumb from '../components/Breadcrumb';
 import Modal from '../components/Modal';
@@ -27,9 +27,10 @@ export default function MyOrders() {
     }
     
     // Fetch user specific orders
-    const allOrders = mockAPI.getOrders();
-    const userOrders = allOrders.filter(o => o.customerEmail.toLowerCase() === user.email.toLowerCase());
-    setOrders(userOrders);
+    api.getOrders().then(allOrders => {
+      const userOrders = allOrders.filter(o => o.customerEmail.toLowerCase() === user.email.toLowerCase());
+      setOrders(userOrders);
+    });
   }, [isLoggedIn, user, navigate]);
 
   if (!isLoggedIn || !user) return null;

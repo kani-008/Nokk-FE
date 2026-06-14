@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Download, BarChart3, LineChart, PieChart, TrendingUp, DollarSign } from 'lucide-react';
 import { useToastStore } from '../../stores/toastStore';
+import { api } from '../../services/api';
 
 export default function Reports() {
   const addToast = useToastStore(state => state.addToast);
 
   const [dateRange, setDateRange] = useState({ start: '2026-06-01', end: '2026-06-14' });
   const [activeTab, setActiveTab] = useState('sales'); // sales | revenue | products | customers
+  
+  const [orders, setOrders] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    api.getOrders().then(setOrders);
+    api.getCategories().then(setCategories);
+    api.getProducts().then(setProducts);
+  }, []);
 
   const handleExport = (type) => {
     addToast(`Exporting ${activeTab} report for range ${dateRange.start} to ${dateRange.end} as ${type.toUpperCase()}...`, 'success');
@@ -18,38 +29,162 @@ export default function Reports() {
   const padding = 40;
 
   // Custom sales data
-  const monthlySales = [
-    { label: 'Jan', value: 120 },
-    { label: 'Feb', value: 165 },
-    { label: 'Mar', value: 140 },
-    { label: 'Apr', value: 210 },
-    { label: 'May', value: 245 },
-    { label: 'Jun', value: 310 }
-  ];
+  const monthlySales = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const result = [];
+    const today = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthName = months[d.getMonth()];
+      result.push({ label: monthName, value: 0, year: d.getFullYear(), monthIdx: d.getMonth() });
+    }
 
-  const maxSales = Math.max(...monthlySales.map(m => m.value)) || 1;
-  const salesPoints = monthlySales.map((m, index) => {
-    const x = padding + (index * (chartWidth - padding * 2)) / (monthlySales.length - 1);
-    const y = chartHeight - padding - (m.value / maxSales) * (chartHeight - padding * 2);
-    return `${x},${y}`;
-  }).join(' ');
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        const date = new Date(o.date);
+        const oMonth = date.getMonth();
+        const oYear = date.getFullYear();
+        
+        const bucket = result.find(r => r.monthIdx === oMonth && r.year === oYear);
+        if (bucket) {
+          const totalQty = o.items.reduce((sum, item) => sum + item.quantity, 0);
+          bucket.value += totalQty;
+        }
+      }
+    });
+
+    if (result.every(r => r.value === 0)) {
+      return [
+        { label: 'Jan', value: 120 },
+        { label: 'Feb', value: 165 },
+        { label: 'Mar', value: 140 },
+        { label: 'Apr', value: 210 },
+        { label: 'May', value: 245 },
+        { label: 'Jun', value: 310 }
+      ];
+    }
+
+    return result.map(({ label, value }) => ({ label, value }));
+  }, [orders]);
+
+  const maxSales = useMemo(() => Math.max(...monthlySales.map(m => m.value)) || 1, [monthlySales]);
+  const salesPoints = useMemo(() => {
+    return monthlySales.map((m, index) => {
+      const x = padding + (index * (chartWidth - padding * 2)) / (monthlySales.length - 1);
+      const y = chartHeight - padding - (m.value / maxSales) * (chartHeight - padding * 2);
+      return `${x},${y}`;
+    }).join(' ');
+  }, [monthlySales, maxSales]);
 
   // Category sales split donut chart data
-  const categorySplit = [
-    { name: 'Dry Fish', value: 45, color: '#8B2500' },
-    { name: 'Pickles', value: 25, color: '#D4621A' },
-    { name: 'Prawns', value: 15, color: '#1A4A5C' },
-    { name: 'Masalas', value: 10, color: '#2E7D32' },
-    { name: 'Combos', value: 5, color: '#E5A93B' }
-  ];
+  const categorySplit = useMemo(() => {
+    const categoryValues = {};
+    let totalSales = 0;
+    
+    // Initialize all categories with 0
+    categories.forEach(cat => {
+      categoryValues[cat.id] = { name: cat.nameEn, value: 0 };
+    });
 
-  // Top Customers mock database list
-  const topCustomers = [
-    { name: 'Anbarasan M', email: 'customer@gmail.com', orders: 15, spend: 6450 },
-    { name: 'Deepak Kumar', email: 'deepak@gmail.com', orders: 9, spend: 3820 },
-    { name: 'Selvanathan P', email: 'selva@gmail.com', orders: 6, spend: 2900 },
-    { name: 'Karthik Raja', email: 'karthik@gmail.com', orders: 4, spend: 1850 }
-  ];
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        o.items.forEach(item => {
+          // find product to get category
+          const prod = products.find(p => p.id === item.productId);
+          const catId = prod ? prod.category : 'combos'; // fallback
+          if (categoryValues[catId]) {
+            const itemRevenue = item.price * item.quantity;
+            categoryValues[catId].value += itemRevenue;
+            totalSales += itemRevenue;
+          }
+        });
+      }
+    });
+
+    const colors = ['#8B2500', '#D4621A', '#1A4A5C', '#2E7D32', '#E5A93B'];
+    
+    if (totalSales === 0) {
+      return [
+        { name: 'Dry Fish', value: 45, color: '#8B2500' },
+        { name: 'Pickles', value: 25, color: '#D4621A' },
+        { name: 'Prawns', value: 15, color: '#1A4A5C' },
+        { name: 'Masalas', value: 10, color: '#2E7D32' },
+        { name: 'Combos', value: 5, color: '#E5A93B' }
+      ];
+    }
+
+    return Object.entries(categoryValues).map(([id, info], idx) => {
+      const percent = Math.round((info.value / totalSales) * 100);
+      return {
+        name: info.name,
+        value: percent,
+        color: colors[idx % colors.length]
+      };
+    });
+  }, [orders, categories, products]);
+
+  // Top Customers list
+  const topCustomers = useMemo(() => {
+    const customerMap = {};
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        const email = o.customerEmail;
+        if (!customerMap[email]) {
+          customerMap[email] = {
+            name: o.customerName,
+            email: o.customerEmail,
+            orders: 0,
+            spend: 0
+          };
+        }
+        customerMap[email].orders += 1;
+        customerMap[email].spend += o.total;
+      }
+    });
+
+    const sorted = Object.values(customerMap)
+      .sort((a, b) => b.spend - a.spend)
+      .slice(0, 5);
+      
+    if (sorted.length === 0) {
+      return [
+        { name: 'Anbarasan M', email: 'customer@gmail.com', orders: 15, spend: 6450 },
+        { name: 'Deepak Kumar', email: 'deepak@gmail.com', orders: 9, spend: 3820 },
+        { name: 'Selvanathan P', email: 'selva@gmail.com', orders: 6, spend: 2900 },
+        { name: 'Karthik Raja', email: 'karthik@gmail.com', orders: 4, spend: 1850 }
+      ];
+    }
+    return sorted;
+  }, [orders]);
+
+  // Top Products list
+  const reportProducts = useMemo(() => {
+    const counts = {};
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        o.items.forEach(item => {
+          counts[item.nameEn] = (counts[item.nameEn] || 0) + item.quantity;
+        });
+      }
+    });
+    const colors = ['#8B2500', '#D4621A', '#1A4A5C', '#2E7D32', '#E5A93B'];
+    const sorted = Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+      
+    if (sorted.length === 0) {
+      return [
+        { name: 'Nethili Karuvadu (Anchovy)', value: 85, color: '#8B2500' },
+        { name: 'Prawn Pickle (Spicy)', value: 64, color: '#D4621A' },
+        { name: 'Sura Karuvadu (Shark)', value: 50, color: '#1A4A5C' },
+        { name: 'Dry Prawns (Ular Eral)', value: 38, color: '#2E7D32' },
+        { name: 'Village Combo pack', value: 25, color: '#E5A93B' }
+      ];
+    }
+    return sorted.map((item, idx) => ({ ...item, color: colors[idx % colors.length] }));
+  }, [orders]);
 
   return (
     <div className="space-y-6 font-inter pb-10">
@@ -220,13 +355,7 @@ export default function Reports() {
             </div>
 
             <div className="space-y-4 max-w-xl mx-auto font-space text-xs font-semibold">
-              {[
-                { name: 'Nethili Karuvadu (Anchovy)', value: 85, color: '#8B2500' },
-                { name: 'Prawn Pickle (Spicy)', value: 64, color: '#D4621A' },
-                { name: 'Sura Karuvadu (Shark)', value: 50, color: '#1A4A5C' },
-                { name: 'Dry Prawns (Ular Eral)', value: 38, color: '#2E7D32' },
-                { name: 'Village Combo pack', value: 25, color: '#E5A93B' }
-              ].map((item, index) => (
+              {reportProducts.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex justify-between text-brand-dark">
                     <span className="font-inter font-medium text-brand-dark/85">{item.name}</span>

@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
+import { api } from '../services/api';
 
 export default function WhatsAppButton() {
-  const whatsappUrl = "https://wa.me/918778784819?text=Hi!%20I'm%20interested%20in%20ordering%20traditional%20dry%20fish%20from%20NammaOorKaruvattuKadai.";
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    api.getSettings().then(setSettings);
+  }, []);
+
+  const whatsappNum = settings?.whatsappNumber?.replace(/[^0-9]/g, '') || '918778784819';
+  const shopName = settings?.websiteName || 'Namma Oor Karuvattu Kadai';
+  const whatsappUrl = `https://wa.me/${whatsappNum}?text=Hi!%20I'm%20interested%20in%20ordering%20traditional%20dry%20fish%20from%20${encodeURIComponent(shopName)}.`;
 
   return (
     <a

@@ -4,7 +4,7 @@ import { MapPin, CreditCard, ShoppingBag, CheckCircle, ArrowLeft, ArrowRight, Sh
 import { useAuthStore } from '../stores/authStore';
 import { useCartStore } from '../stores/cartStore';
 import { useToastStore } from '../stores/toastStore';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import Breadcrumb from '../components/Breadcrumb';
 
 export default function Checkout() {
@@ -126,11 +126,12 @@ export default function Checkout() {
       }
     };
 
-    const newOrder = mockAPI.createOrder(orderData);
-    setPlacedOrder(newOrder);
-    clearCart();
-    setStep(4);
-    addToast('Traditional order placed successfully! 🎉', 'success');
+    api.createOrder(orderData).then(newOrder => {
+      setPlacedOrder(newOrder);
+      clearCart();
+      setStep(4);
+      addToast('Traditional order placed successfully! 🎉', 'success');
+    });
   };
 
   const selectedAddress = user.addresses.find(a => a.id === selectedAddressId);

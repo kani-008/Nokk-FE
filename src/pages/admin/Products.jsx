@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Plus, Search, Edit2, Trash2, CheckCircle2, XCircle, Sparkles, Image, X, Trash } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
@@ -30,8 +30,8 @@ export default function Products() {
   const [discountPercent, setDiscountPercent] = useState(0);
 
   const loadCatalog = () => {
-    setProducts(mockAPI.getProducts());
-    setCategories(mockAPI.getCategories());
+    api.getProducts().then(setProducts);
+    api.getCategories().then(setCategories);
   };
 
   useEffect(() => {
@@ -109,24 +109,27 @@ export default function Products() {
       inStock: variants.reduce((acc, curr) => acc + curr.stock, 0) > 0
     };
 
-    mockAPI.saveProduct(payload);
-    addToast(editingProduct ? 'Product updated successfully!' : 'New product cataloged successfully!', 'success');
-    setIsFormOpen(false);
-    loadCatalog();
+    api.saveProduct(payload).then(() => {
+      addToast(editingProduct ? 'Product updated successfully!' : 'New product cataloged successfully!', 'success');
+      setIsFormOpen(false);
+      loadCatalog();
+    });
   };
 
   const handleDelete = (id, name) => {
     if (window.confirm(`Are you sure you want to delete product: "${name}"?`)) {
-      mockAPI.deleteProduct(id);
-      addToast('Product removed from catalog.', 'info');
-      loadCatalog();
+      api.deleteProduct(id).then(() => {
+        addToast('Product removed from catalog.', 'info');
+        loadCatalog();
+      });
     }
   };
 
   const handleToggleStatus = (id) => {
-    mockAPI.toggleProductStatus(id);
-    addToast('Product stock status toggled.', 'info');
-    loadCatalog();
+    api.toggleProductStatus(id).then(() => {
+      addToast('Product stock status toggled.', 'info');
+      loadCatalog();
+    });
   };
 
   // Variant row controls

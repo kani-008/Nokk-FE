@@ -1,92 +1,56 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Reusable Shared Layout Components
-import AnnouncementBar from './components/AnnouncementBar';
-import Navbar from './components/Navbar';
-import BottomNav from './components/BottomNav';
-import Footer from './components/Footer';
-import WhatsAppButton from './components/WhatsAppButton';
-import CartDrawer from './components/CartDrawer';
-import Toast from './components/Toast';
-
-// Customer Facing Pages
-import Home from './pages/Home';
-import Products from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import MyOrders from './pages/MyOrders';
-import Profile from './pages/Profile';
-import Wishlist from './pages/Wishlist';
-import Offers from './pages/Offers';
-
-// Admin Panel Layout & Pages
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminProducts from './pages/admin/Products';
-import AdminOrders from './pages/admin/Orders';
-import AdminUsers from './pages/admin/Users';
-import AdminOffers from './pages/admin/Offers';
-import AdminBanners from './pages/admin/Banners';
-import AdminInventory from './pages/admin/Inventory';
-import AdminReports from './pages/admin/Reports';
-import AdminSettings from './pages/admin/Settings';
-
-// Initialize React Query Client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false
-    }
-  }
-});
-
-// Layout wrapper for customer facing pages
-function CustomerLayout() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <AnnouncementBar />
-      <Navbar />
-      <main className="flex-grow pt-2.5">
-        <Outlet />
-      </main>
-      <Footer />
-      <BottomNav />
-      <WhatsAppButton />
-    </div>
-  );
-}
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+// Layouts
+import CustomerLayout from "./layouts/CustomerLayout";
+import ProtectedRoute from "./components/route/ProtectedRoute";
+// Customer Pages
+import Home from "./pages/Home";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import MyOrders from "./pages/MyOrders";
+import Profile from "./pages/Profile";
+import Wishlist from "./pages/Wishlist";
+import Offers from "./pages/Offers";
+// Admin Pages
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminProducts from "./pages/admin/Products";
+import AdminOrders from "./pages/admin/Orders";
+import AdminUsers from "./pages/admin/Users";
+import AdminOffers from "./pages/admin/Offers";
+import AdminBanners from "./pages/admin/Banners";
+import AdminInventory from "./pages/admin/Inventory";
+import AdminReports from "./pages/admin/Reports";
+import AdminSettings from "./pages/admin/Settings";
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        {/* Global UI Components */}
-        <Toast />
-        <CartDrawer />
+    <BrowserRouter>
+      <Routes>
+        {/* Public Customer Routes */}
+        <Route element={<CustomerLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:slug" element={<ProductDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/offers" element={<Offers />} />
 
-        <Routes>
-          {/* Customer Facing Routes */}
-          <Route element={<CustomerLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:slug" element={<ProductDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/cart" element={<Cart />} />
+          {/* Customer Protected Routes */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/offers" element={<Offers />} />
           </Route>
-
-          {/* Admin Protected Panel Routes */}
+        </Route>
+        {/* Admin Protected Routes */}
+        <Route element={<ProtectedRoute adminOnly={true} redirectTo="/login" />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
@@ -98,11 +62,11 @@ export default function App() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
+        </Route>
 
-          {/* Catch All Redirect */}
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </Router>
-    </QueryClientProvider>
+        {/* Catch All */}
+        <Route path="*" element={<Home />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

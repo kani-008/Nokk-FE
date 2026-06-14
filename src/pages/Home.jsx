@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Flame, ShieldCheck, Heart, Truck, Sparkles, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import CategoryCard from '../components/CategoryCard';
-
+ 
 export default function Home() {
   const navigate = useNavigate();
   const [banners, setBanners] = useState([]);
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-
+ 
   useEffect(() => {
-    setBanners(mockAPI.getBanners().filter(b => b.active));
-    setCategories(mockAPI.getCategories());
-    setFeaturedProducts(mockAPI.getProducts().slice(0, 6));
+    api.getBanners().then(data => setBanners(data.filter(b => b.active)));
+    api.getCategories().then(setCategories);
+    api.getProducts().then(data => setFeaturedProducts(data.slice(0, 6)));
   }, []);
 
   // Auto-play banner carousel

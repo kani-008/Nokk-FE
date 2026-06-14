@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, Eye, CheckCircle2, XCircle, ArrowRight, Truck, MapPin, Calendar, FileText, IndianRupee } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import DataTable from '../../components/DataTable';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
@@ -20,7 +20,7 @@ export default function Orders() {
   ]);
 
   const loadOrders = () => {
-    setOrders(mockAPI.getOrders());
+    api.getOrders().then(setOrders);
   };
 
   useEffect(() => {
@@ -28,9 +28,10 @@ export default function Orders() {
   }, []);
 
   const handleStatusChange = (id, newStatus) => {
-    mockAPI.updateOrderStatus(id, newStatus);
-    addToast(`Order ${id} status updated to: ${newStatus}`, 'success');
-    loadOrders();
+    api.updateOrderStatus(id, newStatus).then(() => {
+      addToast(`Order ${id} status updated to: ${newStatus}`, 'success');
+      loadOrders();
+    });
   };
 
   const handleOpenDetails = (order) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, Plus, Edit2, Trash2, Calendar, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
@@ -30,7 +30,7 @@ export default function OffersCoupons() {
   const [description, setDescription] = useState('');
 
   const loadCoupons = () => {
-    setCoupons(mockAPI.getCoupons());
+    api.getCoupons().then(setCoupons);
   };
 
   useEffect(() => {
@@ -79,17 +79,19 @@ export default function OffersCoupons() {
       description
     };
 
-    mockAPI.saveCoupon(payload);
-    addToast(editingCoupon ? 'Coupon modified successfully!' : 'New Coupon campaign active!', 'success');
-    setIsModalOpen(false);
-    loadCoupons();
+    api.saveCoupon(payload).then(() => {
+      addToast(editingCoupon ? 'Coupon modified successfully!' : 'New Coupon campaign active!', 'success');
+      setIsModalOpen(false);
+      loadCoupons();
+    });
   };
 
   const handleDelete = (codeVal) => {
     if (window.confirm(`Are you sure you want to delete Coupon code: "${codeVal}"?`)) {
-      mockAPI.deleteCoupon(codeVal);
-      addToast('Coupon deleted from campaigns database.', 'info');
-      loadCoupons();
+      api.deleteCoupon(codeVal).then(() => {
+        addToast('Coupon deleted from campaigns database.', 'info');
+        loadCoupons();
+      });
     }
   };
 

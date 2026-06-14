@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, Globe, Truck, Share2, AlertOctagon, HelpCircle } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 
 export default function SettingsPage() {
@@ -20,20 +20,21 @@ export default function SettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   useEffect(() => {
-    const s = mockAPI.getSettings();
-    if (s) {
-      setWebsiteName(s.websiteName);
-      setWebsiteNameTa(s.websiteNameTa || '');
-      setContactPhone(s.contactPhone);
-      setContactEmail(s.contactEmail);
-      setWhatsappNumber(s.whatsappNumber || '');
-      setFreeShippingThreshold(s.freeShippingThreshold);
-      setFlatDeliveryCharge(s.flatDeliveryCharge);
-      setInstagramUrl(s.instagramUrl);
-      setFacebookUrl(s.facebookUrl);
-      setYoutubeUrl(s.youtubeUrl);
-      setMaintenanceMode(s.maintenanceMode || false);
-    }
+    api.getSettings().then(s => {
+      if (s) {
+        setWebsiteName(s.websiteName);
+        setWebsiteNameTa(s.websiteNameTa || '');
+        setContactPhone(s.contactPhone);
+        setContactEmail(s.contactEmail);
+        setWhatsappNumber(s.whatsappNumber || '');
+        setFreeShippingThreshold(s.freeShippingThreshold);
+        setFlatDeliveryCharge(s.flatDeliveryCharge);
+        setInstagramUrl(s.instagramUrl);
+        setFacebookUrl(s.facebookUrl);
+        setYoutubeUrl(s.youtubeUrl);
+        setMaintenanceMode(s.maintenanceMode || false);
+      }
+    });
   }, []);
 
   const handleSave = (e) => {
@@ -58,8 +59,9 @@ export default function SettingsPage() {
       maintenanceMode
     };
 
-    mockAPI.saveSettings(payload);
-    addToast('Global settings updated successfully!', 'success');
+    api.saveSettings(payload).then(() => {
+      addToast('Global settings updated successfully!', 'success');
+    });
   };
 
   return (
@@ -202,7 +204,7 @@ export default function SettingsPage() {
               <input
                 type="url"
                 value={youtubeUrl}
-                onChange={(e) => setyoutubeUrl(e.target.value)}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="https://youtube.com/nok"
                 className="bg-brand-cream border border-brand-sand rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-primary font-medium"
               />

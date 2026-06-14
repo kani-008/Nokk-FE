@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, Save, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import DataTable from '../../components/DataTable';
 
@@ -13,7 +13,7 @@ export default function Inventory() {
   const [editedStock, setEditedStock] = useState({});
 
   const loadInventory = () => {
-    setProducts(mockAPI.getProducts());
+    api.getProducts().then(setProducts);
   };
 
   useEffect(() => {
@@ -53,17 +53,18 @@ export default function Inventory() {
       inStock: hasStock
     };
 
-    mockAPI.saveProduct(updatedProduct);
-    addToast(`Stock for ${product.nameEn} (${weight}) updated to ${newStock} units.`, 'success');
-    
-    // Clear edited indicator
-    setEditedStock(prev => {
-      const copy = { ...prev };
-      delete copy[key];
-      return copy;
-    });
+    api.saveProduct(updatedProduct).then(() => {
+      addToast(`Stock for ${product.nameEn} (${weight}) updated to ${newStock} units.`, 'success');
+      
+      // Clear edited indicator
+      setEditedStock(prev => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
 
-    loadInventory();
+      loadInventory();
+    });
   };
 
   // Flatten products into variants for easier DataTable representation

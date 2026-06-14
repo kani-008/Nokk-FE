@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, ShieldAlert, CheckCircle2, Eye, ShieldCheck, Mail, Calendar } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
@@ -14,7 +14,7 @@ export default function UsersList() {
   const [userOrders, setUserOrders] = useState([]);
 
   const loadUsersList = () => {
-    setUsers(mockAPI.getUsers());
+    api.getUsers().then(setUsers);
   };
 
   useEffect(() => {
@@ -22,19 +22,21 @@ export default function UsersList() {
   }, []);
 
   const handleToggleBlock = (id, name, currentStatus) => {
-    mockAPI.toggleUserStatus(id);
-    const newStatus = currentStatus === 'Active' ? 'Blocked' : 'Active';
-    addToast(`Customer "${name}" status toggled to: ${newStatus}`, 'info');
-    loadUsersList();
+    api.toggleUserStatus(id).then(() => {
+      const newStatus = currentStatus === 'Active' ? 'Blocked' : 'Active';
+      addToast(`Customer "${name}" status toggled to: ${newStatus}`, 'info');
+      loadUsersList();
+    });
   };
 
   const handleOpenHistory = (userRecord) => {
     setSelectedUser(userRecord);
     // filter orders by user email
-    const allOrders = mockAPI.getOrders();
-    const history = allOrders.filter(o => o.customerEmail.toLowerCase() === userRecord.email.toLowerCase());
-    setUserOrders(history);
-    setIsHistoryOpen(true);
+    api.getOrders().then(allOrders => {
+      const history = allOrders.filter(o => o.customerEmail.toLowerCase() === userRecord.email.toLowerCase());
+      setUserOrders(history);
+      setIsHistoryOpen(true);
+    });
   };
 
   // Columns definition for customers log

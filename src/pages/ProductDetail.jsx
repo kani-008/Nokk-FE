@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag, Truck, Check, AlertCircle, FileText, Sparkles, BookOpen } from 'lucide-react';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { useToastStore } from '../stores/toastStore';
@@ -25,15 +25,16 @@ export default function ProductDetail() {
   const addToast = useToastStore(state => state.addToast);
 
   useEffect(() => {
-    const loadedProduct = mockAPI.getProductBySlug(slug);
-    if (loadedProduct) {
-      setProduct(loadedProduct);
-      setSelectedVariantIndex(0);
-      setQuantity(1);
-    } else {
-      // 404
-      navigate('/products');
-    }
+    api.getProductBySlug(slug).then(loadedProduct => {
+      if (loadedProduct) {
+        setProduct(loadedProduct);
+        setSelectedVariantIndex(0);
+        setQuantity(1);
+      } else {
+        // 404
+        navigate('/products');
+      }
+    });
   }, [slug, navigate]);
 
   if (!product) {

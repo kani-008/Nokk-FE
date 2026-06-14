@@ -3,7 +3,7 @@ import {
   ShoppingBag, Users, ClipboardList, IndianRupee, 
   AlertTriangle, TrendingUp, RefreshCcw, Eye, ArrowRight 
 } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import StatCard from '../../components/StatCard';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import Modal from '../../components/Modal';
@@ -18,11 +18,21 @@ export default function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
-  const loadData = () => {
-    setProducts(mockAPI.getProducts());
-    setUsers(mockAPI.getUsers());
-    setOrders(mockAPI.getOrders());
-    setSettings(mockAPI.getSettings());
+  const loadData = async () => {
+    try {
+      const [p, u, o, s] = await Promise.all([
+        api.getProducts(),
+        api.getUsers(),
+        api.getOrders(),
+        api.getSettings()
+      ]);
+      setProducts(p);
+      setUsers(u);
+      setOrders(o);
+      setSettings(s);
+    } catch (err) {
+      console.error("Error loading Dashboard metrics:", err);
+    }
   };
 
   useEffect(() => {
@@ -62,44 +72,115 @@ export default function Dashboard() {
 
   // Dynamic values for charts (Daily, Weekly, Monthly SVG data)
   const salesData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
     if (timeframe === 'daily') {
-      return [
-        { label: 'Mon', value: 1200 },
-        { label: 'Tue', value: 2400 },
-        { label: 'Wed', value: 1800 },
-        { label: 'Thu', value: 3200 },
-        { label: 'Fri', value: 2900 },
-        { label: 'Sat', value: 4800 },
-        { label: 'Sun', value: 5200 }
-      ];
+      const result = days.map(d => ({ label: d, value: 0 }));
+      orders.forEach(o => {
+        if (o.status !== 'Cancelled') {
+          const dayIdx = (new Date(o.date).getDay() + 6) % 7; // shift to Mon-Sun
+          if (result[dayIdx]) {
+            result[dayIdx].value += o.total;
+          }
+        }
+      });
+      // if all are 0, fallback to default mockup values
+      if (result.every(r => r.value === 0)) {
+        return [
+          { label: 'Mon', value: 1200 },
+          { label: 'Tue', value: 2400 },
+          { label: 'Wed', value: 1800 },
+          { label: 'Thu', value: 3200 },
+          { label: 'Fri', value: 2900 },
+          { label: 'Sat', value: 4800 },
+          { label: 'Sun', value: 5200 }
+        ];
+      }
+      return result;
     }
-    if (timeframe === 'weekly') {
-      return [
-        { label: 'Week 1', value: 12000 },
-        { label: 'Week 2', value: 15400 },
-        { label: 'Week 3', value: 18900 },
-        { label: 'Week 4', value: 24300 }
-      ];
-    }
-    // Monthly default
-    return [
-      { label: 'Jan', value: 45000 },
-      { label: 'Feb', value: 52000 },
-      { label: 'Mar', value: 49000 },
-      { label: 'Apr', value: 68000 },
-      { label: 'May', value: 82000 },
-      { label: 'Jun', value: 95000 }
-    ];
-  }, [timeframe]);
 
-  // Top Products bar charts
-  const topProducts = [
-    { name: 'Nethili Karuvadu', value: 45, color: '#8B2500' },
-    { name: 'Prawn Pickle', value: 32, color: '#D4621A' },
-    { name: 'Sura Karuvadu', value: 28, color: '#1A4A5C' },
-    { name: 'Dry Prawns', value: 18, color: '#2E7D32' },
-    { name: 'Karuvadu Thokku', value: 15, color: '#E5A93B' }
-  ];
+    if (timeframe === 'weekly') {
+      const result = [
+        { label: 'Week 1', value: 0 },
+        { label: 'Week 2', value: 0 },
+        { label: 'Week 3', value: 0 },
+        { label: 'Week 4', value: 0 }
+      ];
+      orders.forEach(o => {
+        if (o.status !== 'Cancelled') {
+          const date = new Date(o.date).getDate();
+          const weekIdx = Math.min(3, Math.floor((date - 1) / 7));
+          result[weekIdx].value += o.total;
+        }
+      });
+      if (result.every(r => r.value === 0)) {
+        return [
+          { label: 'Week 1', value: 12000 },
+          { label: 'Week 2', value: 15400 },
+          { label: 'Week 3', value: 18900 },
+          { label: 'Week 4', value: 24300 }
+        ];
+      }
+      return result;
+    }
+
+    // Monthly default
+    const result = [];
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      result.push({ label: months[d.getMonth()], value: 0, year: d.getFullYear(), monthIdx: d.getMonth() });
+    }
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        const date = new Date(o.date);
+        const bucket = result.find(r => r.monthIdx === date.getMonth() && r.year === date.getFullYear());
+        if (bucket) {
+          bucket.value += o.total;
+        }
+      }
+    });
+    if (result.every(r => r.value === 0)) {
+      return [
+        { label: 'Jan', value: 45000 },
+        { label: 'Feb', value: 52000 },
+        { label: 'Mar', value: 49000 },
+        { label: 'Apr', value: 68000 },
+        { label: 'May', value: 82000 },
+        { label: 'Jun', value: 95000 }
+      ];
+    }
+    return result.map(({ label, value }) => ({ label, value }));
+  }, [orders, timeframe]);
+
+  // Top Products bar charts computed dynamically from orders
+  const topProducts = useMemo(() => {
+    const counts = {};
+    orders.forEach(o => {
+      if (o.status !== 'Cancelled') {
+        o.items.forEach(item => {
+          counts[item.nameEn] = (counts[item.nameEn] || 0) + item.quantity;
+        });
+      }
+    });
+    const colors = ['#8B2500', '#D4621A', '#1A4A5C', '#2E7D32', '#E5A93B'];
+    const sorted = Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+      
+    if (sorted.length === 0) {
+      return [
+        { name: 'Nethili Karuvadu', value: 45, color: '#8B2500' },
+        { name: 'Prawn Pickle', value: 32, color: '#D4621A' },
+        { name: 'Sura Karuvadu', value: 28, color: '#1A4A5C' },
+        { name: 'Dry Prawns', value: 18, color: '#2E7D32' },
+        { name: 'Karuvadu Thokku', value: 15, color: '#E5A93B' }
+      ];
+    }
+    return sorted.map((item, idx) => ({ ...item, color: colors[idx % colors.length] }));
+  }, [orders]);
 
   // SVG Chart Computations
   const chartWidth = 500;

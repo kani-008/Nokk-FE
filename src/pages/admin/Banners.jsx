@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image, Plus, Trash2, Edit2, CheckCircle2, XCircle, ArrowRight, Eye, Sparkles } from 'lucide-react';
-import { mockAPI } from '../../data/mockData';
+import { api } from '../../services/api';
 import { useToastStore } from '../../stores/toastStore';
 import Modal from '../../components/Modal';
 
@@ -21,7 +21,9 @@ export default function Banners() {
   const [active, setActive] = useState(true);
 
   const loadBanners = () => {
-    setBanners(mockAPI.getBanners().sort((a, b) => a.sortOrder - b.sortOrder));
+    api.getBanners().then(data => {
+      setBanners(data.sort((a, b) => a.sortOrder - b.sortOrder));
+    });
   };
 
   useEffect(() => {
@@ -67,25 +69,28 @@ export default function Banners() {
       active
     };
 
-    mockAPI.saveBanner(payload);
-    addToast(editingBanner ? 'Banner updated successfully!' : 'New home banner published!', 'success');
-    setIsModalOpen(false);
-    loadBanners();
+    api.saveBanner(payload).then(() => {
+      addToast(editingBanner ? 'Banner updated successfully!' : 'New home banner published!', 'success');
+      setIsModalOpen(false);
+      loadBanners();
+    });
   };
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to remove this banner from home slider?')) {
-      mockAPI.deleteBanner(id);
-      addToast('Banner removed.', 'info');
-      loadBanners();
+      api.deleteBanner(id).then(() => {
+        addToast('Banner removed.', 'info');
+        loadBanners();
+      });
     }
   };
 
   const handleToggleActive = (banner) => {
     const payload = { ...banner, active: !banner.active };
-    mockAPI.saveBanner(payload);
-    addToast(`Banner slider visibility updated.`, 'info');
-    loadBanners();
+    api.saveBanner(payload).then(() => {
+      addToast(`Banner slider visibility updated.`, 'info');
+      loadBanners();
+    });
   };
 
   return (

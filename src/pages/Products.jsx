@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, Search, RefreshCw, X, ShoppingBag } from 'lucide-react';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import Breadcrumb from '../components/Breadcrumb';
 
@@ -12,8 +12,8 @@ export default function Products() {
 
   // Load Initial Data
   useEffect(() => {
-    setProducts(mockAPI.getProducts());
-    setCategories(mockAPI.getCategories());
+    api.getProducts().then(setProducts);
+    api.getCategories().then(setCategories);
   }, []);
 
   // Filter States

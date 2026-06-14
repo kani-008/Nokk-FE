@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ticket, Calendar, DollarSign, Check, Copy, ArrowRight } from 'lucide-react';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import { useToastStore } from '../stores/toastStore';
 import Breadcrumb from '../components/Breadcrumb';
 
@@ -12,7 +12,7 @@ export default function Offers() {
   const [copiedCode, setCopiedCode] = useState(null);
 
   useEffect(() => {
-    setCoupons(mockAPI.getCoupons());
+    api.getCoupons().then(setCoupons);
   }, []);
 
   const handleCopyCode = (code) => {

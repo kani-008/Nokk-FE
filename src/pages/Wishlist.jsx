@@ -4,7 +4,7 @@ import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { useCartStore } from '../stores/cartStore';
 import { useToastStore } from '../stores/toastStore';
-import { mockAPI } from '../data/mockData';
+import { api } from '../services/api';
 import PriceDisplay from '../components/PriceDisplay';
 import Breadcrumb from '../components/Breadcrumb';
 
@@ -18,9 +18,10 @@ export default function Wishlist() {
 
   // Load products matching wishlist ids
   useEffect(() => {
-    const allProducts = mockAPI.getProducts();
-    const matched = allProducts.filter(p => wishlistItems.includes(p.id));
-    setWishlistProducts(matched);
+    api.getProducts().then(allProducts => {
+      const matched = allProducts.filter(p => wishlistItems.includes(p.id));
+      setWishlistProducts(matched);
+    });
   }, [wishlistItems]);
 
   const handleAddToCart = (product, e) => {
