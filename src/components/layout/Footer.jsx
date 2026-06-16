@@ -5,8 +5,9 @@ import {
   ShieldCheck, Truck, RefreshCcw, Headphones,
   ChevronDown, ChevronUp,
 } from "lucide-react";
+import {FaInstagram,FaFacebook,FaYoutube,FaTwitter} from "react-icons/fa"
 
-// ── data ────────────────────────────────────────────────────────────────
+
 const QUICK_LINKS = [
   { label: "All Products",    to: "/products" },
   { label: "Best Sellers",    to: "/products?isBestseller=true" },
@@ -63,10 +64,10 @@ const FacebookIcon = ({ size = 16 }) => (
 );
 
 const SOCIAL = [
-  { icon: <Instagram size={16} />, href: "#", label: "Instagram" },
-  { icon: <FacebookIcon size={16} />, href: "#", label: "Facebook" },
-  { icon: <Youtube   size={16} />, href: "#", label: "YouTube"   },
-  { icon: <Twitter   size={16} />, href: "#", label: "Twitter"   },
+  { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
+  { icon: <FaFacebook size={16} />, href: "#", label: "Facebook" },
+  { icon: <FaYoutube   size={16} />, href: "#", label: "YouTube"   },
+  { icon: <FaTwitter   size={16} />, href: "#", label: "Twitter"   },
 ];
 
 // ── Mobile accordion section ─────────────────────────────────────────────
