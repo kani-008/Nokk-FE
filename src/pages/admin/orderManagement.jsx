@@ -4,7 +4,7 @@ import {
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
 import { orderApi }     from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore";
+import { useAuthStore } from "../../components/store/AuthStore.jsx";
 import {
   AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
