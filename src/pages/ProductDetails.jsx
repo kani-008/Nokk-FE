@@ -6,7 +6,7 @@ import {
   Share2, ChevronLeft, ChevronRight as ChevronR,
 } from "lucide-react";
 import { productApi }       from "../ApiCall/Api.jsx";
-import { useCartStore }     from "../components/store/AuthStore.jsx";
+import { useCartStore }     from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore }     from "../components/store/AuthStore.jsx";
 
