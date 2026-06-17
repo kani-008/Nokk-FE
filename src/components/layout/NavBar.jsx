@@ -3,12 +3,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Heart, User, Menu, X, Search,
   ChevronDown, Package, LogOut, Settings,
-  ClipboardList, Tag,
+  ClipboardList, Tag, Flame, Grid3x3,
 } from "lucide-react";
 import Logo from "./Logo";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
+import { categoryApi } from "../../ApiCall/Api.jsx";
 
 const NAV_LINKS = [
   { label: "Products", to: "/products" },
@@ -23,6 +24,7 @@ export default function NavBar() {
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [query,       setQuery]       = useState("");
+  const [categories,  setCategories]  = useState([]);
 
   const profileRef = useRef(null);
   const searchRef  = useRef(null);
@@ -30,6 +32,13 @@ export default function NavBar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const cartCount     = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const wishlistCount = useWishlistStore((s) => s.ids.length);
+
+  // fetch categories once for the category strip
+  useEffect(() => {
+    categoryApi.list()
+      .then((r) => setCategories((r.categories || []).filter((c) => c.isActive)))
+      .catch(() => {});
+  }, []);
 
   // close dropdowns on outside click
   useEffect(() => {
@@ -223,6 +232,53 @@ export default function NavBar() {
         </div>
       </div>
 
+      {/* ── Category strip (desktop) ─────────────────────────────── */}
+      <nav className="hidden md:block border-t border-sandal-100 bg-sandal-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
+            <Link
+              to="/products"
+              className={`shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                isActive("/products") && !location.search
+                  ? "bg-gray-800 text-sandal-100"
+                  : "text-gray-600 hover:bg-white hover:text-gray-900"
+              }`}
+            >
+              <Grid3x3 size={13} />
+              All Categories
+            </Link>
+
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/products?category=${cat.slug}`}
+                className="shrink-0 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-gray-600 hover:bg-white hover:text-gray-900 transition-colors whitespace-nowrap"
+              >
+                {cat.nameEn}
+              </Link>
+            ))}
+
+            <div className="shrink-0 w-px h-4 bg-sandal-200 mx-1" />
+
+            <Link
+              to="/products?isBestseller=true"
+              className="shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-gray-600 hover:bg-white hover:text-gray-900 transition-colors whitespace-nowrap"
+            >
+              <Flame size={13} className="text-red-500" />
+              Bestsellers
+            </Link>
+
+            <Link
+              to="/offers"
+              className="shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-sandal-700 hover:bg-white transition-colors whitespace-nowrap"
+            >
+              <Tag size={13} />
+              Today's Offers
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* ── Mobile search bar (slides down) ──────────────────────── */}
       {searchOpen && (
         <div className="md:hidden border-b border-sandal-100 bg-white px-4 py-3" ref={searchRef}>
@@ -268,6 +324,35 @@ export default function NavBar() {
           )}
 
           <nav className="flex flex-col py-2">
+
+            {/* Shop by category — mobile */}
+            {categories.length > 0 && (
+              <div className="px-4 pb-3 mb-1 border-b border-sandal-100">
+                <p className="font-body text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Shop by Category
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to="/products"
+                    onClick={() => setMobileOpen(false)}
+                    className="font-body text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-sandal-100"
+                  >
+                    All
+                  </Link>
+                  {categories.map((cat) => (
+                    <Link
+                      key={cat.id}
+                      to={`/products?category=${cat.slug}`}
+                      onClick={() => setMobileOpen(false)}
+                      className="font-body text-xs font-semibold px-3 py-1.5 rounded-full bg-sandal-50 text-sandal-800 border border-sandal-200"
+                    >
+                      {cat.nameEn}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {NAV_LINKS.map((l) => (
               <MobileNavLink key={l.to} to={l.to} onClick={() => setMobileOpen(false)}>
                 {l.label}

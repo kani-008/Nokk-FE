@@ -1,19 +1,26 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { SlidersHorizontal, X, ChevronDown, ChevronUp, Search } from "lucide-react";
+import {
+  SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
+  Star, ArrowUpDown,
+} from "lucide-react";
 import { productApi, categoryApi } from "../ApiCall/Api.jsx";
 import { useCartStore }    from "../components/store/CartStore";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import ProductCard from "../components/Product/ProductCard";
 
-// ── sort options ───────────────────────────────────────────────────────
+// ── sort options — value must match the productApi.list() `sort` contract ──
 const SORT_OPTIONS = [
-  { value: "popular",        label: "Most Popular" },
+  { value: "popular",        label: "Popularity" },
   { value: "newest",         label: "Newest First" },
-  { value: "price-low-high", label: "Price: Low → High" },
-  { value: "price-high-low", label: "Price: High → Low" },
+  { value: "price-low-high", label: "Price: Low to High" },
+  { value: "price-high-low", label: "Price: High to Low" },
+  { value: "relevance",      label: "Relevance" },
 ];
+
+// rating filter options — "and above" style, matches Amazon/Flipkart convention
+const RATING_OPTIONS = [4, 3, 2, 1];
 
 // ── skeleton card ──────────────────────────────────────────────────────
 function ProductSkeleton() {
@@ -33,13 +40,14 @@ function ProductSkeleton() {
   );
 }
 
-// ── filter section (collapsible on mobile) ─────────────────────────────
-function FilterSection({ title, children }) {
-  const [open, setOpen] = useState(true);
+// ── filter section (collapsible on mobile and desktop alike) ──────────
+function FilterSection({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-amber-100 pb-4 mb-4">
+    <div className="border-b border-sandal-100 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
       <button
-        className="w-full flex items-center justify-between mb-3 font-body text-sm font-semibold text-brand-900"
+        type="button"
+        className="w-full flex items-center justify-between mb-3 font-body text-sm font-bold text-brand-900"
         onClick={() => setOpen((s) => !s)}
       >
         {title}
@@ -62,6 +70,30 @@ function FilterPill({ label, onRemove }) {
   );
 }
 
+// ── star rating filter row ─────────────────────────────────────────────
+function RatingRow({ value, checked, onChange }) {
+  return (
+    <label className="filter-row group">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="filter-checkbox"
+      />
+      <span className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Star
+            key={s}
+            size={13}
+            className={s <= value ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-300"}
+          />
+        ))}
+      </span>
+      <span className="filter-row-label">&amp; above</span>
+    </label>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // PRODUCTS PAGE
 // ══════════════════════════════════════════════════════════════════════
@@ -69,34 +101,69 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // read from URL
-  const search   = searchParams.get("search")       || "";
-  const category = searchParams.get("category")     || "";
-  const sort     = searchParams.get("sort")          || "popular";
-  const inStock  = searchParams.get("inStock")       === "true";
-  const isBest   = searchParams.get("isBestseller") === "true";
-  const isNew    = searchParams.get("isNew")         === "true";
-  const page     = parseInt(searchParams.get("page") || "1");
+  const search        = searchParams.get("search")       || "";
+  const category      = searchParams.get("category")     || "";
+  const sort          = searchParams.get("sort")          || "popular";
+  const inStock       = searchParams.get("inStock")       === "true";
+  const isBest        = searchParams.get("isBestseller") === "true";
+  const isNew         = searchParams.get("isNew")         === "true";
+  const minPrice      = searchParams.get("minPrice")      || "";
+  const maxPrice      = searchParams.get("maxPrice")      || "";
+  const rating        = searchParams.get("rating")        || "";
+  const weightParam   = searchParams.get("weight")        || "";
+  const hasOffer      = searchParams.get("hasOffer")     === "true";
+  const page          = parseInt(searchParams.get("page") || "1");
+
+  // memoized so its identity is stable across renders unless weightParam actually changes —
+  // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
+  const weights = useMemo(
+    () => weightParam.split(",").filter(Boolean),
+    [weightParam]
+  );
 
   const [products,    setProducts]    = useState([]);
   const [categories,  setCategories]  = useState([]);
   const [pagination,  setPagination]  = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [filterOpen,  setFilterOpen]  = useState(false);
+  const [sortOpen,    setSortOpen]    = useState(false);
   const [searchInput, setSearchInput] = useState(search);
+  const [priceDraft,  setPriceDraft]  = useState({ min: minPrice, max: maxPrice });
+
+  const sortRef = useRef(null);
+
+  // close the mobile sort dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // keep the price draft inputs synced if filters are cleared elsewhere (e.g. "Clear all")
+  useEffect(() => {
+    setPriceDraft({ min: minPrice, max: maxPrice });
+  }, [minPrice, maxPrice]);
 
   // ── build query string from URL state ────────────────────────────
   const buildQuery = useCallback(() => {
     const p = new URLSearchParams();
-    if (search)   p.set("search",       search);
-    if (category) p.set("category",     category);
-    if (sort)     p.set("sort",         sort);
-    if (inStock)  p.set("inStock",      "true");
-    if (isBest)   p.set("isBestseller", "true");
-    if (isNew)    p.set("isNew",        "true");
+    if (search)            p.set("search",       search);
+    if (category)          p.set("category",     category);
+    if (sort)              p.set("sort",         sort);
+    if (inStock)           p.set("inStock",      "true");
+    if (isBest)            p.set("isBestseller", "true");
+    if (isNew)             p.set("isNew",        "true");
+    if (minPrice)          p.set("minPrice",     minPrice);
+    if (maxPrice)          p.set("maxPrice",     maxPrice);
+    if (rating)            p.set("rating",       rating);
+    if (weights.length)    p.set("weight",       weights.join(","));
+    if (hasOffer)          p.set("hasOffer",     "true");
     p.set("page",  String(page));
     p.set("limit", "12");
     return p.toString();
-  }, [search, category, sort, inStock, isBest, isNew, page]);
+  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
 
   // ── set a single URL param ────────────────────────────────────────
   const setParam = (key, value) => {
@@ -107,9 +174,26 @@ export default function Products() {
     setSearchParams(p);
   };
 
+  // ── toggle a value inside a comma-separated multi-select param ────
+  const toggleListParam = (key, currentList, value) => {
+    const next = currentList.includes(value)
+      ? currentList.filter((v) => v !== value)
+      : [...currentList, value];
+    setParam(key, next.join(","));
+  };
+
+  const applyPriceRange = () => {
+    const p = new URLSearchParams(searchParams);
+    if (priceDraft.min) p.set("minPrice", priceDraft.min); else p.delete("minPrice");
+    if (priceDraft.max) p.set("maxPrice", priceDraft.max); else p.delete("maxPrice");
+    p.delete("page");
+    setSearchParams(p);
+  };
+
   const removeAllFilters = () => {
     setSearchParams({});
     setSearchInput("");
+    setPriceDraft({ min: "", max: "" });
   };
 
   // ── fetch categories once ─────────────────────────────────────────
@@ -132,6 +216,20 @@ export default function Products() {
       .finally(() => setLoading(false));
   }, [buildQuery]);
 
+  // ── distinct pack sizes available, derived from current result set ─
+  // (kept stable across paginated fetches by deriving from the full mock
+  //  product catalogue once, rather than just the current page's products)
+  const [allWeightLabels, setAllWeightLabels] = useState([]);
+  useEffect(() => {
+    productApi.list("limit=999")
+      .then((r) => {
+        const labels = new Set();
+        (r.products || []).forEach((p) => p.variants.forEach((v) => labels.add(v.weightLabel)));
+        setAllWeightLabels([...labels]);
+      })
+      .catch(() => {});
+  }, []);
+
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [
     search   && { key: "search",       label: `"${search}"` },
@@ -139,14 +237,20 @@ export default function Products() {
     inStock  && { key: "inStock",      label: "In Stock" },
     isBest   && { key: "isBestseller", label: "Best Sellers" },
     isNew    && { key: "isNew",        label: "New Arrivals" },
+    (minPrice || maxPrice) && { key: "price",  label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
+    rating   && { key: "rating",       label: `${rating}★ & above` },
+    hasOffer && { key: "hasOffer",     label: "Has Offer" },
+    ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
   ].filter(Boolean);
 
   const hasFilters = activeFilters.length > 0 || sort !== "popular";
 
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || "Popularity";
+
   // ── sidebar ───────────────────────────────────────────────────────
   const Sidebar = () => (
-    <aside className="w-full md:w-52 shrink-0">
-      <div className="card p-4 sticky top-24">
+    <aside className="w-full md:w-64 shrink-0">
+      <div className="card p-4 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
 
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-body text-sm font-bold text-brand-900">Filters</h3>
@@ -188,26 +292,109 @@ export default function Products() {
           </ul>
         </FilterSection>
 
-        {/* Quick filters */}
-        <FilterSection title="Quick Filters">
-          <div className="space-y-2">
-            {[
-              { key: "inStock",      value: inStock, label: "In Stock Only" },
-              { key: "isBestseller", value: isBest,  label: "Best Sellers" },
-              { key: "isNew",        value: isNew,   label: "New Arrivals" },
-            ].map((f) => (
-              <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={f.value}
-                  onChange={(e) => setParam(f.key, e.target.checked ? "true" : "")}
-                  className="w-4 h-4 rounded accent-brand-700"
-                />
-                <span className="font-body text-sm text-amber-800 group-hover:text-brand-900 transition-colors">
-                  {f.label}
-                </span>
-              </label>
+        {/* Price range */}
+        <FilterSection title="Price Range">
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              placeholder="Min"
+              value={priceDraft.min}
+              onChange={(e) => setPriceDraft((d) => ({ ...d, min: e.target.value }))}
+              className="field-input py-1.5 text-xs px-2.5"
+            />
+            <span className="text-gray-400 text-xs">to</span>
+            <input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              placeholder="Max"
+              value={priceDraft.max}
+              onChange={(e) => setPriceDraft((d) => ({ ...d, max: e.target.value }))}
+              className="field-input py-1.5 text-xs px-2.5"
+            />
+          </div>
+          <button
+            onClick={applyPriceRange}
+            className="btn-sm btn-outline w-full"
+          >
+            Apply
+          </button>
+        </FilterSection>
+
+        {/* Customer rating */}
+        <FilterSection title="Customer Rating">
+          <div className="space-y-1.5">
+            {RATING_OPTIONS.map((r) => (
+              <RatingRow
+                key={r}
+                value={r}
+                checked={rating === String(r)}
+                onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
+              />
             ))}
+          </div>
+        </FilterSection>
+
+        {/* Pack size / quantity */}
+        {allWeightLabels.length > 0 && (
+          <FilterSection title="Pack Size">
+            <div className="space-y-1.5">
+              {allWeightLabels.map((w) => (
+                <label key={w} className="filter-row group">
+                  <input
+                    type="checkbox"
+                    checked={weights.includes(w)}
+                    onChange={() => toggleListParam("weight", weights, w)}
+                    className="filter-checkbox"
+                  />
+                  <span className="filter-row-label">{w}</span>
+                </label>
+              ))}
+            </div>
+          </FilterSection>
+        )}
+
+        {/* Availability & offers */}
+        <FilterSection title="Availability & Offers" defaultOpen={true}>
+          <div className="space-y-1.5">
+            <label className="filter-row group">
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
+                className="filter-checkbox"
+              />
+              <span className="filter-row-label">In Stock Only</span>
+            </label>
+            <label className="filter-row group">
+              <input
+                type="checkbox"
+                checked={hasOffer}
+                onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
+                className="filter-checkbox"
+              />
+              <span className="filter-row-label">On Offer</span>
+            </label>
+            <label className="filter-row group">
+              <input
+                type="checkbox"
+                checked={isBest}
+                onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
+                className="filter-checkbox"
+              />
+              <span className="filter-row-label">Best Sellers</span>
+            </label>
+            <label className="filter-row group">
+              <input
+                type="checkbox"
+                checked={isNew}
+                onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
+                className="filter-checkbox"
+              />
+              <span className="filter-row-label">New Arrivals</span>
+            </label>
           </div>
         </FilterSection>
 
@@ -235,7 +422,7 @@ export default function Products() {
       </div>
 
       {/* ── Top bar: search + sort + mobile filter toggle ─────────── */}
-      <div className="flex flex-wrap gap-3 mb-5 items-center">
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
 
         {/* inline search */}
         <form
@@ -254,20 +441,9 @@ export default function Products() {
           </div>
         </form>
 
-        {/* sort */}
-        <select
-          value={sort}
-          onChange={(e) => setParam("sort", e.target.value)}
-          className="field-input w-auto py-2 text-sm pr-8 cursor-pointer"
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
         {/* mobile filter button */}
         <button
-          className="md:hidden flex items-center gap-1.5 btn-md btn-outline"
+          className="md:hidden flex items-center gap-1.5 btn-md btn-outline ml-auto"
           onClick={() => setFilterOpen((s) => !s)}
         >
           <SlidersHorizontal size={15} />
@@ -278,6 +454,59 @@ export default function Products() {
         </button>
       </div>
 
+      {/* ── Sort bar ──────────────────────────────────────────────── */}
+      <div className="mb-4">
+        {/* Desktop: horizontal chip row */}
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="flex items-center gap-1 font-body text-xs font-bold text-gray-400 uppercase tracking-wider shrink-0 pl-1">
+            <ArrowUpDown size={12} /> Sort By
+          </span>
+          <div className="sort-bar">
+            {SORT_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => setParam("sort", o.value === "popular" ? "" : o.value)}
+                className={sort === o.value ? "sort-chip-active" : "sort-chip"}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile: compact dropdown trigger */}
+        <div className="sm:hidden relative" ref={sortRef}>
+          <button
+            type="button"
+            onClick={() => setSortOpen((s) => !s)}
+            className="w-full flex items-center justify-between gap-2 field-input py-2.5"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <ArrowUpDown size={14} className="text-sandal-500" />
+              Sort: {currentSortLabel}
+            </span>
+            <ChevronDown size={15} className={`text-amber-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+          </button>
+          {sortOpen && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-30">
+              {SORT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
+                  className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors ${
+                    sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* ── Active filter pills ───────────────────────────────────── */}
       {activeFilters.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
@@ -285,7 +514,7 @@ export default function Products() {
             <FilterPill
               key={f.key}
               label={f.label}
-              onRemove={() => setParam(f.key, "")}
+              onRemove={f.custom || (() => setParam(f.key, ""))}
             />
           ))}
         </div>
@@ -318,7 +547,7 @@ export default function Products() {
         <div className="flex-1 min-w-0">
 
           {loading ? (
-            <div className="product-grid">
+            <div className="product-grid-compact">
               {Array.from({ length: 12 }).map((_, i) => <ProductSkeleton key={i} />)}
             </div>
 
@@ -334,7 +563,7 @@ export default function Products() {
 
           ) : (
             <>
-              <div className="product-grid">
+              <div className="product-grid-compact">
                 {products.map((p) => <ProductCard key={p.id} product={p} />)}
               </div>
 
