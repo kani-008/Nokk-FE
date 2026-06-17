@@ -4,16 +4,16 @@
 
 @theme {
   /* Custom Sandal (Warm beige/cream/sandalwood) */
-  --color-sandal-50: #fbf9f6;
-  --color-sandal-100: #f5eedf;
-  --color-sandal-200: #ebdcc0;
-  --color-sandal-300: #e0ca9f;
-  --color-sandal-400: #d4b57e;
-  --color-sandal-500: #c8a05e;
-  --color-sandal-600: #ac8345;
-  --color-sandal-700: #8c6734;
-  --color-sandal-800: #6b4d24;
-  --color-sandal-900: #4b3417;
+  --color-sandal-50: #f5eedf;
+  --color-sandal-100: #ebdcc0;
+  --color-sandal-200: #e0ca9f;
+  --color-sandal-300: #d4b57e;
+  --color-sandal-400: #c8a05e;
+  --color-sandal-500: #ac8345;
+  --color-sandal-600: #8c6734;
+  --color-sandal-700: #6b4d24;
+  --color-sandal-800: #4b3417;
+  --color-sandal-900: #33210d;
 
   /* Custom charcoal grays */
   --color-gray-50: #f7f7f8;
@@ -62,7 +62,7 @@
 /* Base styles */
 body {
   font-family: var(--font-body);
-  background-color: var(--color-gray-50);
+  background-color: var(--color-sandal-50);
   color: var(--color-gray-800);
 }
 
@@ -82,7 +82,7 @@ body {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
   }
 
-  /* ── Buttons ─────────────────────────────────────────────────────── */
+  /* Buttons  */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full
            bg-gray-800 text-sandal-100 border border-gray-800 cursor-pointer
@@ -103,7 +103,7 @@ body {
   .btn-md { @apply px-5 py-2 text-sm; }
   .btn-lg { @apply px-7 py-3 text-base; }
 
-  /* ── Cards ───────────────────────────────────────────────────────── */
+  /* Cards  */
   .card {
     @apply bg-white rounded-2xl border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]
            transition-all duration-300;
@@ -116,7 +116,7 @@ body {
            hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
   }
 
-  /* ── Badges ──────────────────────────────────────────────────────── */
+  /* Badges  */
   .badge-red {
     @apply inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold rounded-full
            bg-red-50 text-red-500 border border-red-100;
@@ -139,6 +139,10 @@ body {
     @apply w-full rounded-xl border-[1.5px] border-gray-200 bg-white px-4 py-2.5 text-sm
            text-gray-800 outline-none transition-all duration-200
            focus:border-sandal-400 focus:ring-3 focus:ring-sandal-400/15;
+  }
+
+  .field-label {
+    @apply block font-body text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide;
   }
 
   /* ── Product grid ────────────────────────────────────────────────────

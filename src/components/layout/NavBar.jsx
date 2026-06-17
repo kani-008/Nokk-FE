@@ -14,6 +14,8 @@ import { categoryApi } from "../../ApiCall/Api.jsx";
 const NAV_LINKS = [
   { label: "Products", to: "/products" },
   { label: "Offers",   to: "/offers"   },
+  { label: "Bestsellers", to: "/products?isBestseller=true" },
+  { label: "Today's Deals", to: "/offers" },
 ];
 
 export default function NavBar() {
@@ -23,11 +25,13 @@ export default function NavBar() {
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [query,       setQuery]       = useState("");
   const [categories,  setCategories]  = useState([]);
 
   const profileRef = useRef(null);
   const searchRef  = useRef(null);
+  const catDropdownRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
   const cartCount     = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
@@ -45,13 +49,18 @@ export default function NavBar() {
     const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
       if (searchRef.current  && !searchRef.current.contains(e.target))  setSearchOpen(false);
+      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target)) setCatDropdownOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); setProfileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setProfileOpen(false);
+    setCatDropdownOpen(false);
+  }, [location.pathname]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -67,217 +76,225 @@ export default function NavBar() {
     navigate("/login");
   };
 
-  const isActive = (to) => location.pathname === to;
+  const isActive = (to) => {
+    if (to.includes("?")) {
+      const [path, queryPart] = to.split("?");
+      return location.pathname === path && location.search.includes(queryPart);
+    }
+    return location.pathname === to;
+  };
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-sandal-100">
+    <header className="sticky top-0 z-50 shadow-sm">
 
-      {/* ── Announcement bar ──────────────────────────────────────── */}
-      <div className="bg-gray-800 text-sandal-100 text-[11px] sm:text-xs text-center py-2 font-body font-medium tracking-wide px-4">
-        🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from Rameswaram fishermen &nbsp;·&nbsp;
-        <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-200 transition-colors ml-1">Today's Deals</Link>
-      </div>
+      {/* ── Main bar — single unified gray bar (Amazon-style) ──────── */}
+      <div className="bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
-      {/* ── Main nav row ──────────────────────────────────────────── */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-16 gap-3">
+          {/* thin shipping note — folded into the top of the gray bar, not a separate row */}
+          <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
+            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from Rameswaram fishermen &nbsp;·&nbsp;
+            <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
+          </div>
 
-          {/* Logo */}
-          <Logo className="shrink-0 mr-4" />
+          <div className="flex items-center h-16 gap-3">
 
-          {/* Desktop search — grows to fill space */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-6">
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search dry fish, pickles, nethili…"
-                className="w-full field-input rounded-full py-2 pl-4 pr-10 text-sm"
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
-              >
-                <Search size={16} />
-              </button>
-            </div>
-          </form>
+            {/* Logo — pinned to the true far-left edge */}
+            <Logo className="shrink-0 mr-2" inverse />
 
-          {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
-                  isActive(l.to)
-                    ? "bg-sandal-100 text-sandal-800"
-                    : "text-gray-600 hover:bg-sandal-50 hover:text-gray-900"
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right icon group */}
-          <div className="flex items-center gap-1.5 ml-auto">
-
-            {/* Mobile search toggle */}
-            <button
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors"
-              onClick={() => setSearchOpen((s) => !s)}
-              aria-label="Search"
-            >
-              <Search size={20} />
-            </button>
-
-            {/* Wishlist */}
-            <Link
-              to="/wishlist"
-              className="relative p-2 text-gray-600 hover:text-rose-500 rounded-xl hover:bg-gray-100 transition-colors"
-              aria-label="Wishlist"
-            >
-              <Heart size={20} />
-              {wishlistCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-rose-500 text-white font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
-                  {wishlistCount > 99 ? "99+" : wishlistCount}
-                </span>
-              )}
-            </Link>
-
-            {/* Cart */}
-            <Link
-              to="/cart"
-              className="relative p-2 text-gray-600 hover:text-sandal-700 rounded-xl hover:bg-gray-100 transition-colors"
-              aria-label="Cart"
-            >
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-gray-800 text-white font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
-            </Link>
-
-            {/* Auth — desktop dropdown / mobile link */}
-            {isAuthenticated ? (
-              <div className="relative" ref={profileRef}>
+            {/* Desktop search — grows to fill center space */}
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search dry fish, pickles, nethili…"
+                  className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                />
                 <button
-                  onClick={() => setProfileOpen((s) => !s)}
-                  className="hidden md:flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
+                  type="submit"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
                 >
-                  {/* avatar initial */}
-                  <div className="w-8 h-8 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-xs font-bold shrink-0">
-                    {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
-                  </div>
-                  <span className="font-body text-sm font-semibold max-w-[80px] truncate text-gray-700">
-                    {(user?.fullName ?? user?.name ?? "Account").split(" ")[0]}
-                  </span>
-                  <ChevronDown size={14} className={`transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+                  <Search size={16} />
+                </button>
+              </div>
+            </form>
+
+            {/* Desktop nav links */}
+            <nav className="hidden md:flex items-center gap-1">
+              {/* Categories Dropdown */}
+              <div
+                ref={catDropdownRef}
+                className="relative"
+                onMouseEnter={() => setCatDropdownOpen(true)}
+                onMouseLeave={() => setCatDropdownOpen(false)}
+              >
+                <button
+                  onClick={() => setCatDropdownOpen((prev) => !prev)}
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                    catDropdownOpen
+                      ? "bg-white/10 text-white"
+                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Grid3x3 size={14} />
+                  Categories
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${catDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
 
-                {/* Desktop dropdown */}
-                {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
-                    {/* user info */}
-                    <div className="px-4 py-2.5 border-b border-sandal-100 mb-1">
-                      <p className="font-body text-xs font-bold text-gray-800 truncate">
-                        {user?.fullName ?? user?.name}
-                      </p>
-                      <p className="font-body text-[11px] text-gray-500 truncate">
-                        {user?.phone ?? user?.email}
-                      </p>
-                    </div>
-                    <DropItem to="/profile"   icon={<User size={14} />}       label="My Profile" />
-                    <DropItem to="/my-orders" icon={<Package size={14} />}    label="My Orders" />
-                    <DropItem to="/wishlist"  icon={<Heart size={14} />}      label="Wishlist" />
-                    <DropItem to="/offers"    icon={<Tag size={14} />}        label="Offers" />
-                    {user?.role === "admin" && (
-                      <>
-                        <div className="border-t border-sandal-100 my-1" />
-                        <DropItem to="/admin" icon={<Settings size={14} />} label="Admin Panel" highlight />
-                      </>
-                    )}
-                    <div className="border-t border-sandal-100 mt-1 pt-1">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                {catDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-sandal-100 rounded-2xl shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Link
+                      to="/products"
+                      onClick={() => setCatDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
+                    >
+                      <Grid3x3 size={14} className="text-sandal-500" />
+                      All Products
+                    </Link>
+                    <div className="border-t border-sandal-100/50 my-1.5" />
+                    {categories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        to={`/products?category=${cat.slug}`}
+                        onClick={() => setCatDropdownOpen(false)}
+                        className="flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-700 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
                       >
-                        <LogOut size={14} /> Logout
-                      </button>
-                    </div>
+                        <span>{cat.nameEn}</span>
+                        {cat.nameTa && <span className="font-tamil text-[10px] text-sandal-400 font-normal">{cat.nameTa}</span>}
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>
-            ) : (
-              <Link
-                to="/login"
-                className="hidden md:inline-flex btn-md btn-primary ml-1"
-              >
-                Login
-              </Link>
-            )}
 
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors ml-1"
-              onClick={() => setMobileOpen((s) => !s)}
-              aria-label="Menu"
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+              {NAV_LINKS.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
+                    isActive(l.to)
+                      ? "bg-white/10 text-white"
+                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Right icon group */}
+            <div className="flex items-center gap-1.5 ml-auto">
+
+              {/* Mobile search toggle */}
+              <button
+                className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                onClick={() => setSearchOpen((s) => !s)}
+                aria-label="Search"
+              >
+                <Search size={20} />
+              </button>
+
+              {/* Wishlist */}
+              <Link
+                to="/wishlist"
+                className="relative p-2 text-sandal-100 hover:text-rose-300 rounded-xl hover:bg-white/10 transition-colors"
+                aria-label="Wishlist"
+              >
+                <Heart size={20} />
+                {wishlistCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 bg-rose-500 text-white font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Cart */}
+              <Link
+                to="/cart"
+                className="relative p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                aria-label="Cart"
+              >
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 bg-sandal-400 text-gray-900 font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Auth — desktop dropdown / mobile link */}
+              {isAuthenticated ? (
+                <div className="relative" ref={profileRef}>
+                  <button
+                    onClick={() => setProfileOpen((s) => !s)}
+                    className="hidden md:flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl text-sandal-100 hover:bg-white/10 transition-colors"
+                  >
+                    {/* avatar initial */}
+                    <div className="w-8 h-8 rounded-full bg-sandal-400 text-gray-900 flex items-center justify-center font-num text-xs font-bold shrink-0">
+                      {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
+                    </div>
+                    <span className="font-body text-sm font-semibold max-w-[80px] truncate text-sandal-100">
+                      {(user?.fullName ?? user?.name ?? "Account").split(" ")[0]}
+                    </span>
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {/* Desktop dropdown */}
+                  {profileOpen && (
+                    <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
+                      {/* user info */}
+                      <div className="px-4 py-2.5 border-b border-sandal-100 mb-1">
+                        <p className="font-body text-xs font-bold text-gray-800 truncate">
+                          {user?.fullName ?? user?.name}
+                        </p>
+                        <p className="font-body text-[11px] text-gray-500 truncate">
+                          {user?.phone ?? user?.email}
+                        </p>
+                      </div>
+                      <DropItem to="/profile"   icon={<User size={14} />}       label="My Profile" />
+                      <DropItem to="/my-orders" icon={<Package size={14} />}    label="My Orders" />
+                      <DropItem to="/wishlist"  icon={<Heart size={14} />}      label="Wishlist" />
+                      <DropItem to="/offers"    icon={<Tag size={14} />}        label="Offers" />
+                      {user?.role === "admin" && (
+                        <>
+                          <div className="border-t border-sandal-100 my-1" />
+                          <DropItem to="/admin" icon={<Settings size={14} />} label="Admin Panel" highlight />
+                        </>
+                      )}
+                      <div className="border-t border-sandal-100 mt-1 pt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut size={14} /> Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="hidden md:inline-flex btn-md bg-sandal-400 text-gray-950 font-semibold rounded-full px-5 py-2 text-sm hover:bg-sandal-300 transition-colors ml-1"
+                >
+                  Login
+                </Link>
+              )}
+
+              {/* Mobile hamburger */}
+              <button
+                className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors ml-1"
+                onClick={() => setMobileOpen((s) => !s)}
+                aria-label="Menu"
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* ── Category strip (desktop) ─────────────────────────────── */}
-      <nav className="hidden md:block border-t border-sandal-100 bg-sandal-50/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
-            <Link
-              to="/products"
-              className={`shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                isActive("/products") && !location.search
-                  ? "bg-gray-800 text-sandal-100"
-                  : "text-gray-600 hover:bg-white hover:text-gray-900"
-              }`}
-            >
-              <Grid3x3 size={13} />
-              All Categories
-            </Link>
-
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/products?category=${cat.slug}`}
-                className="shrink-0 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-gray-600 hover:bg-white hover:text-gray-900 transition-colors whitespace-nowrap"
-              >
-                {cat.nameEn}
-              </Link>
-            ))}
-
-            <div className="shrink-0 w-px h-4 bg-sandal-200 mx-1" />
-
-            <Link
-              to="/products?isBestseller=true"
-              className="shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-gray-600 hover:bg-white hover:text-gray-900 transition-colors whitespace-nowrap"
-            >
-              <Flame size={13} className="text-red-500" />
-              Bestsellers
-            </Link>
-
-            <Link
-              to="/offers"
-              className="shrink-0 flex items-center gap-1.5 font-body text-[13px] font-semibold px-3 py-1.5 rounded-lg text-sandal-700 hover:bg-white transition-colors whitespace-nowrap"
-            >
-              <Tag size={13} />
-              Today's Offers
-            </Link>
-          </div>
-        </div>
-      </nav>
 
       {/* ── Mobile search bar (slides down) ──────────────────────── */}
       {searchOpen && (

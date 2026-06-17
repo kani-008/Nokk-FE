@@ -28,6 +28,31 @@ const rupee = (n) =>
 //  HERO BANNER SLIDER (with loop video background)
 function HeroBanner({ banners }) {
   const [idx, setIdx] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      next();
+    } else if (isRightSwipe) {
+      prev();
+    }
+  };
 
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -50,7 +75,12 @@ function HeroBanner({ banners }) {
   const next = () => setIdx((i) => (i + 1) % slides.length);
 
   return (
-    <section className="relative h-[480px] bg-gray-950 overflow-hidden group select-none flex items-center justify-center">
+    <section
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="relative h-[480px] bg-gray-950 overflow-hidden group select-none flex items-center justify-center"
+    >
       {/* Loop video background */}
       <video
         autoPlay
@@ -458,13 +488,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-sandal-50">
 
       {/* 1 – Hero */}
       <HeroBanner banners={banners} />
-
-      {/* 2 – Trust */}
-      <TrustStrip />
 
       {/* 3 – Categories */}
       <CategoryScroll categories={categories} />

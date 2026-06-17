@@ -42,7 +42,7 @@
   {
     "id": "cat-6",
     "nameEn": "Pickles & Chutneys",
-    "nameTa": "கருவாடு தொக்கு",
+    "nameTa": "ஊறுகாய் மற்றும் துவையல்",
     "slug": "pickles",
     "sortOrder": 6,
     "isActive": true
@@ -53,6 +53,22 @@
     "nameTa": "காம்போ பேக்",
     "slug": "combo-packs",
     "sortOrder": 7,
+    "isActive": true
+  },
+  {
+    "id": "cat-8",
+    "nameEn": "Dry Prawns (Iral Vathal)",
+    "nameTa": "இறால் வத்தல்",
+    "slug": "dry-prawns",
+    "sortOrder": 8,
+    "isActive": true
+  },
+  {
+    "id": "cat-9",
+    "nameEn": "Masala & Spice Powders",
+    "nameTa": "மசாலா தூள்",
+    "slug": "masala-powders",
+    "sortOrder": 9,
     "isActive": true
   }
 ]

@@ -210,5 +210,51 @@
       { "id": "v-9-1", "weightLabel": "Standard Combo Kit", "weightGrams": 700, "price": 649, "comparePrice": 850, "stockQty": 15 }
     ],
     "reviews": []
+  },
+  {
+    "id": "prod-10",
+    "nameEn": "Iral Vathal (Sun-Dried Prawns)",
+    "nameTa": "இறால் வத்தல்",
+    "slug": "iral-vathal-dry-prawns",
+    "description": "Premium sun-dried prawns (Iral Vathal), small and firm with a concentrated, naturally salty-sweet flavor. A coastal Tamil Nadu staple, distinct from karuvadu, used in chutneys, kuzhambu, and stir-fries.",
+    "howToUse": "Dry roast briefly or soak for 5 minutes to soften. Excellent in gongura chutney, sambar, or a simple stir-fry with shallots and curry leaves.",
+    "storageTips": "Store in an airtight container away from moisture. Refrigerate for extended freshness.",
+    "categoryId": "cat-8",
+    "categoryName": "Dry Prawns (Iral Vathal)",
+    "categorySlug": "dry-prawns",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.6,
+    "reviewCount": 9,
+    "variants": [
+      { "id": "v-10-1", "weightLabel": "100g", "weightGrams": 100, "price": 180, "comparePrice": 220, "stockQty": 25 },
+      { "id": "v-10-2", "weightLabel": "250g", "weightGrams": 250, "price": 420, "comparePrice": 500, "stockQty": 15 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-11",
+    "nameEn": "Karuvadu Curry Masala Powder",
+    "nameTa": "கருவாடு குழம்பு மசாலா தூள்",
+    "slug": "karuvadu-curry-masala-powder",
+    "description": "A traditional spice blend made for dry fish kuzhambu and curries — chili, coriander, fennel, and roasted spices ground fresh. Cuts prep time without compromising on authentic coastal flavor.",
+    "howToUse": "Add 1-2 tablespoons while preparing karuvadu kuzhambu or thokku, adjusting to taste. Also works well in prawn or regular fish curries.",
+    "storageTips": "Keep in a dry airtight container, away from direct sunlight. Best used within 6 months for peak aroma.",
+    "categoryId": "cat-9",
+    "categoryName": "Masala & Spice Powders",
+    "categorySlug": "masala-powders",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.7,
+    "reviewCount": 6,
+    "variants": [
+      { "id": "v-11-1", "weightLabel": "100g", "weightGrams": 100, "price": 90, "comparePrice": 120, "stockQty": 40 },
+      { "id": "v-11-2", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 20 }
+    ],
+    "reviews": []
   }
 ]

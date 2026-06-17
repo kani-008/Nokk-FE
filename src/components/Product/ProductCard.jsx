@@ -27,7 +27,7 @@ const rupee = (n) =>
   }
 */
 export default function ProductCard({ product }) {
-  const { addItem }              = useCartStore();
+  const { addItem, updateQty, items } = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
   const { token }                = useAuthStore();
 
@@ -39,6 +39,8 @@ export default function ProductCard({ product }) {
   const disc       = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
   const image      = product.primaryImage || PH;
   const inStock    = (firstV?.stockQty ?? 1) > 0;
+  const cartItem   = firstV ? items.find((i) => i.variantId === firstV.id) : null;
+  const quantity   = cartItem?.quantity ?? 0;
 
   const handleCart = (e) => {
     e.preventDefault();
@@ -171,14 +173,42 @@ export default function ProductCard({ product }) {
             )}
           </div>
 
-          <button
-            onClick={handleCart}
-            disabled={!inStock}
-            aria-label="Add to cart"
-            className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-sandal-100 p-2.5 rounded-xl transition-all duration-300 shrink-0 active:scale-95 group-hover:bg-sandal-600 group-hover:text-white"
-          >
-            <ShoppingCart size={15} />
-          </button>
+          {quantity > 0 ? (
+            <div className="flex items-center bg-gray-800 text-sandal-100 rounded-xl overflow-hidden shrink-0 border border-gray-850">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  updateQty(firstV.id, quantity - 1);
+                }}
+                className="px-3 py-2 text-sm hover:bg-gray-700 hover:text-white transition-colors font-extrabold cursor-pointer"
+              >
+                −
+              </button>
+              <span className="px-2 font-num text-sm font-bold text-white min-w-[20px] text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  updateQty(firstV.id, quantity + 1);
+                }}
+                className="px-3 py-2 text-sm hover:bg-gray-700 hover:text-white transition-colors font-extrabold cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleCart}
+              disabled={!inStock}
+              aria-label="Add to cart"
+              className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-sandal-100 p-2.5 rounded-xl transition-all duration-300 shrink-0 active:scale-95 group-hover:bg-sandal-600 group-hover:text-white cursor-pointer"
+            >
+              <ShoppingCart size={15} />
+            </button>
+          )}
         </div>
       </div>
     </Link>

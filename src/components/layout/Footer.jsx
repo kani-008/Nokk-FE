@@ -45,7 +45,6 @@ const TRUST_ITEMS = [
   { icon: <Headphones size={20} />,  label: "24/7 Support",     sub: "Always here" },
 ];
 
-const PAYMENT_ICONS = ["UPI", "Visa", "MC", "GPay", "PhonePe", "COD"];
 
 const SOCIAL = [
   { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
@@ -165,7 +164,7 @@ export default function Footer() {
             <h4 className="font-body text-sm font-bold text-white mb-4 tracking-wider uppercase">My Account</h4>
             <ul className="space-y-3">
               {ACCOUNT_LINKS.map((l) => (
-                <li key={l.to}>
+                <li key={l.label}>
                   <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
                     {l.label}
                   </Link>
@@ -253,7 +252,7 @@ export default function Footer() {
           <AccordionSection title="My Account">
             <ul className="space-y-3 pl-2">
               {ACCOUNT_LINKS.map((l) => (
-                <li key={l.to}><Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">{l.label}</Link></li>
+                <li key={l.label}><Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">{l.label}</Link></li>
               ))}
             </ul>
           </AccordionSection>
@@ -304,23 +303,9 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* ── Payment methods ──────────────────────────────────────── */}
-        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="font-body text-xs text-gray-500 mb-2 text-center sm:text-left">We accept</p>
-            <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
-              {PAYMENT_ICONS.map((p) => (
-                <span
-                  key={p}
-                  className="font-num text-[10px] font-bold bg-gray-800 border border-gray-700/60 text-sandal-300 px-2.5 py-1 rounded-lg"
-                >
-                  {p}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <p className="font-body text-xs text-gray-500 text-center sm:text-right leading-relaxed">
+        {/* ── Copyright ──────────────────────────────────────── */}
+        <div className="border-t border-gray-800 pt-6 text-center">
+          <p className="font-body text-xs text-gray-500 leading-relaxed">
             © {new Date().getFullYear()} NammaOorKaruvattuKadai. All rights reserved.<br className="sm:hidden" />
             <span className="sm:ml-1">Made with ❤️ in Tamil Nadu</span>
           </p>

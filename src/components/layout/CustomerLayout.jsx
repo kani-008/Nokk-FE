@@ -11,7 +11,7 @@ function ScrollToTop() {
 
 export default function CustomerLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-brand-50">
+    <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
       <NavBar />
       <main className="flex-1">
