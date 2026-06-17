@@ -17,9 +17,9 @@
     "avgRating": 4.8,
     "reviewCount": 42,
     "variants": [
-      { "id": "v-1-1", "weightLabel": "100g", "weightGrams": 100, "price": 99, "comparePrice": 120, "stockQty": 50 },
-      { "id": "v-1-2", "weightLabel": "250g", "weightGrams": 250, "price": 230, "comparePrice": 290, "stockQty": 30 },
-      { "id": "v-1-3", "weightLabel": "500g", "weightGrams": 500, "price": 440, "comparePrice": 550, "stockQty": 20 }
+      { "id": "v-1-1", "weightLabel": "250g", "weightGrams": 250, "price": 230, "comparePrice": 290, "stockQty": 30 },
+      { "id": "v-1-2", "weightLabel": "500g", "weightGrams": 500, "price": 440, "comparePrice": 550, "stockQty": 20 },
+      { "id": "v-1-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 850, "comparePrice": 1050, "stockQty": 15 }
     ],
     "reviews": [
       { "id": "r-1", "userName": "Karthik R.", "rating": 5, "title": "Excellent Quality", "comment": "Very clean and perfectly salted. Tastes just like the ones we get directly at Rameswaram.", "isVerified": true, "createdAt": "2026-05-10" },
@@ -44,9 +44,9 @@
     "avgRating": 4.9,
     "reviewCount": 38,
     "variants": [
-      { "id": "v-2-1", "weightLabel": "100g", "weightGrams": 100, "price": 140, "comparePrice": 180, "stockQty": 40 },
-      { "id": "v-2-2", "weightLabel": "250g", "weightGrams": 250, "price": 320, "comparePrice": 420, "stockQty": 25 },
-      { "id": "v-2-3", "weightLabel": "500g", "weightGrams": 500, "price": 600, "comparePrice": 800, "stockQty": 15 }
+      { "id": "v-2-1", "weightLabel": "250g", "weightGrams": 250, "price": 320, "comparePrice": 420, "stockQty": 25 },
+      { "id": "v-2-2", "weightLabel": "500g", "weightGrams": 500, "price": 600, "comparePrice": 800, "stockQty": 15 },
+      { "id": "v-2-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1150, "comparePrice": 1500, "stockQty": 10 }
     ],
     "reviews": [
       { "id": "r-3", "userName": "Selvam A.", "rating": 5, "title": "Perfect for Sura Putu", "comment": "Clean bone-free pieces. Putu came out wonderful, highly recommend this.", "isVerified": true, "createdAt": "2026-05-20" }
@@ -70,8 +70,9 @@
     "avgRating": 4.6,
     "reviewCount": 15,
     "variants": [
-      { "id": "v-3-1", "weightLabel": "200g", "weightGrams": 200, "price": 220, "comparePrice": 280, "stockQty": 30 },
-      { "id": "v-3-2", "weightLabel": "500g", "weightGrams": 500, "price": 500, "comparePrice": 650, "stockQty": 10 }
+      { "id": "v-3-1", "weightLabel": "250g", "weightGrams": 250, "price": 270, "comparePrice": 350, "stockQty": 20 },
+      { "id": "v-3-2", "weightLabel": "500g", "weightGrams": 500, "price": 500, "comparePrice": 650, "stockQty": 10 },
+      { "id": "v-3-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 950, "comparePrice": 1200, "stockQty": 8 }
     ],
     "reviews": []
   },
@@ -94,7 +95,8 @@
     "reviewCount": 24,
     "variants": [
       { "id": "v-4-1", "weightLabel": "250g", "weightGrams": 250, "price": 280, "comparePrice": 350, "stockQty": 20 },
-      { "id": "v-4-2", "weightLabel": "500g", "weightGrams": 500, "price": 520, "comparePrice": 680, "stockQty": 12 }
+      { "id": "v-4-2", "weightLabel": "500g", "weightGrams": 500, "price": 520, "comparePrice": 680, "stockQty": 12 },
+      { "id": "v-4-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 990, "comparePrice": 1300, "stockQty": 10 }
     ],
     "reviews": []
   },
@@ -116,7 +118,9 @@
     "avgRating": 4.5,
     "reviewCount": 11,
     "variants": [
-      { "id": "v-5-1", "weightLabel": "200g", "weightGrams": 200, "price": 160, "comparePrice": 220, "stockQty": 35 }
+      { "id": "v-5-1", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 35 },
+      { "id": "v-5-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 25 },
+      { "id": "v-5-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 15 }
     ],
     "reviews": []
   },
@@ -139,7 +143,8 @@
     "reviewCount": 19,
     "variants": [
       { "id": "v-6-1", "weightLabel": "250g", "weightGrams": 250, "price": 350, "comparePrice": 450, "stockQty": 15 },
-      { "id": "v-6-2", "weightLabel": "500g", "weightGrams": 500, "price": 680, "comparePrice": 850, "stockQty": 8 }
+      { "id": "v-6-2", "weightLabel": "500g", "weightGrams": 500, "price": 680, "comparePrice": 850, "stockQty": 8 },
+      { "id": "v-6-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1300, "comparePrice": 1600, "stockQty": 5 }
     ],
     "reviews": []
   },
@@ -161,7 +166,9 @@
     "avgRating": 4.9,
     "reviewCount": 54,
     "variants": [
-      { "id": "v-7-1", "weightLabel": "250g Glass Jar", "weightGrams": 250, "price": 199, "comparePrice": 250, "stockQty": 45 }
+      { "id": "v-7-1", "weightLabel": "250g", "weightGrams": 250, "price": 199, "comparePrice": 250, "stockQty": 45 },
+      { "id": "v-7-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 30 },
+      { "id": "v-7-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 20 }
     ],
     "reviews": [
       { "id": "r-4", "userName": "Deepak K.", "rating": 5, "title": "Stunning Taste!", "comment": "Spicy, tangy, and filled with plenty of dry fish pieces. The sesame oil aroma is wonderful.", "isVerified": true, "createdAt": "2026-05-22" }
@@ -185,7 +192,9 @@
     "avgRating": 4.7,
     "reviewCount": 16,
     "variants": [
-      { "id": "v-8-1", "weightLabel": "250g Glass Jar", "weightGrams": 250, "price": 240, "comparePrice": 300, "stockQty": 30 }
+      { "id": "v-8-1", "weightLabel": "250g", "weightGrams": 250, "price": 240, "comparePrice": 300, "stockQty": 30 },
+      { "id": "v-8-2", "weightLabel": "500g", "weightGrams": 500, "price": 450, "comparePrice": 580, "stockQty": 20 },
+      { "id": "v-8-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 850, "comparePrice": 1100, "stockQty": 15 }
     ],
     "reviews": []
   },
@@ -207,7 +216,9 @@
     "avgRating": 5.0,
     "reviewCount": 31,
     "variants": [
-      { "id": "v-9-1", "weightLabel": "Standard Combo Kit", "weightGrams": 700, "price": 649, "comparePrice": 850, "stockQty": 15 }
+      { "id": "v-9-1", "weightLabel": "250g", "weightGrams": 250, "price": 349, "comparePrice": 450, "stockQty": 25 },
+      { "id": "v-9-2", "weightLabel": "500g", "weightGrams": 500, "price": 649, "comparePrice": 850, "stockQty": 15 },
+      { "id": "v-9-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1200, "comparePrice": 1600, "stockQty": 10 }
     ],
     "reviews": []
   },
@@ -229,8 +240,9 @@
     "avgRating": 4.6,
     "reviewCount": 9,
     "variants": [
-      { "id": "v-10-1", "weightLabel": "100g", "weightGrams": 100, "price": 180, "comparePrice": 220, "stockQty": 25 },
-      { "id": "v-10-2", "weightLabel": "250g", "weightGrams": 250, "price": 420, "comparePrice": 500, "stockQty": 15 }
+      { "id": "v-10-1", "weightLabel": "250g", "weightGrams": 250, "price": 420, "comparePrice": 500, "stockQty": 15 },
+      { "id": "v-10-2", "weightLabel": "500g", "weightGrams": 500, "price": 800, "comparePrice": 950, "stockQty": 10 },
+      { "id": "v-10-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1500, "comparePrice": 1800, "stockQty": 5 }
     ],
     "reviews": []
   },
@@ -252,8 +264,9 @@
     "avgRating": 4.7,
     "reviewCount": 6,
     "variants": [
-      { "id": "v-11-1", "weightLabel": "100g", "weightGrams": 100, "price": 90, "comparePrice": 120, "stockQty": 40 },
-      { "id": "v-11-2", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 20 }
+      { "id": "v-11-1", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 20 },
+      { "id": "v-11-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 15 },
+      { "id": "v-11-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 10 }
     ],
     "reviews": []
   }

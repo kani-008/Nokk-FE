@@ -126,6 +126,7 @@ export default function Products() {
   const [pagination,  setPagination]  = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [filterOpen,  setFilterOpen]  = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [sortOpen,    setSortOpen]    = useState(false);
   const [searchInput, setSearchInput] = useState(search);
   const [priceDraft,  setPriceDraft]  = useState({ min: minPrice, max: maxPrice });
@@ -406,7 +407,7 @@ export default function Products() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
       {/* ── Page header ──────────────────────────────────────────── */}
-      <div className="mb-5">
+      {/* <div className="mb-5">
         <h1 className="font-display text-2xl font-bold text-brand-900">
           {category
             ? (categories.find((c) => c.slug === category)?.nameEn || "Products")
@@ -419,91 +420,76 @@ export default function Products() {
             {pagination.total} product{pagination.total !== 1 ? "s" : ""} found
           </p>
         )}
-      </div>
+      </div> */}
 
-      {/* ── Top bar: search + sort + mobile filter toggle ─────────── */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-
+      {/* ── Top toolbar: search + sort + filter button ─────────── */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center justify-between bg-white p-3 rounded-2xl border border-sandal-100 shadow-sm">
+        
         {/* inline search */}
         <form
           onSubmit={(e) => { e.preventDefault(); setParam("search", searchInput); }}
-          className="flex-1 min-w-[160px] max-w-sm"
+          className="flex-1 min-w-[200px]"
         >
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-sandal-500" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search products…"
-              className="field-input pl-8 py-2 text-sm"
+              className="field-input pl-9 pr-4 py-2 text-sm w-full bg-sandal-50/10 focus:bg-white"
             />
           </div>
         </form>
 
-        {/* mobile filter button */}
-        <button
-          className="md:hidden flex items-center gap-1.5 btn-md btn-outline ml-auto"
-          onClick={() => setFilterOpen((s) => !s)}
-        >
-          <SlidersHorizontal size={15} />
-          Filters
-          {activeFilters.length > 0 && (
-            <span className="badge-amber">{activeFilters.length}</span>
-          )}
-        </button>
-      </div>
-
-      {/* ── Sort bar ──────────────────────────────────────────────── */}
-      <div className="mb-4">
-        {/* Desktop: horizontal chip row */}
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="flex items-center gap-1 font-body text-xs font-bold text-gray-400 uppercase tracking-wider shrink-0 pl-1">
-            <ArrowUpDown size={12} /> Sort By
-          </span>
-          <div className="sort-bar">
-            {SORT_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => setParam("sort", o.value === "popular" ? "" : o.value)}
-                className={sort === o.value ? "sort-chip-active" : "sort-chip"}
-              >
-                {o.label}
-              </button>
-            ))}
+        {/* controls group */}
+        <div className="flex items-center gap-2.5">
+          {/* sort dropdown */}
+          <div className="relative" ref={sortRef}>
+            <button
+              type="button"
+              onClick={() => setSortOpen((s) => !s)}
+              className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
+            >
+              <ArrowUpDown size={14} className="text-sandal-500" />
+              <span>Sort: {currentSortLabel}</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-35 min-w-[170px]">
+                {SORT_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${
+                      sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Mobile: compact dropdown trigger */}
-        <div className="sm:hidden relative" ref={sortRef}>
+          {/* filter button */}
           <button
             type="button"
-            onClick={() => setSortOpen((s) => !s)}
-            className="w-full flex items-center justify-between gap-2 field-input py-2.5"
+            onClick={() => {
+              setFilterOpen((s) => !s);
+              setDesktopSidebarOpen((s) => !s);
+            }}
+            className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
           >
-            <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <ArrowUpDown size={14} className="text-sandal-500" />
-              Sort: {currentSortLabel}
-            </span>
-            <ChevronDown size={15} className={`text-amber-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+            <SlidersHorizontal size={14} className="text-sandal-500" />
+            <span>Filter</span>
+            {activeFilters.length > 0 && (
+              <span className="bg-sandal-400 text-gray-900 font-num text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+                {activeFilters.length}
+              </span>
+            )}
           </button>
-          {sortOpen && (
-            <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-30">
-              {SORT_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
-                  className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors ${
-                    sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -523,9 +509,11 @@ export default function Products() {
       <div className="flex gap-6">
 
         {/* ── Desktop sidebar ──────────────────────────────────────── */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+        {desktopSidebarOpen && (
+          <div className="hidden md:block">
+            <Sidebar />
+          </div>
+        )}
 
         {/* ── Mobile filter drawer ──────────────────────────────────── */}
         {filterOpen && (

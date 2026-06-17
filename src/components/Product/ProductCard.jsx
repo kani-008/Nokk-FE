@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Star } from "lucide-react";
 import { useCartStore }     from "../store/CartStore";
@@ -27,9 +28,11 @@ const rupee = (n) =>
   }
 */
 export default function ProductCard({ product }) {
-  const { addItem, updateQty, items } = useCartStore();
+  const { addItem, items } = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
   const { token }                = useAuthStore();
+
+  const [popping, setPopping] = useState(false);
 
   const wishlisted = isWishlisted(product.id);
   const firstV     = product.variants?.[0];
@@ -40,11 +43,25 @@ export default function ProductCard({ product }) {
   const image      = product.primaryImage || PH;
   const inStock    = (firstV?.stockQty ?? 1) > 0;
   const cartItem   = firstV ? items.find((i) => i.variantId === firstV.id) : null;
-  const quantity   = cartItem?.quantity ?? 0;
+  const inCart     = !!cartItem;
+
+  // tiny helper to retrigger the pop animation even on repeated clicks
+  const pop = () => {
+    setPopping(true);
+    setTimeout(() => setPopping(false), 280);
+  };
 
   const handleCart = (e) => {
     e.preventDefault();
     if (!firstV || !inStock) return;
+
+    // Already in cart: just replay the pop feedback, don't add again.
+    // Quantity changes for items already in the cart happen on the Cart page.
+    if (inCart) {
+      pop();
+      return;
+    }
+
     addItem({
       variantId:    firstV.id,
       productId:    product.id,
@@ -55,6 +72,7 @@ export default function ProductCard({ product }) {
       comparePrice: firstV.comparePrice,
       weight:       firstV.weightLabel,
     });
+    pop();
   };
 
   const handleWishlist = (e) => {
@@ -173,42 +191,27 @@ export default function ProductCard({ product }) {
             )}
           </div>
 
-          {quantity > 0 ? (
-            <div className="flex items-center bg-gray-800 text-sandal-100 rounded-xl overflow-hidden shrink-0 border border-gray-850">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  updateQty(firstV.id, quantity - 1);
-                }}
-                className="px-3 py-2 text-sm hover:bg-gray-700 hover:text-white transition-colors font-extrabold cursor-pointer"
-              >
-                −
-              </button>
-              <span className="px-2 font-num text-sm font-bold text-white min-w-[20px] text-center">
-                {quantity}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  updateQty(firstV.id, quantity + 1);
-                }}
-                className="px-3 py-2 text-sm hover:bg-gray-700 hover:text-white transition-colors font-extrabold cursor-pointer"
-              >
-                +
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleCart}
-              disabled={!inStock}
-              aria-label="Add to cart"
-              className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-sandal-100 p-2.5 rounded-xl transition-all duration-300 shrink-0 active:scale-95 group-hover:bg-sandal-600 group-hover:text-white cursor-pointer"
-            >
-              <ShoppingCart size={15} />
-            </button>
-          )}
+          {/*
+            Single cart button, no -/+ stepper.
+            - Default (not in cart): sandal-colored, matches existing palette.
+            - In cart: shifts to the navbar's dark/gray "active" color.
+            - Every click (even repeats on an in-cart item) replays a quick pop.
+          */}
+          <button
+            onClick={handleCart}
+            disabled={!inStock}
+            aria-label={inCart ? "Already in cart" : "Add to cart"}
+            className={`p-2.5 rounded-xl transition-all duration-300 shrink-0 cursor-pointer
+              ${popping ? "scale-110" : "scale-100"}
+              ${!inStock
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : inCart
+                  ? "bg-gray-800 text-white"
+                  : "bg-sandal-500 text-white hover:bg-sandal-600 group-hover:bg-sandal-600"
+              }`}
+          >
+            <ShoppingCart size={15} />
+          </button>
         </div>
       </div>
     </Link>

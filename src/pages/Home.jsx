@@ -95,8 +95,10 @@ function HeroBanner({ banners }) {
       {/* dark charcoal vignette overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-gray-950/40" />
 
-      {/* overlay content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto">
+      <div
+        key={idx}
+        className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto animate-banner-fade"
+      >
         <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
           நம்ம ஊர் கருவாட்டு கடை
         </p>
@@ -155,7 +157,8 @@ function TrustStrip() {
   const items = [
     { icon: <Truck size={18} />,       label: "Free shipping above ₹499" },
     { icon: <ShieldCheck size={18} />, label: "100% natural & authentic" },
-    { icon: <RefreshCcw size={18} />,  label: "Easy 7-day returns" },
+    // { icon: <RefreshCcw size={18} />,  label: "Easy 7-day returns" },
+    { icon: <ShieldCheck size={18} />, label: "Secure Payment Checkout" },
   ];
   return (
     <div className="bg-white border-b border-sandal-100">
@@ -181,10 +184,10 @@ function CategoryScroll({ categories }) {
   if (!categories.length) return null;
   return (
     <section className="page-wrap pt-12 pb-4">
-      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-left">
+      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-center">
         Shop by Category
       </h2>
-      <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
         {categories.map((cat) => (
           <Link
             key={cat.id}

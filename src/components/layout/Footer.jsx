@@ -41,7 +41,8 @@ const CATEGORIES = [
 const TRUST_ITEMS = [
   { icon: <Truck size={20} />,       label: "Free Shipping",    sub: "On orders ₹499+" },
   { icon: <ShieldCheck size={20} />, label: "100% Natural",     sub: "No preservatives" },
-  { icon: <RefreshCcw size={20} />,  label: "7-Day Returns",    sub: "Hassle free" },
+  // { icon: <RefreshCcw size={20} />,  label: "7-Day Returns",    sub: "Hassle free" },
+  { icon: <ShieldCheck size={20} />, label: "Secure Checkout", sub: "100% Encrypted" },
   { icon: <Headphones size={20} />,  label: "24/7 Support",     sub: "Always here" },
 ];
 

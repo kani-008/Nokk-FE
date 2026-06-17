@@ -45,7 +45,7 @@ const setLocalStorage = (key, data) => {
   localStorage.setItem(key, JSON.stringify(data));
 };
 
-const getProducts = () => getLocalStorage("nok-mock-products", productsDb).map(mapProductImages);
+const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
 const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
 const getBanners = () => getLocalStorage("nok-mock-banners", bannersDb).map(mapBannerImage);
 const getOffers = () => getLocalStorage("nok-mock-offers", offersDb);

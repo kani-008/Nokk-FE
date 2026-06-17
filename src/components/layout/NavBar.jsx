@@ -103,23 +103,25 @@ export default function NavBar() {
             <Logo className="shrink-0 mr-2" inverse />
 
             {/* Desktop search — grows to fill center space */}
-            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search dry fish, pickles, nethili…"
-                  className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
-                >
-                  <Search size={16} />
-                </button>
-              </div>
-            </form>
+            {location.pathname !== "/products" && (
+              <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search dry fish, pickles, nethili…"
+                    className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
+                  >
+                    <Search size={16} />
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-1">
@@ -188,13 +190,15 @@ export default function NavBar() {
             <div className="flex items-center gap-1.5 ml-auto">
 
               {/* Mobile search toggle */}
-              <button
-                className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
-                onClick={() => setSearchOpen((s) => !s)}
-                aria-label="Search"
-              >
-                <Search size={20} />
-              </button>
+              {location.pathname !== "/products" && (
+                <button
+                  className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                  onClick={() => setSearchOpen((s) => !s)}
+                  aria-label="Search"
+                >
+                  <Search size={20} />
+                </button>
+              )}
 
               {/* Wishlist */}
               <Link
