@@ -485,20 +485,21 @@ export const orderApi = {
     const orders = getOrders();
     const user = getCurrentUser(token);
     const orderId = `nok-${Math.floor(100000 + Math.random() * 900000)}`;
+    const addressVal = data.shippingAddress || data.address;
     const newOrder = {
       id: orderId,
       createdAt: new Date().toISOString(),
-      customerName: user.fullName || data.address?.name || "Customer",
-      customerPhone: user.phone || data.address?.phone || "N/A",
+      customerName: user.fullName || addressVal?.name || "Customer",
+      customerPhone: user.phone || addressVal?.phone || "N/A",
       subtotal: data.subtotal,
       deliveryCharge: data.deliveryCharge || 0,
       discount: data.discount || 0,
       couponApplied: data.couponCode || null,
       total: data.total,
       status: "pending",
-      paymentStatus: data.paymentMethod === "COD" ? "pending" : "completed",
+      paymentStatus: (data.paymentMethod === "COD" || data.paymentMethod === "upi") ? "pending" : "completed",
       paymentMethod: data.paymentMethod,
-      address: data.address,
+      address: addressVal,
       items: data.items.map(i => ({
         ...i,
         image: comboImg // Map to single image asset
@@ -557,6 +558,23 @@ export const orderApi = {
       return { success: true, order: orders[idx] };
     }
     throw new Error("Order not found");
+  },
+
+  submitUpiReference: async (id, upiRefId, token) => {
+    await delay();
+    const orders = getOrders();
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx === -1) throw new Error("Order not found");
+    if (orders[idx].paymentStatus === "paid") {
+      throw new Error("This order is already marked as paid");
+    }
+    orders[idx].timeline.push({
+      status: "pending",
+      message: `UPI Ref ID submitted by customer: ${upiRefId} — awaiting admin verification.`,
+      time: new Date().toISOString(),
+    });
+    setLocalStorage("nok-mock-orders", orders);
+    return { success: true, message: "UPI reference submitted. We'll verify your payment shortly." };
   },
 
   all: async (params = "", token) => {
@@ -994,5 +1012,59 @@ export const settingsApi = {
     await delay();
     setLocalStorage("nok-mock-settings", data);
     return { success: true, settings: data };
+  }
+};
+
+// ── Payment Settings Mock ───────────────────────────────────────────
+const getPaymentSettings = () => getLocalStorage("nok-mock-payment-settings", {
+  upiId: "nammaoor@upi",
+  payeeName: "Namma Oor Karuvattu Kadai",
+  accountHolderName: "Namma Oor Store",
+  accountNumber: "123456789012",
+  ifscCode: "SBIN0001234",
+  bankName: "State Bank of India",
+  qrCodeUrl: ""
+});
+
+export const paymentSettingsApi = {
+  getPublic: async () => {
+    await delay();
+    const settings = getPaymentSettings();
+    // Return only public UPI receiving details
+    return {
+      success: true,
+      settings: {
+        upiId: settings.upiId,
+        payeeName: settings.payeeName,
+        qrCodeUrl: settings.qrCodeUrl,
+      }
+    };
+  },
+  getAdmin: async (token) => {
+    await delay();
+    return { success: true, settings: getPaymentSettings() };
+  },
+  update: async (data, token) => {
+    await delay();
+    const current = getPaymentSettings();
+    const updated = { ...current, ...data };
+    setLocalStorage("nok-mock-payment-settings", updated);
+    return { success: true, settings: updated };
+  },
+  uploadQr: async (file, token) => {
+    await delay();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const settings = getPaymentSettings();
+        settings.qrCodeUrl = reader.result;
+        setLocalStorage("nok-mock-payment-settings", settings);
+        resolve({ success: true, settings });
+      };
+      reader.onerror = () => {
+        reject(new Error("Failed to read QR file"));
+      };
+      reader.readAsDataURL(file);
+    });
   }
 };

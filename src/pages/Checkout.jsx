@@ -56,10 +56,12 @@ export default function Checkout() {
 
   // ── payment state ──────────────────────────────────────────────────
   const [payMethod, setPayMethod] = useState("upi");
+  const [customerUpiId, setCustomerUpiId] = useState("");
 
   // ── order submit ───────────────────────────────────────────────────
   const [placing,  setPlacing]  = useState(false);
   const [orderErr, setOrderErr] = useState("");
+  const [placedOrderId, setPlacedOrderId] = useState(null);
 
   // ── load saved addresses on mount ─────────────────────────────────
   useEffect(() => {
@@ -124,6 +126,7 @@ export default function Checkout() {
         },
         paymentMethod:  payMethod,
         couponCode:     coupon?.code || undefined,
+        customerUpiId:  customerUpiId || undefined,
         subtotal:       sub,
         deliveryCharge: ship,
         discount:       disc,
@@ -131,7 +134,14 @@ export default function Checkout() {
       }, token);
 
       clearCart();
-      navigate("/my-orders", { state: { newOrderId: res.order?.id } });
+
+      if (payMethod === "upi") {
+        // Stay on Review step so the customer can submit their
+        // transaction reference ID before we send them off.
+        setPlacedOrderId(res.order?.id);
+      } else {
+        navigate("/my-orders", { state: { newOrderId: res.order?.id } });
+      }
     } catch (err) {
       setOrderErr(err.message || "Failed to place order. Please try again.");
     } finally {
@@ -182,22 +192,38 @@ export default function Checkout() {
               onSelect={setPayMethod}
               onBack={() => setStep("address")}
               onNext={() => setStep("review")}
+              amount={tot}
+              customerUpiId={customerUpiId}
+              onCustomerUpiIdChange={setCustomerUpiId}
             />
           )}
 
           {step === "review" && (
-            <ReviewStep
-              address={activeAddress}
-              payMethod={payMethod}
-              items={items}
-              total={tot}
-              placing={placing}
-              error={orderErr}
-              onBack={() => setStep("payment")}
-              onChangeAddress={() => setStep("address")}
-              onChangePayment={() => setStep("payment")}
-              onPlaceOrder={handlePlaceOrder}
-            />
+            <>
+              <ReviewStep
+                address={activeAddress}
+                payMethod={payMethod}
+                items={items}
+                total={tot}
+                placing={placing}
+                error={orderErr}
+                placedOrderId={placedOrderId}
+                token={token}
+                onBack={() => setStep("payment")}
+                onChangeAddress={() => setStep("address")}
+                onChangePayment={() => setStep("payment")}
+                onPlaceOrder={handlePlaceOrder}
+              />
+
+              {placedOrderId && (
+                <button
+                  onClick={() => navigate("/my-orders", { state: { newOrderId: placedOrderId } })}
+                  className="btn-lg btn-primary w-full mt-4"
+                >
+                  View My Orders
+                </button>
+              )}
+            </>
           )}
 
         </div>
