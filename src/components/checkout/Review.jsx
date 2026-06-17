@@ -1,8 +1,10 @@
 import { MapPin, CreditCard, Truck, ArrowLeft, Loader2 } from "lucide-react";
 import { PAYMENT_METHODS } from "./Payment";
 
+import comboImg from "../../assets/products/combo.jpg";
+
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = "https://placehold.co/80x80/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", {

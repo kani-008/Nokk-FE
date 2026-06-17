@@ -11,7 +11,9 @@ import {
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
 
-const PH = "https://placehold.co/40x40/92400e/fef3c7?text=🐟";
+import comboImg from "../../assets/products/combo.jpg";
+
+const PH = comboImg;
 
 function stockBadge(qty) {
   if (qty === 0)  return <span className="badge-red">Out of stock</span>;

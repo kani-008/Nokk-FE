@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { orderApi }     from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore.jsx";
+import comboImg from "../../assets/products/combo.jpg";
 import {
   AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
@@ -45,7 +46,7 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
   };
 
   const addr = order.address || {};
-  const PH = "https://placehold.co/48x48/92400e/fef3c7?text=🐟";
+  const PH = comboImg;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">

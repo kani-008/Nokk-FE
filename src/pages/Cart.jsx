@@ -4,8 +4,10 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, X, Loader2 } from "l
 import { useCartStore }    from "../components/store/CartStore";
 import { useAuthStore }    from "../components/store/AuthStore";
 
+import comboImg from "../assets/products/combo.jpg";
+
 // ─── placeholder until cloud URLs provided ────────────────────────────
-const PH = "https://placehold.co/100x100/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {ArrowRight, ShoppingCart, Star,ShieldCheck, Truck, RefreshCcw,
+import {
+  ArrowRight, ShoppingCart, Star, ShieldCheck, Truck, RefreshCcw,
   ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { productApi, categoryApi, bannerApi } from "../ApiCall/Api.jsx";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
+import comboImg from "../assets/products/combo.jpg";
 
-// placeholder until real cloud URLs provided
-const PH_PRODUCT = "https://placehold.co/400x400/92400e/fef3c7?text=🐟";
-const PH_BANNER  = "https://placehold.co/1200x480/78350f/fef3c7?text=NammaOor";
-const PH_CAT     = "https://placehold.co/200x200/92400e/fef3c7?text=🐟";
+// default image from assets used everywhere
+const PH_PRODUCT = comboImg;
+const PH_BANNER  = comboImg;
+const PH_CAT     = comboImg;
+
+// premium royalty-free ocean/coastal loop video URL
+const HERO_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-crashing-waves-of-the-ocean-close-up-12628-large.mp4";
 
 // price formatter
 const rupee = (n) =>
@@ -20,49 +25,60 @@ const rupee = (n) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-//  HERO BANNER SLIDER
+//  HERO BANNER SLIDER (with loop video background)
 function HeroBanner({ banners }) {
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     if (banners.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % banners.length), 4500);
+    const t = setInterval(() => setIdx((i) => (i + 1) % banners.length), 5000);
     return () => clearInterval(t);
   }, [banners.length]);
 
-  // Static fallback when API returns no banners yet
   const slides = banners.length
     ? banners
-    : [{ title: "Authentic Dry Fish & Coastal Pickles", subtitle: "Sourced directly from Rameswaram fishermen — traditionally dried, naturally preserved.", imageUrl: null, linkUrl: "/products" }];
+    : [
+        {
+          title: "Authentic Dry Fish & Coastal Pickles",
+          subtitle: "Sourced directly from Rameswaram fishermen — traditionally sun-dried, naturally preserved.",
+          linkUrl: "/products"
+        }
+      ];
 
   const cur  = slides[idx];
   const prev = () => setIdx((i) => (i - 1 + slides.length) % slides.length);
   const next = () => setIdx((i) => (i + 1) % slides.length);
 
   return (
-    <section className="relative bg-brand-900 overflow-hidden group select-none">
-      {/* background image */}
-      <img
-        src={cur.imageUrl || PH_BANNER}
-        alt={cur.title}
-        className="w-full h-64 sm:h-[420px] object-cover opacity-30 transition-opacity duration-700"
-        onError={(e) => { e.target.src = PH_BANNER; }}
+    <section className="relative h-[480px] bg-gray-950 overflow-hidden group select-none flex items-center justify-center">
+      {/* Loop video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-35 transition-opacity duration-700"
+        src={cur.videoUrl || HERO_VIDEO_URL}
+        poster={cur.imageUrl || PH_BANNER}
       />
 
+      {/* dark charcoal vignette overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-gray-950/40" />
+
       {/* overlay content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
-        <p className="font-num text-amber-300 text-xs sm:text-sm font-semibold tracking-[0.18em] uppercase mb-3">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto">
+        <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
           நம்ம ஊர் கருவாட்டு கடை
         </p>
-        <h1 className="font-display text-white text-3xl sm:text-5xl font-bold leading-tight mb-4 max-w-2xl">
+        <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md">
           {cur.title}
         </h1>
         {cur.subtitle && (
-          <p className="font-body text-amber-200 text-sm sm:text-base mb-7 max-w-lg leading-relaxed">
+          <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl leading-relaxed drop-shadow">
             {cur.subtitle}
           </p>
         )}
-        <Link to={cur.linkUrl || "/products"} className="btn-lg btn-primary">
+        <Link to={cur.linkUrl || "/products"} className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg">
           Shop Now <ArrowRight size={16} />
         </Link>
       </div>
@@ -73,27 +89,27 @@ function HeroBanner({ banners }) {
           <button
             onClick={prev}
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/55 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={next}
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/55 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm"
           >
             <ChevronRight size={20} />
           </button>
 
           {/* dot indicators */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setIdx(i)}
                 aria-label={`Slide ${i + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === idx ? "bg-amber-400 w-5" : "bg-white/50 w-2"
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  i === idx ? "bg-sandal-400 w-6" : "bg-white/40 w-2.5"
                 }`}
               />
             ))}
@@ -112,15 +128,15 @@ function TrustStrip() {
     { icon: <RefreshCcw size={18} />,  label: "Easy 7-day returns" },
   ];
   return (
-    <div className="bg-white border-b border-amber-100">
-      <div className="page-wrap py-3 grid grid-cols-3 gap-2 sm:gap-6">
+    <div className="bg-white border-b border-sandal-100">
+      <div className="page-wrap py-4.5 grid grid-cols-3 gap-2 sm:gap-6">
         {items.map((item) => (
           <div
             key={item.label}
-            className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 text-center sm:text-left"
+            className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left justify-center"
           >
-            <span className="text-brand-700 shrink-0">{item.icon}</span>
-            <span className="font-body text-xs sm:text-sm text-brand-800 font-medium leading-tight">
+            <span className="text-sandal-600 shrink-0">{item.icon}</span>
+            <span className="font-body text-xs sm:text-sm text-gray-700 font-bold leading-tight">
               {item.label}
             </span>
           </div>
@@ -134,30 +150,30 @@ function TrustStrip() {
 function CategoryScroll({ categories }) {
   if (!categories.length) return null;
   return (
-    <section className="page-wrap pt-10 pb-2">
-      <h2 className="font-display text-xl font-bold text-brand-900 mb-5">
+    <section className="page-wrap pt-12 pb-4">
+      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-left">
         Shop by Category
       </h2>
-      <div className="flex gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((cat) => (
           <Link
             key={cat.id}
             to={`/products?category=${cat.slug}`}
             className="shrink-0 flex flex-col items-center gap-2 group"
           >
-            <div className="w-[72px] h-[72px] sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-amber-200 group-hover:border-brand-700 transition-colors duration-200 bg-brand-50">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
               <img
                 src={cat.imageUrl || PH_CAT}
                 alt={cat.nameEn}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 onError={(e) => { e.target.src = PH_CAT; }}
               />
             </div>
-            <span className="font-body text-[11px] sm:text-xs font-medium text-brand-800 text-center w-20 leading-tight">
+            <span className="font-body text-xs font-bold text-gray-700 text-center w-20 sm:w-24 leading-tight group-hover:text-sandal-700 transition-colors">
               {cat.nameEn}
             </span>
             {cat.nameTa && (
-              <span className="font-tamil text-[10px] text-amber-500 text-center w-20 leading-tight -mt-1">
+              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-20 sm:w-24 leading-tight -mt-0.5">
                 {cat.nameTa}
               </span>
             )}
@@ -168,136 +184,21 @@ function CategoryScroll({ categories }) {
   );
 }
 
-//  PRODUCT CARD
-function ProductCard({ product }) {
-  const { addItem }              = useCartStore();
-  const { toggle, isWishlisted } = useWishlistStore();
-  const wishlisted = isWishlisted(product.id);
-
-  const price    = product.minPrice || 0;
-  const compare  = product.minComparePrice > price ? product.minComparePrice : null;
-  const disc     = compare ? Math.round(((compare - price) / compare) * 100) : 0;
-  const image    = product.primaryImage || PH_PRODUCT;
-  const firstV   = product.variants?.[0];
-
-  const handleCart = (e) => {
-    e.preventDefault();
-    if (!firstV) return;
-    addItem({
-      variantId:   firstV.id,
-      productId:   product.id,
-      productName: product.nameEn,
-      nameTa:      product.nameTa,
-      image,
-      price:       firstV.price,
-      comparePrice: firstV.comparePrice,
-      weight:      firstV.weightLabel,
-    });
-  };
-
-  return (
-    <Link to={`/products/${product.slug}`} className="group block">
-      <div className="card-hover">
-        {/* image */}
-        <div className="relative aspect-square overflow-hidden bg-brand-50 rounded-t-2xl">
-          <img
-            src={image}
-            alt={product.nameEn}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => { e.target.src = PH_PRODUCT; }}
-          />
-          {/* discount pill */}
-          {disc > 0 && (
-            <span className="absolute top-2 left-2 badge-red">-{disc}%</span>
-          )}
-          {/* bestseller / new */}
-          {product.isBestseller && (
-            <span className="absolute top-2 right-2 badge-amber">Best Seller</span>
-          )}
-          {product.isNew && !product.isBestseller && (
-            <span className="absolute top-2 right-2 badge-green">New</span>
-          )}
-          {/* wishlist */}
-          <button
-            onClick={(e) => { e.preventDefault(); toggle(product.id); }}
-            aria-label="Toggle wishlist"
-            className="absolute bottom-2 right-2 bg-white rounded-full w-7 h-7 flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
-          >
-            <svg viewBox="0 0 24 24" className={`w-4 h-4 transition-colors ${wishlisted ? "fill-rose-500 stroke-rose-500" : "fill-none stroke-amber-400"}`} strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* info */}
-        <div className="p-3">
-          <p className="font-body text-[10px] text-amber-500 uppercase tracking-wider font-medium mb-0.5">
-            {product.categoryName}
-          </p>
-          <h3 className="font-body text-sm font-semibold text-brand-900 leading-snug line-clamp-2 mb-0.5">
-            {product.nameEn}
-          </h3>
-          {product.nameTa && (
-            <p className="font-tamil text-[11px] text-amber-400 mb-2 line-clamp-1">
-              {product.nameTa}
-            </p>
-          )}
-
-          {/* stars */}
-          {product.avgRating > 0 && (
-            <div className="flex items-center gap-0.5 mb-2">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  size={10}
-                  className={s <= Math.round(product.avgRating) ? "fill-amber-400 text-amber-400" : "text-amber-200"}
-                />
-              ))}
-              <span className="font-num text-[10px] text-amber-500 ml-0.5">({product.reviewCount})</span>
-            </div>
-          )}
-
-          {/* price + cart */}
-          <div className="flex items-end justify-between gap-1">
-            <div>
-              <span className="font-num text-base font-bold text-brand-900">
-                {rupee(price)}
-              </span>
-              {compare && (
-                <span className="font-num text-xs text-amber-400 line-through ml-1.5">
-                  {rupee(compare)}
-                </span>
-              )}
-              {firstV?.weightLabel && (
-                <p className="font-body text-[10px] text-amber-500 mt-0.5">{firstV.weightLabel}</p>
-              )}
-            </div>
-            <button
-              onClick={handleCart}
-              aria-label="Add to cart"
-              className="bg-brand-800 hover:bg-brand-900 text-white p-2 rounded-xl transition-colors shrink-0 active:scale-90"
-            >
-              <ShoppingCart size={14} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
+//  PRODUCT CARD (reusable inline fallback card to guarantee single template style)
+import ProductCard from "../components/Product/ProductCard.jsx";
 
 //  PRODUCT SKELETON
 function ProductSkeleton() {
   return (
     <div className="card overflow-hidden">
       <div className="aspect-square skeleton" />
-      <div className="p-3 space-y-2">
+      <div className="p-4.5 space-y-2.5">
         <div className="skeleton h-2 w-1/3" />
         <div className="skeleton h-3 w-4/5" />
         <div className="skeleton h-3 w-3/5" />
-        <div className="flex justify-between mt-2">
-          <div className="skeleton h-4 w-1/4" />
-          <div className="skeleton h-7 w-7 rounded-xl" />
+        <div className="flex justify-between mt-3">
+          <div className="skeleton h-4.5 w-1/4" />
+          <div className="skeleton h-8 w-8 rounded-xl" />
         </div>
       </div>
     </div>
@@ -307,17 +208,17 @@ function ProductSkeleton() {
 //  PRODUCT SECTION (reusable grid wrapper)
 function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyText }) {
   return (
-    <section className="page-wrap py-10">
-      <div className="flex items-center justify-between mb-5">
+    <section className="page-wrap py-12">
+      <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
         <div>
-          <h2 className="font-display text-xl font-bold text-brand-900">{title}</h2>
+          <h2 className="font-display text-2xl font-bold text-gray-800">{title}</h2>
           {subtitle && (
-            <p className="font-body text-xs text-amber-500 mt-0.5">{subtitle}</p>
+            <p className="font-body text-xs text-sandal-600 mt-1 font-semibold">{subtitle}</p>
           )}
         </div>
         <Link
           to={viewAllTo}
-          className="font-body text-sm text-brand-700 font-medium flex items-center gap-1 hover:underline"
+          className="font-body text-xs sm:text-sm text-sandal-700 font-bold flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           View all <ArrowRight size={14} />
         </Link>
@@ -328,7 +229,7 @@ function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyTe
           {Array.from({ length: 4 }).map((_, i) => <ProductSkeleton key={i} />)}
         </div>
       ) : products.length === 0 ? (
-        <p className="font-body text-amber-400 text-sm py-8 text-center">{emptyText}</p>
+        <p className="font-body text-sandal-500 text-sm py-10 text-center">{emptyText}</p>
       ) : (
         <div className="product-grid">
           {products.map((p) => <ProductCard key={p.id} product={p} />)}
@@ -341,24 +242,24 @@ function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyTe
 //  PROMO BANNER
 function PromoBanner() {
   return (
-    <div className="page-wrap py-4">
-      <div className="bg-gradient-to-r from-brand-800 to-brand-700 rounded-2xl p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="page-wrap py-6">
+      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
         <div>
-          <p className="font-num text-amber-300 text-xs font-semibold uppercase tracking-wider mb-1">
-            Limited Time
+          <p className="font-num text-sandal-400 text-xs font-bold uppercase tracking-widest mb-1.5">
+            Limited Time Deal
           </p>
-          <h3 className="font-display text-white font-bold text-xl leading-tight">
-            Get 10% off on orders above ₹999
+          <h3 className="font-display text-white font-extrabold text-xl leading-tight">
+            Get 10% off on orders above ₹499
           </h3>
-          <p className="font-body text-amber-200 text-sm mt-1">
+          <p className="font-body text-sandal-100/90 text-sm mt-1">
             Use code{" "}
-            <span className="font-num font-bold text-amber-300 tracking-widest">NAMMA10</span>
+            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">NAMMA10</span>
             {" "}at checkout
           </p>
         </div>
         <Link
           to="/products"
-          className="shrink-0 bg-amber-400 hover:bg-amber-300 text-brand-900 font-body font-bold px-6 py-3 rounded-full text-sm transition-colors"
+          className="shrink-0 bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-7 py-3.5 rounded-full text-sm transition-all shadow-md"
         >
           Shop Now
         </Link>
@@ -368,39 +269,40 @@ function PromoBanner() {
 }
 
 //  WHY US
+// Redesigned to fit charcoal gray and sandal tones
 function WhyUs() {
   const reasons = [
     {
       emoji: "🎣",
       title: "Direct from Fishermen",
-      desc:  "We partner directly with Rameswaram fishing families — no middlemen, no markups.",
+      desc:  "We partner directly with Rameswaram fishing families — no middleman, ensuring maximum freshness.",
     },
     {
       emoji: "☀️",
       title: "Sun-Dried Naturally",
-      desc:  "Traditional coastal drying process. Zero artificial preservatives or chemicals.",
+      desc:  "Traditional coastal sun-drying process under optimal hygienic standards. Zero chemicals.",
     },
     {
       emoji: "📦",
       title: "Hygienic Packaging",
-      desc:  "Airtight, odour-proof packing that preserves freshness for months.",
+      desc:  "Premium multi-layer, odour-proof packaging that seals in coastal freshness for months.",
     },
   ];
   return (
-    <section className="bg-brand-900 py-14 px-4">
+    <section className="bg-gray-900 py-16 px-4 border-t border-b border-gray-850 my-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="font-display text-2xl font-bold text-white mb-2">
-          Why NammaOorKaruvattuKadai?
+        <h2 className="font-display text-3xl font-bold text-white mb-3">
+          Why Namma Oor Karuvattu Kadai?
         </h2>
-        <p className="font-body text-amber-300 text-sm mb-10">
-          We don't just sell dry fish — we preserve a tradition.
+        <p className="font-body text-sandal-300/80 text-sm mb-12 max-w-md mx-auto">
+          We don't just sell dry fish — we preserve a tradition of purity.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {reasons.map((r) => (
-            <div key={r.title} className="bg-brand-800 rounded-2xl p-6 text-left">
-              <span className="text-3xl block mb-3">{r.emoji}</span>
-              <h3 className="font-display text-white font-bold text-base mb-1.5">{r.title}</h3>
-              <p className="font-body text-amber-300 text-sm leading-relaxed">{r.desc}</p>
+            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 text-left">
+              <span className="text-3xl block mb-4">{r.emoji}</span>
+              <h3 className="font-display text-white font-bold text-lg mb-2">{r.title}</h3>
+              <p className="font-body text-gray-400 text-sm leading-relaxed">{r.desc}</p>
             </div>
           ))}
         </div>
@@ -433,44 +335,44 @@ function Testimonials() {
   ];
 
   return (
-    <section className="bg-brand-50 py-14 px-4">
+    <section className="bg-sandal-50/50 py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">
+        <div className="text-center mb-12">
+          <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
             What Our Customers Say
           </h2>
-          <p className="font-body text-sm text-amber-600">
+          <p className="font-body text-sm font-semibold text-sandal-600">
             Real reviews from real karuvadu lovers
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {reviews.map((r) => (
-            <div key={r.name} className="card p-5 flex flex-col gap-3">
+            <div key={r.name} className="card p-6 flex flex-col gap-3.5 shadow-sm border border-sandal-100">
               {/* stars */}
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
                     size={14}
-                    className={s <= r.rating ? "fill-amber-400 text-amber-400" : "text-amber-200"}
+                    className={s <= r.rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-200"}
                   />
                 ))}
               </div>
               {/* text */}
-              <p className="font-body text-sm text-brand-800 leading-relaxed flex-1">
+              <p className="font-body text-sm text-gray-700 leading-relaxed flex-1 italic">
                 "{r.text}"
               </p>
               {/* author */}
-              <div className="flex items-center gap-3 pt-2 border-t border-amber-50">
-                <div className="w-9 h-9 rounded-full bg-brand-800 flex items-center justify-center text-white font-num text-sm font-bold shrink-0">
+              <div className="flex items-center gap-3 pt-3 border-t border-sandal-100/50">
+                <div className="w-9 h-9 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
                   {r.name[0]}
                 </div>
                 <div>
-                  <p className="font-body text-sm font-semibold text-brand-900 leading-none">
+                  <p className="font-body text-sm font-bold text-gray-800 leading-none">
                     {r.name}
                   </p>
-                  <p className="font-body text-xs text-amber-500 mt-0.5">{r.location}</p>
+                  <p className="font-body text-xs text-sandal-500 font-semibold mt-1">{r.location}</p>
                 </div>
               </div>
             </div>
@@ -489,19 +391,18 @@ function NewsletterCTA() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email.trim() || !email.includes("@")) { setStatus("error"); return; }
-    // TODO: wire to /api/newsletter endpoint
     setStatus("success");
     setEmail("");
   };
 
   return (
     <section className="page-wrap py-12">
-      <div className="bg-gradient-to-br from-brand-900 to-brand-800 rounded-3xl px-6 py-10 sm:px-12 flex flex-col sm:flex-row items-center gap-6">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-12 sm:px-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
         <div className="flex-1 text-center sm:text-left">
-          <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-1.5">
+          <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-2">
             Get fresh catch alerts & exclusive deals
           </h3>
-          <p className="font-body text-amber-300 text-sm">
+          <p className="font-body text-sandal-300 text-sm font-medium">
             Subscribe to know when seasonal specials and new arrivals drop.
           </p>
         </div>
@@ -513,20 +414,20 @@ function NewsletterCTA() {
               value={email}
               onChange={(e) => { setEmail(e.target.value); setStatus("idle"); }}
               placeholder="your@email.com"
-              className="flex-1 sm:w-56 bg-white/10 border border-amber-600 text-white placeholder:text-amber-400 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30"
+              className="flex-1 sm:w-60 bg-white/5 border border-sandal-300/20 text-white placeholder:text-gray-500 rounded-xl px-4 py-3 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
             />
             <button
               type="submit"
-              className="bg-amber-400 hover:bg-amber-300 text-brand-900 font-body font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors shrink-0"
+              className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
             >
               Subscribe
             </button>
           </form>
           {status === "success" && (
-            <p className="font-body text-green-300 text-xs mt-2 text-center">✓ You're subscribed!</p>
+            <p className="font-body text-sandal-300 text-xs mt-2 text-center">✓ You're subscribed!</p>
           )}
           {status === "error" && (
-            <p className="font-body text-red-300 text-xs mt-2 text-center">Please enter a valid email.</p>
+            <p className="font-body text-red-400 text-xs mt-2 text-center">Please enter a valid email.</p>
           )}
         </div>
       </div>
@@ -557,7 +458,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
 
       {/* 1 – Hero */}
       <HeroBanner banners={banners} />
@@ -571,7 +472,7 @@ export default function Home() {
       {/* 4 – Best Sellers */}
       <ProductSection
         title="Best Sellers"
-        subtitle="Our most loved products"
+        subtitle="Our most loved coastal delicacies"
         viewAllTo="/products?isBestseller=true"
         loading={loading}
         products={bestsellers}
@@ -585,7 +486,7 @@ export default function Home() {
       {(loading || newest.length > 0) && (
         <ProductSection
           title="New Arrivals"
-          subtitle="Fresh from the coast"
+          subtitle="Fresh from the docks, naturally dried"
           viewAllTo="/products?sort=newest"
           loading={loading}
           products={newest}

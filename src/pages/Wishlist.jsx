@@ -4,10 +4,10 @@ import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
-import { productApi }       from "../ApiCall/Api.jsx";
+import comboImg from "../assets/products/combo.jpg";
 
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = "https://placehold.co/400x400/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

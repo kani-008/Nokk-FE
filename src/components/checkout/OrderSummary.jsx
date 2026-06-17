@@ -1,7 +1,9 @@
 import { Truck } from "lucide-react";
 
+import comboImg from "../../assets/products/combo.jpg";
+
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = "https://placehold.co/80x80/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", {

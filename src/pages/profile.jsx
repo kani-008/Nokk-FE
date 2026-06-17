@@ -3,7 +3,9 @@ import { User, Phone, Mail, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Che
 import { userApi }      from "../ApiCall/Api.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 
-const PH_AVATAR = "https://placehold.co/80x80/92400e/fef3c7?text=U";
+import comboImg from "../assets/products/combo.jpg";
+
+const PH_AVATAR = comboImg;
 
 const TABS = [
   { key: "profile",   label: "Profile",    icon: User   },

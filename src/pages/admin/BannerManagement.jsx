@@ -9,7 +9,9 @@ import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 
-const PH = "https://placehold.co/600x240/92400e/fef3c7?text=Banner";
+import comboImg from "../../assets/products/combo.jpg";
+
+const PH = comboImg;
 
 const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", linkUrl: "", sortOrder: 0, isActive: true };
 

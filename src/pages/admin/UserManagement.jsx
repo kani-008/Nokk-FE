@@ -6,7 +6,9 @@ import {
   AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 
-const PH_AVATAR = "https://placehold.co/40x40/92400e/fef3c7?text=U";
+import comboImg from "../../assets/products/combo.jpg";
+
+const PH_AVATAR = comboImg;
 const fmtDate   = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 // ── User detail drawer ─────────────────────────────────────────────────

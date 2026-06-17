@@ -1,0 +1,58 @@
+[
+  {
+    "id": "cat-1",
+    "nameEn": "Nethili (Anchovy)",
+    "nameTa": "நெத்திலி",
+    "slug": "nethili",
+    "sortOrder": 1,
+    "isActive": true
+  },
+  {
+    "id": "cat-2",
+    "nameEn": "Sura (Shark)",
+    "nameTa": "சுறா",
+    "slug": "sura",
+    "sortOrder": 2,
+    "isActive": true
+  },
+  {
+    "id": "cat-3",
+    "nameEn": "Kanava (Squid)",
+    "nameTa": "கனவா",
+    "slug": "kanava",
+    "sortOrder": 3,
+    "isActive": true
+  },
+  {
+    "id": "cat-4",
+    "nameEn": "Paarai (Kingfish)",
+    "nameTa": "பாறை",
+    "slug": "paarai",
+    "sortOrder": 4,
+    "isActive": true
+  },
+  {
+    "id": "cat-5",
+    "nameEn": "Kelanga (Catfish)",
+    "nameTa": "கெளிறு",
+    "slug": "kelanga",
+    "sortOrder": 5,
+    "isActive": true
+  },
+  {
+    "id": "cat-6",
+    "nameEn": "Pickles & Chutneys",
+    "nameTa": "கருவாடு தொக்கு",
+    "slug": "pickles",
+    "sortOrder": 6,
+    "isActive": true
+  },
+  {
+    "id": "cat-7",
+    "nameEn": "Combo Packs",
+    "nameTa": "காம்போ பேக்",
+    "slug": "combo-packs",
+    "sortOrder": 7,
+    "isActive": true
+  }
+]

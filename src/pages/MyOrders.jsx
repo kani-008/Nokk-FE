@@ -5,9 +5,9 @@ import {
   MapPin, CreditCard, Clock, ArrowRight, X,
 } from "lucide-react";
 import { orderApi }     from "../ApiCall/Api.jsx";
-import { useAuthStore } from "../components/store/AuthStore";
+import comboImg from "../assets/products/combo.jpg";
 
-const PH = "https://placehold.co/48x48/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);

@@ -3,7 +3,9 @@ import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
 import { offerApi } from "../ApiCall/Api.jsx";
 import { Link }     from "react-router-dom";
 
-const PH = "https://placehold.co/600x200/92400e/fef3c7?text=Offer";
+import comboImg from "../assets/products/combo.jpg";
+
+const PH = comboImg;
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);

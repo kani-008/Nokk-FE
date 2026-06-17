@@ -10,8 +10,10 @@ import { useCartStore }     from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore }     from "../components/store/AuthStore.jsx";
 
+import comboImg from "../assets/products/combo.jpg";
+
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = "https://placehold.co/600x600/92400e/fef3c7?text=🐟";
+const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

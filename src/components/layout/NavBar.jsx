@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Heart, User, Menu, X, Search,
-  Fish, ChevronDown, Package, LogOut, Settings,
+  ChevronDown, Package, LogOut, Settings,
   ClipboardList, Tag,
 } from "lucide-react";
+import Logo from "./Logo";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
@@ -60,31 +61,23 @@ export default function NavBar() {
   const isActive = (to) => location.pathname === to;
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-sandal-100">
 
       {/* ── Announcement bar ──────────────────────────────────────── */}
-      <div className="bg-brand-800 text-amber-50 text-[11px] sm:text-xs text-center py-1.5 font-body font-medium tracking-wide px-4">
-        🐟 Free shipping above ₹499 &nbsp;·&nbsp; Direct from Rameswaram fishermen &nbsp;·&nbsp;
-        <Link to="/offers" className="underline underline-offset-2 hover:text-amber-200">Today's Deals</Link>
+      <div className="bg-gray-800 text-sandal-100 text-[11px] sm:text-xs text-center py-2 font-body font-medium tracking-wide px-4">
+        🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from Rameswaram fishermen &nbsp;·&nbsp;
+        <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-200 transition-colors ml-1">Today's Deals</Link>
       </div>
 
       {/* ── Main nav row ──────────────────────────────────────────── */}
-      <div className="border-b border-amber-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-14 gap-3">
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-16 gap-3">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 mr-2">
-            <div className="bg-brand-700 text-white p-1.5 rounded-lg">
-              <Fish size={20} />
-            </div>
-            <div className="hidden sm:block leading-none">
-              <span className="font-display text-brand-900 font-bold text-[15px] block">NammaOor</span>
-              <span className="font-tamil text-brand-600 text-[10px]">கருவாட்டு கடை</span>
-            </div>
-          </Link>
+          <Logo className="shrink-0 mr-4" />
 
           {/* Desktop search — grows to fill space */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-6">
             <div className="relative w-full">
               <input
                 type="text"
@@ -95,7 +88,7 @@ export default function NavBar() {
               />
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-600 hover:text-brand-900 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
               >
                 <Search size={16} />
               </button>
@@ -108,10 +101,10 @@ export default function NavBar() {
               <Link
                 key={l.to}
                 to={l.to}
-                className={`font-body text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
                   isActive(l.to)
-                    ? "bg-brand-50 text-brand-800"
-                    : "text-amber-800 hover:bg-amber-50 hover:text-brand-800"
+                    ? "bg-sandal-100 text-sandal-800"
+                    : "text-gray-600 hover:bg-sandal-50 hover:text-gray-900"
                 }`}
               >
                 {l.label}
@@ -120,11 +113,11 @@ export default function NavBar() {
           </nav>
 
           {/* Right icon group */}
-          <div className="flex items-center gap-0.5 ml-auto">
+          <div className="flex items-center gap-1.5 ml-auto">
 
             {/* Mobile search toggle */}
             <button
-              className="md:hidden p-2 text-amber-800 hover:text-brand-700 rounded-lg hover:bg-amber-50 transition-colors"
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors"
               onClick={() => setSearchOpen((s) => !s)}
               aria-label="Search"
             >
@@ -134,7 +127,7 @@ export default function NavBar() {
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="relative p-2 text-amber-800 hover:text-rose-500 rounded-lg hover:bg-amber-50 transition-colors"
+              className="relative p-2 text-gray-600 hover:text-rose-500 rounded-xl hover:bg-gray-100 transition-colors"
               aria-label="Wishlist"
             >
               <Heart size={20} />
@@ -148,12 +141,12 @@ export default function NavBar() {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative p-2 text-amber-800 hover:text-brand-700 rounded-lg hover:bg-amber-50 transition-colors"
+              className="relative p-2 text-gray-600 hover:text-sandal-700 rounded-xl hover:bg-gray-100 transition-colors"
               aria-label="Cart"
             >
               <ShoppingCart size={20} />
               {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-brand-700 text-white font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
+                <span className="absolute top-0.5 right-0.5 bg-gray-800 text-white font-num text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 leading-none">
                   {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
@@ -164,13 +157,13 @@ export default function NavBar() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen((s) => !s)}
-                  className="hidden md:flex items-center gap-1.5 pl-2 pr-1 py-1.5 rounded-xl text-amber-800 hover:bg-amber-50 transition-colors"
+                  className="hidden md:flex items-center gap-2 pl-2 pr-1 py-1 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   {/* avatar initial */}
-                  <div className="w-7 h-7 rounded-full bg-brand-700 text-white flex items-center justify-center font-num text-xs font-bold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-xs font-bold shrink-0">
                     {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
                   </div>
-                  <span className="font-body text-sm font-medium max-w-[80px] truncate">
+                  <span className="font-body text-sm font-semibold max-w-[80px] truncate text-gray-700">
                     {(user?.fullName ?? user?.name ?? "Account").split(" ")[0]}
                   </span>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
@@ -178,13 +171,13 @@ export default function NavBar() {
 
                 {/* Desktop dropdown */}
                 {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 bg-white border border-amber-100 rounded-2xl shadow-xl py-2 w-48 z-50">
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
                     {/* user info */}
-                    <div className="px-4 py-2 border-b border-amber-50 mb-1">
-                      <p className="font-body text-xs font-semibold text-brand-900 truncate">
+                    <div className="px-4 py-2.5 border-b border-sandal-100 mb-1">
+                      <p className="font-body text-xs font-bold text-gray-800 truncate">
                         {user?.fullName ?? user?.name}
                       </p>
-                      <p className="font-body text-[11px] text-amber-500 truncate">
+                      <p className="font-body text-[11px] text-gray-500 truncate">
                         {user?.phone ?? user?.email}
                       </p>
                     </div>
@@ -194,14 +187,14 @@ export default function NavBar() {
                     <DropItem to="/offers"    icon={<Tag size={14} />}        label="Offers" />
                     {user?.role === "admin" && (
                       <>
-                        <div className="border-t border-amber-50 my-1" />
+                        <div className="border-t border-sandal-100 my-1" />
                         <DropItem to="/admin" icon={<Settings size={14} />} label="Admin Panel" highlight />
                       </>
                     )}
-                    <div className="border-t border-amber-50 mt-1 pt-1">
+                    <div className="border-t border-sandal-100 mt-1 pt-1">
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-4 py-2 font-body text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut size={14} /> Logout
                       </button>
@@ -220,7 +213,7 @@ export default function NavBar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 text-amber-800 hover:text-brand-700 rounded-lg hover:bg-amber-50 transition-colors ml-1"
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors ml-1"
               onClick={() => setMobileOpen((s) => !s)}
               aria-label="Menu"
             >
@@ -232,7 +225,7 @@ export default function NavBar() {
 
       {/* ── Mobile search bar (slides down) ──────────────────────── */}
       {searchOpen && (
-        <div className="md:hidden border-b border-amber-100 bg-white px-4 py-3" ref={searchRef}>
+        <div className="md:hidden border-b border-sandal-100 bg-white px-4 py-3" ref={searchRef}>
           <form onSubmit={handleSearch}>
             <div className="relative">
               <input
@@ -245,7 +238,7 @@ export default function NavBar() {
               />
               <button
                 type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
               >
                 <Search size={16} />
               </button>
@@ -256,18 +249,18 @@ export default function NavBar() {
 
       {/* ── Mobile drawer ─────────────────────────────────────────── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-amber-100 bg-white">
+        <div className="md:hidden border-t border-sandal-100 bg-white shadow-inner">
           {/* user info if logged in */}
           {isAuthenticated && (
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-50 bg-brand-50">
-              <div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center font-num text-sm font-bold shrink-0">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-sandal-100 bg-sandal-50">
+              <div className="w-10 h-10 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
                 {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
               </div>
               <div className="min-w-0">
-                <p className="font-body text-sm font-semibold text-brand-900 truncate">
+                <p className="font-body text-sm font-bold text-gray-800 truncate">
                   {user?.fullName ?? user?.name}
                 </p>
-                <p className="font-body text-xs text-amber-500 truncate">
+                <p className="font-body text-xs text-gray-500 truncate">
                   {user?.phone ?? user?.email}
                 </p>
               </div>
@@ -281,7 +274,7 @@ export default function NavBar() {
               </MobileNavLink>
             ))}
 
-            <div className="border-t border-amber-50 mt-1 pt-1">
+            <div className="border-t border-sandal-100 mt-1 pt-1">
               {isAuthenticated ? (
                 <>
                   <MobileNavLink to="/profile"   icon={<User size={16} />}    onClick={() => setMobileOpen(false)}>My Profile</MobileNavLink>
@@ -296,7 +289,7 @@ export default function NavBar() {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut size={16} /> Logout
                   </button>
@@ -332,13 +325,13 @@ function DropItem({ to, icon, label, highlight }) {
   return (
     <Link
       to={to}
-      className={`flex items-center gap-2.5 px-4 py-2 font-body text-sm transition-colors ${
+      className={`flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-medium transition-colors ${
         highlight
-          ? "text-brand-700 font-semibold hover:bg-brand-50"
-          : "text-amber-900 hover:bg-amber-50"
+          ? "text-sandal-700 font-bold hover:bg-sandal-50"
+          : "text-gray-700 hover:bg-gray-100"
       }`}
     >
-      <span className="text-amber-500">{icon}</span>
+      <span className="text-sandal-500">{icon}</span>
       {label}
     </Link>
   );
@@ -349,13 +342,13 @@ function MobileNavLink({ to, icon, onClick, highlight, children }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 font-body text-sm font-medium transition-colors ${
+      className={`flex items-center gap-3 px-4 py-3 font-body text-sm font-semibold transition-colors ${
         highlight
-          ? "text-brand-700 hover:bg-brand-50"
-          : "text-amber-900 hover:bg-amber-50"
+          ? "text-sandal-700 hover:bg-sandal-50"
+          : "text-gray-700 hover:bg-gray-100"
       }`}
     >
-      {icon && <span className="text-amber-500 shrink-0">{icon}</span>}
+      {icon && <span className="text-sandal-500 shrink-0">{icon}</span>}
       {children}
     </Link>
   );
