@@ -124,7 +124,7 @@ export default function NavBar() {
             )}
 
             {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
               {/* Categories Dropdown */}
               <div
                 ref={catDropdownRef}

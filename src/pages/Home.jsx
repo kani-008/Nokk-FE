@@ -28,6 +28,7 @@ const rupee = (n) =>
 //  HERO BANNER SLIDER (with loop video background)
 function HeroBanner({ banners }) {
   const [idx, setIdx] = useState(0);
+  const [direction, setDirection] = useState("next"); // 'next' | 'prev'
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
@@ -56,7 +57,10 @@ function HeroBanner({ banners }) {
 
   useEffect(() => {
     if (banners.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % banners.length), 5000);
+    const t = setInterval(() => {
+      setDirection("next");
+      setIdx((i) => (i + 1) % banners.length);
+    }, 5000);
     return () => clearInterval(t);
   }, [banners.length]);
 
@@ -71,8 +75,14 @@ function HeroBanner({ banners }) {
       ];
 
   const cur  = slides[idx];
-  const prev = () => setIdx((i) => (i - 1 + slides.length) % slides.length);
-  const next = () => setIdx((i) => (i + 1) % slides.length);
+  const prev = () => {
+    setDirection("prev");
+    setIdx((i) => (i - 1 + slides.length) % slides.length);
+  };
+  const next = () => {
+    setDirection("next");
+    setIdx((i) => (i + 1) % slides.length);
+  };
 
   return (
     <section
@@ -95,24 +105,35 @@ function HeroBanner({ banners }) {
       {/* dark charcoal vignette overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-gray-950/40" />
 
-      <div
-        key={idx}
-        className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto animate-banner-fade"
-      >
-        <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
-          நம்ம ஊர் கருவாட்டு கடை
-        </p>
-        <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md">
-          {cur.title}
-        </h1>
-        {cur.subtitle && (
-          <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl leading-relaxed drop-shadow">
-            {cur.subtitle}
-          </p>
-        )}
-        <Link to={cur.linkUrl || "/products"} className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg">
-          Shop Now <ArrowRight size={16} />
-        </Link>
+      <div className="relative z-10 w-full overflow-hidden flex items-center justify-center">
+        <div
+          className="flex transition-transform duration-700 ease-in-out w-full"
+          style={{ transform: `translateX(-${idx * 100}%)` }}
+        >
+          {slides.map((slide, i) => (
+            <div
+              key={i}
+              className="w-full shrink-0 flex flex-col items-center justify-center text-center px-4"
+            >
+              <div className="max-w-4xl w-full mx-auto">
+                <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
+                  நம்ம ஊர் கருவாட்டு கடை
+                </p>
+                <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md">
+                  {slide.title}
+                </h1>
+                {slide.subtitle && (
+                  <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl leading-relaxed drop-shadow">
+                    {slide.subtitle}
+                  </p>
+                )}
+                <Link to={slide.linkUrl || "/products"} className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2">
+                  Shop Now <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* arrows — visible on hover */}
@@ -138,7 +159,10 @@ function HeroBanner({ banners }) {
             {slides.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setIdx(i)}
+                onClick={() => {
+                  setDirection(i > idx ? "next" : "prev");
+                  setIdx(i);
+                }}
                 aria-label={`Slide ${i + 1}`}
                 className={`h-2.5 rounded-full transition-all duration-300 ${
                   i === idx ? "bg-sandal-400 w-6" : "bg-white/40 w-2.5"

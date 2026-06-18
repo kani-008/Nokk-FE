@@ -229,4 +229,34 @@ body {
   .animate-banner-fade {
     animation: banner-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  @keyframes banner-swipe-next {
+    from {
+      opacity: 0;
+      transform: translateX(60px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes banner-swipe-prev {
+    from {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-banner-swipe-next {
+    animation: banner-swipe-next 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-banner-swipe-prev {
+    animation: banner-swipe-prev 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
