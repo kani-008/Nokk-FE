@@ -9,13 +9,13 @@ import { Link } from "react-router-dom";
 const getDistribution = (avg, count, reviews = []) => {
   const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   const total = count || 0;
-  
+
   if (reviews.length > 0) {
     reviews.forEach((r) => {
       const rInt = Math.min(5, Math.max(1, Math.round(r.rating)));
       dist[rInt]++;
     });
-    
+
     // Scale up to total count if total review count exceeds logged array count
     const loggedCount = reviews.length;
     if (total > loggedCount) {
@@ -68,10 +68,10 @@ function StarBadge({ rating, size = 12 }) {
 // ── Write review form ──
 function ReviewForm({ productId, onSubmit }) {
   const { isAuthenticated, token } = useAuthStore();
-  const [form,    setForm]    = useState({ rating: 5, title: "", comment: "" });
+  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
   const [loading, setLoading] = useState(false);
-  const [done,    setDone]    = useState(false);
-  const [error,   setError]   = useState("");
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
 
   if (!isAuthenticated) {
     return (
@@ -173,7 +173,7 @@ export default function ProductReviews({ product, onSubmitReview }) {
   const dist = getDistribution(avgRating, reviewCount, reviewsList);
 
   return (
-    <div className="border border-sandal-100 rounded-2xl bg-white p-4 sm:p-5 space-y-6">
+    <div className="border border-sandal-100 rounded-2xl p-4 sm:p-5 space-y-6">
       <h3 className="font-display text-sm sm:text-base font-bold text-gray-800 uppercase tracking-wide">
         Ratings &amp; Reviews
       </h3>
@@ -202,9 +202,8 @@ export default function ProductReviews({ product, onSubmitReview }) {
                 {/* progress bar */}
                 <div className="flex-1 h-1.5 bg-gray-250/50 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      star >= 4 ? "bg-green-600" : star === 3 ? "bg-amber-500" : "bg-red-500"
-                    }`}
+                    className={`h-full rounded-full transition-all duration-500 ${star >= 4 ? "bg-green-600" : star === 3 ? "bg-amber-500" : "bg-red-500"
+                      }`}
                     style={{ width: `${percent}%` }}
                   />
                 </div>

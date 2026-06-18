@@ -6,6 +6,7 @@ import {
   ClipboardList, Tag, Flame, Grid3x3,
 } from "lucide-react";
 import Logo from "./Logo";
+import MobileDrawer from "./MobileDrawer.jsx";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
@@ -26,6 +27,7 @@ export default function NavBar() {
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
+  const [mobileCatOpen, setMobileCatOpen] = useState(false); // collapsible category list inside the drawer (currently unused — category section is commented out in MobileDrawer)
   const [query,       setQuery]       = useState("");
   const [categories,  setCategories]  = useState([]);
 
@@ -60,7 +62,14 @@ export default function NavBar() {
     setMobileOpen(false);
     setProfileOpen(false);
     setCatDropdownOpen(false);
+    setMobileCatOpen(false);
   }, [location.pathname]);
+
+  // lock page scroll while the mobile drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -228,7 +237,7 @@ export default function NavBar() {
                 )}
               </Link>
 
-              {/* Auth — desktop dropdown / mobile link */}
+              {/* Auth — desktop dropdown / mobile icon */}
               {isAuthenticated ? (
                 <div className="relative" ref={profileRef}>
                   <button
@@ -279,12 +288,26 @@ export default function NavBar() {
                   )}
                 </div>
               ) : (
-                <Link
-                  to="/login"
-                  className="hidden md:inline-flex btn-md bg-sandal-400 text-gray-950 font-semibold rounded-full px-5 py-2 text-sm hover:bg-sandal-300 transition-colors ml-1"
-                >
-                  Login
-                </Link>
+                <>
+                  {/* Desktop login button — unchanged */}
+                  <Link
+                    to="/login"
+                    className="hidden md:inline-flex btn-md bg-sandal-400 text-gray-950 font-semibold rounded-full px-5 py-2 text-sm hover:bg-sandal-300 transition-colors ml-1"
+                  >
+                    Login
+                  </Link>
+
+                  {/* Mobile login icon — sits in the top icon row alongside
+                      search/wishlist/cart, replaces the old in-drawer
+                      Login/Register buttons for logged-out mobile users */}
+                  <Link
+                    to="/login"
+                    className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                    aria-label="Login"
+                  >
+                    <User size={20} />
+                  </Link>
+                </>
               )}
 
               {/* Mobile hamburger */}
@@ -300,7 +323,7 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* ── Mobile search bar (slides down) ──────────────────────── */}
+      {/* Mobile search bar (slides down)*/}
       {searchOpen && (
         <div className="md:hidden border-b border-sandal-100 bg-white px-4 py-3" ref={searchRef}>
           <form onSubmit={handleSearch}>
@@ -324,109 +347,24 @@ export default function NavBar() {
         </div>
       )}
 
-      {/* ── Mobile drawer ─────────────────────────────────────────── */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-sandal-100 bg-white shadow-inner">
-          {/* user info if logged in */}
-          {isAuthenticated && (
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-sandal-100 bg-sandal-50">
-              <div className="w-10 h-10 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
-                {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
-              </div>
-              <div className="min-w-0">
-                <p className="font-body text-sm font-bold text-gray-800 truncate">
-                  {user?.fullName ?? user?.name}
-                </p>
-                <p className="font-body text-xs text-gray-500 truncate">
-                  {user?.phone ?? user?.email}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <nav className="flex flex-col py-2">
-
-            {/* Shop by category — mobile */}
-            {categories.length > 0 && (
-              <div className="px-4 pb-3 mb-1 border-b border-sandal-100">
-                <p className="font-body text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  Shop by Category
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    to="/products"
-                    onClick={() => setMobileOpen(false)}
-                    className="font-body text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-sandal-100"
-                  >
-                    All
-                  </Link>
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/products?category=${cat.slug}`}
-                      onClick={() => setMobileOpen(false)}
-                      className="font-body text-xs font-semibold px-3 py-1.5 rounded-full bg-sandal-50 text-sandal-800 border border-sandal-200"
-                    >
-                      {cat.nameEn}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {NAV_LINKS.map((l) => (
-              <MobileNavLink key={l.to} to={l.to} onClick={() => setMobileOpen(false)}>
-                {l.label}
-              </MobileNavLink>
-            ))}
-
-            <div className="border-t border-sandal-100 mt-1 pt-1">
-              {isAuthenticated ? (
-                <>
-                  <MobileNavLink to="/profile"   icon={<User size={16} />}    onClick={() => setMobileOpen(false)}>My Profile</MobileNavLink>
-                  <MobileNavLink to="/my-orders" icon={<ClipboardList size={16} />} onClick={() => setMobileOpen(false)}>My Orders</MobileNavLink>
-                  <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={() => setMobileOpen(false)}>
-                    Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
-                  </MobileNavLink>
-                  {user?.role === "admin" && (
-                    <MobileNavLink to="/admin" icon={<Settings size={16} />} onClick={() => setMobileOpen(false)} highlight>
-                      Admin Panel
-                    </MobileNavLink>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 font-body text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut size={16} /> Logout
-                  </button>
-                </>
-              ) : (
-                <div className="flex gap-3 px-4 py-3">
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 btn-md btn-primary text-center"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 btn-md btn-outline text-center"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
-      )}
+      {/* Mobile drawer — extracted to components/layout/MobileDrawer.jsx */}
+      <MobileDrawer
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        navLinks={NAV_LINKS}
+        categories={categories}
+        mobileCatOpen={mobileCatOpen}
+        onToggleMobileCat={() => setMobileCatOpen((s) => !s)}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        wishlistCount={wishlistCount}
+        onLogout={handleLogout}
+      />
     </header>
   );
 }
 
-// ── small helpers ───────────────────────────────────────────────────────
+// ── small helper ────────────────────────────────────────────────────────
 function DropItem({ to, icon, label, highlight }) {
   return (
     <Link
@@ -439,23 +377,6 @@ function DropItem({ to, icon, label, highlight }) {
     >
       <span className="text-sandal-500">{icon}</span>
       {label}
-    </Link>
-  );
-}
-
-function MobileNavLink({ to, icon, onClick, highlight, children }) {
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 font-body text-sm font-semibold transition-colors ${
-        highlight
-          ? "text-sandal-700 hover:bg-sandal-50"
-          : "text-gray-700 hover:bg-gray-100"
-      }`}
-    >
-      {icon && <span className="text-sandal-500 shrink-0">{icon}</span>}
-      {children}
     </Link>
   );
 }

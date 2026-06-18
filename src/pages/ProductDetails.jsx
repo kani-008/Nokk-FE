@@ -4,11 +4,14 @@ import {
   ChevronRight, ShoppingCart, Heart, Star,
   Minus, Plus, Truck, ShieldCheck, RefreshCcw,
   Share2, ChevronLeft, ChevronRight as ChevronR,
+  AlertCircle, X,
 } from "lucide-react";
+import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { productApi }       from "../ApiCall/Api.jsx";
 import { useCartStore }     from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore }     from "../components/store/AuthStore.jsx";
+import { useToast }         from "../hooks/useToast";
 import ProductDescription   from "../components/Product/ProductDescription.jsx";
 import ProductReviews       from "../components/Product/ProductReviews.jsx";
 
@@ -299,6 +302,7 @@ export default function ProductDetails() {
   const { addItem, items }  = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
   const { token }    = useAuthStore();
+  const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
   const [product,    setProduct]    = useState(null);
   const [related,    setRelated]    = useState([]);
@@ -307,6 +311,7 @@ export default function ProductDetails() {
   const [activeVariant, setActiveVariant] = useState(null);
   const [qty,        setQty]        = useState(1);
   const [addedMsg,   setAddedMsg]   = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
@@ -381,14 +386,53 @@ export default function ProductDetails() {
     navigate("/cart");
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({ title: product.nameEn, url: window.location.href })
-        .catch(() => {});
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setSuccess("Product link copied to clipboard!");
+        })
+        .catch(() => {
+          fallbackCopyToClipboard(text);
+        });
     } else {
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => alert("Product link copied to clipboard!"))
-        .catch(() => alert("Failed to copy link."));
+      fallbackCopyToClipboard(text);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) {
+        setSuccess("Product link copied to clipboard!");
+      } else {
+        setError("Failed to copy link. Please copy it manually.");
+      }
+    } catch (err) {
+      setError("Failed to copy link. Please copy it manually.");
+    }
+  };
+
+  const handleShare = () => {
+    const shareUrl = window.location.href;
+    const shareTitle = product.nameEn;
+    if (navigator.share) {
+      navigator.share({ title: shareTitle, url: shareUrl })
+        .catch(() => {
+          setShareModalOpen(true);
+        });
+    } else {
+      setShareModalOpen(true);
     }
   };
 
@@ -396,6 +440,30 @@ export default function ProductDetails() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+      {/* ── Toast (Red for Error, Green for Success) ── */}
+      <div
+        className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${
+          toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
+        }`}
+      >
+        {displayedError && (
+          <div
+            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${
+              displayedType === "success"
+                ? "border-green-200 shadow-green-900/5 text-green-700"
+                : "border-red-200 shadow-red-900/5 text-red-700"
+            }`}
+          >
+            {displayedType === "success" ? (
+              <ShieldCheck size={17} className="shrink-0 mt-0.5 text-green-500" />
+            ) : (
+              <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" />
+            )}
+            <p className="leading-snug">{displayedError}</p>
+          </div>
+        )}
+      </div>
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 font-body text-xs text-amber-500 mb-6 flex-wrap">
@@ -419,7 +487,7 @@ export default function ProductDetails() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-12 pb-20 md:pb-0">
 
         {/* Gallery — sticky on desktop */}
-        <div className="md:sticky md:top-24 h-fit">
+        <div>
           <ImageGallery images={product.images} onShare={handleShare} />
         </div>
 
@@ -614,6 +682,117 @@ export default function ProductDetails() {
           Buy at {rupee(price)}
         </button>
       </div>
+
+      {/* ── Share Modal Fallback ── */}
+      {shareModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-modal-fade-in animate-none">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 animate-modal-slide-up relative">
+            <button
+              onClick={() => setShareModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-800 transition-colors"
+              aria-label="Close share dialog"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="font-display text-lg font-bold text-brand-900 mb-6">Share Product</h3>
+
+            <div className="grid grid-cols-5 gap-2 mb-6">
+              {/* WhatsApp */}
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(product.nameEn + ' - ' + window.location.href)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaWhatsapp size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">WhatsApp</span>
+              </a>
+
+              {/* Instagram */}
+              <button
+                onClick={() => {
+                  copyToClipboard(window.location.href);
+                  setSuccess("Link copied! Open Instagram to share.");
+                  setTimeout(() => {
+                    window.open("https://instagram.com", "_blank", "noopener,noreferrer");
+                  }, 1000);
+                  setShareModalOpen(false);
+                }}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaInstagram size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Instagram</span>
+              </button>
+
+              {/* Facebook */}
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaFacebook size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Facebook</span>
+              </a>
+
+              {/* X */}
+              <a
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-gray-50 text-gray-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaTwitter size={22} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">X</span>
+              </a>
+
+              {/* Telegram */}
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaTelegramPlane size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Telegram</span>
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2 bg-sandal-50 p-2.5 rounded-xl border border-sandal-200">
+              <input
+                type="text"
+                readOnly
+                value={window.location.href}
+                className="flex-1 bg-transparent border-none font-body text-xs text-amber-950 focus:outline-none select-all truncate"
+              />
+              <button
+                onClick={() => {
+                  copyToClipboard(window.location.href);
+                  setShareModalOpen(false);
+                }}
+                className="btn-md py-1.5 px-3 bg-brand-700 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-sm"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

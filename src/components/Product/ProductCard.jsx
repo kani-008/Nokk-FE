@@ -32,7 +32,7 @@ export default function ProductCard({ product }) {
   const { toggle, isWishlisted } = useWishlistStore();
   const { token }                = useAuthStore();
 
-  const [popping, setPopping] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
 
   const wishlisted = isWishlisted(product.id);
   const firstV     = product.variants?.[0];
@@ -45,20 +45,20 @@ export default function ProductCard({ product }) {
   const cartItem   = firstV ? items.find((i) => i.variantId === firstV.id) : null;
   const inCart     = !!cartItem;
 
-  // tiny helper to retrigger the pop animation even on repeated clicks
-  const pop = () => {
-    setPopping(true);
-    setTimeout(() => setPopping(false), 280);
-  };
+  // Fires a quick side-to-side shake on the cart icon — every click replays
+  // it, whether this is the first "add" or a repeat click on an already
+  // in-cart item. Bumping a counter (used as a key below) guarantees the
+  // CSS animation restarts even on rapid repeat clicks.
+  const shake = () => setShakeKey((k) => k + 1);
 
   const handleCart = (e) => {
     e.preventDefault();
     if (!firstV || !inStock) return;
 
-    // Already in cart: just replay the pop feedback, don't add again.
+    // Already in cart: just replay the shake feedback, don't add again.
     // Quantity changes for items already in the cart happen on the Cart page.
     if (inCart) {
-      pop();
+      shake();
       return;
     }
 
@@ -72,7 +72,7 @@ export default function ProductCard({ product }) {
       comparePrice: firstV.comparePrice,
       weight:       firstV.weightLabel,
     });
-    pop();
+    shake();
   };
 
   const handleWishlist = (e) => {
@@ -195,14 +195,13 @@ export default function ProductCard({ product }) {
             Single cart button, no -/+ stepper.
             - Default (not in cart): sandal-colored, matches existing palette.
             - In cart: shifts to the navbar's dark/gray "active" color.
-            - Every click (even repeats on an in-cart item) replays a quick pop.
+            - Every click (even repeats on an in-cart item) replays a shake.
           */}
           <button
             onClick={handleCart}
             disabled={!inStock}
             aria-label={inCart ? "Already in cart" : "Add to cart"}
-            className={`p-2.5 rounded-xl transition-all duration-300 shrink-0 cursor-pointer
-              ${popping ? "scale-110" : "scale-100"}
+            className={`p-2.5 rounded-xl transition-colors duration-300 shrink-0 cursor-pointer overflow-hidden
               ${!inStock
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : inCart
@@ -210,8 +209,26 @@ export default function ProductCard({ product }) {
                   : "bg-sandal-500 text-white hover:bg-sandal-600 group-hover:bg-sandal-600"
               }`}
           >
-            <ShoppingCart size={15} />
+            <span key={shakeKey} className={`inline-flex ${shakeKey > 0 ? "animate-cart-shake" : ""}`}>
+              <ShoppingCart size={15} />
+            </span>
           </button>
+
+          {/* scoped keyframes for the cart-icon shake feedback */}
+          <style>{`
+            @keyframes cart-shake {
+              0%   { transform: translateX(0) rotate(0); }
+              15%  { transform: translateX(-3px) rotate(-8deg); }
+              30%  { transform: translateX(3px) rotate(8deg); }
+              45%  { transform: translateX(-3px) rotate(-6deg); }
+              60%  { transform: translateX(3px) rotate(6deg); }
+              75%  { transform: translateX(-2px) rotate(-3deg); }
+              100% { transform: translateX(0) rotate(0); }
+            }
+            .animate-cart-shake {
+              animation: cart-shake 0.4s ease-in-out;
+            }
+          `}</style>
         </div>
       </div>
     </Link>

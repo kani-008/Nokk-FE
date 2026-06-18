@@ -261,7 +261,7 @@ export default function AdminLayout() {
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-sandal-50 overflow-hidden">
 
       {/* ── Desktop sidebar ─────────────────────────────────────── */}
       <div className="hidden md:flex shrink-0 transition-all duration-300">

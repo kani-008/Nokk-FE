@@ -5,6 +5,7 @@ import {
   MapPin, CreditCard, Clock, ArrowRight, X,
 } from "lucide-react";
 import { orderApi }     from "../ApiCall/Api.jsx";
+import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
 const PH = comboImg;

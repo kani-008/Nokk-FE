@@ -1,4 +1,5 @@
-import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight, Loader2, Navigation } from "lucide-react";
 
 const INDIAN_STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
@@ -107,6 +108,101 @@ export default function Address({
   errors,
   onNext,
 }) {
+  const [detecting, setDetecting] = useState(false);
+  const [localErr, setLocalErr] = useState("");
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setLocalErr("Geolocation is not supported by your browser");
+      return;
+    }
+    setDetecting(true);
+    setLocalErr("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            {
+              headers: {
+                "Accept-Language": "en"
+              }
+            }
+          );
+          if (!res.ok) throw new Error("Location lookup failed");
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const street = addr.road || addr.suburb || addr.neighbourhood || "";
+            const house = addr.house_number || addr.building || "";
+            const line1 = [house, street].filter(Boolean).join(", ");
+            const city = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+            
+            let state = addr.state || "";
+            state = state.replace(/State of\s+/i, "");
+            
+            const pincode = addr.postcode || "";
+
+            const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
+            const matchedState = INDIAN_STATES.find((s) => normalize(s) === normalize(state));
+
+            if (line1) onChangeNew("addressLine1", line1);
+            if (city) onChangeNew("city", city);
+            if (matchedState) onChangeNew("state", matchedState);
+            if (pincode) onChangeNew("pincode", pincode.replace(/\s+/g, ""));
+          } else {
+            setLocalErr("Could not retrieve address details for this location");
+          }
+        } catch (e) {
+          setLocalErr("Failed to resolve address from coordinates");
+        } finally {
+          setDetecting(false);
+        }
+      },
+      (error) => {
+        let msg = "Failed to detect location";
+        if (error.code === error.PERMISSION_DENIED) {
+          msg = "Location access denied. Please enable location permissions.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          msg = "Location information is unavailable.";
+        } else if (error.code === error.TIMEOUT) {
+          msg = "Location request timed out.";
+        }
+        setLocalErr(msg);
+        setDetecting(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handlePincodeChange = async (name, val) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 6);
+    onChangeNew("pincode", cleaned);
+
+    if (cleaned.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data[0]?.Status === "Success" && data[0]?.PostOffice?.length > 0) {
+          const po = data[0].PostOffice[0];
+          const city = po.District || po.Block || po.Name || "";
+          const state = po.State || "";
+          
+          const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
+          const matchedState = INDIAN_STATES.find((s) => normalize(s) === normalize(state));
+          
+          if (city) onChangeNew("city", city);
+          if (matchedState) onChangeNew("state", matchedState);
+        }
+      } catch (err) {
+        // fail silently
+      }
+    }
+  };
+
   return (
     <div className="card p-5 sm:p-6">
       {/* header */}
@@ -142,6 +238,29 @@ export default function Address({
       {/* new address form */}
       {showNewForm && (
         <div className="border border-amber-100 rounded-2xl p-4 mb-5 bg-brand-50">
+          {localErr && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-body rounded-xl px-4 py-2.5 mb-3">
+              {localErr}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-amber-100/50">
+            <span className="font-body text-xs font-semibold text-amber-600">Enter Address details:</span>
+            <button
+              type="button"
+              disabled={detecting}
+              onClick={handleDetectLocation}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-brand-300 bg-brand-50 hover:bg-brand-100 text-brand-800 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+            >
+              {detecting ? (
+                <Loader2 size={13} className="animate-spin text-brand-600" />
+              ) : (
+                <Navigation size={13} className="text-brand-600" />
+              )}
+              {detecting ? "Detecting…" : "Detect My Location"}
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <Field
               label="Full Name" name="name" placeholder="Recipient name"
@@ -160,16 +279,16 @@ export default function Address({
               value={newAddress.addressLine2} onChange={onChangeNew}
             />
             <Field
+              label="Pincode" name="pincode" type="tel" placeholder="6-digit pincode"
+              required half value={newAddress.pincode} onChange={handlePincodeChange} error={errors.pincode}
+            />
+            <Field
               label="City" name="city" placeholder="City"
               required half value={newAddress.city} onChange={onChangeNew} error={errors.city}
             />
             <Field
               label="State" name="state"
-              required half select value={newAddress.state} onChange={onChangeNew} error={errors.state}
-            />
-            <Field
-              label="Pincode" name="pincode" type="tel" placeholder="6-digit pincode"
-              required half value={newAddress.pincode} onChange={onChangeNew} error={errors.pincode}
+              required select value={newAddress.state} onChange={onChangeNew} error={errors.state}
             />
           </div>
         </div>

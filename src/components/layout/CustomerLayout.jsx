@@ -10,6 +10,9 @@ function ScrollToTop() {
 }
 
 export default function CustomerLayout() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
@@ -17,7 +20,10 @@ export default function CustomerLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <Footer />
+      {/* Hide footer on mobile view alone for the login and register pages */}
+      <div className={isAuthPage ? "hidden md:block" : "block"}>
+        <Footer />
+      </div>
     </div>
   );
 }

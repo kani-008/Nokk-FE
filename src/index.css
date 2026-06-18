@@ -58,6 +58,28 @@
   --font-tamil: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-num: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
+/* Custom scrollbar — matches project gray palette */
+html, body, * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-300);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-400);
+}
 
 /* Base styles */
 body {
@@ -138,7 +160,13 @@ body {
   .field-input {
     @apply w-full rounded-xl border-[1.5px] border-gray-200 bg-white px-4 py-2.5 text-sm
            text-gray-800 outline-none transition-all duration-200
-           focus:border-sandal-400 focus:ring-3 focus:ring-sandal-400/15;
+           focus:outline-none focus-visible:outline-none focus:border-sandal-400 focus:ring-3 focus:ring-sandal-400/15;
+  }
+
+  .field-input-error {
+    @apply w-full rounded-xl border-[1.5px] border-red-300 bg-red-50/20 px-4 py-2.5 text-sm
+           text-gray-800 outline-none transition-all duration-200
+           focus:outline-none focus-visible:outline-none focus:border-red-400 focus:ring-3 focus:ring-red-400/15;
   }
 
   .field-label {
@@ -208,11 +236,11 @@ body {
 
   /* ── Hide scrollbar for horizontally-scrolling strips (category nav, sort bar) ── */
   .scrollbar-hide {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
   }
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+    display: none !important;
   }
 
   @keyframes banner-fade {
@@ -258,5 +286,29 @@ body {
 
   .animate-banner-swipe-prev {
     animation: banner-swipe-prev 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes modal-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes modal-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-modal-fade-in {
+    animation: modal-fade-in 0.2s ease-out forwards;
+  }
+
+  .animate-modal-slide-up {
+    animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
