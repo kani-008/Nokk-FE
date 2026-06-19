@@ -1,0 +1,104 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+lib-cov
+coverage
+*.lcov
+.nyc_output
+
+# Grunt
+.grunt
+
+# Bower
+bower_components
+
+# node-gyp
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# npm/eslint cache
+.npm
+.eslintcache
+
+# Microbundle cache
+.rts2_cache_main
+.rts2_cache_lit
+.rts2_cache_umd
+
+# REPL history
+.node_repl_history
+
+# npm pack output
+*.tgz
+.yarn-integrity
+
+# Env files
+.env
+.env.*.local
+
+# Cache
+.cache
+.parcel-cache
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt
+dist/
+
+# Gatsby
+.cache/
+
+# vuepress
+.vuepress/dist
+
+# Serverless
+.serverless/
+
+# FuseBox
+.fusebox/
+
+# DynamoDB Local
+.dynamodb/
+
+# Tern
+.tern-project
+
+# Editor / IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
