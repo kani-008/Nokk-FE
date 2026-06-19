@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { authApi } from "../ApiCall/Api.jsx";
 import { useAuthStore } from "../components/store/AuthStore";
-import { useToast } from "../hooks/useToast";
+import { useToast } from "../components/useToast";
 
 // ─── Logo URL — replace with real cloud URL when available ────────────
 const LOGO_URL = null;

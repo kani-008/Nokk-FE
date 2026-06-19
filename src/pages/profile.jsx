@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { User, Phone, Mail, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Check, Loader2, Navigation, AlertCircle } from "lucide-react";
 import { userApi }      from "../ApiCall/Api.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
-import { useToast }     from "../hooks/useToast";
+import { useToast }     from "../components/useToast.jsx";
 
 import comboImg from "../assets/products/combo.jpg";
 

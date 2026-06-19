@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { UserX, UserCheck, Mail, Phone, Shield, ShieldOff, X } from "lucide-react";
+import { UserX, UserCheck, Mail, Phone, X, AlertTriangle } from "lucide-react";
 import { userApi }      from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
 import {
@@ -15,18 +15,26 @@ const fmtDate   = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-d
 function UserDrawer({ user, onClose, onBlock, onUnblock }) {
   const { token } = useAuthStore();
   const [acting, setActing] = useState(false);
+  const [error,  setError]  = useState("");
 
   if (!user) return null;
 
+  const isBlocked = user.status === "blocked";
+
   const handleToggle = async () => {
-    setActing(true);
+    setActing(true); setError("");
     try {
-      if (user.status === "blocked") await userApi.unblock(user.id, token);
-      else                           await userApi.block(user.id, token);
-      user.status === "blocked" ? onUnblock(user.id) : onBlock(user.id);
+      if (isBlocked) {
+        await userApi.unblock(user.id, token);
+        onUnblock(user.id);
+      } else {
+        await userApi.block(user.id, token);
+        onBlock(user.id);
+      }
       onClose();
-    } catch (e) { alert(e.message || "Action failed"); }
-    finally { setActing(false); }
+    } catch (e) {
+      setError(e.message || "Action failed");
+    } finally { setActing(false); }
   };
 
   return (
@@ -36,7 +44,7 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h3 className="font-display text-base font-bold text-gray-900">User Details</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
@@ -95,14 +103,21 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
             </div>
           </AdminCard>
 
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* action */}
           {user.role !== "admin" && (
             <AdminButton
-              variant={user.status === "blocked" ? "primary" : "danger"}
+              variant={isBlocked ? "primary" : "danger"}
               onClick={handleToggle}
               disabled={acting}
             >
-              {user.status === "blocked"
+              {isBlocked
                 ? <><UserCheck size={14} /> {acting ? "Unblocking…" : "Unblock User"}</>
                 : <><UserX    size={14} /> {acting ? "Blocking…"   : "Block User"}</>
               }
@@ -122,18 +137,25 @@ export default function UserManagement() {
   const [users,      setUsers]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [status,     setStatus]     = useState("");
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selected,   setSelected]   = useState(null);
 
+  // debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const load = async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (search)     params.set("search", search);
-    if (roleFilter) params.set("role",   roleFilter);
-    if (status)     params.set("status", status);
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (roleFilter)      params.set("role",   roleFilter);
+    if (status)          params.set("status", status);
     params.set("page", page); params.set("limit", 15);
     try {
       const res = await userApi.all(params.toString(), token);
@@ -142,7 +164,7 @@ export default function UserManagement() {
     } catch (_) {} finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [search, roleFilter, status, page, token]);
+  useEffect(() => { load(); }, [debouncedSearch, roleFilter, status, page, token]);
 
   const patchStatus = (id, newStatus) =>
     setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: newStatus } : u));
@@ -185,7 +207,7 @@ export default function UserManagement() {
     <AdminPage title="Users" sub="Manage customer accounts and permissions">
 
       <div className="flex flex-wrap gap-3">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search name, email, phone…" className="w-56" />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-56" />
 
         <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="field-input w-36">
           <option value="">All roles</option>

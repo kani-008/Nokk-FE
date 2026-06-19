@@ -182,7 +182,7 @@ export default function NavBar() {
 
               {NAV_LINKS.map((l) => (
                 <Link
-                  key={l.to}
+                  key={l.label}
                   to={l.to}
                   className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
                     isActive(l.to)

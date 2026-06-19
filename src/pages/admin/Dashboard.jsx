@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   IndianRupee, ShoppingBag, Package, Users,
   TrendingUp, Clock, CheckCircle2, XCircle,
@@ -130,7 +131,7 @@ export default function Dashboard() {
       title="Dashboard"
       sub="Your store at a glance"
       action={
-        <button onClick={() => load(true)} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors">
+        <button onClick={() => load(true)} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
       }
@@ -179,9 +180,10 @@ export default function Dashboard() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="font-body text-sm font-bold text-gray-900">Recent Orders</p>
-          <a href="/admin/orders" className="font-body text-xs text-brand-700 font-medium flex items-center gap-1 hover:underline">
+          {/* router Link — keeps SPA state, no full page reload */}
+          <Link to="/admin/orders" className="font-body text-xs text-brand-700 font-medium flex items-center gap-1 hover:underline">
             View all <ArrowRight size={12} />
-          </a>
+          </Link>
         </div>
         <DataTable columns={ORDER_COLS} rows={recentOrders} loading={loading} emptyText="No orders yet." />
       </div>

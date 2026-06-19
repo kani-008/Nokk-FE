@@ -122,7 +122,7 @@ export default function MobileDrawer({
             */}
 
             {navLinks.map((l) => (
-              <MobileNavLink key={l.to} to={l.to} onClick={onClose}>
+              <MobileNavLink key={l.label} to={l.to} onClick={onClose}>
                 {l.label}
               </MobileNavLink>
             ))}

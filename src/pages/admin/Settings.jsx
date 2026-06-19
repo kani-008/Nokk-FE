@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Save, Loader2, Check, Store, Truck, IndianRupee, Bell, QrCode, Upload, Landmark } from "lucide-react";
+import { Save, Loader2, Check, Store, Truck, IndianRupee, Bell, QrCode, Upload, Landmark, Palette, RotateCcw, ShoppingCart } from "lucide-react";
 import { settingsApi, paymentSettingsApi } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
+import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";
+
+const MAX_QR_BYTES = 2 * 1024 * 1024; // 2MB — matches the helper text
 
 const DEFAULTS = {
   storeName: "NammaOorKaruvattuKadai",
@@ -17,6 +20,7 @@ const DEFAULTS = {
   cardEnabled: true,
   notifyOrderConfirmed: true,
   notifyOrderShipped: true,
+  themeColor: "", // empty = use the palette defined in index.css
 };
 
 const PAYMENT_DEFAULTS = {
@@ -29,9 +33,21 @@ const PAYMENT_DEFAULTS = {
   qrCodeUrl: "",
 };
 
-function SectionCard({ icon: Icon, title, children }) {
+// curated brand presets — each is a single base colour the generator
+// expands into a full 50–900 scale
+const THEME_PRESETS = [
+  { name: "Terracotta", hex: "#c2613a" },
+  { name: "Saffron",    hex: "#d97706" },
+  { name: "Ocean",      hex: "#0e7490" },
+  { name: "Forest",     hex: "#15803d" },
+  { name: "Indigo",     hex: "#4338ca" },
+  { name: "Crimson",    hex: "#be123c" },
+  { name: "Slate",      hex: "#475569" },
+];
+
+function SectionCard({ icon: Icon, title, children, className = "" }) {
   return (
-    <AdminCard>
+    <AdminCard className={className}>
       <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100">
         <div className="p-2 rounded-xl bg-brand-50"><Icon size={16} className="text-brand-700" /></div>
         <h3 className="font-display text-base font-bold text-gray-900">{title}</h3>
@@ -60,15 +76,125 @@ function Field({ label, name, type = "text", value, onChange, placeholder, unit,
 
 function ToggleRow({ label, sub, checked, onChange }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+    <button
+      type="button"
+      onClick={onChange}
+      aria-pressed={!!checked}
+      className="w-full flex items-center justify-between py-3 border-b border-gray-50 last:border-0 text-left"
+    >
       <div>
         <p className="font-body text-sm font-medium text-gray-900">{label}</p>
         {sub && <p className="font-body text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
-      <div onClick={onChange} className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors shrink-0 ml-4 ${checked ? "bg-brand-700" : "bg-gray-300"}`}>
-        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
+      <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ml-4 ${checked ? "bg-brand-700" : "bg-gray-300"}`}>
+        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
+      </span>
+    </button>
+  );
+}
+
+// ── Theme / appearance section ─────────────────────────────────────────
+function ThemeSection({ value, onChange }) {
+  // local hex field so the admin can type freely before it's valid
+  const [hexInput, setHexInput] = useState(value || "");
+
+  useEffect(() => { setHexInput(value || ""); }, [value]);
+
+  const choose = (hex) => {
+    onChange(hex);
+    applyTheme(hex);          // live preview across the whole UI
+  };
+
+  const onHexType = (raw) => {
+    setHexInput(raw);
+    const v = raw.startsWith("#") ? raw : `#${raw}`;
+    if (isValidHex(v)) choose(v);
+  };
+
+  const reset = () => {
+    onChange("");
+    setHexInput("");
+    resetTheme();             // fall back to index.css palette
+  };
+
+  const active = value || "";
+
+  return (
+    <SectionCard icon={Palette} title="Theme & Appearance" className="lg:col-span-2">
+      <p className="font-body text-sm text-gray-500 mb-4 -mt-1">
+        Pick a brand colour for the storefront. Changes preview instantly and apply site-wide once saved.
+      </p>
+
+      {/* presets */}
+      <div className="flex flex-wrap gap-2.5 mb-5">
+        {THEME_PRESETS.map((p) => {
+          const selected = active.toLowerCase() === p.hex.toLowerCase();
+          return (
+            <button
+              key={p.hex}
+              type="button"
+              onClick={() => choose(p.hex)}
+              title={p.name}
+              className={`group flex flex-col items-center gap-1.5 ${selected ? "" : "opacity-90 hover:opacity-100"}`}
+            >
+              <span
+                className={`w-9 h-9 rounded-full shadow-sm transition-transform group-hover:scale-110 ${selected ? "ring-2 ring-offset-2 ring-gray-900" : "ring-1 ring-black/5"}`}
+                style={{ backgroundColor: p.hex }}
+              />
+              <span className="font-body text-[10px] text-gray-500">{p.name}</span>
+            </button>
+          );
+        })}
       </div>
-    </div>
+
+      {/* custom + reset */}
+      <div className="flex flex-wrap items-end gap-4">
+        <div>
+          <label className="field-label">Custom colour</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={isValidHex(active) ? active : "#c2613a"}
+              onChange={(e) => choose(e.target.value)}
+              className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer bg-white p-0.5"
+              aria-label="Pick custom colour"
+            />
+            <input
+              type="text"
+              value={hexInput}
+              onChange={(e) => onHexType(e.target.value)}
+              placeholder="#c2613a"
+              className="field-input w-32 font-num"
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={reset}
+          className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors mb-2.5"
+        >
+          <RotateCcw size={14} /> Reset to default
+        </button>
+      </div>
+
+      {/* live preview */}
+      <div className="mt-5 pt-5 border-t border-gray-100">
+        <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Preview</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-md btn-primary pointer-events-none">
+            <ShoppingCart size={14} /> Add to Cart
+          </button>
+          <button type="button" className="btn-md btn-outline pointer-events-none">View</button>
+          <span className="badge-amber">Best Seller</span>
+          <span className="font-body text-sm font-semibold text-brand-700">Sample link</span>
+          <span className="w-8 h-8 rounded-full bg-brand-800 inline-block" />
+        </div>
+        <p className="font-body text-[11px] text-gray-400 mt-3">
+          Tip: very light colours can make white button text hard to read — darker, saturated tones work best as a primary.
+        </p>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -91,17 +217,25 @@ export default function Settings() {
 
   useEffect(() => {
     settingsApi.get()
-      .then((r) => setForm((f) => ({ ...f, ...(r.settings || {}) })))
+      .then((r) => {
+        const s = r.settings || {};
+        setForm((f) => ({ ...f, ...s }));
+        if (s.themeColor) applyTheme(s.themeColor); // restore saved theme on load
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
+  // depends on token: if auth resolves after mount, this refetches with
+  // the real token instead of silently firing with undefined
   useEffect(() => {
+    if (!token) return;
+    setPayLoading(true);
     paymentSettingsApi.getAdmin(token)
       .then((r) => setPayForm((f) => ({ ...f, ...(r.settings || {}) })))
       .catch(() => {})
       .finally(() => setPayLoading(false));
-  }, []);
+  }, [token]);
 
   const set  = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setE = (e)    => set(e.target.name, e.target.type === "number" ? Number(e.target.value) : e.target.value);
@@ -134,12 +268,18 @@ export default function Settings() {
     if (!file) return;
     if (!["image/png", "image/jpeg"].includes(file.type)) {
       setPayError("Only PNG or JPG images are allowed");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (file.size > MAX_QR_BYTES) {
+      setPayError("QR image must be 2MB or smaller");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
     setQrUploading(true); setPayError("");
     try {
       const r = await paymentSettingsApi.uploadQr(file, token);
-      setPayForm((f) => ({ ...f, qrCodeUrl: r.settings.qrCodeUrl }));
+      setPayForm((f) => ({ ...f, qrCodeUrl: r.settings?.qrCodeUrl || f.qrCodeUrl }));
     } catch (e) {
       setPayError(e.message || "Failed to upload QR code");
     } finally {
@@ -173,6 +313,9 @@ export default function Settings() {
       {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {/* Theme & Appearance (spans full width) */}
+        <ThemeSection value={form.themeColor} onChange={(hex) => set("themeColor", hex)} />
 
         {/* Store Info */}
         <SectionCard icon={Store} title="Store Information">

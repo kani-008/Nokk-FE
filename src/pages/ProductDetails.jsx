@@ -11,7 +11,7 @@ import { productApi }       from "../ApiCall/Api.jsx";
 import { useCartStore }     from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore }     from "../components/store/AuthStore.jsx";
-import { useToast }         from "../hooks/useToast";
+import { useToast }         from "../components/useToast";
 import ProductDescription   from "../components/Product/ProductDescription.jsx";
 import ProductReviews       from "../components/Product/ProductReviews.jsx";
 
@@ -428,12 +428,55 @@ export default function ProductDetails() {
     const shareTitle = product.nameEn;
     if (navigator.share) {
       navigator.share({ title: shareTitle, url: shareUrl })
-        .catch(() => {
-          setShareModalOpen(true);
+        .catch((err) => {
+          // AbortError fires when the user just dismisses the native
+          // share sheet — that's an intentional cancel, not a failure,
+          // so don't force the fallback modal open in that case.
+          if (err?.name !== "AbortError") {
+            setShareModalOpen(true);
+          }
         });
     } else {
       setShareModalOpen(true);
     }
+  };
+
+  const isMobileDevice = () =>
+    window.innerWidth < 768 ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  // WhatsApp, Facebook, X and Telegram all expose a real "share with this
+  // url/text" web intent that works the same way everywhere: on mobile it
+  // deep-links straight into the installed app, on desktop it opens the
+  // share web page. So a single window.open() is correct for both — no
+  // need to branch on device or pre-copy the link first.
+  const handleSocialShare = (platform, customUrl, customMessage) => {
+    window.open(customUrl, "_blank", "noopener,noreferrer");
+    if (customMessage) setSuccess(customMessage);
+    setShareModalOpen(false);
+  };
+
+  // Instagram is different: it has no public web intent that accepts a
+  // prefilled URL or caption (there's no "?text=" / "?url=" param it
+  // understands), so the old code just opened a blank instagram.com
+  // homepage with nothing actually shared. The only thing that really
+  // works is copying the link first, then opening Instagram so the
+  // person can paste it into their Story, DM, or bio.
+  const handleInstagramShare = () => {
+    copyToClipboard(window.location.href);
+    setSuccess("Link copied! Paste it into your Instagram Story or DM.");
+
+    if (isMobileDevice()) {
+      // Try the app deep link first; if Instagram isn't installed the
+      // browser just ignores it, so we follow up with the web fallback.
+      window.location.href = "instagram://app";
+      setTimeout(() => {
+        window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      }, 600);
+    } else {
+      window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    }
+    setShareModalOpen(false);
   };
 
 
@@ -657,7 +700,7 @@ export default function ProductDetails() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <button
           onClick={() => toggle(product.id, token)}
-          className="shrink-0 p=1.5 transition-colors"
+          className="shrink-0 p-1.5 transition-colors"
           aria-label="Toggle wishlist"
         >
           <Heart
@@ -699,29 +742,22 @@ export default function ProductDetails() {
 
             <div className="grid grid-cols-5 gap-2 mb-6">
               {/* WhatsApp */}
-              <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(product.nameEn + ' - ' + window.location.href)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setShareModalOpen(false)}
-                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              <button
+                onClick={() => handleSocialShare(
+                  "WhatsApp",
+                  `https://wa.me/?text=${encodeURIComponent(product.nameEn + ' - ' + window.location.href)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
                   <FaWhatsapp size={24} />
                 </div>
                 <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">WhatsApp</span>
-              </a>
+              </button>
 
               {/* Instagram */}
               <button
-                onClick={() => {
-                  copyToClipboard(window.location.href);
-                  setSuccess("Link copied! Open Instagram to share.");
-                  setTimeout(() => {
-                    window.open("https://instagram.com", "_blank", "noopener,noreferrer");
-                  }, 1000);
-                  setShareModalOpen(false);
-                }}
+                onClick={handleInstagramShare}
                 className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
@@ -731,46 +767,46 @@ export default function ProductDetails() {
               </button>
 
               {/* Facebook */}
-              <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setShareModalOpen(false)}
-                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              <button
+                onClick={() => handleSocialShare(
+                  "Facebook",
+                  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
                   <FaFacebook size={24} />
                 </div>
                 <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Facebook</span>
-              </a>
+              </button>
 
               {/* X */}
-              <a
-                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setShareModalOpen(false)}
-                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              <button
+                onClick={() => handleSocialShare(
+                  "X",
+                  `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-gray-50 text-gray-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
                   <FaTwitter size={22} />
                 </div>
                 <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">X</span>
-              </a>
+              </button>
 
               {/* Telegram */}
-              <a
-                href={`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setShareModalOpen(false)}
-                className="flex flex-col items-center gap-2 group cursor-pointer text-center"
+              <button
+                onClick={() => handleSocialShare(
+                  "Telegram",
+                  `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.nameEn)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
               >
                 <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
                   <FaTelegramPlane size={24} />
                 </div>
                 <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Telegram</span>
-              </a>
+              </button>
             </div>
 
             <div className="flex items-center gap-2 bg-sandal-50 p-2.5 rounded-xl border border-sandal-200">
