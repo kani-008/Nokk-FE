@@ -1,57 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 @theme {
-  --color-brand-primary: #8B2500;
-  --color-brand-secondary: #D4621A;
-  --color-brand-sand: #F5EDD6;
-  --color-brand-ocean: #1A4A5C;
-  --color-brand-cream: #FFF8EE;
-  --color-brand-dark: #1C1C1C;
-  --color-brand-success: #2E7D32;
+  /* Custom Sandal (Warm beige/cream/sandalwood) */
+  --color-sandal-50: #f5eedf;
+  --color-sandal-100: #ebdcc0;
+  --color-sandal-200: #e0ca9f;
+  --color-sandal-300: #d4b57e;
+  --color-sandal-400: #c8a05e;
+  --color-sandal-500: #ac8345;
+  --color-sandal-600: #8c6734;
+  --color-sandal-700: #6b4d24;
+  --color-sandal-800: #4b3417;
+  --color-sandal-900: #33210d;
 
-  --font-tiro-tamil: "Tiro Tamil", serif;
-  --font-playfair: "Playfair Display", serif;
-  --font-inter: "Inter", sans-serif;
-  --font-space: "Space Grotesk", sans-serif;
+  /* Custom charcoal grays */
+  --color-gray-50: #f7f7f8;
+  --color-gray-100: #efeff1;
+  --color-gray-200: #e1e2e5;
+  --color-gray-300: #cdcfd4;
+  --color-gray-400: #999da5;
+  --color-gray-500: #686e7a;
+  --color-gray-600: #4b515d;
+  --color-gray-700: #333842;
+  --color-gray-800: #22252c;
+  --color-gray-900: #1b1c21;
+
+  /* Mapping brand and amber to keep backwards compatibility */
+  --color-brand-50: var(--color-gray-50);
+  --color-brand-100: var(--color-gray-100);
+  --color-brand-200: var(--color-gray-200);
+  --color-brand-300: var(--color-gray-300);
+  --color-brand-400: var(--color-gray-400);
+  --color-brand-500: var(--color-gray-500);
+  --color-brand-600: var(--color-gray-600);
+  --color-brand-700: var(--color-gray-700);
+  --color-brand-800: var(--color-gray-800);
+  --color-brand-900: var(--color-gray-900);
+
+  --color-amber-50: var(--color-sandal-50);
+  --color-amber-100: var(--color-sandal-100);
+  --color-amber-200: var(--color-sandal-200);
+  --color-amber-300: var(--color-sandal-300);
+  --color-amber-400: var(--color-sandal-400);
+  --color-amber-500: var(--color-sandal-500);
+  --color-amber-600: var(--color-sandal-600);
+  --color-amber-700: var(--color-sandal-700);
+  --color-amber-800: var(--color-sandal-800);
+  --color-amber-900: var(--color-sandal-900);
+
+  /* Fonts */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-tamil: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-num: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+/* Custom scrollbar — matches project gray palette */
+html, body, * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) transparent;
 }
 
-/* Custom CSS utilities */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-300);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-400);
+}
+
+/* Base styles */
 body {
-  font-family: "Inter", sans-serif;
-  background-color: #FFF8EE; /* brand-cream */
-  color: #1C1C1C; /* brand-dark */
-  min-height: 100vh;
+  font-family: var(--font-body);
+  background-color: var(--color-sandal-50);
+  color: var(--color-gray-800);
 }
 
-/* Signature woven palm-leaf texture overlay */
-.palm-leaf-pattern {
-  background-color: #FFF8EE;
-  background-image: 
-    repeating-linear-gradient(45deg, rgba(139, 37, 0, 0.03) 0px, rgba(139, 37, 0, 0.03) 1px, transparent 1px, transparent 12px),
-    repeating-linear-gradient(-45deg, rgba(139, 37, 0, 0.03) 0px, rgba(139, 37, 0, 0.03) 1px, transparent 1px, transparent 12px);
-  background-size: 24px 24px;
+@keyframes loading-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-/* Hide scrollbar utility for category carousel */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+/* ─────────────────────────────────────────────────────────────────────
+   Global reusable component classes — strictly composed from Tailwind
+   utilities via @apply. Anything used in 3+ places lives here so pages
+   don't repeat long className strings.
+   ───────────────────────────────────────────────────────────────────── */
+@layer components {
 
-/* Micro-animations */
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
-}
+  .page-wrap {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
+  }
 
-.animate-marquee {
-  display: inline-block;
-  animation: marquee 20s linear infinite;
-}
+  /* Buttons  */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full
+           bg-gray-800 text-sandal-100 border border-gray-800 cursor-pointer
+           transition-all duration-200
+           hover:bg-gray-900 hover:text-sandal-50 hover:border-gray-900 hover:shadow-md
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full
+           bg-transparent text-gray-800 border-[1.5px] border-gray-500 cursor-pointer
+           transition-all duration-200
+           hover:bg-gray-100 hover:border-gray-300
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .btn-md { @apply px-5 py-2 text-sm; }
+  .btn-lg { @apply px-7 py-3 text-base; }
+
+  /* Cards  */
+  .card {
+    @apply bg-white rounded-2xl border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]
+           transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply bg-white rounded-2xl border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]
+           transition-all duration-300 ease-out
+           hover:-translate-y-1 hover:border-sandal-300
+           hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
+  }
+
+  /* Badges  */
+  .badge-red {
+    @apply inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold rounded-full
+           bg-red-50 text-red-500 border border-red-100;
+  }
+  .badge-amber {
+    @apply inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold rounded-full
+           bg-sandal-100 text-sandal-800 border border-sandal-200;
+  }
+  .badge-green {
+    @apply inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold rounded-full
+           bg-green-50 text-green-600 border border-green-100;
+  }
+  .badge-gray {
+    @apply inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold rounded-full
+           bg-gray-100 text-gray-600 border border-gray-200;
+  }
+
+  /* ── Form fields ─────────────────────────────────────────────────── */
+  .field-input {
+    @apply w-full rounded-xl border-[1.5px] border-gray-200 bg-white px-4 py-2.5 text-sm
+           text-gray-800 outline-none transition-all duration-200
+           focus:outline-none focus-visible:outline-none focus:border-sandal-400 focus:ring-3 focus:ring-sandal-400/15;
+  }
+
+  .field-input-error {
+    @apply w-full rounded-xl border-[1.5px] border-red-300 bg-red-50/20 px-4 py-2.5 text-sm
+           text-gray-800 outline-none transition-all duration-200
+           focus:outline-none focus-visible:outline-none focus:border-red-400 focus:ring-3 focus:ring-red-400/15;
+  }
+
+  .field-label {
+    @apply block font-body text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide;
+  }
+
+  /* ── Product grid ────────────────────────────────────────────────────
+     2 cols on mobile, 3 on tablet, 4 on desktop — never collapses to 1.
+     `.product-grid-compact` shifts breakpoints later for pages with a
+     filter sidebar eating horizontal space (e.g. Products listing). ── */
+  .product-grid {
+    @apply grid grid-cols-2 gap-3
+           sm:grid-cols-3 sm:gap-5
+           lg:grid-cols-4 lg:gap-6
+           xl:gap-7;
+  }
+
+  .product-grid-compact {
+    @apply grid grid-cols-2 gap-3
+           md:grid-cols-2 md:gap-4
+           lg:grid-cols-3 lg:gap-5
+           xl:grid-cols-4 xl:gap-6;
+  }
+
+  /* ── Loading skeleton ────────────────────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-200) 50%, var(--color-gray-100) 75%);
+    background-size: 200% 100%;
+    animation: loading-pulse 1.5s infinite;
+  }
+
+  /* ── Sort bar (Products listing page) ───────────────────────────── */
+  .sort-bar {
+    @apply flex items-center gap-1 overflow-x-auto
+           bg-white border border-sandal-100 rounded-2xl p-1.5 shadow-sm;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .sort-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sort-chip {
+    @apply shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold
+           transition-colors duration-150 cursor-pointer
+           text-gray-600 hover:bg-sandal-50 hover:text-gray-900;
+  }
+
+  .sort-chip-active {
+    @apply shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold
+           transition-colors duration-150 cursor-pointer
+           bg-gray-800 text-sandal-100 hover:bg-gray-900 hover:text-sandal-50;
+  }
+
+  /* ── Filter sidebar primitives ───────────────────────────────────── */
+  .filter-checkbox {
+    @apply w-4 h-4 rounded accent-gray-800 cursor-pointer shrink-0;
+  }
+
+  .filter-row {
+    @apply flex items-center gap-2.5 cursor-pointer py-1;
+  }
+
+  .filter-row-label {
+    @apply font-body text-sm text-gray-700 group-hover:text-gray-900 transition-colors;
+  }
+
+  /* ── Hide scrollbar for horizontally-scrolling strips (category nav, sort bar) ── */
+  .scrollbar-hide {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  @keyframes banner-fade {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-banner-fade {
+    animation: banner-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes banner-swipe-next {
+    from {
+      opacity: 0;
+      transform: translateX(60px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes banner-swipe-prev {
+    from {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-banner-swipe-next {
+    animation: banner-swipe-next 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-banner-swipe-prev {
+    animation: banner-swipe-prev 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes modal-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes modal-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-modal-fade-in {
+    animation: modal-fade-in 0.2s ease-out forwards;
+  }
+
+  .animate-modal-slide-up {
+    animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }

@@ -1,208 +1,269 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, ShoppingBag, ClipboardList, Users, Ticket, 
-  Image, Layers, BarChart3, Settings, LogOut, ChevronLeft, 
-  ChevronRight, ShieldCheck, User, Menu, X, ArrowLeft
-} from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
-import { useToastStore } from '../../stores/toastStore';
+import { useState, useEffect } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard, Package, ShoppingBag, Users,
+  Tag, Image, BarChart2, Settings, Warehouse,
+  LogOut, Menu, X, Fish,
+  Bell, ExternalLink, Search,
+} from "lucide-react";
+import { useAuthStore } from "../../components/store/AuthStore";
 
-export default function AdminLayout() {
+// ── Nav items ──────────────────────────────────────────────────────────
+const NAV_GROUPS = [
+  { label: "Overview",  items: [{ to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true }] },
+  { label: "Catalogue", items: [
+      { to: "/admin/products",  label: "Products",  icon: Package },
+      { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
+  ] },
+  { label: "Sales", items: [
+      { to: "/admin/orders",  label: "Orders",  icon: ShoppingBag },
+      { to: "/admin/offers",  label: "Offers",  icon: Tag },
+      { to: "/admin/banners", label: "Banners", icon: Image },
+  ] },
+  { label: "People",   items: [{ to: "/admin/users",   label: "Users",   icon: Users }] },
+  { label: "Insights", items: [{ to: "/admin/reports", label: "Reports", icon: BarChart2 }] },
+  { label: "System",   items: [{ to: "/admin/settings", label: "Settings", icon: Settings }] },
+];
+
+const TITLE_LOOKUP = NAV_GROUPS.flatMap((g) => g.items);
+
+function useIsActive() {
+  const { pathname } = useLocation();
+  return (item) => (item.exact ? pathname === item.to : pathname.startsWith(item.to));
+}
+
+// ── Single nav link ────────────────────────────────────────────────────
+function NavLink({ item, collapsed, onClick }) {
+  const isActive = useIsActive();
+  const active   = isActive(item);
+  const Icon     = item.icon;
+  return (
+    <Link
+      to={item.to}
+      onClick={onClick}
+      title={collapsed ? item.label : undefined}
+      className={`
+        group relative flex items-center gap-3 rounded-xl transition-all duration-150
+        ${collapsed ? "justify-center px-0 py-2.5 mx-1" : "px-3 py-2.5 mx-2"}
+        ${active ? "bg-brand-800 text-white shadow-sm" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"}
+      `}
+    >
+      <Icon size={18} className={`shrink-0 transition-colors ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`} />
+      {!collapsed && <span className="font-body text-[13px] font-medium leading-none">{item.label}</span>}
+      {collapsed && active && <span className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-amber-400" />}
+    </Link>
+  );
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────
+function Sidebar({ collapsed, onClose }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { isLoggedIn, user, logout } = useAuthStore();
-  const addToast = useToastStore(state => state.addToast);
-
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Security guard - only allow Admin
-  useEffect(() => {
-    if (!isLoggedIn) {
-      addToast('Please login to access the admin portal.', 'warning');
-      navigate('/login');
-      return;
-    }
-    if (user?.role !== 'admin') {
-      addToast('Access Denied. Admin privileges required.', 'error');
-      navigate('/');
-    }
-  }, [isLoggedIn, user, navigate]);
-
-  if (!isLoggedIn || user?.role !== 'admin') return null;
-
-  const navGroups = [
-    {
-      title: 'Core Management',
-      items: [
-        { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/admin/products', label: 'Products & Catalog', icon: ShoppingBag },
-        { path: '/admin/orders', label: 'Orders Ledger', icon: ClipboardList },
-        { path: '/admin/users', label: 'Customer Log', icon: Users },
-        { path: '/admin/inventory', label: 'Inventory Stock', icon: Layers }
-      ]
-    },
-    {
-      title: 'Promotions',
-      items: [
-        { path: '/admin/offers', label: 'Offers & Coupons', icon: Ticket },
-        { path: '/admin/banners', label: 'Hero Banners', icon: Image }
-      ]
-    },
-    {
-      title: 'Analytics & Settings',
-      items: [
-        { path: '/admin/reports', label: 'Sales Reports', icon: BarChart3 },
-        { path: '/admin/settings', label: 'Global Settings', icon: Settings }
-      ]
-    }
-  ];
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     logout();
-    addToast('Signed out from admin session.', 'info');
-    navigate('/login');
+    navigate("/login");
+    if (onClose) onClose();
   };
-
-  const isActive = (path) => {
-    if (path === '/admin') {
-      return location.pathname === '/admin' || location.pathname === '/admin/';
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const linkClasses = (path) => `flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs transition-all ${
-    isActive(path)
-      ? 'bg-brand-primary text-brand-cream shadow-sm scale-98'
-      : 'text-brand-cream/75 hover:bg-brand-primary/10 hover:text-brand-cream'
-  }`;
 
   return (
-    <div className="min-h-screen bg-brand-cream/35 flex flex-col lg:flex-row font-inter">
-      {/* 1. Mobile Admin Header */}
-      <header className="lg:hidden bg-brand-ocean text-brand-cream px-4 py-3 flex items-center justify-between border-b border-brand-primary/10 sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="bg-brand-primary p-1.5 rounded-full text-brand-cream">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <span className="font-tiro-tamil text-sm font-bold text-brand-secondary">Admin Kadai</span>
-        </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-1 hover:bg-brand-primary/20 rounded">
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </header>
+    <div className={`flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}>
 
-      {/* 2. Left Sidebar (Desktop / Mobile overlay) */}
-      <aside
-        className={`bg-brand-ocean text-brand-cream border-r border-brand-primary/10 flex flex-col justify-between shrink-0 transition-all duration-300 z-30 ${
-          collapsed ? 'lg:w-20' : 'lg:w-64'
-        } ${
-          mobileOpen ? 'fixed inset-y-0 left-0 w-64 block' : 'hidden lg:flex'
-        }`}
-      >
-        {/* Logo Section */}
-        <div className="p-5 border-b border-brand-cream/10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="bg-brand-primary text-brand-cream p-2 rounded-xl shrink-0">
-              <ShieldCheck className="w-5.5 h-5.5" />
-            </div>
+      {/* Logo + mobile close */}
+      <div className={`flex items-center border-b border-gray-100 shrink-0 ${collapsed ? "justify-center px-0 py-4" : "gap-2.5 px-4 py-4"}`}>
+        <div className="w-8 h-8 rounded-xl bg-brand-800 flex items-center justify-center shrink-0">
+          <Fish size={16} className="text-white" />
+        </div>
+        {!collapsed && (
+          <div className="min-w-0">
+            <p className="font-display text-[13px] font-bold text-gray-900 leading-none">NammaOor</p>
+            <p className="font-body text-[10px] text-amber-600 mt-0.5 leading-none">Admin Console</p>
+          </div>
+        )}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden ml-auto p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-800 transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-1">
             {!collapsed && (
-              <div className="flex flex-col">
-                <span className="font-tiro-tamil text-sm font-bold leading-tight text-brand-secondary">
-                  நிர்வாக குழு
-                </span>
-                <span className="text-[9px] text-brand-cream/60 font-bold uppercase tracking-wider font-space">Admin Console</span>
-              </div>
+              <p className="font-body text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-5 py-1.5">{group.label}</p>
             )}
+            {collapsed && <div className="border-t border-gray-100 my-2 mx-3" />}
+            {group.items.map((item) => (
+              <NavLink key={item.to} item={item} collapsed={collapsed} onClick={onClose} />
+            ))}
           </div>
+        ))}
+      </nav>
 
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:block p-1 hover:bg-brand-primary/15 rounded text-brand-cream/70 hover:text-brand-cream"
-          >
-            {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-          </button>
-        </div>
+      {/* User + logout */}
+      <div className={`border-t border-gray-100 py-3 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}>
+        <Link
+          to="/"
+          onClick={onClose}
+          className={`flex items-center gap-3 rounded-xl py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
+          title={collapsed ? "View Store" : undefined}
+        >
+          <ExternalLink size={16} className="shrink-0" />
+          {!collapsed && <span className="font-body text-[13px]">View Store</span>}
+        </Link>
 
-        {/* Links Navigation */}
-        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6 no-scrollbar">
-          {navGroups.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-2">
-              {!collapsed && (
-                <p className="text-[9px] font-bold text-brand-secondary uppercase tracking-widest px-4 mb-2">
-                  {group.title}
-                </p>
-              )}
-              {group.items.map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={idx}
-                    to={item.path}
-                    onClick={() => setMobileOpen(false)}
-                    className={linkClasses(item.path)}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <Icon className="w-4.5 h-4.5 shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
-                  </Link>
-                );
-              })}
+        {!collapsed && (
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50 mx-0">
+            <div className="w-7 h-7 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">
+              {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
             </div>
-          ))}
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-body text-[12px] font-semibold text-gray-900 truncate leading-none">
+                {(user?.fullName ?? user?.name ?? "Admin").split(" ")[0]}
+              </p>
+              <p className="font-body text-[10px] text-gray-400 truncate mt-0.5 leading-none">{user?.email ?? "admin"}</p>
+            </div>
+          </div>
+        )}
 
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-brand-cream/10 space-y-2 font-bold text-xs">
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-brand-cream/75 hover:bg-brand-primary/10 hover:text-brand-cream"
-          >
-            <ArrowLeft className="w-4.5 h-4.5 shrink-0 text-brand-secondary" />
-            {!collapsed && <span>Storefront</span>}
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-300 hover:bg-rose-950/20 hover:text-rose-400 cursor-pointer text-left"
-          >
-            <LogOut className="w-4.5 h-4.5 shrink-0" />
-            {!collapsed && <span>Logout</span>}
-          </button>
-        </div>
-      </aside>
+        <button
+          onClick={handleLogout}
+          className={`w-full flex items-center gap-3 rounded-xl py-2 text-red-500 hover:bg-red-50 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <LogOut size={16} className="shrink-0" />
+          {!collapsed && <span className="font-body text-[13px] font-medium">Logout</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
 
-      {/* Background Mask for Mobile Sidebar */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-brand-dark/60 backdrop-blur-xs z-20 lg:hidden"
-          onClick={() => setMobileOpen(false)}
+// ── Top header bar ─────────────────────────────────────────────────────
+function TopBar({ onToggle, onMobileOpen, pathname }) {
+  const { user } = useAuthStore();
+  const [searchVal, setSearchVal] = useState("");
+
+  const title =
+    TITLE_LOOKUP.find((i) => (i.exact ? pathname === i.to : pathname.startsWith(i.to)))?.label ?? "Admin";
+
+  return (
+    <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
+
+      {/* Mobile: opens drawer */}
+      <button
+        onClick={onMobileOpen}
+        className="md:hidden p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label="Open menu"
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Desktop: collapse sidebar */}
+      <button
+        onClick={onToggle}
+        className="hidden md:inline-flex p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label="Collapse sidebar"
+      >
+        <Menu size={19} />
+      </button>
+
+      <h1 className="font-display text-base font-bold text-gray-900">{title}</h1>
+
+      <div className="flex-1" />
+
+      <div className="relative hidden md:block">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchVal}
+          onChange={(e) => setSearchVal(e.target.value)}
+          placeholder="Quick search…"
+          className="w-52 bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400"
         />
-      )}
+      </div>
 
-      {/* 3. Main content area (Right) */}
-      <main className="flex-1 flex flex-col min-w-0 max-w-full">
-        {/* Desktop Header */}
-        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-brand-sand shadow-sm relative z-10 font-bold text-xs">
-          <div>
-            <p className="text-brand-dark/45">Welcome back, Admin</p>
-            <h2 className="text-sm text-brand-ocean font-playfair font-bold">Selvam M. (Cooperative Head)</h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="bg-brand-sand text-brand-ocean px-3 py-1 rounded-xl text-[10px] font-bold border border-brand-sand/65">
-              🛡️ Super Administrator
-            </span>
-            <div className="w-8 h-8 rounded-full bg-brand-primary text-brand-cream flex items-center justify-center font-bold text-xs border border-brand-sand shadow">
-              AS
-            </div>
-          </div>
-        </header>
+      <button className="relative p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors" aria-label="Notifications">
+        <Bell size={18} />
+        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
+      </button>
 
-        {/* Content Body Container */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-          <Outlet />
+      <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">
+        {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
+      </div>
+    </header>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN LAYOUT
+// ══════════════════════════════════════════════════════════════════════
+export default function AdminLayout() {
+  const { pathname } = useLocation();
+  const [collapsed,  setCollapsed]  = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  return (
+    <div className="flex h-screen bg-sandal-50 overflow-hidden">
+
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex shrink-0">
+        <Sidebar collapsed={collapsed} />
+      </div>
+
+      {/* Mobile drawer — always mounted, slides via transform */}
+      <div className="md:hidden">
+        <div
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+          className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
+            mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={`fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transition-transform duration-300 ease-out ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <Sidebar collapsed={false} onClose={() => setMobileOpen(false)} />
         </div>
-      </main>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <TopBar
+          onToggle={() => setCollapsed((s) => !s)}
+          onMobileOpen={() => setMobileOpen(true)}
+          pathname={pathname}
+        />
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 max-w-[1400px] mx-auto">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

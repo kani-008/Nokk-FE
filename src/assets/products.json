@@ -1,0 +1,273 @@
+[
+  {
+    "id": "prod-1",
+    "nameEn": "Nethili Karuvadu (Sun-Dried Anchovy)",
+    "nameTa": "நெத்திலி கருவாடு",
+    "slug": "nethili-karuvadu",
+    "description": "Authentic sun-dried Nethili (Anchovies) sourced directly from Rameswaram fishermen. Traditionally processed with optimal salt and sun-dried under hygienic conditions. Rich in protein, Omega-3 fatty acids, and calcium.",
+    "howToUse": "Wash thoroughly in warm water 2-3 times before cooking. Best suited for spicy karuvadu gravy (Kuzhambu) or crispy shallow fry.",
+    "storageTips": "Store in an airtight container in a cool, dry place. Refrigiration extends shelf life up to 6 months.",
+    "categoryId": "cat-1",
+    "categoryName": "Nethili (Anchovy)",
+    "categorySlug": "nethili",
+    "isBestseller": true,
+    "isNew": false,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.8,
+    "reviewCount": 42,
+    "variants": [
+      { "id": "v-1-1", "weightLabel": "250g", "weightGrams": 250, "price": 230, "comparePrice": 290, "stockQty": 30 },
+      { "id": "v-1-2", "weightLabel": "500g", "weightGrams": 500, "price": 440, "comparePrice": 550, "stockQty": 20 },
+      { "id": "v-1-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 850, "comparePrice": 1050, "stockQty": 15 }
+    ],
+    "reviews": [
+      { "id": "r-1", "userName": "Karthik R.", "rating": 5, "title": "Excellent Quality", "comment": "Very clean and perfectly salted. Tastes just like the ones we get directly at Rameswaram.", "isVerified": true, "createdAt": "2026-05-10" },
+      { "id": "r-2", "userName": "Meera S.", "rating": 4.5, "title": "Very Tasty", "comment": "Good packaging. No smell leakage. The fish fry turned out extremely crispy.", "isVerified": true, "createdAt": "2026-05-15" }
+    ]
+  },
+  {
+    "id": "prod-2",
+    "nameEn": "Sura Karuvadu (Premium Dried Shark)",
+    "nameTa": "சுறா கருவாடு",
+    "slug": "sura-karuvadu",
+    "description": "Premium quality Sura Karuvadu (Dried Shark Meat Pieces). Known for its firm texture and rich coastal taste. Sun-dried with minimal moisture, ideal for traditional medicinal and culinary uses.",
+    "howToUse": "Soak in hot water for 10 minutes to remove excess salt, shred into small pieces, and cook. Perfect for Sura Putu (scrambled shark curry).",
+    "storageTips": "Store in a dry airtight jar. Avoid moisture contact.",
+    "categoryId": "cat-2",
+    "categoryName": "Sura (Shark)",
+    "categorySlug": "sura",
+    "isBestseller": true,
+    "isNew": false,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.9,
+    "reviewCount": 38,
+    "variants": [
+      { "id": "v-2-1", "weightLabel": "250g", "weightGrams": 250, "price": 320, "comparePrice": 420, "stockQty": 25 },
+      { "id": "v-2-2", "weightLabel": "500g", "weightGrams": 500, "price": 600, "comparePrice": 800, "stockQty": 15 },
+      { "id": "v-2-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1150, "comparePrice": 1500, "stockQty": 10 }
+    ],
+    "reviews": [
+      { "id": "r-3", "userName": "Selvam A.", "rating": 5, "title": "Perfect for Sura Putu", "comment": "Clean bone-free pieces. Putu came out wonderful, highly recommend this.", "isVerified": true, "createdAt": "2026-05-20" }
+    ]
+  },
+  {
+    "id": "prod-3",
+    "nameEn": "Kanava Karuvadu (Sun-Dried Squid)",
+    "nameTa": "கனவா கருவாடு",
+    "slug": "kanava-karuvadu",
+    "description": "Delicious sun-dried coastal squid (Kanava). Sun-dried whole squid that captures the absolute essence of coastal seafood. Highly nutritious and low in fat.",
+    "howToUse": "Soak in hot water for 15 minutes, clean the inner skin if any, and cut into rings. Best prepared as a dry spicy masala fry.",
+    "storageTips": "Keep in refrigerator for longer preservation.",
+    "categoryId": "cat-3",
+    "categoryName": "Kanava (Squid)",
+    "categorySlug": "kanava",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.6,
+    "reviewCount": 15,
+    "variants": [
+      { "id": "v-3-1", "weightLabel": "250g", "weightGrams": 250, "price": 270, "comparePrice": 350, "stockQty": 20 },
+      { "id": "v-3-2", "weightLabel": "500g", "weightGrams": 500, "price": 500, "comparePrice": 650, "stockQty": 10 },
+      { "id": "v-3-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 950, "comparePrice": 1200, "stockQty": 8 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-4",
+    "nameEn": "Paarai Karuvadu (Dried Kingfish / Paarai)",
+    "nameTa": "பாறை கருவாடு",
+    "slug": "paarai-karuvadu",
+    "description": "Thick-cut, premium sun-dried Paarai Karuvadu. Freshly caught Kingfish sliced and naturally sun-dried by coastal fishermen. Has a rich, meaty flavor and soft texture when cooked.",
+    "howToUse": "Soak in water for 5 minutes, rinse, and shallow fry with chili powder and turmeric, or add to tangy tamarind-based fish curries.",
+    "storageTips": "Keep airtight. Refrigerate for up to 90 days.",
+    "categoryId": "cat-4",
+    "categoryName": "Paarai (Kingfish)",
+    "categorySlug": "paarai",
+    "isBestseller": false,
+    "isNew": false,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.7,
+    "reviewCount": 24,
+    "variants": [
+      { "id": "v-4-1", "weightLabel": "250g", "weightGrams": 250, "price": 280, "comparePrice": 350, "stockQty": 20 },
+      { "id": "v-4-2", "weightLabel": "500g", "weightGrams": 500, "price": 520, "comparePrice": 680, "stockQty": 12 },
+      { "id": "v-4-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 990, "comparePrice": 1300, "stockQty": 10 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-5",
+    "nameEn": "Kelanga Karuvadu (Sun-Dried Catfish)",
+    "nameTa": "கெளிறு கருவாடு",
+    "slug": "kelanga-karuvadu",
+    "description": "Traditional coastal sun-dried Catfish (Kelanga). Cleaned and salted to perfection, sun-dried naturally on coastal sandbeds using clean raised platforms.",
+    "howToUse": "Wash in warm water and fry with garlic and onions. Complements simple curd rice or rasam rice beautifully.",
+    "storageTips": "Store in dry place away from sunlight.",
+    "categoryId": "cat-5",
+    "categoryName": "Kelanga (Catfish)",
+    "categorySlug": "kelanga",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.5,
+    "reviewCount": 11,
+    "variants": [
+      { "id": "v-5-1", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 35 },
+      { "id": "v-5-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 25 },
+      { "id": "v-5-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 15 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-6",
+    "nameEn": "Koduva Karuvadu (Premium Dried Sea Bass)",
+    "nameTa": "கொடுவா கருவாடு",
+    "slug": "koduva-karuvadu",
+    "description": "Extremely premium Koduva (Sea Bass) sun-dried steaks. Thick, flesh-rich slices containing very few bones, dry-cured naturally. Highly sought after for its rich coastal taste.",
+    "howToUse": "Desalt slightly, then fry with mustard, red chilies, and curry leaves. Also tastes excellent in dry-fish gravy.",
+    "storageTips": "Airtight dry container.",
+    "categoryId": "cat-4",
+    "categoryName": "Paarai (Kingfish)",
+    "categorySlug": "paarai",
+    "isBestseller": true,
+    "isNew": false,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.9,
+    "reviewCount": 19,
+    "variants": [
+      { "id": "v-6-1", "weightLabel": "250g", "weightGrams": 250, "price": 350, "comparePrice": 450, "stockQty": 15 },
+      { "id": "v-6-2", "weightLabel": "500g", "weightGrams": 500, "price": 680, "comparePrice": 850, "stockQty": 8 },
+      { "id": "v-6-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1300, "comparePrice": 1600, "stockQty": 5 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-7",
+    "nameEn": "Special Nethili Karuvadu Thokku (Anchovy Pickle)",
+    "nameTa": "நெத்திலி கருவாடு தொக்கு",
+    "slug": "nethili-karuvadu-thokku",
+    "description": "Homestyle Nethili Karuvadu Thokku (Dry Fish Pickle) prepared with cold-pressed sesame oil, homemade spices, garlic, and tamarind. Naturally preserved without artificial additives.",
+    "howToUse": "Ready to eat! Serve as a side dish for white rice, idli, dosa, or chapati.",
+    "storageTips": "Always use a clean dry spoon. Keep in a dry cupboard or refrigerate for longer shelf life.",
+    "categoryId": "cat-6",
+    "categoryName": "Pickles & Chutneys",
+    "categorySlug": "pickles",
+    "isBestseller": true,
+    "isNew": false,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.9,
+    "reviewCount": 54,
+    "variants": [
+      { "id": "v-7-1", "weightLabel": "250g", "weightGrams": 250, "price": 199, "comparePrice": 250, "stockQty": 45 },
+      { "id": "v-7-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 30 },
+      { "id": "v-7-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 20 }
+    ],
+    "reviews": [
+      { "id": "r-4", "userName": "Deepak K.", "rating": 5, "title": "Stunning Taste!", "comment": "Spicy, tangy, and filled with plenty of dry fish pieces. The sesame oil aroma is wonderful.", "isVerified": true, "createdAt": "2026-05-22" }
+    ]
+  },
+  {
+    "id": "prod-8",
+    "nameEn": "Spicy Sura Karuvadu Thokku (Shark Pickle)",
+    "nameTa": "சுறா கருவாடு தொக்கு",
+    "slug": "sura-karuvadu-thokku",
+    "description": "Rich and spicy Sura Karuvadu Thokku (Shark Pickle) cooked slowly with premium quality sun-dried shark shreds and authentic chettinad spices. Packaged hygienically to seal in freshness.",
+    "howToUse": "Directly serve with hot steamed rice or curd rice.",
+    "storageTips": "Store in a cool dry place.",
+    "categoryId": "cat-6",
+    "categoryName": "Pickles & Chutneys",
+    "categorySlug": "pickles",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.7,
+    "reviewCount": 16,
+    "variants": [
+      { "id": "v-8-1", "weightLabel": "250g", "weightGrams": 250, "price": 240, "comparePrice": 300, "stockQty": 30 },
+      { "id": "v-8-2", "weightLabel": "500g", "weightGrams": 500, "price": 450, "comparePrice": 580, "stockQty": 20 },
+      { "id": "v-8-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 850, "comparePrice": 1100, "stockQty": 15 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-9",
+    "nameEn": "Ultimate Coastal Karuvadu Combo Pack",
+    "nameTa": "கருவாடு காம்போ பேக்",
+    "slug": "karuvadu-combo-pack",
+    "description": "An ultimate curation of our best sellers. Includes Nethili Karuvadu (100g), Sura Karuvadu (100g), Paarai Karuvadu (250g), and Nethili Karuvadu Thokku (250g glass jar). Perfect gift for dry fish lovers.",
+    "howToUse": "See individual packaging guidelines for cooking methods.",
+    "storageTips": "Keep in respective airtight jars.",
+    "categoryId": "cat-7",
+    "categoryName": "Combo Packs",
+    "categorySlug": "combo-packs",
+    "isBestseller": true,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 5.0,
+    "reviewCount": 31,
+    "variants": [
+      { "id": "v-9-1", "weightLabel": "250g", "weightGrams": 250, "price": 349, "comparePrice": 450, "stockQty": 25 },
+      { "id": "v-9-2", "weightLabel": "500g", "weightGrams": 500, "price": 649, "comparePrice": 850, "stockQty": 15 },
+      { "id": "v-9-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1200, "comparePrice": 1600, "stockQty": 10 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-10",
+    "nameEn": "Iral Vathal (Sun-Dried Prawns)",
+    "nameTa": "இறால் வத்தல்",
+    "slug": "iral-vathal-dry-prawns",
+    "description": "Premium sun-dried prawns (Iral Vathal), small and firm with a concentrated, naturally salty-sweet flavor. A coastal Tamil Nadu staple, distinct from karuvadu, used in chutneys, kuzhambu, and stir-fries.",
+    "howToUse": "Dry roast briefly or soak for 5 minutes to soften. Excellent in gongura chutney, sambar, or a simple stir-fry with shallots and curry leaves.",
+    "storageTips": "Store in an airtight container away from moisture. Refrigerate for extended freshness.",
+    "categoryId": "cat-8",
+    "categoryName": "Dry Prawns (Iral Vathal)",
+    "categorySlug": "dry-prawns",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.6,
+    "reviewCount": 9,
+    "variants": [
+      { "id": "v-10-1", "weightLabel": "250g", "weightGrams": 250, "price": 420, "comparePrice": 500, "stockQty": 15 },
+      { "id": "v-10-2", "weightLabel": "500g", "weightGrams": 500, "price": 800, "comparePrice": 950, "stockQty": 10 },
+      { "id": "v-10-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 1500, "comparePrice": 1800, "stockQty": 5 }
+    ],
+    "reviews": []
+  },
+  {
+    "id": "prod-11",
+    "nameEn": "Karuvadu Curry Masala Powder",
+    "nameTa": "கருவாடு குழம்பு மசாலா தூள்",
+    "slug": "karuvadu-curry-masala-powder",
+    "description": "A traditional spice blend made for dry fish kuzhambu and curries — chili, coriander, fennel, and roasted spices ground fresh. Cuts prep time without compromising on authentic coastal flavor.",
+    "howToUse": "Add 1-2 tablespoons while preparing karuvadu kuzhambu or thokku, adjusting to taste. Also works well in prawn or regular fish curries.",
+    "storageTips": "Keep in a dry airtight container, away from direct sunlight. Best used within 6 months for peak aroma.",
+    "categoryId": "cat-9",
+    "categoryName": "Masala & Spice Powders",
+    "categorySlug": "masala-powders",
+    "isBestseller": false,
+    "isNew": true,
+    "isActive": true,
+    "inStock": true,
+    "avgRating": 4.7,
+    "reviewCount": 6,
+    "variants": [
+      { "id": "v-11-1", "weightLabel": "250g", "weightGrams": 250, "price": 200, "comparePrice": 260, "stockQty": 20 },
+      { "id": "v-11-2", "weightLabel": "500g", "weightGrams": 500, "price": 380, "comparePrice": 480, "stockQty": 15 },
+      { "id": "v-11-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 720, "comparePrice": 900, "stockQty": 10 }
+    ],
+    "reviews": []
+  }
+]

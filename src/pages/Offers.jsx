@@ -1,125 +1,150 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Ticket, Calendar, DollarSign, Check, Copy, ArrowRight } from 'lucide-react';
-import { mockAPI } from '../data/mockData';
-import { useToastStore } from '../stores/toastStore';
-import Breadcrumb from '../components/Breadcrumb';
+import { useState, useEffect } from "react";
+import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
+import { offerApi } from "../ApiCall/Api.jsx";
+import { Link }     from "react-router-dom";
 
-export default function Offers() {
-  const navigate = useNavigate();
-  const addToast = useToastStore(state => state.addToast);
-  const [coupons, setCoupons] = useState([]);
-  const [copiedCode, setCopiedCode] = useState(null);
+import comboImg from "../assets/products/combo.jpg";
 
-  useEffect(() => {
-    setCoupons(mockAPI.getCoupons());
-  }, []);
+const PH = comboImg;
 
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    addToast(`Coupon "${code}" copied to clipboard!`, 'success');
-    setTimeout(() => {
-      setCopiedCode(null);
-    }, 2000);
+function OfferCard({ offer }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(offer.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
-  const breadcrumbItems = [{ label: 'Active Offers', link: '/offers' }];
+  const isPercentage = offer.offerType === "percentage";
+  const badgeLabel   = isPercentage ? `${offer.value}% OFF` : `₹${offer.value} OFF`;
+
+  const endDate = offer.endDate
+    ? new Date(offer.endDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-6 pb-20 font-inter">
-      <Breadcrumb items={breadcrumbItems} />
+    <div className="card overflow-hidden hover:shadow-md transition-shadow duration-200">
+      {/* image section */}
+      <div className="relative h-36 bg-gradient-to-br from-brand-900 to-brand-700 overflow-hidden">
+        {offer.imageUrl && (
+          <img
+            src={offer.imageUrl} alt={offer.title}
+            className="w-full h-full object-cover opacity-20"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
+        )}
+        <div className="absolute inset-0 flex flex-col items-start justify-end p-5">
+          <span className="font-num text-amber-300 text-xs font-bold uppercase tracking-widest mb-1">
+            {badgeLabel}
+          </span>
+          <h3 className="font-display text-white text-lg font-bold leading-snug">{offer.title}</h3>
+          {offer.description && (
+            <p className="font-body text-amber-200 text-xs mt-1 line-clamp-2">{offer.description}</p>
+          )}
+        </div>
+        {/* badge */}
+        <div className="absolute top-3 right-3 bg-amber-400 text-amber-900 font-num text-xs font-bold px-3 py-1 rounded-full">
+          {badgeLabel}
+        </div>
+      </div>
 
-      <h1 className="font-tiro-tamil text-2xl md:text-3xl text-brand-primary font-bold border-b border-brand-sand pb-4 mb-8">
-        ஆஃபர்கள் & சலுகைகள்
-      </h1>
+      {/* coupon row */}
+      {offer.code && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-amber-50">
+          <div className="flex items-center gap-2">
+            <Tag size={13} className="text-amber-400" />
+            <span className="font-num text-sm font-bold text-brand-900 tracking-widest">{offer.code}</span>
+          </div>
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-1.5 font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              copied
+                ? "bg-green-50 text-green-600"
+                : "bg-amber-50 text-brand-700 hover:bg-amber-100"
+            }`}
+          >
+            {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+          </button>
+        </div>
+      )}
 
-      <div className="text-center max-w-lg mx-auto mb-12 space-y-2">
-        <h2 className="font-playfair text-xl md:text-2xl font-bold text-brand-ocean">Exclusive Village Coupons</h2>
-        <p className="text-xs text-brand-dark/65 font-medium leading-relaxed">
-          Unlock premium discounts on your favorite traditional dry fish and spicy pickles. Simply copy a code below and apply it inside your cart or at checkout!
+      {/* meta row */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex flex-col gap-0.5">
+          {offer.minOrderValue > 0 && (
+            <p className="font-body text-xs text-amber-500">
+              Min. order: <span className="font-num font-semibold">
+                ₹{Number(offer.minOrderValue).toLocaleString("en-IN")}
+              </span>
+            </p>
+          )}
+          {endDate && (
+            <p className="font-body text-xs text-amber-400 flex items-center gap-1">
+              <Clock size={10} /> Valid till {endDate}
+            </p>
+          )}
+        </div>
+        <Link to="/products" className="font-body text-xs text-brand-700 font-semibold flex items-center gap-1 hover:underline">
+          Shop Now <ArrowRight size={12} />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function OfferSkeleton() {
+  return (
+    <div className="card overflow-hidden animate-pulse">
+      <div className="h-36 skeleton" />
+      <div className="px-4 py-3 space-y-2">
+        <div className="skeleton h-4 w-1/3" />
+        <div className="skeleton h-3 w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+export default function Offers() {
+  const [offers,  setOffers]  = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    offerApi.active()
+      .then((r) => setOffers(r.offers || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="page-wrap py-8">
+      <div className="mb-7">
+        <h1 className="font-display text-2xl font-bold text-brand-900">Offers & Deals</h1>
+        <p className="font-body text-amber-500 text-sm mt-1">
+          Exclusive discounts on premium dry fish & pickles
         </p>
       </div>
 
-      {/* Coupons grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {coupons.map((c) => {
-          const isCopied = copiedCode === c.code;
-
-          return (
-            <div
-              key={c.code}
-              className="bg-brand-cream border border-brand-sand/70 rounded-3xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden border-b-6 border-b-brand-sand"
-            >
-              {/* Ticket border circle cuts */}
-              <div className="absolute top-1/2 -left-3.5 w-7 h-7 bg-[#FFF8EE] rounded-full border-r border-brand-sand/65 -translate-y-1/2" />
-              <div className="absolute top-1/2 -right-3.5 w-7 h-7 bg-[#FFF8EE] rounded-full border-l border-brand-sand/65 -translate-y-1/2" />
-
-              <div className="space-y-4">
-                {/* Header icon + Discount */}
-                <div className="flex items-start justify-between">
-                  <div className="p-3 bg-brand-primary/10 rounded-2xl text-brand-primary">
-                    <Ticket className="w-6 h-6" />
-                  </div>
-                  <div className="text-right font-space">
-                    <span className="text-2xl font-bold text-brand-primary">
-                      {c.discountPercent > 0 ? `${c.discountPercent}%` : `₹${c.discountFlat}`}
-                    </span>
-                    <span className="text-[10px] text-brand-dark/45 font-bold uppercase tracking-wider block mt-0.5">Discount</span>
-                  </div>
-                </div>
-
-                {/* Title & info */}
-                <div className="space-y-2">
-                  <h3 className="font-playfair text-base font-bold text-brand-ocean">{c.description}</h3>
-                  <div className="space-y-1 text-xs text-brand-dark/65 font-medium">
-                    <p className="flex justify-between"><span>Min Order:</span> <strong className="text-brand-dark font-space">₹{c.minOrder}</strong></p>
-                    <p className="flex justify-between"><span>Usage Limit:</span> <strong className="text-brand-dark">Single use</strong></p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action and coupon code */}
-              <div className="mt-6 pt-4 border-t border-dashed border-brand-sand flex items-center justify-between gap-4 relative">
-                <div className="bg-white border border-brand-sand rounded-xl px-3.5 py-1.5 text-xs font-mono font-bold tracking-wider text-brand-ocean select-all shadow-inner">
-                  {c.code}
-                </div>
-
-                <button
-                  onClick={() => handleCopyCode(c.code)}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer ${
-                    isCopied
-                      ? 'bg-emerald-600 text-white shadow-none scale-95'
-                      : 'bg-brand-primary text-brand-cream hover:bg-brand-secondary active:scale-95'
-                  }`}
-                >
-                  {isCopied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" /> Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" /> Copy Code
-                    </>
-                  )}
-                </button>
-              </div>
-
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Redirect footer CTA */}
-      <div className="mt-14 text-center">
-        <button
-          onClick={() => navigate('/products')}
-          className="bg-brand-ocean text-brand-cream font-bold py-3.5 px-8 rounded-xl hover:bg-brand-primary active:scale-98 transition-all shadow-md text-sm flex items-center gap-2 mx-auto cursor-pointer"
-        >
-          Explore Seafood Store <ArrowRight className="w-4.5 h-4.5 text-brand-secondary" />
-        </button>
-      </div>
-
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(3)].map((_, i) => <OfferSkeleton key={i} />)}
+        </div>
+      ) : offers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Tag size={48} className="text-amber-200 mb-4" />
+          <h2 className="font-display text-xl font-bold text-brand-900 mb-2">No active offers</h2>
+          <p className="font-body text-amber-500 text-sm mb-6 max-w-xs">
+            Check back soon for exciting deals and seasonal discounts.
+          </p>
+          <Link to="/products" className="btn-lg btn-primary">Browse Products</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {offers.map((o) => <OfferCard key={o.id} offer={o} />)}
+        </div>
+      )}
     </div>
   );
 }

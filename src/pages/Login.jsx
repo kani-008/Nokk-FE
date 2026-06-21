@@ -1,166 +1,708 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
-import { useToastStore } from '../stores/toastStore';
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import {
+    Eye, EyeOff, Phone, Mail, Lock, ArrowRight, Loader2,
+    AlertCircle, KeyRound, ShieldCheck
+} from "lucide-react";
+import { authApi } from "../ApiCall/Api";
+import { useAuthStore } from "../components/store/AuthStore";
+import { useToast } from "../components/useToast";
+
+// ─── Logo URL — replace with real cloud URL when available ────────────
+const LOGO_URL = null;
+
+// ─── MOCK BYPASS — remove once the real backend is wired up ───────────
+const MOCK_PHONE = "9999999999";
+const MOCK_OTP = "123456";
+
+const OTP_LENGTH = 6;
+const EMPTY_OTP = Array(OTP_LENGTH).fill("");
+
+// a bare 10-digit number (optionally with spaces) is treated as a phone number,
+// anything else is sent as email — single field, no separate phone/email tabs
+const isPhoneLike = (value) => /^\d{10}$/.test(value.replace(/\s+/g, ""));
+const isValidPhone = (v) => /^[6-9]\d{9}$/.test(v.trim());
+
+// shared input class helper — avoids repeating the error/normal ternary everywhere
+const fieldClass = (hasError, extra = "") =>
+    `${hasError ? "field-input-error" : "field-input"} ${extra}`.trim();
+
+// ── Step indicators — 3 steps ──────
+function StepDots({ step }) {
+    return (
+        <div className="flex items-center gap-2 mt-6">
+            {[1, 2, 3].map((s) => (
+                <div
+                    key={s}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${s === step ? "w-8 bg-amber-300" : s < step ? "w-4 bg-amber-500" : "w-4 bg-brand-700"
+                        }`}
+                />
+            ))}
+            <span className="font-num text-amber-400 text-[11px] ml-1">Step {step}/3</span>
+        </div>
+    );
+}
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login, isLoggedIn, error, clearError, user } = useAuthStore();
-  const addToast = useToastStore(state => state.addToast);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuthStore();
+    const redirectTo = location.state?.from || "/";
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+    // ── Custom Toast Hook (supports error & success) ──
+    const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isLoggedIn && user) {
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
-    }
-    return () => clearError();
-  }, [isLoggedIn, user, navigate, clearError]);
+    // ── Login Form State ──
+    const [form, setForm] = useState({ identifier: "", password: "" });
+    const [showPw, setShowPw] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) return;
+    // ── View States ──
+    const [view, setView] = useState("login"); // "login" | "forgot-phone" | "forgot-otp" | "forgot-reset"
 
-    setLoading(true);
-    // Simulate brief network delay
-    setTimeout(() => {
-      const success = login(email, password);
-      setLoading(false);
-      if (success) {
-        addToast(`Welcome back, ${email === 'admin@nammaoor.com' ? 'Admin Selvam' : 'Anbarasan M'}!`, 'success');
-      }
-    }, 800);
-  };
+    // ── Forgot Password Form State ──
+    const [phone, setPhone] = useState("");
+    const [otp, setOtp] = useState(EMPTY_OTP); // 6 individual OTP boxes
+    const [newPw, setNewPw] = useState("");
+    const [confirmPw, setConfirmPw] = useState("");
+    const [showFpPw, setShowFpPw] = useState(false);
+    const [showFpCf, setShowFpCf] = useState(false);
+    const [forgotErrors, setForgotErrors] = useState({});
+    const [otpExpiryTime, setOtpExpiryTime] = useState(0); // timestamp when OTP expires in background
 
-  const handleGoogleLogin = () => {
-    addToast('Google OAuth sign-in simulated successfully!', 'success');
-    login('customer@gmail.com', 'customer123');
-  };
+    // ── OTP Expiration background check (3 minutes) ──
+    useEffect(() => {
+        if (view !== "forgot-otp" || otpExpiryTime === 0) return;
 
-  return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-brand-sand/35 py-12 px-4 sm:px-6 lg:px-8 font-inter palm-leaf-pattern">
-      <div className="max-w-md w-full bg-white border border-brand-sand rounded-3xl p-8 shadow-xl relative border-b-8 border-b-brand-sand">
-        
-        {/* Back Link */}
-        <Link to="/" className="inline-flex items-center gap-1 text-xs font-bold text-brand-dark/50 hover:text-brand-primary mb-6 transition-colors">
-          <ArrowLeft className="w-4.5 h-4.5" /> Back to Home
-        </Link>
+        const checkExpiry = setInterval(() => {
+            if (Date.now() >= otpExpiryTime) {
+                clearInterval(checkExpiry);
+                setError("OTP expired. Please try again.");
+                goToOtpStep(); // Send them back to phone number entry step
+            }
+        }, 1000);
 
-        {/* Header */}
-        <div className="text-center space-y-2 mb-8">
-          <div className="bg-brand-primary text-brand-cream p-3.5 rounded-full w-max mx-auto shadow-inner">
-            <svg className="w-7 h-7 fill-current" viewBox="0 0 24 24">
-              <path d="M12,2A10,10,0,0,0,2,12a9.89,9.89,0,0,0,2.15,6.08L2.09,20.14a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l2.06-2.06A9.89,9.89,0,0,0,12,22a10,10,0,0,0,10-10C22,5.2,16.5,2,12,2Zm5,11H7a1,1,0,0,1,0-2H17a1,1,0,0,1,0,2Z" />
-            </svg>
-          </div>
-          <h2 className="font-tiro-tamil text-xl md:text-2xl text-brand-primary font-bold">
-            உள்நுழையவும்
-          </h2>
-          <p className="font-playfair text-xs md:text-sm text-brand-dark/55 font-bold">
-            Sign In to your Karuvattu Kadai account
-          </p>
-        </div>
+        return () => clearInterval(checkExpiry);
+    }, [view, otpExpiryTime]);
 
-        {/* Error popup */}
-        {error && (
-          <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-semibold">
-            <AlertCircle className="w-4.5 h-4.5 text-rose-500 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
+    const set = (k, v) => {
+        setForm((f) => ({ ...f, [k]: v }));
+        setError("");
+    };
 
-        {/* Credentials hints */}
-        <div className="bg-brand-cream border border-brand-sand/75 p-3.5 rounded-2xl mb-6 text-xs text-brand-dark/75 space-y-1">
-          <p className="font-bold text-brand-ocean uppercase tracking-wider text-[9px] mb-1">Demo Credentials Quick access:</p>
-          <p>👤 <strong>Admin:</strong> <code className="bg-white px-1.5 py-0.5 rounded font-mono border">admin@nammaoor.com</code> / <code className="bg-white px-1.5 py-0.5 rounded font-mono border">admin123</code></p>
-          <p>👤 <strong>Customer:</strong> <code className="bg-white px-1.5 py-0.5 rounded font-mono border">customer@gmail.com</code> / <code className="bg-white px-1.5 py-0.5 rounded font-mono border">customer123</code></p>
-        </div>
+    // ── Shared helper: clear both the forgot-password field errors and the toast ──
+    const clearForgotErrors = () => {
+        setForgotErrors({});
+        setError("");
+    };
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs font-semibold">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-brand-dark/70">Email Address</label>
-            <div className="relative">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. Selvamen@gmail.com"
-                className="w-full bg-brand-cream border border-brand-sand/75 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary placeholder-brand-dark/35 font-medium"
-              />
-              <Mail className="w-4.5 h-4.5 text-brand-dark/40 absolute left-3 top-3" />
+    // ── Login Handler ──
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!form.identifier.trim()) { setError("Please enter your phone number or email"); return; }
+        if (!form.password.trim()) { setError("Please enter your password"); return; }
+
+        const trimmedId = form.identifier.trim().replace(/\s+/g, "");
+
+        // ── MOCK BYPASS — admin / customer test accounts ───────────────
+        const mockAccounts = [
+            { id: "9876543210", pw: "1234", role: "admin", name: "Mock Admin", userId: "mock-admin-id", token: "mock-admin-token", to: "/admin" },
+            { id: "1234567890", pw: "1234", role: "customer", name: "Mock Customer", userId: "mock-customer-id", token: "mock-customer-token", to: redirectTo },
+        ];
+        const matched = mockAccounts.find((a) => trimmedId === a.id && form.password === a.pw);
+        if (matched) {
+            login({ id: matched.userId, phone: matched.id, role: matched.role, name: matched.name }, matched.token);
+            navigate(matched.to, { replace: true });
+            return;
+        }
+        // Standard mock login — any password works for the standard mock phone
+        if (trimmedId === MOCK_PHONE) {
+            login({ id: "mock-user-id", phone: MOCK_PHONE, role: "customer", name: "Mock User" }, "mock-user-token");
+            navigate(redirectTo, { replace: true });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // ── REAL API CALL — uncomment once the backend is live ──────
+            // const payload = isPhoneLike(form.identifier)
+            //     ? { phone: form.identifier.replace(/\s+/g, ""), password: form.password }
+            //     : { email: form.identifier.trim(), password: form.password };
+            // const res = await authApi.login(payload);
+            // login(res.user, res.token);
+            // navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+
+            throw new Error("Invalid credentials. Please try again.");
+        } catch (err) {
+            setError(err.message || "Invalid credentials. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ── Enter-key submit for the main login form ──
+    const handleLoginKeyDown = (e) => {
+        if (e.key === "Enter" && !loading) handleSubmit(e);
+    };
+
+    // ── Forgot Password Handlers ──
+    const handleSendOtp = async (e) => {
+        e.preventDefault();
+        if (!isValidPhone(phone)) { setForgotErrors({ phone: "Enter a valid 10-digit mobile number" }); return; }
+        setForgotErrors({});
+
+        setLoading(true);
+        try {
+            // ── REAL API CALL — uncomment once the backend is live ──────
+            // await authApi.sendOtp({ phone, purpose: "reset-password" });
+
+            // ── MOCK BYPASS ──────────────────────────────────────────────
+            if (phone.trim() !== MOCK_PHONE) {
+                throw new Error(`Use the test number ${MOCK_PHONE} for now — OTP sending isn't live yet.`);
+            }
+
+            setView("forgot-otp");
+            setOtpExpiryTime(Date.now() + 180 * 1000); // 3 minutes background expiry
+        } catch (err) {
+            setError(err.message || "Failed to send OTP. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ── Enter-key submit for the phone-entry step ──
+    const handlePhoneKeyDown = (e) => {
+        if (e.key === "Enter" && !loading) handleSendOtp(e);
+    };
+
+    // ── Resend OTP — also clears the boxes and restarts ──
+    const handleResend = async () => {
+        setOtp(EMPTY_OTP);
+        setLoading(true);
+        try {
+            // ── REAL API CALL ────────────────────────────────────────────
+            // await authApi.sendOtp({ phone, purpose: "reset-password" });
+            setOtpExpiryTime(Date.now() + 180 * 1000); // restart 3 minutes timer
+        } catch (err) {
+            setError(err.message || "Could not resend OTP.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = (e) => {
+        e.preventDefault();
+        const otpValue = otp.join("");
+        if (otp.some((d) => d === "")) { setForgotErrors({ otp: "Enter the 6-digit OTP" }); return; }
+
+        // ── MOCK BYPASS ──────────────────────────────────────────────────
+        if (otpValue !== MOCK_OTP) {
+            setError(`Use the test OTP ${MOCK_OTP} for now — OTP verification isn't live yet.`);
+            return;
+        }
+
+        setView("forgot-reset");
+    };
+
+    // ── Individual OTP box change handler — auto-advances focus ──
+    const handleOtpChange = (index, value) => {
+        if (!/^\d?$/.test(value)) return;
+        setOtp((prev) => {
+            const updated = [...prev];
+            updated[index] = value;
+            return updated;
+        });
+        clearForgotErrors();
+        if (value && index < OTP_LENGTH - 1) {
+            document.getElementById(`fp-otp-${index + 1}`)?.focus();
+        }
+    };
+
+    // ── Backspace moves focus back; Enter submits ──
+    const handleOtpKeyDown = (index, e) => {
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            document.getElementById(`fp-otp-${index - 1}`)?.focus();
+        }
+        if (e.key === "Enter" && !loading) {
+            handleVerifyOtp(e);
+        }
+    };
+
+    // ── Paste a full 6-digit code into the OTP boxes at once ──
+    const handleOtpPaste = (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+        if (!pasted) return;
+        const updated = [...EMPTY_OTP];
+        pasted.split("").forEach((char, i) => { updated[i] = char; });
+        setOtp(updated);
+        clearForgotErrors();
+        const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+        document.getElementById(`fp-otp-${focusIndex}`)?.focus();
+    };
+
+    const validateStep3 = () => {
+        const e = {};
+        if (newPw.length < 6) e.newPw = "Minimum 6 characters";
+        if (newPw !== confirmPw) e.confirmPw = "Passwords do not match";
+        setForgotErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        if (!validateStep3()) return;
+
+        setLoading(true);
+        try {
+            // ── REAL API CALL — uncomment once the backend is live ──────
+            // await authApi.resetPassword({
+            //     phone: phone.trim(),
+            //     otp: otp.join(""),
+            //     newPassword: newPw,
+            // });
+
+            setSuccess("Password reset successful.");
+            resetForgotFlow(true); // reset and go back to login form, keeping the success toast
+        } catch (err) {
+            setError(err.message || "Could not reset password. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ── Enter-key submit for the reset-password step ──
+    const handleResetKeyDown = (e) => {
+        if (e.key === "Enter" && !loading) handleResetPassword(e);
+    };
+
+    const resetForgotFlow = (keepToast = false) => {
+        setView("login");
+        setPhone("");
+        setOtp(EMPTY_OTP);
+        setNewPw("");
+        setConfirmPw("");
+        setShowFpPw(false);
+        setShowFpCf(false);
+        setForgotErrors({});
+        setOtpExpiryTime(0);
+        if (!keepToast) {
+            setError("");
+        }
+    };
+
+    const goToOtpStep = () => { setView("forgot-phone"); setOtp(EMPTY_OTP); clearForgotErrors(); };
+
+    // Calculate current step for Forgot Password
+    const step = view === "forgot-otp" ? 2 : view === "forgot-reset" ? 3 : 1;
+
+    return (
+        <div className="min-h-screen flex flex-col items-center px-4 pt-8 pb-10 md:flex-row md:justify-center md:items-center md:py-10 bg-sandal-50 relative">
+
+            {/* ── Toast (Red for Error, Green for Success) ── */}
+            <div
+                className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible
+                    ? "translate-x-0 opacity-100"
+                    : "translate-x-[120%] opacity-0 pointer-events-none"
+                    }`}
+            >
+                {displayedError && (
+                    <div className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
+                        ? "border-green-200 shadow-green-900/5 text-green-700"
+                        : "border-red-200 shadow-red-900/5 text-red-700"
+                        }`}>
+                        {displayedType === "success" ? (
+                            <ShieldCheck size={17} className="shrink-0 mt-0.5 text-green-500" />
+                        ) : (
+                            <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" />
+                        )}
+                        <p className="leading-snug">{displayedError}</p>
+                    </div>
+                )}
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-brand-dark/70">
-              <label>Password</label>
-              <Link to="/login" className="text-brand-primary hover:underline font-bold text-[10px]">
-                Forgot Password?
-              </Link>
+            {/* ambient background wash — mobile only */}
+            <div className="md:hidden absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-brand-800/[0.06] blur-2xl" />
+                <div className="absolute top-1/3 -left-24 w-64 h-64 rounded-full bg-sandal-400/10 blur-3xl" />
             </div>
-            <div className="relative">
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-brand-cream border border-brand-sand/75 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary placeholder-brand-dark/35 font-medium"
-              />
-              <Lock className="w-4.5 h-4.5 text-brand-dark/40 absolute left-3 top-3" />
+
+            <div className="relative z-10 w-full max-w-md md:max-w-4xl bg-white rounded-3xl md:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col md:flex-row shadow-xl shadow-brand-900/5">
+
+                {/* LEFT — Brand panel (desktop only) */}
+                <div className="hidden md:flex relative md:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-6 overflow-hidden">
+                    <div className="absolute -top-16 -left-16 w-56 h-56 bg-brand-800 rounded-full opacity-40" />
+                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-800 rounded-full opacity-30" />
+
+                    {/* Desktop brand panel logo */}
+                    <div className="relative z-10 flex flex-col items-center gap-4 text-center">
+                        {LOGO_URL ? (
+                            <img src={LOGO_URL} alt="NammaOor Logo" className="w-20 h-20 object-contain" />
+                        ) : (
+                            <div className="w-20 h-20 rounded-full bg-brand-700 flex items-center justify-center text-4xl shadow-lg ring-4 ring-white/10">
+                                🐟
+                            </div>
+                        )}
+                        <div>
+                            <h1 className="font-display text-white text-2xl font-bold leading-tight">
+                                நம்ம ஊர்
+                            </h1>
+                            <p className="font-display text-amber-300 text-lg font-semibold leading-tight">
+                                கருவாட்டு கடை
+                            </p>
+                            <p className="font-body text-amber-400 text-xs mt-1 tracking-wider uppercase">
+                                Namma Oor Karuvattu Kadai
+                            </p>
+                        </div>
+                    </div>
+
+                    {view.startsWith("forgot-") ? (
+                        <>
+                            <div className="relative z-10 w-14 h-14 rounded-full bg-brand-700/60 flex items-center justify-center mt-2">
+                                <KeyRound size={24} className="text-amber-300" />
+                            </div>
+
+                            <p className="relative z-10 font-body text-amber-300 text-sm text-center leading-relaxed max-w-[220px]">
+                                We'll verify it's really you, then let you set a brand-new password in just a few steps.
+                            </p>
+
+                            <StepDots step={step} />
+
+                            <p className="relative z-10 font-body text-amber-500 text-xs text-center mt-auto">
+                                Remembered your password?{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => resetForgotFlow(false)}
+                                    className="text-amber-300 font-semibold hover:underline bg-transparent border-none cursor-pointer"
+                                >
+                                    Sign In
+                                </button>
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            {/* tagline */}
+                            <p className="relative z-10 font-body text-amber-300 text-sm text-center leading-relaxed max-w-[200px]">
+                                Authentic dry fish & coastal pickles — straight from Rameswaram fishermen.
+                            </p>
+                        </>
+                    )}
+                </div>
+
+                {/* RIGHT — form panel */}
+                <div className="w-full md:w-7/12 flex flex-col justify-center px-6 py-8 md:px-12 md:py-12 bg-white">
+
+                    {/* Mobile brand badge + wordmark — visible only on mobile */}
+                    <div className="flex flex-col items-center mb-7 md:hidden">
+                        <div className="relative mb-3">
+                            <div className="absolute inset-0 rounded-full bg-brand-900/15 blur-md scale-110" />
+                            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
+                                🐟
+                            </div>
+                        </div>
+
+                        <h1 className="font-display text-gray-900 text-xl font-bold leading-tight tracking-tight text-center">
+                            நம்ம ஊர் கருவாட்டு கடை
+                        </h1>
+                        <p className="font-body text-sandal-600 text-[11px] font-semibold tracking-[0.15em] uppercase mt-1">
+                            Namma Oor Karuvattu Kadai
+                        </p>
+                    </div>
+
+                    {/* Heading and subtext */}
+                    <div className="flex flex-col items-center md:items-start text-center md:text-left mb-6 w-full">
+                        {view === "forgot-otp" ? (
+                            <div className="flex items-center justify-center md:justify-start gap-3 mb-1 w-full">
+                                <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+                                    <ShieldCheck size={20} className="text-brand-700" />
+                                </div>
+                                <h2 className="font-display text-2xl font-bold text-brand-900">Verify OTP</h2>
+                            </div>
+                        ) : (
+                            <h2 className="font-display text-2xl md:text-3xl font-extrabold text-brand-900 mb-1">
+                                {view === "login" && "Welcome back"}
+                                {view === "forgot-phone" && "Forgot password?"}
+                                {view === "forgot-reset" && "Set new password"}
+                            </h2>
+                        )}
+                        <p className="font-body text-sm text-amber-600 mt-1 text-center md:text-left">
+                            {view === "login" && "Sign in to continue shopping"}
+                            {view === "forgot-otp" && (
+                                <>Enter the 6-digit code sent to{" "}
+                                    <button
+                                        type="button"
+                                        onClick={goToOtpStep}
+                                        className="font-semibold text-brand-800 underline cursor-pointer hover:text-brand-900 bg-transparent border-none p-0 inline-block font-sans"
+                                    >
+                                        +91 {phone}
+                                    </button>
+                                </>
+                            )}
+                            {view === "forgot-reset" && "Choose a new password for your account"}
+                        </p>
+                    </div>
+
+                    {/* ── View: Login ── */}
+                    {view === "login" && (
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                            {/* identifier — phone or email */}
+                            <div>
+                                <label className="field-label">
+                                    Phone Number or Email
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                        {isPhoneLike(form.identifier) ? <Phone size={18} /> : <Mail size={18} />}
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={form.identifier}
+                                        onChange={(e) => set("identifier", e.target.value)}
+                                        onKeyDown={handleLoginKeyDown}
+                                        placeholder="10-digit mobile number or you@example.com"
+                                        className="field-input pl-10"
+                                        autoComplete="username"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* password */}
+                            <div>
+                                <label className="field-label mb-1">Password</label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                        <Lock size={18} />
+                                    </span>
+                                    <input
+                                        type={showPw ? "text" : "password"}
+                                        value={form.password}
+                                        onChange={(e) => set("password", e.target.value)}
+                                        onKeyDown={handleLoginKeyDown}
+                                        placeholder="Your password"
+                                        className="field-input pl-10 pr-10"
+                                        autoComplete="current-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPw((s) => !s)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5"
+                                        aria-label="Toggle password visibility">
+                                        {showPw ? <Eye size={18} /> : <EyeOff size={18} />}
+                                    </button>
+                                </div>
+                                <div className="flex justify-end mt-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setForgotErrors({}); setView("forgot-phone"); }}
+                                        className="font-body text-xs text-brand-700 underline bg-transparent border-none cursor-pointer"
+                                    >
+                                        Forgot password?
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* submit */}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="btn-md btn-primary w-full mt-1">
+                                {loading ? (
+                                    <><Loader2 size={16} className="animate-spin" /> Signing in…</>
+                                ) : (
+                                    <>Sign In <ArrowRight size={15} /></>
+                                )}
+                            </button>
+
+                            {/* register link */}
+                            <p className="font-body text-sm text-center text-amber-700">
+                                Don't have an account?{" "}
+                                <Link to="/register" className="font-semibold text-brand-800 underline">
+                                    Register
+                                </Link>
+                            </p>
+                        </form>
+                    )}
+
+                    {/* ── View: Forgot Phone ── */}
+                    {view === "forgot-phone" && (
+                        <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+                            <div>
+                                <label className="field-label">Phone Number</label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                        <Phone size={18} />
+                                    </span>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); clearForgotErrors(); }}
+                                        onKeyDown={handlePhoneKeyDown}
+                                        placeholder="10-digit mobile number"
+                                        inputMode="numeric"
+                                        maxLength={10}
+                                        autoComplete="tel"
+                                        className={fieldClass(!!forgotErrors.phone, "pl-10")}
+                                    />
+                                </div>
+                                {forgotErrors.phone && (
+                                    <p className="font-body text-xs text-red-500 mt-1">{forgotErrors.phone}</p>
+                                )}
+                            </div>
+
+                            <button type="submit" disabled={loading} className="btn-md btn-primary w-full mt-1">
+                                {loading ? (
+                                    <><Loader2 size={16} className="animate-spin" /> Sending OTP…</>
+                                ) : (
+                                    <>Send OTP <ArrowRight size={15} /></>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => resetForgotFlow(false)}
+                                className="font-body text-xs text-amber-500 hover:text-brand-700 text-center transition-colors bg-transparent border-none cursor-pointer mt-2"
+                            >
+                                ← Back to Login
+                            </button>
+                        </form>
+                    )}
+
+                    {/* ── View: Forgot OTP ── */}
+                    {view === "forgot-otp" && (
+                        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
+                            <div>
+                                <label className="field-label">Enter OTP</label>
+
+                                {/* Individual OTP boxes — auto-advance, backspace-back, paste-fill */}
+                                <div className="flex justify-center gap-2.5 mt-1">
+                                    {otp.map((digit, i) => (
+                                        <input
+                                            key={i}
+                                            id={`fp-otp-${i}`}
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChange={(e) => handleOtpChange(i, e.target.value)}
+                                            onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                                            onPaste={i === 0 ? handleOtpPaste : undefined}
+                                            autoFocus={i === 0}
+                                            className={`w-11 h-12 text-center font-num text-lg font-semibold rounded-xl border transition-colors ${forgotErrors.otp
+                                                ? "border-red-300 bg-red-50 text-red-700"
+                                                : "border-sandal-200 bg-sandal-50 text-brand-900 focus:border-brand-700 focus:bg-brand-50"
+                                                } focus:outline-none`}
+                                        />
+                                    ))}
+                                </div>
+
+                                {forgotErrors.otp && (
+                                    <p className="font-body text-xs text-red-500 mt-2 text-center">{forgotErrors.otp}</p>
+                                )}
+                            </div>
+
+                            <div className="text-center">
+                                <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    disabled={loading}
+                                    className="font-body text-xs text-brand-700 font-semibold hover:underline disabled:opacity-50 bg-transparent border-none cursor-pointer"
+                                >
+                                    Resend OTP
+                                </button>
+                            </div>
+
+                            <button type="submit" disabled={loading} className="btn-md btn-primary w-full">
+                                {loading ? (
+                                    <><Loader2 size={16} className="animate-spin" /> Verifying…</>
+                                ) : (
+                                    <>Verify OTP <ArrowRight size={15} /></>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={goToOtpStep}
+                                className="font-body text-xs text-amber-500 hover:text-brand-700 text-center transition-colors bg-transparent border-none cursor-pointer"
+                            >
+                                ← Change phone number
+                            </button>
+                        </form>
+                    )}
+
+                    {/* ── View: Forgot Reset ── */}
+                    {view === "forgot-reset" && (
+                        <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+                            <div>
+                                <label className="field-label">New Password</label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                        <Lock size={18} />
+                                    </span>
+                                    <input
+                                        type={showFpPw ? "text" : "password"}
+                                        value={newPw}
+                                        onChange={(e) => { setNewPw(e.target.value); setForgotErrors((er) => ({ ...er, newPw: "" })); setError(""); }}
+                                        onKeyDown={handleResetKeyDown}
+                                        placeholder="Minimum 6 characters"
+                                        autoComplete="new-password"
+                                        className={fieldClass(!!forgotErrors.newPw, "pl-10 pr-10")}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFpPw((s) => !s)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5"
+                                    >
+                                        {showFpPw ? <Eye size={18} /> : <EyeOff size={18} />}
+                                    </button>
+                                </div>
+                                {forgotErrors.newPw && (
+                                    <p className="font-body text-xs text-red-500 mt-1">{forgotErrors.newPw}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="field-label">Confirm New Password</label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                        <Lock size={18} />
+                                    </span>
+                                    <input
+                                        type={showFpCf ? "text" : "password"}
+                                        value={confirmPw}
+                                        onChange={(e) => { setConfirmPw(e.target.value); setForgotErrors((er) => ({ ...er, confirmPw: "" })); setError(""); }}
+                                        onKeyDown={handleResetKeyDown}
+                                        placeholder="Re-enter new password"
+                                        autoComplete="new-password"
+                                        className={fieldClass(!!forgotErrors.confirmPw, "pl-10 pr-10")}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFpCf((s) => !s)}
+                                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5"
+                                    >
+                                        {showFpCf ? <Eye size={18} /> : <EyeOff size={18} />}                                    </button>
+                                </div>
+                                {forgotErrors.confirmPw && (
+                                    <p className="font-body text-xs text-red-500 mt-1">{forgotErrors.confirmPw}</p>
+                                )}
+                            </div>
+
+                            <button type="submit" disabled={loading} className="btn-md btn-primary w-full mt-1">
+                                {loading ? (
+                                    <><Loader2 size={16} className="animate-spin" /> Updating password…</>
+                                ) : (
+                                    <>Reset Password</>
+                                )}
+                            </button>
+                        </form>
+                    )}
+                </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-brand-primary text-brand-cream py-3 rounded-xl text-sm font-bold hover:bg-brand-secondary active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {loading ? 'Signing In...' : 'Login'}
-          </button>
-        </form>
-
-        {/* Divider */}
-        <div className="relative flex py-5 items-center">
-          <div className="flex-grow border-t border-brand-sand"></div>
-          <span className="flex-shrink mx-4 text-brand-dark/40 text-[10px] uppercase font-bold tracking-wider">or continue with</span>
-          <div className="flex-grow border-t border-brand-sand"></div>
+            {/* mobile footer note */}
+            <p className="md:hidden relative z-10 font-body text-[11px] text-amber-500/80 text-center mt-6 px-8 leading-relaxed">
+                🐟 Sourced directly from Rameswaram fishermen · Naturally sun-dried
+            </p>
         </div>
-
-        {/* Google OAuth simulation */}
-        <button
-          onClick={handleGoogleLogin}
-          className="w-full border border-brand-sand bg-white text-brand-dark py-2.5 rounded-xl text-xs font-bold hover:bg-brand-sand/20 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-        >
-          {/* Simulated Google colored G icon */}
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-          </svg>
-          Sign In with Google
-        </button>
-
-        {/* Footer Link */}
-        <div className="mt-8 text-center text-xs text-brand-dark/65 font-medium">
-          <span>Don't have an account? </span>
-          <Link to="/register" className="text-brand-primary hover:underline font-bold">
-            Create Account
-          </Link>
-        </div>
-
-      </div>
-    </div>
-  );
+    );
 }
