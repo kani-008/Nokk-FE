@@ -463,10 +463,9 @@ export default function ProductDetails() {
   // works is copying the link first, then opening Instagram so the
   // person can paste it into their Story, DM, or bio.
   const handleInstagramShare = () => {
-    copyToClipboard(window.location.href);
-    setSuccess("Link copied! Paste it into your Instagram Story or DM.");
+    const isMobile = isMobileDevice();
 
-    if (isMobileDevice()) {
+    if (isMobile) {
       // Try the app deep link first; if Instagram isn't installed the
       // browser just ignores it, so we follow up with the web fallback.
       window.location.href = "instagram://app";
@@ -474,12 +473,12 @@ export default function ProductDetails() {
         window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
       }, 600);
     } else {
+      copyToClipboard(window.location.href);
+      setSuccess("Link copied! Paste it into your Instagram Story or DM.");
       window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
     }
     setShareModalOpen(false);
   };
-
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">

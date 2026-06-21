@@ -13,9 +13,14 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digi
 // ── Toggle ─────────────────────────────────────────────────────────────
 function Toggle({ value, onChange }) {
   return (
-    <div onClick={onChange} className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${value ? "bg-brand-700" : "bg-gray-300"}`}>
-      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
-    </div>
+    <button
+      type="button"
+      onClick={onChange}
+      aria-pressed={!!value}
+      className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${value ? "bg-brand-700" : "bg-gray-300"}`}
+    >
+      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
+    </button>
   );
 }
 

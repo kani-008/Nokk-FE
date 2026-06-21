@@ -3,27 +3,16 @@ import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-re
 import { productApi, categoryApi } from "../../ApiCall/Api.jsx";
 import { useAuthStore }            from "../../components/store/AuthStore";
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar,
+  AdminPage, DataTable, AdminButton, SearchBar,
 } from "../../components/admin/AdminUI.jsx";
-
+import EditProduct from "../../components/admin/EditProduct.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
-const PH     = comboImg;
-const rupee  = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
-const EMPTY  = { nameEn:"", nameTa:"", slug:"", description:"", howToUse:"", storageTips:"", categoryId:"", isBestseller:false, isNew:false, isActive:true };
-const V_EMPTY = { weightGrams:"", weightLabel:"", price:"", comparePrice:"", stockQty:"" };
-
-// stable client-side id for variant rows (React keys must not be the array
-// index when rows can be added/removed, or inputs bind to the wrong row)
-const uid = () =>
-  (typeof crypto !== "undefined" && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : `v_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-const newVariant = () => ({ ...V_EMPTY, _uid: uid() });
+const PH    = comboImg;
+const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
 
 // ── Confirm dialog (replaces native confirm()) ─────────────────────────
-function ConfirmDialog({ open, title, message, confirmLabel = "Delete", loading, onCancel, onConfirm }) {
+function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -45,205 +34,8 @@ function ConfirmDialog({ open, title, message, confirmLabel = "Delete", loading,
             disabled={loading}
             className="inline-flex items-center gap-1.5 font-body text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
           >
-            {loading ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : confirmLabel}
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : "Delete"}
           </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Variant row ────────────────────────────────────────────────────────
-function VariantRow({ v, idx, canRemove, onChange, onRemove }) {
-  const set = (k, val) => onChange(idx, k, val);
-  return (
-    <div className="grid grid-cols-5 gap-2 items-end">
-      <div><label className="field-label text-[10px]">Weight (g)</label><input type="number" value={v.weightGrams} onChange={(e) => set("weightGrams", e.target.value)} placeholder="250" className="field-input" /></div>
-      <div><label className="field-label text-[10px]">Label</label><input value={v.weightLabel} onChange={(e) => set("weightLabel", e.target.value)} placeholder="250g" className="field-input" /></div>
-      <div><label className="field-label text-[10px]">Price ₹</label><input type="number" value={v.price} onChange={(e) => set("price", e.target.value)} placeholder="299" className="field-input" /></div>
-      <div><label className="field-label text-[10px]">MRP ₹</label><input type="number" value={v.comparePrice} onChange={(e) => set("comparePrice", e.target.value)} placeholder="399" className="field-input" /></div>
-      <div className="flex items-end gap-1">
-        <div className="flex-1"><label className="field-label text-[10px]">Stock</label><input type="number" value={v.stockQty} onChange={(e) => set("stockQty", e.target.value)} placeholder="50" className="field-input" /></div>
-        <button
-          type="button"
-          onClick={() => onRemove(idx)}
-          disabled={!canRemove}
-          title={canRemove ? "Remove variant" : "At least one variant is required"}
-          className="mb-0.5 p-2 text-red-400 hover:bg-red-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <X size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Product form modal ─────────────────────────────────────────────────
-function ProductModal({ product, categories, onClose, onSaved }) {
-  const { token } = useAuthStore();
-  const isEdit    = !!product?.id;
-
-  // Resolve categoryId robustly: the product row from the list endpoint
-  // may only carry categoryName/categorySlug, not categoryId — without
-  // this, the category dropdown would render blank when editing.
-  const resolvedCatId =
-    product?.categoryId
-    || categories.find((c) => c.slug === product?.categorySlug || c.nameEn === product?.categoryName)?.id
-    || "";
-
-  const [form,     setForm]     = useState(product ? { ...EMPTY, ...product, categoryId: resolvedCatId } : { ...EMPTY });
-  const [variants, setVariants] = useState(
-    product?.variants?.length ? product.variants.map((v) => ({ ...v, _uid: v.id ?? uid() })) : [newVariant()]
-  );
-  const [imageUrl, setImageUrl] = useState(product?.images?.[0]?.imageUrl || "");
-  const [saving,   setSaving]   = useState(false);
-  const [error,    setError]    = useState("");
-
-  const setF    = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const setV    = (i, k, v) => setVariants((arr) => arr.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
-  const addV    = () => setVariants((arr) => [...arr, newVariant()]);
-  const removeV = (i) => setVariants((arr) => arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr);
-
-  // auto-generate slug from nameEn (collapse repeats, trim stray hyphens)
-  const slugify = (val) =>
-    val.toLowerCase().trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-
-  const handleNameChange = (val) => {
-    setF("nameEn", val);
-    if (!isEdit) setF("slug", slugify(val));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.nameEn.trim())            { setError("Product name is required"); return; }
-    if (!form.slug?.trim())             { setError("Slug is required"); return; }
-    if (!form.categoryId)               { setError("Category is required"); return; }
-    if (!variants.length)               { setError("At least one variant is required"); return; }
-    if (variants.some((v) => !v.price)) { setError("Every variant needs a price"); return; }
-
-    setSaving(true); setError("");
-    try {
-      // strip the client-only _uid before sending to the API
-      const cleanVariants = variants.map(({ _uid, ...rest }) => rest);
-      const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
-      let res;
-      if (isEdit) res = await productApi.update(product.id, payload, token);
-      else        res = await productApi.create(payload, token);
-      onSaved(res.product || { ...payload, id: product?.id });
-      onClose();
-    } catch (e) { setError(e.message || "Failed to save product"); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : onClose} />
-      <div className="relative bg-white w-full max-w-2xl h-full flex flex-col shadow-2xl overflow-y-auto">
-
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Product" : "Add Product"}</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close"><X size={18} /></button>
-        </div>
-
-        <div className="p-6 space-y-5 flex-1">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* image preview */}
-            <div>
-              <label className="field-label">Primary Image URL</label>
-              <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" className="field-input mb-2" />
-              {imageUrl && (
-                <img src={imageUrl} alt="preview" className="h-24 w-24 rounded-xl object-cover border border-amber-100" onError={(e) => { e.target.style.display = "none"; }} />
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="field-label">Product Name (EN) *</label>
-                <input value={form.nameEn} onChange={(e) => handleNameChange(e.target.value)} placeholder="Nethili Karuvadu" className="field-input" />
-              </div>
-              <div>
-                <label className="field-label">Tamil Name</label>
-                <input value={form.nameTa || ""} onChange={(e) => setF("nameTa", e.target.value)} placeholder="நெத்திலி கருவாடு" className="field-input" />
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label className="field-label">Slug *</label>
-                <input value={form.slug || ""} onChange={(e) => setF("slug", e.target.value)} placeholder="nethili-karuvadu" className="field-input" />
-              </div>
-              <div>
-                <label className="field-label">Category *</label>
-                <select value={form.categoryId || ""} onChange={(e) => setF("categoryId", e.target.value)} className="field-input">
-                  <option value="">Select category</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.nameEn}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="field-label">Description</label>
-              <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="field-label">How to Use</label>
-                <textarea value={form.howToUse || ""} onChange={(e) => setF("howToUse", e.target.value)} rows={2} placeholder="Cooking tips…" className="field-input resize-none" />
-              </div>
-              <div>
-                <label className="field-label">Storage Tips</label>
-                <textarea value={form.storageTips || ""} onChange={(e) => setF("storageTips", e.target.value)} rows={2} placeholder="Store in airtight…" className="field-input resize-none" />
-              </div>
-            </div>
-
-            {/* toggles — whole control is one button so the label text is clickable too */}
-            <div className="flex flex-wrap gap-4">
-              {[
-                { key: "isBestseller", label: "Best Seller" },
-                { key: "isNew",        label: "New Arrival" },
-                { key: "isActive",     label: "Active"      },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setF(key, !form[key])}
-                  aria-pressed={!!form[key]}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <span className={`w-9 h-5 rounded-full relative transition-colors ${form[key] ? "bg-brand-700" : "bg-gray-300"}`}>
-                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form[key] ? "translate-x-4" : "translate-x-0.5"}`} />
-                  </span>
-                  <span className="font-body text-sm text-gray-700">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* variants */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="field-label mb-0">Variants *</label>
-                <button type="button" onClick={addV} className="font-body text-xs text-brand-700 hover:underline font-semibold flex items-center gap-1">
-                  <Plus size={12} /> Add Variant
-                </button>
-              </div>
-              <div className="space-y-2">
-                {variants.map((v, i) => (
-                  <VariantRow key={v._uid} v={v} idx={i} canRemove={variants.length > 1} onChange={setV} onRemove={removeV} />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <AdminButton variant="outline" onClick={onClose} type="button" disabled={saving}>Cancel</AdminButton>
-              <AdminButton type="submit" disabled={saving}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isEdit ? "Update Product" : "Add Product"}
-              </AdminButton>
-            </div>
-          </form>
         </div>
       </div>
     </div>
@@ -404,7 +196,7 @@ export default function ProductManagement() {
       )}
 
       {modal !== null && (
-        <ProductModal
+        <EditProduct
           product={modal === "new" ? null : modal}
           categories={categories}
           onClose={() => setModal(null)}

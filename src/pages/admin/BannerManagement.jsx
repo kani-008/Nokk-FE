@@ -98,15 +98,17 @@ function BannerModal({ banner, onClose, onSaved }) {
                 <input type="number" min={0} value={form.sortOrder} onChange={(e) => set("sortOrder", Number(e.target.value))} className="field-input" />
               </div>
               <div className="flex flex-col justify-end pb-0.5">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <div
-                    onClick={() => set("isActive", !form.isActive)}
-                    className={`w-10 h-5 rounded-full relative transition-colors ${form.isActive ? "bg-brand-700" : "bg-gray-300"}`}
-                  >
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.isActive ? "translate-x-5" : "translate-x-0.5"}`} />
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => set("isActive", !form.isActive)}
+                  aria-pressed={!!form.isActive}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <span className={`w-10 h-5 rounded-full relative transition-colors ${form.isActive ? "bg-brand-700" : "bg-gray-300"}`}>
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.isActive ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </span>
                   <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
-                </label>
+                </button>
               </div>
             </div>
 
