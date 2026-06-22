@@ -503,6 +503,52 @@ export const bannerApi = {
 };
 
 // ═════════════════════════════════════════════════════════════════════
+// BTEXT — real API
+// ═════════════════════════════════════════════════════════════════════
+const BTEXT_BASE = `${import.meta.env.VITE_LHOST_API_URL}/btext`;
+
+export const btextApi = {
+  // public — overlays for a specific banner (used by HeroBanner)
+  byBanner: (bannerId) =>
+    apiFetch(`${BTEXT_BASE}?bannerId=${bannerId}`),
+
+  // admin — all btext entries
+  all: (token) =>
+    apiFetch(`${BTEXT_BASE}/all`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  // admin — overlays for a specific banner
+  forBanner: (bannerId, token) =>
+    apiFetch(`${BTEXT_BASE}/banner/${bannerId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  // admin — create: { bannerId, heading, subtext?, isActive? }
+  create: (data, token) =>
+    apiFetch(BTEXT_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  // admin — update an overlay by bt_id
+  update: (id, data, token) =>
+    apiFetch(`${BTEXT_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  // admin — delete an overlay
+  remove: (id, token) =>
+    apiFetch(`${BTEXT_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ═════════════════════════════════════════════════════════════════════
 // ORDERS MOCK
 // ═════════════════════════════════════════════════════════════════════
 export const orderApi = {
