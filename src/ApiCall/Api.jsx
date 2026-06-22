@@ -874,8 +874,10 @@ export const offerApi = {
 };
 
 // ═════════════════════════════════════════════════════════════════════
-// USERS MOCK
+// USERS
 // ═════════════════════════════════════════════════════════════════════
+const USER_BASE = `${import.meta.env.VITE_LHOST_API_URL}/users`;
+
 export const userApi = {
   me: async (token) => {
     await delay();
@@ -940,30 +942,27 @@ export const userApi = {
     setLocalStorage(`nok-mock-addresses-${user.id}`, mockAddr);
     return { success: true };
   },
-  all: async (params = "", token) => {
-    await delay();
-    return { success: true, users: getUsers() };
-  },
-  block: async (id, token) => {
-    await delay();
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === id);
-    if (idx !== -1) {
-      users[idx].status = "blocked";
-      setLocalStorage("nok-mock-users", users);
-    }
-    return { success: true };
-  },
-  unblock: async (id, token) => {
-    await delay();
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === id);
-    if (idx !== -1) {
-      users[idx].status = "active";
-      setLocalStorage("nok-mock-users", users);
-    }
-    return { success: true };
-  }
+  all: (params = "", token) =>
+    apiFetch(`${USER_BASE}?${params}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+  block: (id, token) =>
+    apiFetch(`${USER_BASE}/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status: "blocked" })
+    }),
+  unblock: (id, token) =>
+    apiFetch(`${USER_BASE}/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status: "active" })
+    }),
+  remove: (id, token) =>
+    apiFetch(`${USER_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
 };
 
 // ═════════════════════════════════════════════════════════════════════

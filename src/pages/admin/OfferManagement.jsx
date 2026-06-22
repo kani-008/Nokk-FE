@@ -5,24 +5,13 @@ import { useAuthStore }        from "../../components/store/AuthStore";
 import {
   AdminPage, DataTable, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import Toggle                  from "../../components/admin/Toggle.jsx";
 
 const OFFER_EMPTY  = { title:"", description:"", imageUrl:"", offerType:"percentage", value:"", code:"", minOrderValue:"", isActive:true, startDate:"", endDate:"" };
 const COUPON_EMPTY = { code:"", discountType:"percentage", discountValue:"", minOrderValue:"", maxUsageCount:"", isActive:true, expiresAt:"" };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
 
-// ── Toggle ─────────────────────────────────────────────────────────────
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      aria-pressed={!!value}
-      className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${value ? "bg-brand-700" : "bg-gray-300"}`}
-    >
-      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
-    </button>
-  );
-}
+
 
 // ── Offer modal ────────────────────────────────────────────────────────
 function OfferModal({ offer, onClose, onSaved }) {
@@ -76,7 +65,7 @@ function OfferModal({ offer, onClose, onSaved }) {
               <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle value={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
               <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
             </label>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
@@ -141,7 +130,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
               <div className="col-span-2"><label className="field-label">Expires At</label><input type="date" value={form.expiresAt || ""} onChange={(e) => set("expiresAt", e.target.value)} className="field-input" /></div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle value={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
               <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
             </label>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">

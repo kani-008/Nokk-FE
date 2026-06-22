@@ -3,6 +3,7 @@ import { Plus, X, Loader2 } from "lucide-react";
 import { productApi } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../store/AuthStore.jsx";
 import { AdminButton } from "./AdminUI.jsx";
+import Toggle from "./Toggle.jsx";
 
 const EMPTY = {
   nameEn: "", nameTa: "", slug: "", description: "", howToUse: "", storageTips: "",
@@ -144,10 +145,10 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     // rounded top, slides from the bottom edge) and the original
     // right-hand drawer from `sm` up — matching how the rest of the app's
     // mobile sheets behave instead of reusing the desktop drawer verbatim.
-    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : onClose} />
 
-      <div className="relative bg-white w-full sm:max-w-2xl h-[92vh] sm:h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden">
+      <div className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-modal-slide-up">
 
         {/* header — sticky, safe-area aware */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 shrink-0">
@@ -233,18 +234,10 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
                 { key: "isNew",        label: "New Arrival" },
                 { key: "isActive",     label: "Active" },
               ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setF(key, !form[key])}
-                  aria-pressed={!!form[key]}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <span className={`w-9 h-5 rounded-full relative transition-colors shrink-0 ${form[key] ? "bg-brand-700" : "bg-gray-300"}`}>
-                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form[key] ? "translate-x-4" : "translate-x-0.5"}`} />
-                  </span>
+                <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
+                  <Toggle checked={form[key]} onChange={() => setF(key, !form[key])} />
                   <span className="font-body text-sm text-gray-700">{label}</span>
-                </button>
+                </label>
               ))}
             </div>
 

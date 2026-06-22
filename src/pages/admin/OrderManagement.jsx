@@ -24,8 +24,8 @@ const ALL_STATUSES = [
 
 const PAYMENT_METHODS = ["cod", "upi", "card"];
 
-// ── Order detail drawer ────────────────────────────────────────────────
-function OrderDrawer({ order, onClose, onStatusChange }) {
+// ── Order detail modal ────────────────────────────────────────────────
+function OrderModal({ order, onClose, onStatusChange }) {
   const { token } = useAuthStore();
   const [newStatus, setNewStatus] = useState(order?.status || "");
   const [saving,    setSaving]    = useState(false);
@@ -49,12 +49,12 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
   const PH = comboImg;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white shadow-2xl flex flex-col h-full overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
 
         {/* header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div>
             <p className="font-body text-xs text-gray-400 mb-0.5">Order Details</p>
             <h3 className="font-display text-base font-bold text-gray-900">
@@ -64,7 +64,7 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={18} /></button>
         </div>
 
-        <div className="p-5 space-y-5 flex-1">
+        <div className="p-5 space-y-5 overflow-y-auto flex-1">
 
           {/* status + update */}
           <AdminCard>
@@ -325,9 +325,9 @@ export default function OrderManagement() {
         </div>
       )}
 
-      {/* detail drawer */}
+      {/* detail modal */}
       {selected && (
-        <OrderDrawer order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+        <OrderModal order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
       )}
     </AdminPage>
   );

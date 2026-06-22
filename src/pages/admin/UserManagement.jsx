@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { UserX, UserCheck, Mail, Phone, X, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { userApi }      from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
 import {
@@ -11,8 +11,59 @@ import comboImg from "../../assets/products/combo.jpg";
 const PH_AVATAR = comboImg;
 const fmtDate   = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-// ── User detail drawer ─────────────────────────────────────────────────
-function UserDrawer({ user, onClose, onBlock, onUnblock }) {
+// ── Custom Dropdown for Admin filters ─────────────────────────────────
+function CustomDropdown({ value, onChange, options, placeholder, className = "" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div ref={containerRef} className={`relative select-none ${className}`}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none transition-all duration-200 focus:border-sandal-400 focus:ring-2 focus:ring-sandal-400/15 cursor-pointer h-[34px] sm:h-[38px] sm:text-sm sm:px-4 sm:py-2"
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 shrink-0 ml-1.5 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer hover:bg-sandal-50 hover:text-sandal-800 ${
+                opt.value === value ? "bg-sandal-50/70 text-sandal-700 font-semibold" : "text-gray-700"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── User detail modal ─────────────────────────────────────────────────
+function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const { token } = useAuthStore();
   const [acting, setActing] = useState(false);
   const [error,  setError]  = useState("");
@@ -37,12 +88,24 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
     } finally { setActing(false); }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-white shadow-2xl flex flex-col h-full">
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) return;
+    setActing(true); setError("");
+    try {
+      await userApi.remove(user.id, token);
+      onDelete(user.id);
+      onClose();
+    } catch (e) {
+      setError(e.message || "Delete failed");
+    } finally { setActing(false); }
+  };
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-display text-base font-bold text-gray-900">User Details</h3>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close"><X size={18} /></button>
         </div>
@@ -56,10 +119,12 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
               className="w-14 h-14 rounded-full object-cover bg-amber-50 border-2 border-amber-100"
               onError={(e) => { e.target.src = PH_AVATAR; }}
             />
-            <div>
-              <p className="font-body text-base font-bold text-gray-900">{user.fullName || user.name}</p>
-              <StatusBadge status={user.role || "customer"} />
-              <span className="ml-1.5"><StatusBadge status={user.status || "active"} /></span>
+            <div className="min-w-0 flex-1">
+              <p className="font-body text-base font-bold text-gray-900 truncate">{user.fullName || user.name}</p>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                <StatusBadge status={user.role || "customer"} />
+                <StatusBadge status={user.status || "active"} />
+              </div>
             </div>
           </div>
 
@@ -67,15 +132,15 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
           <AdminCard>
             <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Contact</p>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 font-body text-sm text-gray-700">
+              <div className="flex items-center gap-2 font-body text-sm text-gray-700 min-w-0">
                 <Mail  size={14} className="text-gray-400 shrink-0" />
-                <span>{user.email || "—"}</span>
-                {user.emailVerified && <span className="badge-green ml-auto">Verified</span>}
+                <span className="truncate flex-1">{user.email || "—"}</span>
+                {user.emailVerified && <span className="badge-green shrink-0">Verified</span>}
               </div>
-              <div className="flex items-center gap-2 font-body text-sm text-gray-700">
+              <div className="flex items-center gap-2 font-body text-sm text-gray-700 min-w-0">
                 <Phone size={14} className="text-gray-400 shrink-0" />
-                <span>{user.phone || "—"}</span>
-                {user.phoneVerified && <span className="badge-green ml-auto">Verified</span>}
+                <span className="truncate flex-1">{user.phone || "—"}</span>
+                {user.phoneVerified && <span className="badge-green shrink-0">Verified</span>}
               </div>
             </div>
           </AdminCard>
@@ -106,22 +171,34 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
           {error && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">
               <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <span className="break-words flex-1">{error}</span>
             </div>
           )}
 
           {/* action */}
           {user.role !== "admin" && (
-            <AdminButton
-              variant={isBlocked ? "primary" : "danger"}
-              onClick={handleToggle}
-              disabled={acting}
-            >
-              {isBlocked
-                ? <><UserCheck size={14} /> {acting ? "Unblocking…" : "Unblock User"}</>
-                : <><UserX    size={14} /> {acting ? "Blocking…"   : "Block User"}</>
-              }
-            </AdminButton>
+            <div className="flex gap-3 pt-2">
+              <AdminButton
+                variant={isBlocked ? "primary" : "outline"}
+                onClick={handleToggle}
+                disabled={acting}
+                className="flex-1"
+              >
+                {isBlocked
+                  ? <><UserCheck size={14} /> {acting ? "Unblocking…" : "Unblock"}</>
+                  : <><UserX    size={14} /> {acting ? "Blocking…"   : "Block"}</>
+                }
+              </AdminButton>
+
+              <AdminButton
+                variant="danger"
+                onClick={handleDelete}
+                disabled={acting}
+                className="flex-1"
+              >
+                <Trash2 size={14} /> {acting ? "Deleting…" : "Delete"}
+              </AdminButton>
+            </div>
           )}
         </div>
       </div>
@@ -171,21 +248,19 @@ export default function UserManagement() {
 
   const COLS = [
     {
-      key: "name", label: "User",
+      key: "name", label: "Name",
       render: (r) => (
         <div className="flex items-center gap-3">
-          <img
+          {/* <img
             src={r.avatarUrl || PH_AVATAR} alt={r.fullName}
             className="w-9 h-9 rounded-full object-cover bg-amber-50 shrink-0 border border-amber-100"
             onError={(e) => { e.target.src = PH_AVATAR; }}
-          />
-          <div>
-            <p className="font-body text-sm font-semibold text-gray-900">{r.fullName || r.name}</p>
-            <p className="font-body text-xs text-gray-400">{r.email}</p>
-          </div>
+          /> */}
+          <span className="font-body text-sm font-semibold text-gray-900">{r.fullName || r.name || "—"}</span>
         </div>
       ),
     },
+    { key: "email",     label: "Email",   render: (r) => <span className="font-body text-sm text-gray-600">{r.email || "—"}</span> },
     { key: "phone",     label: "Phone",   render: (r) => <span className="font-num text-sm text-gray-600">{r.phone || "—"}</span> },
     { key: "role",      label: "Role",    render: (r) => <StatusBadge status={r.role || "customer"} /> },
     { key: "status",    label: "Status",  render: (r) => <StatusBadge status={r.status || "active"} /> },
@@ -206,23 +281,35 @@ export default function UserManagement() {
   return (
     <AdminPage title="Users" sub="Manage customer accounts and permissions">
 
-      <div className="flex flex-wrap gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-56" />
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-[56%] sm:w-230" />
 
-        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="field-input w-36">
-          <option value="">All roles</option>
-          <option value="customer">Customer</option>
-          <option value="admin">Admin</option>
-        </select>
+        <CustomDropdown
+          value={roleFilter}
+          onChange={(val) => { setRoleFilter(val); setPage(1); }}
+          options={[
+            { value: "", label: "All" },
+            { value: "customer", label: "Customer" },
+            { value: "admin", label: "Admin" },
+          ]}
+          placeholder="All"
+          className="w-[20%] sm:w-36"
+        />
 
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="field-input w-36">
-          <option value="">All status</option>
-          <option value="active">Active</option>
-          <option value="blocked">Blocked</option>
-        </select>
+        <CustomDropdown
+          value={status}
+          onChange={(val) => { setStatus(val); setPage(1); }}
+          options={[
+            { value: "", label: "All" },
+            { value: "active", label: "Active" },
+            { value: "blocked", label: "Blocked" },
+          ]}
+          placeholder="All"
+          className="w-[20%] sm:w-36"
+        />
 
         {(search || roleFilter || status) && (
-          <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500">
+          <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors">
             <X size={14} /> Clear
           </button>
         )}
@@ -239,11 +326,15 @@ export default function UserManagement() {
       )}
 
       {selected && (
-        <UserDrawer
+        <UserModal
           user={selected}
           onClose={() => setSelected(null)}
           onBlock={(id) => patchStatus(id, "blocked")}
           onUnblock={(id) => patchStatus(id, "active")}
+          onDelete={(id) => {
+            setUsers((prev) => prev.filter((u) => u.id !== id));
+            setSelected(null);
+          }}
         />
       )}
     </AdminPage>

@@ -203,7 +203,7 @@ export function StatusBadge({ status }) {
 // ══════════════════════════════════════════════════════════════════════
 // AdminButton — primary / outline / danger
 // ══════════════════════════════════════════════════════════════════════
-export function AdminButton({ children, variant = "primary", size = "md", onClick, disabled, type = "button" }) {
+export function AdminButton({ children, variant = "primary", size = "md", onClick, disabled, type = "button", className = "" }) {
   const sizes = {
     sm: "text-xs px-3 py-1.5 gap-1",
     md: "text-sm px-4 py-2 gap-1.5",
@@ -224,7 +224,7 @@ export function AdminButton({ children, variant = "primary", size = "md", onClic
       className={`
         inline-flex items-center justify-center font-body font-semibold rounded-xl
         transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed
-        ${sizes[size]} ${variants[variant]}
+        ${sizes[size]} ${variants[variant]} ${className}
       `}
     >
       {children}

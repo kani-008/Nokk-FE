@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
+import { productApi }       from "../ApiCall/Api.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
 // ─── placeholder ──────────────────────────────────────────────────────
