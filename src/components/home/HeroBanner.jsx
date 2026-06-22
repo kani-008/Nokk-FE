@@ -27,15 +27,43 @@ const HERO_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-crashing-
      way around the loop) rather than reversing.
 */
 export default function HeroBanner({ banners }) {
-  const slides = banners.length
-    ? banners
-    : [
-        {
-          title: "Authentic Dry Fish & Coastal Pickles",
-          subtitle: "Sourced directly from Rameswaram fishermen — traditionally sun-dried, naturally preserved.",
-          linkUrl: "/products",
-        },
-      ];
+  const slides = (() => {
+    const DEFAULT_OVERLAYS = [
+      {
+        id: "ol-1",
+        h1: "Authentic Dry Fish & Coastal Pickles",
+        p: "Sourced directly from Rameswaram fishermen — traditionally sun-dried, naturally preserved.",
+        linkUrl: "/products",
+        isActive: true,
+      },
+      {
+        id: "ol-2",
+        h1: "Special Combo Packs Available",
+        p: "Taste our curated coastal combo selections. Cleaned, prepped, and ready to cook.",
+        linkUrl: "/products?category=combos",
+        isActive: true,
+      },
+      {
+        id: "ol-3",
+        h1: "Free Shipping on Orders over ₹499",
+        p: "Get fresh catch dry fish delivered to your doorstep across India with zero delivery fees.",
+        linkUrl: "/offers",
+        isActive: true,
+      },
+    ];
+
+    try {
+      const local = localStorage.getItem("nok-mock-text-overlays");
+      if (local) {
+        const parsed = JSON.parse(local);
+        const active = parsed.filter((o) => o.isActive);
+        return active.length ? active : DEFAULT_OVERLAYS;
+      }
+    } catch (e) {
+      // fallback
+    }
+    return DEFAULT_OVERLAYS;
+  })();
 
   const count = slides.length;
 
@@ -170,6 +198,11 @@ export default function HeroBanner({ banners }) {
     }
   };
 
+  // Use a single stable background video from active database banners or default
+  const activeVideoBanner = banners?.find((b) => b.videoUrl && b.isActive) || banners?.find((b) => b.videoUrl) || banners?.[0];
+  const videoUrl = activeVideoBanner?.videoUrl || HERO_VIDEO_URL;
+  const posterUrl = activeVideoBanner?.imageUrl || PH_BANNER;
+
   const cur = slides[logicalIdx];
 
   return (
@@ -178,6 +211,7 @@ export default function HeroBanner({ banners }) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       className="relative h-[480px] bg-gray-950 overflow-hidden group select-none flex items-center justify-center"
+      style={{ touchAction: "pan-y" }}
     >
       {/* loop video background */}
       <video
@@ -185,13 +219,13 @@ export default function HeroBanner({ banners }) {
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-35"
-        src={cur.videoUrl || HERO_VIDEO_URL}
-        poster={cur.imageUrl || PH_BANNER}
+        className="absolute inset-0 w-full h-full object-cover opacity-100"
+        src={videoUrl}
+        poster={posterUrl}
       />
 
       {/* dark vignette overlay — sits above the video, below the text */}
-      <div className="absolute inset-0 z-[5] bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-gray-950/40" />
+      <div className="absolute inset-0 z-[5] bg-black/45" />
 
       {/* slide track — width is trackLength * 100% so each slide's
           100/trackLength% share matches the translateX percentage math */}
@@ -213,14 +247,14 @@ export default function HeroBanner({ banners }) {
             >
               <div className="max-w-4xl w-full mx-auto">
                 <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
-                  நம்ம ஊர் கருவாட்டு கடை
+                  Namma Oor Karuvattu Kadai
                 </p>
                 <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md">
-                  {slide.title}
+                  {slide.h1}
                 </h1>
-                {slide.subtitle && (
+                {slide.p && (
                   <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed drop-shadow">
-                    {slide.subtitle}
+                    {slide.p}
                   </p>
                 )}
                 <Link

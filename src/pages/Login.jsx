@@ -104,35 +104,27 @@ export default function Login() {
 
         const trimmedId = form.identifier.trim().replace(/\s+/g, "");
 
-        // ── MOCK BYPASS — admin / customer test accounts ───────────────
-        const mockAccounts = [
-            { id: "9876543210", pw: "1234", role: "admin", name: "Mock Admin", userId: "mock-admin-id", token: "mock-admin-token", to: "/admin" },
-            { id: "1234567890", pw: "1234", role: "customer", name: "Mock Customer", userId: "mock-customer-id", token: "mock-customer-token", to: redirectTo },
+        // ── DEV BYPASS — remove before production ─────────────────────
+        const devAccounts = [
+            { id: "9999999999", pw: "admin123",    role: "admin",    name: "Dev Admin",    to: "/admin"   },
+            { id: "8888888888", pw: "customer123", role: "customer", name: "Dev Customer", to: redirectTo },
         ];
-        const matched = mockAccounts.find((a) => trimmedId === a.id && form.password === a.pw);
-        if (matched) {
-            login({ id: matched.userId, phone: matched.id, role: matched.role, name: matched.name }, matched.token);
-            navigate(matched.to, { replace: true });
+        const dev = devAccounts.find((a) => trimmedId === a.id && form.password === a.pw);
+        if (dev) {
+            login({ id: `dev-${dev.role}`, phone: dev.id, role: dev.role, name: dev.name }, "dev-token", null);
+            navigate(dev.to, { replace: true });
             return;
         }
-        // Standard mock login — any password works for the standard mock phone
-        if (trimmedId === MOCK_PHONE) {
-            login({ id: "mock-user-id", phone: MOCK_PHONE, role: "customer", name: "Mock User" }, "mock-user-token");
-            navigate(redirectTo, { replace: true });
-            return;
-        }
+        // ─────────────────────────────────────────────────────────────
 
         setLoading(true);
         try {
-            // ── REAL API CALL — uncomment once the backend is live ──────
-            // const payload = isPhoneLike(form.identifier)
-            //     ? { phone: form.identifier.replace(/\s+/g, ""), password: form.password }
-            //     : { email: form.identifier.trim(), password: form.password };
-            // const res = await authApi.login(payload);
-            // login(res.user, res.token);
-            // navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
-
-            throw new Error("Invalid credentials. Please try again.");
+            const payload = isPhoneLike(trimmedId)
+                ? { identifier: trimmedId, password: form.password }
+                : { identifier: trimmedId.toLowerCase(), password: form.password };
+            const res = await authApi.login(payload);
+            login(res.user, res.accessToken, res.refreshToken);
+            navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
             setError(err.message || "Invalid credentials. Please try again.");
         } finally {

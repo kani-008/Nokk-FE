@@ -5,18 +5,18 @@ import {
   Star, ArrowUpDown,
 } from "lucide-react";
 import { productApi, categoryApi } from "../ApiCall/Api.jsx";
-import { useCartStore }    from "../components/store/CartStore";
+import { useCartStore } from "../components/store/CartStore";
 import { useWishlistStore } from "../components/store/WishlistStore";
-import { useAuthStore }     from "../components/store/AuthStore";
+import { useAuthStore } from "../components/store/AuthStore";
 import ProductCard from "../components/Product/ProductCard";
 
 // ── sort options — value must match the productApi.list() `sort` contract ──
 const SORT_OPTIONS = [
-  { value: "popular",        label: "Popularity" },
-  { value: "newest",         label: "Newest First" },
+  { value: "popular", label: "Popularity" },
+  { value: "newest", label: "Newest First" },
   { value: "price-low-high", label: "Price: Low to High" },
   { value: "price-high-low", label: "Price: High to Low" },
-  { value: "relevance",      label: "Relevance" },
+  { value: "relevance", label: "Relevance" },
 ];
 
 // rating filter options — "and above" style, matches Amazon/Flipkart convention
@@ -101,18 +101,18 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // read from URL
-  const search        = searchParams.get("search")       || "";
-  const category      = searchParams.get("category")     || "";
-  const sort          = searchParams.get("sort")          || "popular";
-  const inStock       = searchParams.get("inStock")       === "true";
-  const isBest        = searchParams.get("isBestseller") === "true";
-  const isNew         = searchParams.get("isNew")         === "true";
-  const minPrice      = searchParams.get("minPrice")      || "";
-  const maxPrice      = searchParams.get("maxPrice")      || "";
-  const rating        = searchParams.get("rating")        || "";
-  const weightParam   = searchParams.get("weight")        || "";
-  const hasOffer      = searchParams.get("hasOffer")     === "true";
-  const page          = parseInt(searchParams.get("page") || "1");
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
+  const sort = searchParams.get("sort") || "popular";
+  const inStock = searchParams.get("inStock") === "true";
+  const isBest = searchParams.get("isBestseller") === "true";
+  const isNew = searchParams.get("isNew") === "true";
+  const minPrice = searchParams.get("minPrice") || "";
+  const maxPrice = searchParams.get("maxPrice") || "";
+  const rating = searchParams.get("rating") || "";
+  const weightParam = searchParams.get("weight") || "";
+  const hasOffer = searchParams.get("hasOffer") === "true";
+  const page = parseInt(searchParams.get("page") || "1");
 
   // memoized so its identity is stable across renders unless weightParam actually changes —
   // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
@@ -121,15 +121,15 @@ export default function Products() {
     [weightParam]
   );
 
-  const [products,    setProducts]    = useState([]);
-  const [categories,  setCategories]  = useState([]);
-  const [pagination,  setPagination]  = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [filterOpen,  setFilterOpen]  = useState(false);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [sortOpen,    setSortOpen]    = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
-  const [priceDraft,  setPriceDraft]  = useState({ min: minPrice, max: maxPrice });
+  const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
 
   const sortRef = useRef(null);
 
@@ -150,18 +150,18 @@ export default function Products() {
   // ── build query string from URL state ────────────────────────────
   const buildQuery = useCallback(() => {
     const p = new URLSearchParams();
-    if (search)            p.set("search",       search);
-    if (category)          p.set("category",     category);
-    if (sort)              p.set("sort",         sort);
-    if (inStock)           p.set("inStock",      "true");
-    if (isBest)            p.set("isBestseller", "true");
-    if (isNew)             p.set("isNew",        "true");
-    if (minPrice)          p.set("minPrice",     minPrice);
-    if (maxPrice)          p.set("maxPrice",     maxPrice);
-    if (rating)            p.set("rating",       rating);
-    if (weights.length)    p.set("weight",       weights.join(","));
-    if (hasOffer)          p.set("hasOffer",     "true");
-    p.set("page",  String(page));
+    if (search) p.set("search", search);
+    if (category) p.set("category", category);
+    if (sort) p.set("sort", sort);
+    if (inStock) p.set("inStock", "true");
+    if (isBest) p.set("isBestseller", "true");
+    if (isNew) p.set("isNew", "true");
+    if (minPrice) p.set("minPrice", minPrice);
+    if (maxPrice) p.set("maxPrice", maxPrice);
+    if (rating) p.set("rating", rating);
+    if (weights.length) p.set("weight", weights.join(","));
+    if (hasOffer) p.set("hasOffer", "true");
+    p.set("page", String(page));
     p.set("limit", "12");
     return p.toString();
   }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
@@ -201,7 +201,7 @@ export default function Products() {
   useEffect(() => {
     categoryApi.list()
       .then((r) => setCategories(r.categories || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── fetch products whenever filters change ────────────────────────
@@ -228,19 +228,19 @@ export default function Products() {
         (r.products || []).forEach((p) => p.variants.forEach((v) => labels.add(v.weightLabel)));
         setAllWeightLabels([...labels]);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [
-    search   && { key: "search",       label: `"${search}"` },
-    category && { key: "category",     label: categories.find((c) => c.slug === category)?.nameEn || category },
-    inStock  && { key: "inStock",      label: "In Stock" },
-    isBest   && { key: "isBestseller", label: "Best Sellers" },
-    isNew    && { key: "isNew",        label: "New Arrivals" },
-    (minPrice || maxPrice) && { key: "price",  label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
-    rating   && { key: "rating",       label: `${rating}★ & above` },
-    hasOffer && { key: "hasOffer",     label: "Has Offer" },
+    search && { key: "search", label: `"${search}"` },
+    category && { key: "category", label: categories.find((c) => c.slug === category)?.nameEn || category },
+    inStock && { key: "inStock", label: "In Stock" },
+    isBest && { key: "isBestseller", label: "Best Sellers" },
+    isNew && { key: "isNew", label: "New Arrivals" },
+    (minPrice || maxPrice) && { key: "price", label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
+    rating && { key: "rating", label: `${rating}★ & above` },
+    hasOffer && { key: "hasOffer", label: "Has Offer" },
     ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
   ].filter(Boolean);
 
@@ -271,9 +271,8 @@ export default function Products() {
             <li>
               <button
                 onClick={() => setParam("category", "")}
-                className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${
-                  !category ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                }`}
+                className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${!category ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
+                  }`}
               >
                 All Products
               </button>
@@ -282,9 +281,8 @@ export default function Products() {
               <li key={cat.id}>
                 <button
                   onClick={() => setParam("category", cat.slug)}
-                  className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${
-                    category === cat.slug ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                  }`}
+                  className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${category === cat.slug ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
+                    }`}
                 >
                   {cat.nameEn}
                 </button>
@@ -424,7 +422,7 @@ export default function Products() {
 
       {/* ── Top toolbar: search + sort + filter button ─────────── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center justify-between bg-white p-3 rounded-2xl border border-sandal-100 shadow-sm">
-        
+
         {/* inline search */}
         <form
           onSubmit={(e) => { e.preventDefault(); setParam("search", searchInput); }}
@@ -462,9 +460,8 @@ export default function Products() {
                     key={o.value}
                     type="button"
                     onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${
-                      sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     {o.label}
                   </button>

@@ -6,6 +6,7 @@ import categoriesDb from "../assets/categories.json";
 import bannersDb from "../assets/banners.json";
 import offersDb from "../assets/offers.json";
 import comboImg from "../assets/products/combo.jpg";
+import { useAuthStore } from "../components/store/AuthStore";
 
 // ── Image Mapper ──────────────────────────────────────────────────────
 // Dynamically forces all images in the database to use the single combo.jpg asset
@@ -76,46 +77,32 @@ const getCurrentUser = (token) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════
-// AUTH MOCK
+// AUTH — real API
 // ═════════════════════════════════════════════════════════════════════
+const AUTH_BASE = `${import.meta.env.VITE_LHOST_API_URL}/auth`;
+
 export const authApi = {
-  login: async (data) => {
-    await delay();
-    const users = getUsers();
-    const user = users.find(u => u.email === data.email || u.phone === data.phone) || users[0];
-    const isMockAdmin = data.email === "balaji@nammakadai.com" || data.phone === "9876543210";
-    const loggedUser = isMockAdmin ? users.find(u => u.role === "admin") : user;
-    const token = loggedUser.role === "admin" ? "admin-token" : "customer-token";
-    return { success: true, user: loggedUser, token };
-  },
-  register: async (data) => {
-    await delay();
-    const users = getUsers();
-    const newUser = {
-      id: `user-${Date.now()}`,
-      fullName: data.fullName || "New User",
-      email: data.email || "",
-      phone: data.phone || "",
-      role: "customer",
-      status: "active",
-      createdAt: new Date().toISOString().split("T")[0]
-    };
-    users.push(newUser);
-    setLocalStorage("nok-mock-users", users);
-    return { success: true, user: newUser, token: "customer-token" };
-  },
-  sendOtp: async (data) => {
-    await delay();
-    return { success: true, message: "Mock OTP 123456 sent successfully" };
-  },
-  logout: async (token) => {
-    await delay();
-    return { success: true };
-  },
-  refresh: async (token) => {
-    await delay();
-    return { success: true, token };
-  }
+  // returns { accessToken, refreshToken, user }
+  login: (data) =>
+    apiFetch(`${AUTH_BASE}/user-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }, false),
+
+  logout: (refreshToken, token) =>
+    apiFetch(`${AUTH_BASE}/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ refreshToken }),
+    }, false),
+
+  refresh: (refreshToken) =>
+    apiFetch(`${AUTH_BASE}/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    }, false),
 };
 
 // ═════════════════════════════════════════════════════════════════════
@@ -433,47 +420,86 @@ export const categoryApi = {
 };
 
 // ═════════════════════════════════════════════════════════════════════
-// BANNERS MOCK
+// BANNERS — real API
 // ═════════════════════════════════════════════════════════════════════
-export const bannerApi = {
-  active: async () => {
-    await delay();
-    return { success: true, banners: getBanners().filter(b => b.isActive) };
-  },
-  all: async (token) => {
-    await delay();
-    return { success: true, banners: getBanners() };
-  },
-  create: async (data, token) => {
-    await delay();
-    const banners = getBanners();
-    const newBanner = {
-      ...data,
-      id: `ban-${Date.now()}`,
-      isActive: true
-    };
-    banners.push(newBanner);
-    setLocalStorage("nok-mock-banners", banners);
-    return { success: true, banner: mapBannerImage(newBanner) };
-  },
-  update: async (id, data, token) => {
-    await delay();
-    const banners = getBanners();
-    const idx = banners.findIndex(b => b.id === id);
-    if (idx !== -1) {
-      banners[idx] = { ...banners[idx], ...data };
-      setLocalStorage("nok-mock-banners", banners);
-      return { success: true, banner: mapBannerImage(banners[idx]) };
-    }
-    throw new Error("Banner not found");
-  },
-  remove: async (id, token) => {
-    await delay();
-    const banners = getBanners();
-    const filtered = banners.filter(b => b.id !== id);
-    setLocalStorage("nok-mock-banners", filtered);
-    return { success: true };
+const BANNER_BASE = `${import.meta.env.VITE_LHOST_API_URL}/banners`;
+
+async function apiFetch(url, options = {}, _retry = true) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch {
+    throw new Error("Cannot connect to server — is the backend running?");
   }
+
+  const text = await res.text();
+  if (!text) throw new Error("Server returned empty response");
+  let json;
+  try { json = JSON.parse(text); } catch { throw new Error("Server returned invalid JSON"); }
+
+  // Access token expired or invalid — try silent refresh once
+  if ((res.status === 401 || res.status === 403) && _retry) {
+    const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
+    if (refreshToken) {
+      try {
+        const rRes = await fetch(`${import.meta.env.VITE_LHOST_API_URL}/auth/refresh-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        });
+        const rJson = await rRes.json();
+        if (rRes.ok && rJson.accessToken) {
+          setAccessToken(rJson.accessToken);
+          const retryOptions = {
+            ...options,
+            headers: { ...options.headers, Authorization: `Bearer ${rJson.accessToken}` },
+          };
+          return apiFetch(url, retryOptions, false);
+        }
+      } catch { /* refresh request itself failed */ }
+    }
+    // Could not refresh — force logout so user re-authenticates
+    logout();
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!res.ok) throw new Error(json.message || `Request failed (${res.status})`);
+  return json;
+}
+
+export const bannerApi = {
+  // public — active banners only (Home page)
+  active: () =>
+    apiFetch(BANNER_BASE),
+
+  // admin — all banners including inactive
+  all: (token) =>
+    apiFetch(`${BANNER_BASE}/all`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  // admin — create: { title, subtitle?, imageUrl?, videoUrl?, linkUrl?, sortOrder?, isActive? }
+  create: (data, token) =>
+    apiFetch(BANNER_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  // admin — update a banner by id
+  update: (id, data, token) =>
+    apiFetch(`${BANNER_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  // admin — delete a banner
+  remove: (id, token) =>
+    apiFetch(`${BANNER_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 // ═════════════════════════════════════════════════════════════════════

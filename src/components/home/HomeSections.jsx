@@ -11,7 +11,7 @@ const PH_CAT = comboImg;
 // ══════════════════════════════════════════════════════════════════════
 export function TrustStrip() {
   const items = [
-    { icon: <Truck size={18} />,       label: "Free shipping above ₹499" },
+    { icon: <Truck size={18} />, label: "Free shipping above ₹499" },
     { icon: <ShieldCheck size={18} />, label: "100% natural & authentic" },
     { icon: <ShieldCheck size={18} />, label: "Secure Payment Checkout" },
   ];
@@ -169,17 +169,17 @@ export function WhyUs() {
     {
       emoji: "🎣",
       title: "Direct from Fishermen",
-      desc:  "We partner directly with Rameswaram fishing families — no middleman, ensuring maximum freshness.",
+      desc: "We partner directly with Rameswaram fishing families — no middleman, ensuring maximum freshness.",
     },
     {
       emoji: "☀️",
       title: "Sun-Dried Naturally",
-      desc:  "Traditional coastal sun-drying process under optimal hygienic standards. Zero chemicals.",
+      desc: "Traditional coastal sun-drying process under optimal hygienic standards. Zero chemicals.",
     },
     {
       emoji: "📦",
       title: "Hygienic Packaging",
-      desc:  "Premium multi-layer, odour-proof packaging that seals in coastal freshness for months.",
+      desc: "Premium multi-layer, odour-proof packaging that seals in coastal freshness for months.",
     },
   ];
   return (
@@ -211,22 +211,22 @@ export function WhyUs() {
 export function Testimonials() {
   const reviews = [
     {
-      name:     "Meena Sundaram",
+      name: "Meena Sundaram",
       location: "Chennai",
-      text:     "The nethili is exactly like what my paati used to buy in Rameswaram. Freshness and quality is unmatched. Ordering for 6 months now.",
-      rating:   5,
+      text: "The nethili is exactly like what my paati used to buy in Rameswaram. Freshness and quality is unmatched. Ordering for 6 months now.",
+      rating: 5,
     },
     {
-      name:     "Rajan Pillai",
+      name: "Rajan Pillai",
       location: "Coimbatore",
-      text:     "Packaging is excellent — no smell leakage, arrived sealed and dry. The sura karuvadu is perfectly dried, not too salty. Will reorder.",
-      rating:   5,
+      text: "Packaging is excellent — no smell leakage, arrived sealed and dry. The sura karuvadu is perfectly dried, not too salty. Will reorder.",
+      rating: 5,
     },
     {
-      name:     "Divya Krishnamurthy",
+      name: "Divya Krishnamurthy",
       location: "Bengaluru",
-      text:     "Living away used to mean missing authentic dry fish. Found NammaOor and now I order every month. The pickle combo is outstanding!",
-      rating:   5,
+      text: "Living away used to mean missing authentic dry fish. Found NammaOor and now I order every month. The pickle combo is outstanding!",
+      rating: 5,
     },
   ];
 
@@ -283,7 +283,7 @@ export function Testimonials() {
 // NEWSLETTER CTA
 // ══════════════════════════════════════════════════════════════════════
 export function NewsletterCTA() {
-  const [email,  setEmail]  = useState("");
+  const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | success | error
 
   const handleSubmit = (e) => {

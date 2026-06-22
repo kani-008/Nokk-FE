@@ -7,13 +7,13 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { productApi }       from "../ApiCall/Api.jsx";
-import { useCartStore }     from "../components/store/CartStore.jsx";
+import { productApi } from "../ApiCall/Api.jsx";
+import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
-import { useAuthStore }     from "../components/store/AuthStore.jsx";
-import { useToast }         from "../components/useToast";
-import ProductDescription   from "../components/Product/ProductDescription.jsx";
-import ProductReviews       from "../components/Product/ProductReviews.jsx";
+import { useAuthStore } from "../components/store/AuthStore.jsx";
+import { useToast } from "../components/useToast";
+import ProductDescription from "../components/Product/ProductDescription.jsx";
+import ProductReviews from "../components/Product/ProductReviews.jsx";
 
 import comboImg from "../assets/products/combo.jpg";
 
@@ -64,7 +64,7 @@ function Stars({ rating, count, size = 14 }) {
 function ImageGallery({ images, onShare }) {
   const [active, setActive] = useState(0);
   const scrollRef = useRef(null);
-  
+
   const list = images?.length ? images : [{ imageUrl: PH, isPrimary: true }];
   // Replicate primary image if only 1 exists, to demonstrate swipe transition & dots
   const showList = list.length === 1 ? [list[0], list[0], list[0]] : list;
@@ -103,7 +103,7 @@ function ImageGallery({ images, onShare }) {
     <div className="flex flex-col gap-3">
       {/* main image viewer */}
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-sandal-100 group select-none">
-        
+
         {/* Horizontal scroll snap container */}
         <div
           ref={scrollRef}
@@ -157,9 +157,8 @@ function ImageGallery({ images, onShare }) {
             <button
               key={i}
               onClick={() => scrollToImage(i)}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                i === active ? "bg-sandal-600 w-5" : "bg-gray-300 w-2"
-              }`}
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${i === active ? "bg-sandal-600 w-5" : "bg-gray-300 w-2"
+                }`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
@@ -201,10 +200,10 @@ function ReviewCard({ review }) {
 // ── Write review form ──────────────────────────────────────────────────
 function ReviewForm({ productId, onSubmit }) {
   const { isAuthenticated, token } = useAuthStore();
-  const [form,    setForm]    = useState({ rating: 5, title: "", comment: "" });
+  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
   const [loading, setLoading] = useState(false);
-  const [done,    setDone]    = useState(false);
-  const [error,   setError]   = useState("");
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
 
   if (!isAuthenticated) {
     return (
@@ -297,20 +296,20 @@ function ReviewForm({ productId, onSubmit }) {
 // PRODUCT DETAILS PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductDetails() {
-  const { slug }     = useParams();
-  const navigate     = useNavigate();
-  const { addItem, items }  = useCartStore();
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { addItem, items } = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
-  const { token }    = useAuthStore();
+  const { token } = useAuthStore();
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
-  const [product,    setProduct]    = useState(null);
-  const [related,    setRelated]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [notFound,   setNotFound]   = useState(false);
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [activeVariant, setActiveVariant] = useState(null);
-  const [qty,        setQty]        = useState(1);
-  const [addedMsg,   setAddedMsg]   = useState(false);
+  const [qty, setQty] = useState(1);
+  const [addedMsg, setAddedMsg] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
@@ -347,25 +346,25 @@ export default function ProductDetails() {
   if (!product) return null;
 
   const wishlisted = isWishlisted(product.id);
-  const price      = activeVariant?.price ?? product.minPrice ?? 0;
-  const compare    = (activeVariant?.comparePrice ?? product.minComparePrice) > price
+  const price = activeVariant?.price ?? product.minPrice ?? 0;
+  const compare = (activeVariant?.comparePrice ?? product.minComparePrice) > price
     ? (activeVariant?.comparePrice ?? product.minComparePrice)
     : null;
-  const disc       = compare ? Math.round(((compare - price) / compare) * 100) : 0;
-  const inStock    = (activeVariant?.stockQty ?? product.totalStock ?? 0) > 0;
+  const disc = compare ? Math.round(((compare - price) / compare) * 100) : 0;
+  const inStock = (activeVariant?.stockQty ?? product.totalStock ?? 0) > 0;
 
   const handleAddToCart = () => {
     if (!activeVariant || !inStock) return;
     addItem({
-      variantId:    activeVariant.id,
-      productId:    product.id,
-      productName:  product.nameEn,
-      nameTa:       product.nameTa,
-      image:        product.primaryImage,
-      price:        activeVariant.price,
+      variantId: activeVariant.id,
+      productId: product.id,
+      productName: product.nameEn,
+      nameTa: product.nameTa,
+      image: product.primaryImage,
+      price: activeVariant.price,
       comparePrice: activeVariant.comparePrice,
-      weight:       activeVariant.weightLabel,
-      quantity:     qty,
+      weight: activeVariant.weightLabel,
+      quantity: qty,
     });
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2500);
@@ -485,17 +484,15 @@ export default function ProductDetails() {
 
       {/* ── Toast (Red for Error, Green for Success) ── */}
       <div
-        className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${
-          toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
-        }`}
+        className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
+          }`}
       >
         {displayedError && (
           <div
-            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${
-              displayedType === "success"
-                ? "border-green-200 shadow-green-900/5 text-green-700"
-                : "border-red-200 shadow-red-900/5 text-red-700"
-            }`}
+            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
+              ? "border-green-200 shadow-green-900/5 text-green-700"
+              : "border-red-200 shadow-red-900/5 text-red-700"
+              }`}
           >
             {displayedType === "success" ? (
               <ShieldCheck size={17} className="shrink-0 mt-0.5 text-green-500" />
@@ -509,7 +506,7 @@ export default function ProductDetails() {
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 font-body text-xs text-amber-500 mb-6 flex-wrap">
-        <Link to="/"        className="hover:text-brand-700 transition-colors">Home</Link>
+        <Link to="/" className="hover:text-brand-700 transition-colors">Home</Link>
         <ChevronRight size={12} />
         <Link to="/products" className="hover:text-brand-700 transition-colors">Products</Link>
         {product.categoryName && (
@@ -541,8 +538,8 @@ export default function ProductDetails() {
             {/* badges */}
             <div className="flex gap-2 flex-wrap">
               {product.isBestseller && <span className="badge-amber">🏆 Best Seller</span>}
-              {product.isNew        && <span className="badge-green">✨ New Arrival</span>}
-              {!inStock             && <span className="badge-red">Out of Stock</span>}
+              {product.isNew && <span className="badge-green">✨ New Arrival</span>}
+              {!inStock && <span className="badge-red">Out of Stock</span>}
             </div>
 
             {/* name */}
@@ -591,11 +588,10 @@ export default function ProductDetails() {
                       key={v.id}
                       onClick={() => { setActiveVariant(v); setQty(1); }}
                       disabled={v.stockQty === 0}
-                      className={`font-body text-sm px-4 py-2 rounded-xl border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                        activeVariant?.id === v.id
-                          ? "border-brand-700 bg-brand-700 text-white font-semibold"
-                          : "border-amber-200 text-amber-800 hover:border-brand-600 bg-white"
-                      }`}
+                      className={`font-body text-sm px-4 py-2 rounded-xl border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${activeVariant?.id === v.id
+                        ? "border-brand-700 bg-brand-700 text-white font-semibold"
+                        : "border-amber-200 text-amber-800 hover:border-brand-600 bg-white"
+                        }`}
                     >
                       {v.weightLabel}
                       {v.stockQty === 0 && <span className="ml-1 text-[10px]">(OOS)</span>}
@@ -628,11 +624,10 @@ export default function ProductDetails() {
               </button>
               <button
                 onClick={() => toggle(product.id, token)}
-                className={`p-3.5 border-2 rounded-2xl transition-colors ${
-                  wishlisted
-                    ? "border-rose-300 bg-rose-50 text-rose-500"
-                    : "border-amber-200 text-amber-400 hover:border-rose-300 hover:text-rose-400"
-                }`}
+                className={`p-3.5 border-2 rounded-2xl transition-colors ${wishlisted
+                  ? "border-rose-300 bg-rose-50 text-rose-500"
+                  : "border-amber-200 text-amber-400 hover:border-rose-300 hover:text-rose-400"
+                  }`}
                 aria-label="Toggle wishlist"
               >
                 <Heart size={20} className={wishlisted ? "fill-rose-500" : ""} />
@@ -642,7 +637,7 @@ export default function ProductDetails() {
             {/* trust badges */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-100">
               {[
-                { icon: <Truck size={16} />,       text: "Free above ₹499" },
+                { icon: <Truck size={16} />, text: "Free above ₹499" },
                 { icon: <ShieldCheck size={16} />, text: "100% Safe & Natural" },
                 // { icon: <RefreshCcw size={16} />,  text: "7-Day Returns" },
               ].map((t) => (
@@ -682,7 +677,9 @@ export default function ProductDetails() {
                   </div>
                   <div className="p-3">
                     <p className="font-body text-sm font-semibold text-brand-900 line-clamp-2">{p.nameEn}</p>
-                    <p className="font-num text-sm font-bold text-brand-800 mt-1">{rupee(p.minPrice)}</p>
+                    <p className="font-num text-sm font-bold text-brand-800 mt-1">
+                      {rupee(p.variants?.[0]?.price ?? p.minPrice ?? 0)}
+                    </p>
                   </div>
                 </div>
               </Link>

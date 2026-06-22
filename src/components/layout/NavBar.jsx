@@ -14,43 +14,43 @@ import { categoryApi } from "../../ApiCall/Api.jsx";
 
 const NAV_LINKS = [
   { label: "Products", to: "/products" },
-  { label: "Offers",   to: "/offers"   },
+  { label: "Offers", to: "/offers" },
   { label: "Bestsellers", to: "/products?isBestseller=true" },
   { label: "Today's Deals", to: "/offers" },
 ];
 
 export default function NavBar() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false); // collapsible category list inside the drawer (currently unused — category section is commented out in MobileDrawer)
-  const [query,       setQuery]       = useState("");
-  const [categories,  setCategories]  = useState([]);
+  const [query, setQuery] = useState("");
+  const [categories, setCategories] = useState([]);
 
   const profileRef = useRef(null);
-  const searchRef  = useRef(null);
+  const searchRef = useRef(null);
   const catDropdownRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
-  const cartCount     = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const wishlistCount = useWishlistStore((s) => s.ids.length);
 
   // fetch categories once for the category strip
   useEffect(() => {
     categoryApi.list()
       .then((r) => setCategories((r.categories || []).filter((c) => c.isActive)))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-      if (searchRef.current  && !searchRef.current.contains(e.target))  setSearchOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
       if (catDropdownRef.current && !catDropdownRef.current.contains(e.target)) setCatDropdownOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -143,11 +143,10 @@ export default function NavBar() {
               >
                 <button
                   onClick={() => setCatDropdownOpen((prev) => !prev)}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
-                    catDropdownOpen
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${catDropdownOpen
                       ? "bg-white/10 text-white"
                       : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <Grid3x3 size={14} />
                   Categories
@@ -184,11 +183,10 @@ export default function NavBar() {
                 <Link
                   key={l.label}
                   to={l.to}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
-                    isActive(l.to)
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${isActive(l.to)
                       ? "bg-white/10 text-white"
                       : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
+                    }`}
                 >
                   {l.label}
                 </Link>
@@ -266,10 +264,10 @@ export default function NavBar() {
                           {user?.phone ?? user?.email}
                         </p>
                       </div>
-                      <DropItem to="/profile"   icon={<User size={14} />}       label="My Profile" />
-                      <DropItem to="/my-orders" icon={<Package size={14} />}    label="My Orders" />
-                      <DropItem to="/wishlist"  icon={<Heart size={14} />}      label="Wishlist" />
-                      <DropItem to="/offers"    icon={<Tag size={14} />}        label="Offers" />
+                      <DropItem to="/profile" icon={<User size={14} />} label="My Profile" />
+                      <DropItem to="/my-orders" icon={<Package size={14} />} label="My Orders" />
+                      <DropItem to="/wishlist" icon={<Heart size={14} />} label="Wishlist" />
+                      <DropItem to="/offers" icon={<Tag size={14} />} label="Offers" />
                       {user?.role === "admin" && (
                         <>
                           <div className="border-t border-sandal-100 my-1" />
@@ -369,11 +367,10 @@ function DropItem({ to, icon, label, highlight }) {
   return (
     <Link
       to={to}
-      className={`flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-medium transition-colors ${
-        highlight
+      className={`flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-medium transition-colors ${highlight
           ? "text-sandal-700 font-bold hover:bg-sandal-50"
           : "text-gray-700 hover:bg-gray-100"
-      }`}
+        }`}
     >
       <span className="text-sandal-500">{icon}</span>
       {label}

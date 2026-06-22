@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Star } from "lucide-react";
-import { useCartStore }     from "../store/CartStore";
+import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
-import { useAuthStore }     from "../store/AuthStore";
+import { useAuthStore } from "../store/AuthStore";
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -30,20 +30,20 @@ const rupee = (n) =>
 export default function ProductCard({ product }) {
   const { addItem, items } = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
-  const { token }                = useAuthStore();
+  const { token } = useAuthStore();
 
   const [shakeKey, setShakeKey] = useState(0);
 
   const wishlisted = isWishlisted(product.id);
-  const firstV     = product.variants?.[0];
-  const price      = firstV?.price       ?? product.minPrice        ?? 0;
-  const compare    = firstV?.comparePrice ?? product.minComparePrice ?? 0;
-  const hasDisc    = compare > price;
-  const disc       = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
-  const image      = product.primaryImage || PH;
-  const inStock    = (firstV?.stockQty ?? 1) > 0;
-  const cartItem   = firstV ? items.find((i) => i.variantId === firstV.id) : null;
-  const inCart     = !!cartItem;
+  const firstV = product.variants?.[0];
+  const price = firstV?.price ?? product.minPrice ?? 0;
+  const compare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
+  const hasDisc = compare > price;
+  const disc = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
+  const image = product.primaryImage || PH;
+  const inStock = (firstV?.stockQty ?? 1) > 0;
+  const cartItem = firstV ? items.find((i) => i.variantId === firstV.id) : null;
+  const inCart = !!cartItem;
 
   // Fires a quick side-to-side shake on the cart icon — every click replays
   // it, whether this is the first "add" or a repeat click on an already
@@ -63,14 +63,14 @@ export default function ProductCard({ product }) {
     }
 
     addItem({
-      variantId:    firstV.id,
-      productId:    product.id,
-      productName:  product.nameEn,
-      nameTa:       product.nameTa,
+      variantId: firstV.id,
+      productId: product.id,
+      productName: product.nameEn,
+      nameTa: product.nameTa,
       image,
-      price:        firstV.price,
+      price: firstV.price,
       comparePrice: firstV.comparePrice,
-      weight:       firstV.weightLabel,
+      weight: firstV.weightLabel,
     });
     shake();
   };
@@ -121,11 +121,10 @@ export default function ProductCard({ product }) {
             >
               <svg
                 viewBox="0 0 24 24"
-                className={`w-4 h-4 transition-colors ${
-                  wishlisted
-                    ? "fill-rose-500 stroke-rose-500"
-                    : "fill-none stroke-sandal-500 hover:stroke-rose-500"
-                }`}
+                className={`w-4 h-4 transition-colors ${wishlisted
+                  ? "fill-rose-500 stroke-rose-500"
+                  : "fill-none stroke-sandal-500 hover:stroke-rose-500"
+                  }`}
                 strokeWidth="2.5"
               >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -201,7 +200,7 @@ export default function ProductCard({ product }) {
             onClick={handleCart}
             disabled={!inStock}
             aria-label={inCart ? "Already in cart" : "Add to cart"}
-            className={`p-2.5 rounded-xl transition-colors duration-300 shrink-0 cursor-pointer overflow-hidden
+            className={`px-3 py-2 rounded-xl  transition-colors duration-300 shrink-0 cursor-pointer overflow-hidden
               ${!inStock
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : inCart
