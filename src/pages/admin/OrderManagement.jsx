@@ -3,12 +3,27 @@ import {
   Filter, ChevronDown, X, Eye, ExternalLink,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
-import { orderApi }     from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore.jsx";
+
+const ORDER_BASE = `${API_URL}/orders`;
+const orderApi = {
+  all: (params = "", token) =>
+    apiFetch(`${ORDER_BASE}?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  updateStatus: (id, data, token) =>
+    apiFetch(`${ORDER_BASE}/${id}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
 import comboImg from "../../assets/products/combo.jpg";
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -314,7 +329,7 @@ export default function OrderManagement() {
         )}
       </div>
 
-      <DataTable columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
+      <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
 
       {/* pagination */}
       {totalPages > 1 && (

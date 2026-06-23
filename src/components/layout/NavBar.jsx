@@ -10,7 +10,12 @@ import MobileDrawer from "./MobileDrawer.jsx";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
-import { categoryApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+
+const CATEGORY_BASE = `${API_URL}/categories`;
+const categoryApi = {
+  list: () => apiFetch(CATEGORY_BASE),
+};
 
 const NAV_LINKS = [
   { label: "Products", to: "/products" },

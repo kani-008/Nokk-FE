@@ -2,11 +2,26 @@ import { useState, useEffect } from "react";
 import {
   AlertTriangle, PackageX, Save, X, RefreshCw,
 } from "lucide-react";
-import { inventoryApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
+
+const INVENTORY_BASE = `${API_URL}/inventory`;
+const inventoryApi = {
+  list: (params = "", token) =>
+    apiFetch(`${INVENTORY_BASE}?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  update: (variantId, data, token) =>
+    apiFetch(`${INVENTORY_BASE}/${variantId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard, StatCard,
+  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard, StatCard,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -222,7 +237,7 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      <DataTable columns={COLS} rows={items} loading={loading} emptyText="No inventory items found." />
+      <TableFormat columns={COLS} rows={items} loading={loading} emptyText="No inventory items found." />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

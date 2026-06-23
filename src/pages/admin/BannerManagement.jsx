@@ -3,8 +3,59 @@ import {
   Plus, Pencil, Trash2, X, Image as ImageIcon,
   Eye, EyeOff, Loader2, Video,
 } from "lucide-react";
-import { bannerApi, btextApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
+
+const BANNER_BASE = `${API_URL}/banners`;
+const BTEXT_BASE = `${API_URL}/btext`;
+
+const bannerApi = {
+  all: (token) =>
+    apiFetch(`${BANNER_BASE}/all`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  create: (data, token) =>
+    apiFetch(BANNER_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  update: (id, data, token) =>
+    apiFetch(`${BANNER_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  remove: (id, token) =>
+    apiFetch(`${BANNER_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+const btextApi = {
+  forBanner: (bannerId, token) =>
+    apiFetch(`${BTEXT_BASE}/banner/${bannerId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  create: (data, token) =>
+    apiFetch(BTEXT_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  update: (id, data, token) =>
+    apiFetch(`${BTEXT_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  remove: (id, token) =>
+    apiFetch(`${BTEXT_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
 import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";

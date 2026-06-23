@@ -1,6 +1,84 @@
 import { useState, useEffect, useRef } from "react";
 import { Save, Loader2, Check, Store, Truck, IndianRupee, Bell, QrCode, Upload, Landmark, Palette, RotateCcw, ShoppingCart } from "lucide-react";
-import { settingsApi, paymentSettingsApi } from "../../ApiCall/Api.jsx";
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const setLocalStorage = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+const getSettings = () => getLocalStorage("nok-mock-settings", {
+  storeName: "Namma Oor Karuvattu Kadai",
+  storeEmail: "hello@nammakadai.com",
+  storePhone: "+91 98765 43210",
+  freeShippingThreshold: 499,
+  shippingCharge: 60,
+  gstPercentage: 5
+});
+
+const getPaymentSettings = () => getLocalStorage("nok-mock-payment-settings", {
+  upiId: "nammaoor@upi",
+  payeeName: "Namma Oor Karuvattu Kadai",
+  accountHolderName: "Namma Oor Store",
+  accountNumber: "123456789012",
+  ifscCode: "SBIN0001234",
+  bankName: "State Bank of India",
+  qrCodeUrl: ""
+});
+
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const settingsApi = {
+  get: async () => {
+    await delay();
+    return { success: true, settings: getSettings() };
+  },
+  update: async (data, token) => {
+    await delay();
+    setLocalStorage("nok-mock-settings", data);
+    return { success: true, settings: data };
+  }
+};
+
+const paymentSettingsApi = {
+  getAdmin: async (token) => {
+    await delay();
+    return { success: true, settings: getPaymentSettings() };
+  },
+  update: async (data, token) => {
+    await delay();
+    const current = getPaymentSettings();
+    const updated = { ...current, ...data };
+    setLocalStorage("nok-mock-payment-settings", updated);
+    return { success: true, settings: updated };
+  },
+  uploadQr: async (file, token) => {
+    await delay();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const settings = getPaymentSettings();
+        settings.qrCodeUrl = reader.result;
+        setLocalStorage("nok-mock-payment-settings", settings);
+        resolve({ success: true, settings });
+      };
+      reader.onerror = () => {
+        reject(new Error("Failed to read QR file"));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+};
 import { useAuthStore } from "../../components/store/AuthStore";
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";

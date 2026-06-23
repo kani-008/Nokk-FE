@@ -4,7 +4,7 @@ import {
     User, Phone, Mail, Lock, Eye, EyeOff,
     ArrowRight, Loader2, CheckCircle2, ShieldCheck, AlertCircle,
 } from "lucide-react";
-import { authApi } from "../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 
@@ -148,18 +148,11 @@ export default function Register() {
 
         setLoading(true);
         try {
-            // ── REAL API CALL — uncomment once the backend is live ──────
-            // await authApi.sendOtp({ phone: form.phone });
-
-            // ── MOCK BYPASS ──────────────────────────────────────────────
-            if (form.phone.trim() !== MOCK_PHONE) {
-                throw new Error(`Use the test number ${MOCK_PHONE} for now — OTP sending isn't live yet.`);
-            }
-
+            await API.post("/auth/otp-create", { phone: form.phone, identifier: form.phone });
             setView("otp");
             setOtpExpiryTime(Date.now() + 180 * 1000); // 3 minutes background expiry
         } catch (err) {
-            setApiErr(err.message || "Failed to send OTP. Please try again.");
+            setApiErr(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -170,11 +163,10 @@ export default function Register() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            // ── REAL API CALL ────────────────────────────────────────────
-            // await authApi.sendOtp({ phone: form.phone });
+            await API.post("/auth/otp-create", { phone: form.phone, identifier: form.phone });
             setOtpExpiryTime(Date.now() + 180 * 1000); // restart 3 minutes timer
         } catch (err) {
-            setApiErr(err.message || "Could not resend OTP.");
+            setApiErr(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {
             setLoading(false);
         }
@@ -185,12 +177,6 @@ export default function Register() {
         e.preventDefault();
         const otpValue = otp.join("");
         if (otp.some((d) => d === "")) { setErrors({ otp: "Enter the 6-digit OTP" }); return; }
-
-        // ── MOCK BYPASS ──────────────────────────────────────────────────
-        if (otpValue !== MOCK_OTP) {
-            setApiErr(`Use the test OTP ${MOCK_OTP} for now — OTP verification isn't live yet.`);
-            return;
-        }
 
         setView("password");
     };
@@ -241,25 +227,19 @@ export default function Register() {
 
         setLoading(true);
         try {
-            // ── REAL API CALL — uncomment once the backend is live ──────
-            // const res = await authApi.register({
-            //     fullName: form.fullName.trim(),
-            //     phone: form.phone.trim(),
-            //     email: form.email.trim() || undefined,
-            //     password: form.password,
-            //     otp: otp.join(""),
-            // });
-            // login(res.user, res.token);
-            // navigate("/", { replace: true });
-
-            // ── MOCK BYPASS ──────────────────────────────────────────────
-            login(
-                { id: "mock-user-id", phone: form.phone.trim(), role: "customer", name: form.fullName.trim() || "Mock User" },
-                "mock-user-token"
-            );
+            const res = await API.post("/auth/register", {
+                fullName: form.fullName.trim(),
+                phone: form.phone.trim(),
+                identifier: form.phone.trim(),
+                email: form.email.trim() || undefined,
+                password: form.password,
+                otp: otp.join(""),
+            });
+            const data = res.data;
+            login(data.user, data.accessToken || data.token, data.refreshToken);
             navigate("/", { replace: true });
         } catch (err) {
-            setApiErr(err.message || "Registration failed. Please try again.");
+            setApiErr(err.response?.data?.message || err.message || "Registration failed. Please try again.");
         } finally {
             setLoading(false);
         }

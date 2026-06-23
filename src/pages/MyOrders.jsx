@@ -4,7 +4,48 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, CreditCard, Clock, ArrowRight, X,
 } from "lucide-react";
-import { orderApi }     from "../ApiCall/Api.jsx";
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const setLocalStorage = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+const getOrders = () => getLocalStorage("nok-mock-orders", []);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const orderApi = {
+  mine: async (token) => {
+    await delay();
+    return { success: true, orders: getOrders() };
+  },
+  cancel: async (id, token) => {
+    await delay();
+    const orders = getOrders();
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      orders[idx].status = "cancelled";
+      orders[idx].timeline.push({
+        status: "cancelled",
+        message: "Order cancelled by customer",
+        time: new Date().toISOString()
+      });
+      setLocalStorage("nok-mock-orders", orders);
+      return { success: true, order: orders[idx] };
+    }
+    throw new Error("Order not found");
+  }
+};
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 

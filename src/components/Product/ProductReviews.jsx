@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
-import { productApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../store/AuthStore.jsx";
+
+const PRODUCT_BASE = `${API_URL}/products`;
+const productApi = {
+  addReview: (id, data, token) =>
+    apiFetch(`${PRODUCT_BASE}/${id}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
 import { Link } from "react-router-dom";
 
 // Helper to distribute total review counts realistically if actual review logs are empty or partial.

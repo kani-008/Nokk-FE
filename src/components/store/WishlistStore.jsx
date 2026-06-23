@@ -1,6 +1,25 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { wishlistApi } from "../../ApiCall/Api";
+import { apiFetch, API_URL } from "../../ApiCall/Api";
+
+const WISHLIST_BASE = `${API_URL}/wishlist`;
+const wishlistApi = {
+  get: (token) =>
+    apiFetch(WISHLIST_BASE, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  toggle: (data, token) =>
+    apiFetch(WISHLIST_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  remove: (pid, token) =>
+    apiFetch(`${WISHLIST_BASE}/${pid}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
 
 /*
   Wishlist stores product IDs locally so the heart icon works

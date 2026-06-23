@@ -1,7 +1,30 @@
 import { useState, useEffect } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
-import { offerApi } from "../ApiCall/Api.jsx";
+import offersDb from "../assets/offers.json";
 import { Link }     from "react-router-dom";
+
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const getOffers = () => getLocalStorage("nok-mock-offers", offersDb);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const offerApi = {
+  active: async () => {
+    await delay();
+    return { success: true, offers: getOffers().filter(o => o.isActive) };
+  }
+};
 
 import comboImg from "../assets/products/combo.jpg";
 

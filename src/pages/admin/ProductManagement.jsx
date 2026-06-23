@@ -1,10 +1,27 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { productApi, categoryApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore }            from "../../components/store/AuthStore";
+
+const PRODUCT_BASE = `${API_URL}/products`;
+const CATEGORY_BASE = `${API_URL}/categories`;
+
+const categoryApi = {
+  list: () => apiFetch(CATEGORY_BASE),
+};
+
+const productApi = {
+  list: (params = "") => apiFetch(`${PRODUCT_BASE}?${params}`),
+  remove: (id, token) =>
+    apiFetch(`${PRODUCT_BASE}/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
 import {
-  AdminPage, DataTable, AdminButton, SearchBar,
+  AdminPage, AdminButton, SearchBar,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -185,7 +202,7 @@ export default function ProductManagement() {
         )}
       </div>
 
-      <DataTable columns={COLS} rows={products} loading={loading} emptyText="No products found." />
+      <TableFormat columns={COLS} rows={products} loading={loading} emptyText="No products found." />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

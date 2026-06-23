@@ -1,7 +1,23 @@
 import { useState } from "react";
 import { Plus, X, Loader2 } from "lucide-react";
-import { productApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../store/AuthStore.jsx";
+
+const PRODUCT_BASE = `${API_URL}/products`;
+const productApi = {
+  create: (data, token) =>
+    apiFetch(PRODUCT_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+  update: (id, data, token) =>
+    apiFetch(`${PRODUCT_BASE}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
 import { AdminButton } from "./AdminUI.jsx";
 import Toggle from "./Toggle.jsx";
 

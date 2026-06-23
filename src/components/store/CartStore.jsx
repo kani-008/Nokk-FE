@@ -1,6 +1,31 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { cartApi, couponApi } from "../../ApiCall/Api";
+import { apiFetch, API_URL } from "../../ApiCall/Api";
+
+const CART_BASE = `${API_URL}/cart`;
+const COUPON_BASE = `${API_URL}/coupons`;
+
+const cartApi = {
+  get: (token) =>
+    apiFetch(CART_BASE, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  add: (data, token) =>
+    apiFetch(CART_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
+
+const couponApi = {
+  validate: (data, token) =>
+    apiFetch(`${COUPON_BASE}/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+};
 
 /*
   Cart item shape (local):

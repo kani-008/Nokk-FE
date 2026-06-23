@@ -4,7 +4,49 @@ import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
-import { productApi }       from "../ApiCall/Api.jsx";
+import productsDb from "../assets/products.json";
+
+const mapProductImages = (p) => ({
+  ...p,
+  primaryImage: comboImg,
+  images: [
+    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
+  ]
+});
+
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const productApi = {
+  list: async (params = "") => {
+    await delay();
+    const products = getProducts();
+    const urlParams = new URLSearchParams(params);
+    const idsVal = urlParams.get("ids");
+    let filtered = products;
+    if (idsVal) {
+      const idList = idsVal.split(",");
+      filtered = filtered.filter(p => idList.includes(p.id));
+    }
+    return {
+      success: true,
+      products: filtered
+    };
+  }
+};
 import comboImg from "../assets/products/combo.jpg";
 
 // ─── placeholder ──────────────────────────────────────────────────────

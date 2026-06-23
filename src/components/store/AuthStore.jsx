@@ -22,9 +22,9 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       // ── state ──────────────────────────────────────────────────────
-      user:            null,
-      token:           null,
-      refreshToken:    null,
+      user: null,
+      token: null,
+      refreshToken: null,
       isAuthenticated: false,
 
       // ── derived ────────────────────────────────────────────────────
@@ -46,9 +46,9 @@ export const useAuthStore = create(
     {
       name: "nok-auth",
       partialize: (state) => ({
-        user:            state.user,
-        token:           state.token,
-        refreshToken:    state.refreshToken,
+        user: state.user,
+        token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

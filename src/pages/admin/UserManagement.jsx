@@ -1,10 +1,40 @@
 import { useState, useEffect, useRef } from "react";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
-import { userApi }      from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+
+const USER_BASE = `${API_URL}/users`;
+const userApi = {
+  all: (params = "", token) =>
+    apiFetch(`${USER_BASE}/get-all?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  block: (id, token) =>
+    apiFetch(`${USER_BASE}/toggle-status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status: "blocked" }),
+    }),
+
+  unblock: (id, token) =>
+    apiFetch(`${USER_BASE}/toggle-status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status: "active" }),
+    }),
+
+  remove: (id, token) =>
+    apiFetch(`${USER_BASE}/delete-user`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    }),
+};
 import { useAuthStore } from "../../components/store/AuthStore";
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -213,6 +243,7 @@ export default function UserManagement() {
   const { token } = useAuthStore();
   const [users,      setUsers]      = useState([]);
   const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState("");
   const [search,     setSearch]     = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -229,6 +260,7 @@ export default function UserManagement() {
 
   const load = async () => {
     setLoading(true);
+    setError("");
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (roleFilter)      params.set("role",   roleFilter);
@@ -238,7 +270,9 @@ export default function UserManagement() {
       const res = await userApi.all(params.toString(), token);
       setUsers(res.users || []);
       setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); }
+    } catch (e) {
+      setError(e.message || "Failed to load users");
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [debouncedSearch, roleFilter, status, page, token]);
@@ -264,9 +298,8 @@ export default function UserManagement() {
     { key: "phone",     label: "Phone",   render: (r) => <span className="font-num text-sm text-gray-600">{r.phone || "—"}</span> },
     { key: "role",      label: "Role",    render: (r) => <StatusBadge status={r.role || "customer"} /> },
     { key: "status",    label: "Status",  render: (r) => <StatusBadge status={r.status || "active"} /> },
-    { key: "createdAt", label: "Joined",  render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.createdAt)}</span> },
     {
-      key: "action", label: "", width: "60px",
+      key: "action", label: "Action", width: "60px",
       render: (r) => (
         <button
           onClick={() => setSelected(r)}
@@ -315,7 +348,14 @@ export default function UserManagement() {
         )}
       </div>
 
-      <DataTable columns={COLS} rows={users} loading={loading} emptyText="No users found." />
+      {error && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <TableFormat columns={COLS} rows={users} loading={loading} emptyText="No users found." />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

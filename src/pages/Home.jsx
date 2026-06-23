@@ -1,5 +1,76 @@
 import { useState, useEffect } from "react";
-import { productApi, categoryApi, bannerApi } from "../ApiCall/Api.jsx";
+import productsDb from "../assets/products.json";
+import categoriesDb from "../assets/categories.json";
+import comboImg from "../assets/products/combo.jpg";
+import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
+
+const mapProductImages = (p) => ({
+  ...p,
+  primaryImage: comboImg,
+  images: [
+    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
+  ]
+});
+
+const mapCategoryImage = (c) => ({
+  ...c,
+  imageUrl: comboImg
+});
+
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
+const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const bannerApi = {
+  active: () => apiFetch(`${API_URL}/banners/get-banners`),
+};
+
+const categoryApi = {
+  list: async () => {
+    await delay();
+    return { success: true, categories: getCategories() };
+  }
+};
+
+const productApi = {
+  list: async (params = "") => {
+    await delay();
+    const products = getProducts();
+    const urlParams = new URLSearchParams(params);
+
+    const sort         = urlParams.get("sort") || "popular";
+    const isBestseller = urlParams.get("isBestseller") === "true";
+    const limit          = parseInt(urlParams.get("limit") || "8");
+
+    let filtered = products;
+
+    if (isBestseller) {
+      filtered = filtered.filter(p => p.isBestseller);
+    }
+
+    if (sort === "newest") {
+      filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
+    }
+
+    return {
+      success: true,
+      products: filtered.slice(0, limit)
+    };
+  }
+};
 import HeroBanner from "../components/home/HeroBanner.jsx";
 import {
   CategoryScroll,

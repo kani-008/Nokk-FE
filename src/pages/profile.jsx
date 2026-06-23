@@ -1,6 +1,54 @@
 import { useState, useEffect } from "react";
 import { User, Phone, Mail, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Check, Loader2, Navigation, AlertCircle } from "lucide-react";
-import { userApi }      from "../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
+
+const USER_BASE = `${API_URL}/users`;
+const userApi = {
+  me: (token) =>
+    apiFetch(`${USER_BASE}/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  updateMe: (data, token) =>
+    apiFetch(`${USER_BASE}/me/update`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (data, token) =>
+    apiFetch(`${USER_BASE}/me/password`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  addresses: (token) =>
+    apiFetch(`${USER_BASE}/me/addresses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  addAddress: (data, token) =>
+    apiFetch(`${USER_BASE}/me/add-address`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  updateAddress: (id, data, token) =>
+    apiFetch(`${USER_BASE}/me/update-address`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ addressId: id, ...data }),
+    }),
+
+  deleteAddress: (id, token) =>
+    apiFetch(`${USER_BASE}/me/delete-address`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ addressId: id }),
+    }),
+};
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import { useToast }     from "../components/useToast.jsx";
 

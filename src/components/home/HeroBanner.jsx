@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { btextApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+
+const BTEXT_BASE = `${API_URL}/btext`;
+const btextApi = {
+  byBanner: (bannerId) => apiFetch(`${BTEXT_BASE}?bannerId=${bannerId}`),
+};
 
 // premium royalty-free ocean/coastal loop video URL
 const HERO_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-crashing-waves-of-the-ocean-close-up-12628-large.mp4";

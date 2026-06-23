@@ -3,8 +3,16 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import { dashboardApi }  from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL }  from "../../ApiCall/Api.jsx";
 import { useAuthStore }  from "../../components/store/AuthStore";
+
+const DASHBOARD_BASE = `${API_URL}/dashboard`;
+const dashboardApi = {
+  reports: (params = "", token) =>
+    apiFetch(`${DASHBOARD_BASE}/reports?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";

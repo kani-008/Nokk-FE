@@ -5,8 +5,29 @@ import {
   TrendingUp, Clock, CheckCircle2, XCircle,
   ArrowRight, RefreshCw,
 } from "lucide-react";
-import { dashboardApi, orderApi } from "../../ApiCall/Api.jsx";
+import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore }           from "../../components/store/AuthStore";
+
+const DASHBOARD_BASE = `${API_URL}/dashboard`;
+const ORDER_BASE = `${API_URL}/orders`;
+
+const dashboardApi = {
+  kpis: (token) =>
+    apiFetch(`${DASHBOARD_BASE}/kpis`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  charts: (token) =>
+    apiFetch(`${DASHBOARD_BASE}/charts`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+const orderApi = {
+  all: (params = "", token) =>
+    apiFetch(`${ORDER_BASE}?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
 import {
   StatCard, AdminPage, DataTable, StatusBadge, AdminCard,
 } from "../../components/admin/AdminUI.jsx";

@@ -1,7 +1,70 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
-import { orderApi, userApi }     from "../ApiCall/Api.jsx";
+import comboImg from "../assets/products/combo.jpg";
+import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
+
+const USER_BASE = `${API_URL}/users`;
+const userApi = {
+  addresses: (token) =>
+    apiFetch(`${USER_BASE}/me/addresses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const setLocalStorage = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+const getOrders = () => getLocalStorage("nok-mock-orders", []);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const orderApi = {
+  place: async (data, token) => {
+    await delay();
+    const orders = getOrders();
+    const orderId = `nok-${Math.floor(100000 + Math.random() * 900000)}`;
+    const addressVal = data.shippingAddress || data.address;
+    const newOrder = {
+      id: orderId,
+      createdAt: new Date().toISOString(),
+      customerName: addressVal?.name || "Customer",
+      customerPhone: addressVal?.phone || "N/A",
+      subtotal: data.subtotal,
+      deliveryCharge: data.deliveryCharge || 0,
+      discount: data.discount || 0,
+      couponApplied: data.couponCode || null,
+      total: data.total,
+      status: "pending",
+      paymentStatus: "completed",
+      paymentMethod: data.paymentMethod,
+      address: addressVal,
+      items: data.items.map(i => ({
+        ...i,
+        image: comboImg
+      })),
+      timeline: [
+        { status: "pending", message: "Order placed successfully", time: new Date().toISOString() }
+      ]
+    };
+    orders.unshift(newOrder);
+    setLocalStorage("nok-mock-orders", orders);
+    return { success: true, order: newOrder };
+  }
+};
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
 import StepBar      from "../components/checkout/StepBar";
@@ -135,13 +198,7 @@ export default function Checkout() {
 
       clearCart();
 
-      if (payMethod === "upi") {
-        // Stay on Review step so the customer can submit their
-        // transaction reference ID before we send them off.
-        setPlacedOrderId(res.order?.id);
-      } else {
-        navigate("/my-orders", { state: { newOrderId: res.order?.id } });
-      }
+      navigate("/my-orders", { state: { newOrderId: res.order?.id } });
     } catch (err) {
       setOrderErr(err.message || "Failed to place order. Please try again.");
     } finally {

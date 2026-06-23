@@ -4,7 +4,164 @@ import {
   SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
   Star, ArrowUpDown,
 } from "lucide-react";
-import { productApi, categoryApi } from "../ApiCall/Api.jsx";
+import productsDb from "../assets/products.json";
+import categoriesDb from "../assets/categories.json";
+import comboImg from "../assets/products/combo.jpg";
+
+const mapProductImages = (p) => ({
+  ...p,
+  primaryImage: comboImg,
+  images: [
+    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
+  ]
+});
+
+const mapCategoryImage = (c) => ({
+  ...c,
+  imageUrl: comboImg
+});
+
+const getLocalStorage = (key, initialData) => {
+  const data = localStorage.getItem(key);
+  if (!data) {
+    localStorage.setItem(key, JSON.stringify(initialData));
+    return initialData;
+  }
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    return initialData;
+  }
+};
+
+const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
+const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
+const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const productApi = {
+  list: async (params = "") => {
+    await delay();
+    const products = getProducts();
+    const urlParams = new URLSearchParams(params);
+
+    const search       = urlParams.get("search") || "";
+    const category     = urlParams.get("category") || "";
+    const sort         = urlParams.get("sort") || "popular";
+    const inStock      = urlParams.get("inStock") === "true";
+    const isBestseller = urlParams.get("isBestseller") === "true";
+    const isNew        = urlParams.get("isNew") === "true";
+    const minPrice     = urlParams.get("minPrice") ? parseFloat(urlParams.get("minPrice")) : null;
+    const maxPrice      = urlParams.get("maxPrice") ? parseFloat(urlParams.get("maxPrice")) : null;
+    const minRating     = urlParams.get("rating") ? parseFloat(urlParams.get("rating")) : null;
+    const weights        = (urlParams.get("weight") || "").split(",").filter(Boolean);
+    const hasOffer       = urlParams.get("hasOffer") === "true";
+    const idsVal         = urlParams.get("ids");
+    const page          = parseInt(urlParams.get("page") || "1");
+    const limit          = parseInt(urlParams.get("limit") || "12");
+
+    const minVariantPrice = (p) =>
+      p.variants.length ? Math.min(...p.variants.map(v => v.price)) : (p.minPrice || 0);
+
+    let filtered = products;
+
+    if (idsVal) {
+      const idList = idsVal.split(",");
+      filtered = filtered.filter(p => idList.includes(p.id));
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(
+        p => p.nameEn.toLowerCase().includes(q) ||
+             (p.nameTa && p.nameTa.toLowerCase().includes(q)) ||
+             p.description.toLowerCase().includes(q)
+      );
+    }
+
+    if (category) {
+      filtered = filtered.filter(p => p.categorySlug === category);
+    }
+
+    if (isBestseller) {
+      filtered = filtered.filter(p => p.isBestseller);
+    }
+
+    if (isNew) {
+      filtered = filtered.filter(p => p.isNew);
+    }
+
+    if (inStock) {
+      filtered = filtered.filter(p => p.variants.some(v => v.stockQty > 0));
+    }
+
+    if (minPrice !== null) {
+      filtered = filtered.filter(p => minVariantPrice(p) >= minPrice);
+    }
+    if (maxPrice !== null) {
+      filtered = filtered.filter(p => minVariantPrice(p) <= maxPrice);
+    }
+
+    if (minRating !== null) {
+      filtered = filtered.filter(p => (p.avgRating || 0) >= minRating);
+    }
+
+    if (weights.length > 0) {
+      filtered = filtered.filter(p =>
+        p.variants.some(v => weights.includes(v.weightLabel))
+      );
+    }
+
+    if (hasOffer) {
+      filtered = filtered.filter(p =>
+        p.variants.some(v => v.comparePrice && v.comparePrice > v.price)
+      );
+    }
+
+    if (sort === "newest") {
+      filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
+    } else if (sort === "price-low-high") {
+      filtered = [...filtered].sort((a, b) => minVariantPrice(a) - minVariantPrice(b));
+    } else if (sort === "price-high-low") {
+      filtered = [...filtered].sort((a, b) => minVariantPrice(b) - minVariantPrice(a));
+    } else if (sort === "popularity" || sort === "popular") {
+      filtered = [...filtered].sort((a, b) =>
+        (b.reviewCount || 0) - (a.reviewCount || 0) || (b.avgRating || 0) - (a.avgRating || 0)
+      );
+    } else if (sort === "relevance") {
+      if (search) {
+        const q = search.toLowerCase();
+        const score = (p) => {
+          const name = p.nameEn.toLowerCase();
+          if (name === q) return 3;
+          if (name.startsWith(q)) return 2;
+          if (name.includes(q)) return 1;
+          return 0;
+        };
+        filtered = [...filtered].sort((a, b) => score(b) - score(a));
+      } else {
+        filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
+      }
+    }
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const paginated = filtered.slice(start, start + limit);
+
+    return {
+      success: true,
+      products: paginated,
+      pagination: { total, page, limit, totalPages }
+    };
+  }
+};
+
+const categoryApi = {
+  list: async () => {
+    await delay();
+    return { success: true, categories: getCategories() };
+  }
+};
 import { useCartStore } from "../components/store/CartStore";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore } from "../components/store/AuthStore";

@@ -4,7 +4,7 @@ import {
     Eye, EyeOff, Phone, Mail, Lock, ArrowRight, Loader2,
     AlertCircle, KeyRound, ShieldCheck
 } from "lucide-react";
-import { authApi } from "../ApiCall/Api";
+import API, { setTokens } from "../ApiCall/Api";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 
@@ -118,11 +118,12 @@ export default function Login() {
             const payload = isPhoneLike(trimmedId)
                 ? { identifier: trimmedId, password: form.password }
                 : { identifier: trimmedId.toLowerCase(), password: form.password };
-            const res = await authApi.login(payload);
+            const response = await API.post("/auth/user-login", payload);
+            const res = response.data;
             login(res.user, res.accessToken, res.refreshToken);
             navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
-            setError(err.message || "Invalid credentials. Please try again.");
+            setError(err.response?.data?.message || err.message || "Invalid credentials. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -141,11 +142,11 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await authApi.sendOtp({ phone });
+            await API.post("/auth/otp-create", { phone, identifier: phone });
             setView("forgot-otp");
             setOtpExpiryTime(Date.now() + 180 * 1000); // 3 minutes background expiry
         } catch (err) {
-            setError(err.message || "Failed to send OTP. Please try again.");
+            setError(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -161,10 +162,10 @@ export default function Login() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            await authApi.sendOtp({ phone });
+            await API.post("/auth/otp-create", { phone, identifier: phone });
             setOtpExpiryTime(Date.now() + 180 * 1000); // restart 3 minutes timer
         } catch (err) {
-            setError(err.message || "Could not resend OTP.");
+            setError(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {
             setLoading(false);
         }
@@ -177,10 +178,10 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await authApi.verifyOtp({ phone, otp: otpValue });
+            await API.post("/auth/otp-verify", { phone, identifier: phone, otp: otpValue });
             setView("forgot-reset");
         } catch (err) {
-            setError(err.message || "Invalid or expired OTP.");
+            setError(err.response?.data?.message || err.message || "Invalid or expired OTP.");
         } finally {
             setLoading(false);
         }
@@ -237,11 +238,17 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await authApi.resetPassword({ phone: phone.trim(), newPassword: newPw });
+            await API.post("/auth/reset-password", {
+                phone: phone.trim(),
+                identifier: phone.trim(),
+                password: newPw,
+                newPassword: newPw,
+                confirmPass: confirmPw,
+            });
             setSuccess("Password reset successful.");
             resetForgotFlow(true); // reset and go back to login form, keeping the success toast
         } catch (err) {
-            setError(err.message || "Could not reset password. Please try again.");
+            setError(err.response?.data?.message || err.message || "Could not reset password. Please try again.");
         } finally {
             setLoading(false);
         }
