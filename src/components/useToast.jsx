@@ -10,15 +10,31 @@ export function useToast() {
     const [toastVisible, setToastVisible] = useState(false);
 
     useEffect(() => {
+        let active = true;
         if (toast.message) {
-            setDisplayedToast(toast);
-            setToastVisible(true);
-        } else {
-            setToastVisible(false);
             const t = setTimeout(() => {
+                if (!active) return;
+                setDisplayedToast(toast);
+                setToastVisible(true);
+            }, 0);
+            return () => {
+                active = false;
+                clearTimeout(t);
+            };
+        } else {
+            const t1 = setTimeout(() => {
+                if (!active) return;
+                setToastVisible(false);
+            }, 0);
+            const t2 = setTimeout(() => {
+                if (!active) return;
                 setDisplayedToast({ message: "", type: "error" });
             }, 300); // Matches duration-300 transition duration
-            return () => clearTimeout(t);
+            return () => {
+                active = false;
+                clearTimeout(t1);
+                clearTimeout(t2);
+            };
         }
     }, [toast]);
 

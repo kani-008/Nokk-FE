@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Phone, Mail, MapPin,
-  ShieldCheck, Truck, RefreshCcw, Headphones,
+  ShieldCheck, Truck, Headphones,
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { FaInstagram, FaFacebook, FaYoutube, FaTwitter } from "react-icons/fa";

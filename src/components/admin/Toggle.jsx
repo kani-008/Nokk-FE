@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * Premium Toggle/Switch component.

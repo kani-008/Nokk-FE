@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore }            from "../../components/store/AuthStore";
@@ -83,8 +83,10 @@ export default function ProductManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async () => {
+    setTimeout(() => {
+      setLoading(true);
+    }, 0);
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search",   debouncedSearch);
     if (catFilter)       p.set("category", catFilter);
@@ -93,12 +95,19 @@ export default function ProductManagement() {
       const res = await productApi.list(p.toString());
       setProducts(res.products || []);
       setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {
+    } catch {
       setPageError("Couldn't load products. Please try again.");
-    } finally { setLoading(false); }
-  };
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, catFilter, page]);
 
-  useEffect(() => { load(); }, [debouncedSearch, catFilter, page]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

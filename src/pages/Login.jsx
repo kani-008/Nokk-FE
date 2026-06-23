@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     Eye, EyeOff, Phone, Mail, Lock, ArrowRight, Loader2,
     AlertCircle, KeyRound, ShieldCheck
 } from "lucide-react";
-import API, { setTokens } from "../ApiCall/Api";
+import API from "../ApiCall/Api";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 
@@ -66,6 +66,18 @@ export default function Login() {
     const [forgotErrors, setForgotErrors] = useState({});
     const [otpExpiryTime, setOtpExpiryTime] = useState(0); // timestamp when OTP expires in background
 
+    // ── Shared helper: clear both the forgot-password field errors and the toast ──
+    const clearForgotErrors = useCallback(() => {
+        setForgotErrors({});
+        setError("");
+    }, [setError]);
+
+    const goToOtpStep = useCallback(() => {
+        setView("forgot-phone");
+        setOtp(EMPTY_OTP);
+        clearForgotErrors();
+    }, [clearForgotErrors]);
+
     // ── OTP Expiration background check (3 minutes) ──
     useEffect(() => {
         if (view !== "forgot-otp" || otpExpiryTime === 0) return;
@@ -79,16 +91,10 @@ export default function Login() {
         }, 1000);
 
         return () => clearInterval(checkExpiry);
-    }, [view, otpExpiryTime]);
+    }, [view, otpExpiryTime, setError, goToOtpStep]);
 
     const set = (k, v) => {
         setForm((f) => ({ ...f, [k]: v }));
-        setError("");
-    };
-
-    // ── Shared helper: clear both the forgot-password field errors and the toast ──
-    const clearForgotErrors = () => {
-        setForgotErrors({});
         setError("");
     };
 
@@ -274,7 +280,6 @@ export default function Login() {
         }
     };
 
-    const goToOtpStep = () => { setView("forgot-phone"); setOtp(EMPTY_OTP); clearForgotErrors(); };
 
     // Calculate current step for Forgot Password
     const step = view === "forgot-otp" ? 2 : view === "forgot-reset" ? 3 : 1;

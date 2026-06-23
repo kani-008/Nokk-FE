@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Phone, Mail, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Check, Loader2, Navigation, AlertCircle } from "lucide-react";
+import { User, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Check, Loader2, Navigation, AlertCircle } from "lucide-react";
 import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
 
 const USER_BASE = `${API_URL}/users`;
@@ -177,7 +177,7 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
           } else {
             setError("Could not retrieve address details for this location");
           }
-        } catch (e) {
+        } catch {
           setError("Failed to resolve address from coordinates");
         } finally {
           setDetecting(false);
@@ -223,7 +223,7 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
           }));
           setSuccess(`Pincode resolved: ${city}, ${state}`);
         }
-      } catch (err) {
+      } catch {
         // fail silently
       }
     }
@@ -311,34 +311,42 @@ export default function Profile() {
   const [tab,       setTab]       = useState("profile");
   const [profile,   setProfile]   = useState({ fullName: authUser?.fullName || authUser?.name || "", email: authUser?.email || "", phone: authUser?.phone || "" });
   const [saving,    setSaving]    = useState(false);
-  const [saved,     setSaved]     = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [addrLoading, setAddrLoading] = useState(false);
   const [editAddr,  setEditAddr]  = useState(null); // null | "new" | addr object
   const [pwForm,    setPwForm]    = useState({ current: "", newPw: "", confirm: "" });
   const [showPw,    setShowPw]    = useState({ c: false, n: false, cf: false });
   const [pwSaving,  setPwSaving]  = useState(false);
-  const [pwMsg,     setPwMsg]     = useState("");
 
   // load addresses when tab switches
   useEffect(() => {
+    let active = true;
     if (tab !== "addresses") return;
-    setAddrLoading(true);
+    const timer = setTimeout(() => {
+      if (active) setAddrLoading(true);
+    }, 0);
     userApi.addresses(token)
-      .then((r) => setAddresses(r.addresses || []))
+      .then((r) => {
+        if (!active) return;
+        setAddresses(r.addresses || []);
+      })
       .catch(() => {})
-      .finally(() => setAddrLoading(false));
+      .finally(() => {
+        if (active) setAddrLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [tab, token]);
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
-    setSaving(true); setSaved(false);
+    setSaving(true);
     try {
       const res = await userApi.updateMe({ fullName: profile.fullName, phone: profile.phone }, token);
       updateUser(res.user || { ...authUser, fullName: profile.fullName, phone: profile.phone });
       setSuccess("Profile information updated successfully!");
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
     } catch (e) { setError(e.message || "Failed to save profile"); }
     finally { setSaving(false); }
   };

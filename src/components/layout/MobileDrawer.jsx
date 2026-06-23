@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  X, User, Heart, Package, LogOut, Settings,
+  X, User, Heart, LogOut, Settings,
   ClipboardList, ChevronDown, Grid3x3, // eslint-disable-line no-unused-vars -- kept for the commented-out "Shop by Category" block below; re-enable that block to use these again
 } from "lucide-react";
 
@@ -21,9 +21,6 @@ export default function MobileDrawer({
   open,
   onClose,
   navLinks,
-  categories,
-  mobileCatOpen,
-  onToggleMobileCat,
   isAuthenticated,
   user,
   wishlistCount,

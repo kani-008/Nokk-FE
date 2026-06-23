@@ -8,7 +8,7 @@ const getLocalStorage = (key, initialData) => {
   }
   try {
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return initialData;
   }
 };
@@ -43,7 +43,7 @@ const settingsApi = {
     await delay();
     return { success: true, settings: getSettings() };
   },
-  update: async (data, token) => {
+  update: async (data) => {
     await delay();
     setLocalStorage("nok-mock-settings", data);
     return { success: true, settings: data };
@@ -51,18 +51,18 @@ const settingsApi = {
 };
 
 const paymentSettingsApi = {
-  getAdmin: async (token) => {
+  getAdmin: async () => {
     await delay();
     return { success: true, settings: getPaymentSettings() };
   },
-  update: async (data, token) => {
+  update: async (data) => {
     await delay();
     const current = getPaymentSettings();
     const updated = { ...current, ...data };
     setLocalStorage("nok-mock-payment-settings", updated);
     return { success: true, settings: updated };
   },
-  uploadQr: async (file, token) => {
+  uploadQr: async (file) => {
     await delay();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -176,7 +176,11 @@ function ThemeSection({ value, onChange }) {
   // local hex field so the admin can type freely before it's valid
   const [hexInput, setHexInput] = useState(value || "");
 
-  useEffect(() => { setHexInput(value || ""); }, [value]);
+  useEffect(() => {
+    setTimeout(() => {
+      setHexInput(value || "");
+    }, 0);
+  }, [value]);
 
   const choose = (hex) => {
     onChange(hex);
@@ -308,7 +312,9 @@ export default function Settings() {
   // the real token instead of silently firing with undefined
   useEffect(() => {
     if (!token) return;
-    setPayLoading(true);
+    setTimeout(() => {
+      setPayLoading(true);
+    }, 0);
     paymentSettingsApi.getAdmin(token)
       .then((r) => setPayForm((f) => ({ ...f, ...(r.settings || {}) })))
       .catch(() => {})

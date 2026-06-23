@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation }   from "react-router-dom";
 import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
-  MapPin, CreditCard, Clock, ArrowRight, X,
+  MapPin, Clock, ArrowRight, X,
 } from "lucide-react";
 import { apiFetch } from "../ApiCall/Api";
 

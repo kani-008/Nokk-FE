@@ -1,4 +1,3 @@
-import React from "react";
 
 export default function TableFormat({ columns, rows, emptyText = "No data found.", loading }) {
   if (loading) {

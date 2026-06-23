@@ -12,8 +12,6 @@ import { useToast } from "../components/useToast";
 const LOGO_URL = null;
 
 // ─── MOCK BYPASS — remove once the real backend is wired up ───────────
-const MOCK_PHONE = "9999999999";
-const MOCK_OTP = "123456";
 
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
@@ -74,7 +72,6 @@ export default function Register() {
 
     // ── toast (uses custom useToast hook) ──────────────────────────────
     const {
-        error: apiErr,
         setError: setApiErr,
         displayedError: displayedApiErr,
         toastVisible
@@ -94,7 +91,7 @@ export default function Register() {
         }, 1000);
 
         return () => clearInterval(checkExpiry);
-    }, [view, otpExpiryTime]);
+    }, [view, otpExpiryTime, setApiErr]);
 
     useEffect(() => {
         // Prevent body/root viewport scrolling on mobile for the register page
@@ -175,7 +172,6 @@ export default function Register() {
     // ── Step 2 → 3 : verify OTP only (registration itself happens at step 3) ──
     const handleVerifyOtp = (e) => {
         e.preventDefault();
-        const otpValue = otp.join("");
         if (otp.some((d) => d === "")) { setErrors({ otp: "Enter the 6-digit OTP" }); return; }
 
         setView("password");

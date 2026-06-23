@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Filter, ChevronDown, X, Eye, ExternalLink,
+  X, Eye,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
@@ -236,8 +236,10 @@ export default function OrderManagement() {
   const [totalPages,setTotalPages]= useState(1);
   const [selected,  setSelected]  = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async () => {
+    setTimeout(() => {
+      setLoading(true);
+    }, 0);
     const params = new URLSearchParams();
     if (search)  params.set("search",        search);
     if (status)  params.set("status",        status);
@@ -248,10 +250,19 @@ export default function OrderManagement() {
       const res = await orderApi.all(params.toString(), token);
       setOrders(res.orders || []);
       setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); }
-  };
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [search, status, payment, page, token]);
 
-  useEffect(() => { load(); }, [search, status, payment, page, token]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const handleStatusChange = (id, newStatus) => {
     setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: newStatus } : o));

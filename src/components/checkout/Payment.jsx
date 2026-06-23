@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   CreditCard, Smartphone, Banknote, ArrowLeft, ChevronRight,
-  QrCode, ExternalLink, Lock,
+  QrCode, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 const getLocalStorage = (key, initialData) => {
@@ -12,7 +12,7 @@ const getLocalStorage = (key, initialData) => {
   }
   try {
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return initialData;
   }
 };
@@ -108,11 +108,11 @@ function buildGenericUpiLink({ upiId, payeeName, amount, note }) {
 // Simple UA-sniff — good enough to decide button vs QR emphasis.
 // Not used for anything security-sensitive.
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
+  const [isMobile] = useState(() => {
+    if (typeof navigator === "undefined") return false;
     const ua = navigator.userAgent || "";
-    setIsMobile(/Android|iPhone|iPad|iPod/i.test(ua));
-  }, []);
+    return /Android|iPhone|iPad|iPod/i.test(ua);
+  });
   return isMobile;
 }
 

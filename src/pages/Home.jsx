@@ -25,7 +25,7 @@ const getLocalStorage = (key, initialData) => {
   }
   try {
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return initialData;
   }
 };

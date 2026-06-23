@@ -155,7 +155,7 @@ export default function Address({
           } else {
             setLocalErr("Could not retrieve address details for this location");
           }
-        } catch (e) {
+        } catch {
           setLocalErr("Failed to resolve address from coordinates");
         } finally {
           setDetecting(false);
@@ -197,7 +197,7 @@ export default function Address({
           if (city) onChangeNew("city", city);
           if (matchedState) onChangeNew("state", matchedState);
         }
-      } catch (err) {
+      } catch {
         // fail silently
       }
     }

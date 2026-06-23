@@ -1,7 +1,6 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
-import comboImg from "../assets/products/combo.jpg";
 import { apiFetch } from "../ApiCall/Api.jsx";
 
 const userApi = {
@@ -138,7 +137,7 @@ export default function Checkout() {
   // ── redirect if cart emptied ───────────────────────────────────────
   useEffect(() => {
     if (items.length === 0) navigate("/cart");
-  }, [items]);
+  }, [items, navigate]);
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
@@ -194,7 +193,10 @@ export default function Checkout() {
 
       await clearCart();
 
-      navigate("/my-orders", { state: { newOrderId: res.order?.id } });
+      setPlacedOrderId(res.order?.id);
+      if (payMethod !== "upi") {
+        navigate("/my-orders", { state: { newOrderId: res.order?.id } });
+      }
     } catch (err) {
       setOrderErr(err.message || "Failed to place order. Please try again.");
     } finally {

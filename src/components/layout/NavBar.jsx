@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Heart, User, Menu, X, Search,
   ChevronDown, Package, LogOut, Settings,
-  ClipboardList, Tag, Flame, Grid3x3,
+  Tag, Grid3x3,
 } from "lucide-react";
 import Logo from "./Logo";
 import MobileDrawer from "./MobileDrawer.jsx";
@@ -64,10 +64,13 @@ export default function NavBar() {
 
   // close mobile menu on route change
   useEffect(() => {
-    setMobileOpen(false);
-    setProfileOpen(false);
-    setCatDropdownOpen(false);
-    setMobileCatOpen(false);
+    const timer = setTimeout(() => {
+      setMobileOpen(false);
+      setProfileOpen(false);
+      setCatDropdownOpen(false);
+      setMobileCatOpen(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   // lock page scroll while the mobile drawer is open

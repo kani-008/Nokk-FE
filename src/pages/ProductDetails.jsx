@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight, ShoppingCart, Heart, Star,
-  Minus, Plus, Truck, ShieldCheck, RefreshCcw,
+  Truck, ShieldCheck,
   Share2, ChevronLeft, ChevronRight as ChevronR,
   AlertCircle, X,
 } from "lucide-react";
@@ -189,129 +189,7 @@ function ImageGallery({ images, onShare }) {
   );
 }
 
-// ── Review card ────────────────────────────────────────────────────────
-function ReviewCard({ review }) {
-  return (
-    <div className="card p-4">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-brand-700 text-white flex items-center justify-center font-num text-xs font-bold shrink-0">
-            {review.userName?.[0] ?? "U"}
-          </div>
-          <div>
-            <p className="font-body text-sm font-semibold text-brand-900 leading-none">{review.userName ?? "Customer"}</p>
-            {review.isVerified && (
-              <span className="font-body text-[10px] text-green-600 font-medium">✓ Verified Purchase</span>
-            )}
-          </div>
-        </div>
-        <Stars rating={review.rating} size={12} />
-      </div>
-      {review.title && (
-        <p className="font-body text-sm font-semibold text-brand-800 mb-1">{review.title}</p>
-      )}
-      <p className="font-body text-sm text-amber-700 leading-relaxed">{review.comment}</p>
-      <p className="font-body text-[11px] text-amber-400 mt-2">
-        {new Date(review.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-      </p>
-    </div>
-  );
-}
 
-// ── Write review form ──────────────────────────────────────────────────
-function ReviewForm({ productId, onSubmit }) {
-  const { isAuthenticated, token } = useAuthStore();
-  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
-
-  if (!isAuthenticated) {
-    return (
-      <div className="card p-5 text-center">
-        <p className="font-body text-sm text-amber-700 mb-3">
-          <Link to="/login" className="font-semibold text-brand-700 hover:underline">Sign in</Link>
-          {" "}to write a review
-        </p>
-      </div>
-    );
-  }
-
-  if (done) {
-    return (
-      <div className="card p-5 text-center">
-        <p className="font-body text-sm text-green-700 font-medium">✓ Review submitted — thank you!</p>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.comment.trim()) { setError("Please write your review"); return; }
-    setLoading(true);
-    try {
-      await productApi.addReview(productId, form, token);
-      setDone(true);
-      onSubmit?.();
-    } catch (err) {
-      setError(err.message || "Failed to submit review");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="card p-5 space-y-4">
-      <h4 className="font-body text-sm font-bold text-brand-900">Write a Review</h4>
-
-      {/* star picker */}
-      <div>
-        <label className="field-label">Rating</label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, rating: s }))}
-            >
-              <Star
-                size={22}
-                className={s <= form.rating ? "fill-amber-400 text-amber-400" : "fill-amber-100 text-amber-200"}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="field-label">Title (optional)</label>
-        <input
-          type="text"
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          placeholder="Summarise your experience"
-          className="field-input"
-        />
-      </div>
-
-      <div>
-        <label className="field-label">Review</label>
-        <textarea
-          value={form.comment}
-          onChange={(e) => { setForm((f) => ({ ...f, comment: e.target.value })); setError(""); }}
-          placeholder="Share your thoughts about this product…"
-          rows={3}
-          className="field-input resize-none"
-        />
-        {error && <p className="font-body text-xs text-red-500 mt-1">{error}</p>}
-      </div>
-
-      <button type="submit" disabled={loading} className="btn-md btn-primary">
-        {loading ? "Submitting…" : "Submit Review"}
-      </button>
-    </form>
-  );
-}
 
 // ══════════════════════════════════════════════════════════════════════
 // PRODUCT DETAILS PAGE
@@ -330,13 +208,14 @@ export default function ProductDetails() {
   const [notFound, setNotFound] = useState(false);
   const [activeVariant, setActiveVariant] = useState(null);
   const [qty, setQty] = useState(1);
-  const [addedMsg, setAddedMsg] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
-  const fetchProduct = () => {
-    setLoading(true);
+  const fetchProduct = useCallback(() => {
+    setTimeout(() => {
+      setLoading(true);
+    }, 0);
     productApi.bySlug(slug)
       .then((r) => {
         setProduct(r.product);
@@ -351,9 +230,9 @@ export default function ProductDetails() {
         if (err.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
-  };
+  }, [slug]);
 
-  useEffect(() => { fetchProduct(); }, [slug]);
+  useEffect(() => { fetchProduct(); }, [fetchProduct]);
 
   if (loading) return <DetailSkeleton />;
   if (notFound) return (
@@ -387,8 +266,6 @@ export default function ProductDetails() {
       weight: activeVariant.weightLabel,
       quantity: qty,
     });
-    setAddedMsg(true);
-    setTimeout(() => setAddedMsg(false), 2500);
   };
 
   const handleCartClick = () => {
@@ -438,7 +315,7 @@ export default function ProductDetails() {
       } else {
         setError("Failed to copy link. Please copy it manually.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to copy link. Please copy it manually.");
     }
   };

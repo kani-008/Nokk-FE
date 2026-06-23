@@ -91,11 +91,11 @@ export async function apiFetch(url, options = {}) {
     return response.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data?.message || `Request failed (${error.response.status})`);
+      throw new Error(error.response.data?.message || `Request failed (${error.response.status})`, { cause: error });
     } else if (error.request) {
-      throw new Error("Cannot connect to server — is the backend running?");
+      throw new Error("Cannot connect to server — is the backend running?", { cause: error });
     } else {
-      throw new Error(error.message);
+      throw new Error(error.message, { cause: error });
     }
   }
 }

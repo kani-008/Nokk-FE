@@ -144,7 +144,7 @@ function WishCard({ product, onRemove }) {
 // WISHLIST PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function Wishlist() {
-  const { ids, toggle, loadFromServer, clear } = useWishlistStore();
+  const { ids, loadFromServer, clear } = useWishlistStore();
   const { token, isAuthenticated }             = useAuthStore();
 
   const [products, setProducts] = useState([]);   // fetched product details
@@ -156,15 +156,28 @@ export default function Wishlist() {
     if (isAuthenticated && token) {
       loadFromServer(token).then(() => setLocalIds(useWishlistStore.getState().ids));
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, loadFromServer]);
 
   // ── Fetch product details whenever localIds change ────────────────
   useEffect(() => {
-    if (!localIds.length) { setProducts([]); return; }
-    setLoading(true);
+    let active = true;
+    if (!localIds.length) {
+      const timer = setTimeout(() => {
+        if (active) setProducts([]);
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
+    }
+
+    const timer = setTimeout(() => {
+      if (active) setLoading(true);
+    }, 0);
 
     apiFetch(`/products/get-all?limit=999`)
       .then((res) => {
+        if (!active) return;
         const allProducts = res.products || [];
         const fetched = allProducts.filter(p => localIds.includes(p.id));
         setProducts(fetched);
@@ -172,7 +185,14 @@ export default function Wishlist() {
       .catch((err) => {
         console.error("Failed to load wishlist products:", err);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [localIds]);
 
   // ── Instant remove (update local mirror, store handles rest) ──────

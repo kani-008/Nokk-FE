@@ -247,7 +247,6 @@ export default function HeroBanner({ banners }) {
         loop
         muted
         playsInline
-        // eslint-disable-next-line react/no-unknown-property
         webkit-playsinline="true"
         preload="auto"
         src={videoUrl}

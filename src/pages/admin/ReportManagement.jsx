@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
@@ -18,7 +18,7 @@ import {
 } from "../../components/admin/AdminUI.jsx";
 
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+
 
 const PERIODS = [
   { key: "7d",   label: "Last 7 days"  },
@@ -59,16 +59,27 @@ export default function ReportManagement() {
   const [loading,   setLoading]   = useState(true);
   const [refreshing,setRefreshing]= useState(false);
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
+  const load = useCallback(async (showRefresh = false) => {
+    setTimeout(() => {
+      showRefresh ? setRefreshing(true) : setLoading(true);
+    }, 0);
     try {
       const res = await dashboardApi.reports(`period=${period}`, token);
       setReport(res.report || res || {});
-    } catch (_) {}
-    finally { setLoading(false); setRefreshing(false); }
-  };
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [period, token]);
 
-  useEffect(() => { load(); }, [period, token]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const handleExport = () => {
     if (!report) return;

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
   Star, ArrowUpDown,
 } from "lucide-react";
 import { apiFetch } from "../ApiCall/Api";
-import comboImg from "../assets/products/combo.jpg";
 
 const productApi = {
   list: async (params = "") => {
@@ -131,9 +130,6 @@ const categoryApi = {
     return res;
   }
 };
-import { useCartStore } from "../components/store/CartStore";
-import { useWishlistStore } from "../components/store/WishlistStore";
-import { useAuthStore } from "../components/store/AuthStore";
 import ProductCard from "../components/Product/ProductCard";
 
 // ── sort options — value must match the productApi.list() `sort` contract ──
@@ -145,8 +141,7 @@ const SORT_OPTIONS = [
   { value: "relevance", label: "Relevance" },
 ];
 
-// rating filter options — "and above" style, matches Amazon/Flipkart convention
-const RATING_OPTIONS = [4, 3, 2, 1];
+
 
 // ── skeleton card ──────────────────────────────────────────────────────
 function ProductSkeleton() {
@@ -220,162 +215,26 @@ function RatingRow({ value, checked, onChange }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// PRODUCTS PAGE
-// ══════════════════════════════════════════════════════════════════════
-export default function Products() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // read from URL
-  const search = searchParams.get("search") || "";
-  const category = searchParams.get("category") || "";
-  const sort = searchParams.get("sort") || "popular";
-  const inStock = searchParams.get("inStock") === "true";
-  const isBest = searchParams.get("isBestseller") === "true";
-  const isNew = searchParams.get("isNew") === "true";
-  const minPrice = searchParams.get("minPrice") || "";
-  const maxPrice = searchParams.get("maxPrice") || "";
-  const rating = searchParams.get("rating") || "";
-  const weightParam = searchParams.get("weight") || "";
-  const hasOffer = searchParams.get("hasOffer") === "true";
-  const page = parseInt(searchParams.get("page") || "1");
-
-  // memoized so its identity is stable across renders unless weightParam actually changes —
-  // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
-  const weights = useMemo(
-    () => weightParam.split(",").filter(Boolean),
-    [weightParam]
-  );
-
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [pagination, setPagination] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [sortOpen, setSortOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState(search);
-  const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
-
-  const sortRef = useRef(null);
-
-  // close the mobile sort dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // keep the price draft inputs synced if filters are cleared elsewhere (e.g. "Clear all")
-  useEffect(() => {
-    setPriceDraft({ min: minPrice, max: maxPrice });
-  }, [minPrice, maxPrice]);
-
-  // ── build query string from URL state ────────────────────────────
-  const buildQuery = useCallback(() => {
-    const p = new URLSearchParams();
-    if (search) p.set("search", search);
-    if (category) p.set("category", category);
-    if (sort) p.set("sort", sort);
-    if (inStock) p.set("inStock", "true");
-    if (isBest) p.set("isBestseller", "true");
-    if (isNew) p.set("isNew", "true");
-    if (minPrice) p.set("minPrice", minPrice);
-    if (maxPrice) p.set("maxPrice", maxPrice);
-    if (rating) p.set("rating", rating);
-    if (weights.length) p.set("weight", weights.join(","));
-    if (hasOffer) p.set("hasOffer", "true");
-    p.set("page", String(page));
-    p.set("limit", "12");
-    return p.toString();
-  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
-
-  // ── set a single URL param ────────────────────────────────────────
-  const setParam = (key, value) => {
-    const p = new URLSearchParams(searchParams);
-    if (value) p.set(key, value);
-    else p.delete(key);
-    p.delete("page"); // reset to page 1 on any filter change
-    setSearchParams(p);
-  };
-
-  // ── toggle a value inside a comma-separated multi-select param ────
-  const toggleListParam = (key, currentList, value) => {
-    const next = currentList.includes(value)
-      ? currentList.filter((v) => v !== value)
-      : [...currentList, value];
-    setParam(key, next.join(","));
-  };
-
-  const applyPriceRange = () => {
-    const p = new URLSearchParams(searchParams);
-    if (priceDraft.min) p.set("minPrice", priceDraft.min); else p.delete("minPrice");
-    if (priceDraft.max) p.set("maxPrice", priceDraft.max); else p.delete("maxPrice");
-    p.delete("page");
-    setSearchParams(p);
-  };
-
-  const removeAllFilters = () => {
-    setSearchParams({});
-    setSearchInput("");
-    setPriceDraft({ min: "", max: "" });
-  };
-
-  // ── fetch categories once ─────────────────────────────────────────
-  useEffect(() => {
-    categoryApi.list()
-      .then((r) => setCategories(r.categories || []))
-      .catch(() => { });
-  }, []);
-
-  // ── fetch products whenever filters change ────────────────────────
-  useEffect(() => {
-    setLoading(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    productApi.list(buildQuery())
-      .then((r) => {
-        setProducts(r.products || []);
-        setPagination(r.pagination || null);
-      })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
-  }, [buildQuery]);
-
-  // ── distinct pack sizes available, derived from current result set ─
-  // (kept stable across paginated fetches by deriving from the full mock
-  //  product catalogue once, rather than just the current page's products)
-  const [allWeightLabels, setAllWeightLabels] = useState([]);
-  useEffect(() => {
-    productApi.list("limit=999")
-      .then((r) => {
-        const labels = new Set();
-        (r.products || []).forEach((p) => p.variants.forEach((v) => labels.add(v.weightLabel)));
-        setAllWeightLabels([...labels]);
-      })
-      .catch(() => { });
-  }, []);
-
-  // ── active filters for pill display ──────────────────────────────
-  const activeFilters = [
-    search && { key: "search", label: `"${search}"` },
-    category && { key: "category", label: categories.find((c) => c.slug === category)?.nameEn || category },
-    inStock && { key: "inStock", label: "In Stock" },
-    isBest && { key: "isBestseller", label: "Best Sellers" },
-    isNew && { key: "isNew", label: "New Arrivals" },
-    (minPrice || maxPrice) && { key: "price", label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
-    rating && { key: "rating", label: `${rating}★ & above` },
-    hasOffer && { key: "hasOffer", label: "Has Offer" },
-    ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
-  ].filter(Boolean);
-
-  const hasFilters = activeFilters.length > 0 || sort !== "popular";
-
-  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || "Popularity";
-
-  // ── sidebar ───────────────────────────────────────────────────────
-  const Sidebar = () => (
+// ── sidebar ───────────────────────────────────────────────────────
+function Sidebar({
+  hasFilters,
+  removeAllFilters,
+  category,
+  setParam,
+  categories,
+  priceDraft,
+  setPriceDraft,
+  applyPriceRange,
+  rating,
+  allWeightLabels,
+  weights,
+  toggleListParam,
+  inStock,
+  hasOffer,
+  isBest,
+  isNew,
+}) {
+  return (
     <aside className="w-full md:w-64 shrink-0">
       <div className="card p-4 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
 
@@ -451,7 +310,7 @@ export default function Products() {
         {/* Customer rating */}
         <FilterSection title="Customer Rating">
           <div className="space-y-1.5">
-            {RATING_OPTIONS.map((r) => (
+            {[4, 3, 2, 1].map((r) => (
               <RatingRow
                 key={r}
                 value={r}
@@ -526,6 +385,186 @@ export default function Products() {
       </div>
     </aside>
   );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PRODUCTS PAGE
+// ══════════════════════════════════════════════════════════════════════
+export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // read from URL
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
+  const sort = searchParams.get("sort") || "popular";
+  const inStock = searchParams.get("inStock") === "true";
+  const isBest = searchParams.get("isBestseller") === "true";
+  const isNew = searchParams.get("isNew") === "true";
+  const minPrice = searchParams.get("minPrice") || "";
+  const maxPrice = searchParams.get("maxPrice") || "";
+  const rating = searchParams.get("rating") || "";
+  const weightParam = searchParams.get("weight") || "";
+  const hasOffer = searchParams.get("hasOffer") === "true";
+  const page = parseInt(searchParams.get("page") || "1");
+
+  // memoized so its identity is stable across renders unless weightParam actually changes —
+  // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
+  const weights = useMemo(
+    () => weightParam.split(",").filter(Boolean),
+    [weightParam]
+  );
+
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(search);
+  const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
+
+  const sortRef = useRef(null);
+
+  // close the mobile sort dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // keep the price draft inputs synced if filters are cleared elsewhere (e.g. "Clear all")
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPriceDraft({ min: minPrice, max: maxPrice });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [minPrice, maxPrice]);
+
+  // ── build query string from URL state ────────────────────────────
+  const buildQuery = useCallback(() => {
+    const p = new URLSearchParams();
+    if (search) p.set("search", search);
+    if (category) p.set("category", category);
+    if (sort) p.set("sort", sort);
+    if (inStock) p.set("inStock", "true");
+    if (isBest) p.set("isBestseller", "true");
+    if (isNew) p.set("isNew", "true");
+    if (minPrice) p.set("minPrice", minPrice);
+    if (maxPrice) p.set("maxPrice", maxPrice);
+    if (rating) p.set("rating", rating);
+    if (weights.length) p.set("weight", weights.join(","));
+    if (hasOffer) p.set("hasOffer", "true");
+    p.set("page", String(page));
+    p.set("limit", "12");
+    return p.toString();
+  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
+
+  // ── set a single URL param ────────────────────────────────────────
+  const setParam = (key, value) => {
+    const p = new URLSearchParams(searchParams);
+    if (value) p.set(key, value);
+    else p.delete(key);
+    p.delete("page"); // reset to page 1 on any filter change
+    setSearchParams(p);
+  };
+
+  // ── toggle a value inside a comma-separated multi-select param ────
+  const toggleListParam = (key, currentList, value) => {
+    const next = currentList.includes(value)
+      ? currentList.filter((v) => v !== value)
+      : [...currentList, value];
+    setParam(key, next.join(","));
+  };
+
+  const applyPriceRange = () => {
+    const p = new URLSearchParams(searchParams);
+    if (priceDraft.min) p.set("minPrice", priceDraft.min); else p.delete("minPrice");
+    if (priceDraft.max) p.set("maxPrice", priceDraft.max); else p.delete("maxPrice");
+    p.delete("page");
+    setSearchParams(p);
+  };
+
+  const removeAllFilters = () => {
+    setSearchParams({});
+    setSearchInput("");
+    setPriceDraft({ min: "", max: "" });
+  };
+
+  // ── fetch categories once ─────────────────────────────────────────
+  useEffect(() => {
+    categoryApi.list()
+      .then((r) => setCategories(r.categories || []))
+      .catch(() => { });
+  }, []);
+
+  // ── fetch products whenever filters change ────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(true);
+    }, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    productApi.list(buildQuery())
+      .then((r) => {
+        setProducts(r.products || []);
+        setPagination(r.pagination || null);
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+    return () => clearTimeout(timer);
+  }, [buildQuery]);
+
+  // ── distinct pack sizes available, derived from current result set ─
+  // (kept stable across paginated fetches by deriving from the full mock
+  //  product catalogue once, rather than just the current page's products)
+  const [allWeightLabels, setAllWeightLabels] = useState([]);
+  useEffect(() => {
+    productApi.list("limit=999")
+      .then((r) => {
+        const labels = new Set();
+        (r.products || []).forEach((p) => p.variants.forEach((v) => labels.add(v.weightLabel)));
+        setAllWeightLabels([...labels]);
+      })
+      .catch(() => { });
+  }, []);
+
+  // ── active filters for pill display ──────────────────────────────
+  const activeFilters = [
+    search && { key: "search", label: `"${search}"` },
+    category && { key: "category", label: categories.find((c) => c.slug === category)?.nameEn || category },
+    inStock && { key: "inStock", label: "In Stock" },
+    isBest && { key: "isBestseller", label: "Best Sellers" },
+    isNew && { key: "isNew", label: "New Arrivals" },
+    (minPrice || maxPrice) && { key: "price", label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
+    rating && { key: "rating", label: `${rating}★ & above` },
+    hasOffer && { key: "hasOffer", label: "Has Offer" },
+    ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
+  ].filter(Boolean);
+
+  const hasFilters = activeFilters.length > 0 || sort !== "popular";
+
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || "Popularity";
+
+  const sidebarProps = {
+    hasFilters,
+    removeAllFilters,
+    category,
+    setParam,
+    categories,
+    priceDraft,
+    setPriceDraft,
+    applyPriceRange,
+    rating,
+    allWeightLabels,
+    weights,
+    toggleListParam,
+    inStock,
+    hasOffer,
+    isBest,
+    isNew,
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
@@ -634,7 +673,7 @@ export default function Products() {
         {/* ── Desktop sidebar ──────────────────────────────────────── */}
         {desktopSidebarOpen && (
           <div className="hidden md:block">
-            <Sidebar />
+            <Sidebar {...sidebarProps} />
           </div>
         )}
 
@@ -649,7 +688,7 @@ export default function Products() {
                   <X size={20} />
                 </button>
               </div>
-              <Sidebar />
+              <Sidebar {...sidebarProps} />
             </div>
           </div>
         )}

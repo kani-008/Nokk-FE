@@ -141,7 +141,11 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
     setSaving(true); setError("");
     try {
-      const cleanVariants = variants.map(({ _uid, ...rest }) => rest);
+      const cleanVariants = variants.map((v) => {
+        const rest = { ...v };
+        delete rest._uid;
+        return rest;
+      });
       const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
       let res;
       if (isEdit) res = await productApi.update(product.id, payload, token);

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
-import offersDb from "../assets/offers.json";
 import { Link }     from "react-router-dom";
 
 import { apiFetch } from "../ApiCall/Api";
@@ -11,10 +10,6 @@ const offerApi = {
     return res;
   }
 };
-
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);

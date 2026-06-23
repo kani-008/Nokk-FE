@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 
@@ -258,9 +258,11 @@ export default function UserManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async () => {
+    setTimeout(() => {
+      setLoading(true);
+      setError("");
+    }, 0);
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (roleFilter)      params.set("role",   roleFilter);
@@ -272,10 +274,17 @@ export default function UserManagement() {
       setTotalPages(res.pagination?.totalPages || 1);
     } catch (e) {
       setError(e.message || "Failed to load users");
-    } finally { setLoading(false); }
-  };
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, roleFilter, status, page, token]);
 
-  useEffect(() => { load(); }, [debouncedSearch, roleFilter, status, page, token]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const patchStatus = (id, newStatus) =>
     setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: newStatus } : u));

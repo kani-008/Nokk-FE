@@ -482,24 +482,54 @@ export default function BannerManagement() {
 
   // load banners from API
   useEffect(() => {
-    setLoading(true);
+    let active = true;
+    const timer = setTimeout(() => {
+      if (active) setLoading(true);
+    }, 0);
     bannerApi.all(token)
       .then((r) => {
+        if (!active) return;
         const sorted = (r.banners || []).sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
         setBanners(sorted);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [token]);
 
   // load overlays from backend when a banner is selected
   useEffect(() => {
-    if (!selectedBannerId) { setOverlays([]); return; }
-    setOverlaysLoading(true);
+    let active = true;
+    if (!selectedBannerId) {
+      const timer = setTimeout(() => {
+        if (active) setOverlays([]);
+      }, 0);
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
+    }
+    const timer = setTimeout(() => {
+      if (active) setOverlaysLoading(true);
+    }, 0);
     btextApi.forBanner(selectedBannerId, token)
-      .then((r) => setOverlays(r.btexts || []))
+      .then((r) => {
+        if (!active) return;
+        setOverlays(r.btexts || []);
+      })
       .catch(() => {})
-      .finally(() => setOverlaysLoading(false));
+      .finally(() => {
+        if (active) setOverlaysLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [selectedBannerId, token]);
 
   const handleSaved = (banner) => {

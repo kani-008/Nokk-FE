@@ -25,7 +25,7 @@ export default function CustomerLayout() {
       syncCart(token).then(() => loadCart(token));
       loadWishlist(token);
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, syncCart, loadCart, loadWishlist]);
 
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">

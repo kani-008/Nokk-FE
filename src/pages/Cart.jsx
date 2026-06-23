@@ -262,7 +262,6 @@ function CartItem({ item, onQty, onRemove }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function Cart() {
   const navigate = useNavigate();
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   // ── Read from CartStore ───────────────────────────────────────────
   const {
@@ -331,7 +330,7 @@ export default function Cart() {
               onApply={validateCoupon}
               onRemove={removeCoupon}
               onCheckout={handleCheckout}
-              loading={checkoutLoading}
+              loading={false}
             />
           </div>
         </div>
@@ -347,7 +346,7 @@ export default function Cart() {
             onApply={validateCoupon}
             onRemove={removeCoupon}
             onCheckout={handleCheckout}
-            loading={checkoutLoading}
+            loading={false}
           />
         </div>
 

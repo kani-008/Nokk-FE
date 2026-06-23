@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Tag } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
 
@@ -54,9 +54,9 @@ const couponApi = {
     }),
 };
 import {
-  AdminPage, AdminButton, SearchBar, AdminCard,
+  AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
-import TableFormat from "../../components/admin/TableFormat.jsx";
+import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 
 const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "" };
@@ -207,13 +207,15 @@ export default function OfferManagement() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
-  const loadOffers = () => offerApi.all(token).then((r) => setOffers(r.offers || [])).catch(() => { });
-  const loadCoupons = () => couponApi.all(token).then((r) => setCoupons(r.coupons || [])).catch(() => { });
+  const loadOffers = useCallback(() => offerApi.all(token).then((r) => setOffers(r.offers || [])).catch(() => { }), [token]);
+  const loadCoupons = useCallback(() => couponApi.all(token).then((r) => setCoupons(r.coupons || [])).catch(() => { }), [token]);
 
   useEffect(() => {
-    setLoading(true);
+    setTimeout(() => {
+      setLoading(true);
+    }, 0);
     Promise.allSettled([loadOffers(), loadCoupons()]).finally(() => setLoading(false));
-  }, [token]);
+  }, [token, loadOffers, loadCoupons]);
 
   const handleDeleteOffer = async (id) => {
     if (!confirm("Delete this offer?")) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   IndianRupee, ShoppingBag, Package, Users,
@@ -97,8 +97,10 @@ export default function Dashboard() {
   const [loading,      setLoading]      = useState(true);
   const [refreshing,   setRefreshing]   = useState(false);
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
+  const load = useCallback(async (showRefresh = false) => {
+    const timer = setTimeout(() => {
+      showRefresh ? setRefreshing(true) : setLoading(true);
+    }, 0);
     try {
       const [kRes, cRes, oRes] = await Promise.allSettled([
         dashboardApi.kpis(token),
@@ -108,10 +110,14 @@ export default function Dashboard() {
       if (kRes.status === "fulfilled") setKpis(kRes.value?.kpis   || kRes.value || {});
       if (cRes.status === "fulfilled") setCharts(cRes.value?.charts || cRes.value || {});
       if (oRes.status === "fulfilled") setRecentOrders(oRes.value?.orders || []);
-    } finally { setLoading(false); setRefreshing(false); }
-  };
+    } finally {
+      clearTimeout(timer);
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token]);
 
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => { load(); }, [load]);
 
   const KPI_CARDS = [
     { label: "Total Revenue",   key: "totalRevenue",  icon: IndianRupee, color: "green",  currency: true },

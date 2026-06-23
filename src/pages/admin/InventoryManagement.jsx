@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle, PackageX, Save, X, RefreshCw,
 } from "lucide-react";
@@ -19,7 +19,7 @@ const inventoryApi = {
     }),
 };
 import {
-  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard, StatCard,
+  AdminPage, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 
@@ -113,8 +113,10 @@ export default function InventoryManagement() {
   const [totalPages,setTotalPages]= useState(1);
   const [refreshing,setRefreshing]= useState(false);
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
+  const load = useCallback(async (showRefresh = false) => {
+    setTimeout(() => {
+      showRefresh ? setRefreshing(true) : setLoading(true);
+    }, 0);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (filter === "low") params.set("lowStock", "true");
@@ -124,10 +126,20 @@ export default function InventoryManagement() {
       const res = await inventoryApi.list(params.toString(), token);
       setItems(res.inventory || []);
       setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); setRefreshing(false); }
-  };
+    } catch {
+      // fail silently
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [search, filter, page, token]);
 
-  useEffect(() => { load(); }, [search, filter, page, token]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const patchStock = (variantId, newQty) =>
     setItems((prev) => prev.map((i) => i.variantId === variantId ? { ...i, stockQty: newQty } : i));
