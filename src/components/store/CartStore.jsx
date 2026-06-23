@@ -1,35 +1,51 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { apiFetch, API_URL } from "../../ApiCall/Api";
+import { useAuthStore } from "./AuthStore";
 
 const CART_BASE = `${API_URL}/cart`;
 const COUPON_BASE = `${API_URL}/coupons`;
 
 const cartApi = {
-  get: (token) =>
-    apiFetch(CART_BASE, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  add: (data, token) =>
-    apiFetch(CART_BASE, {
+  get: () =>
+    apiFetch(`${CART_BASE}/get-cart`),
+  add: (data) =>
+    apiFetch(`${CART_BASE}/add-item`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    }),
+  update: (data) =>
+    apiFetch(`${CART_BASE}/update-item`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  remove: (data) =>
+    apiFetch(`${CART_BASE}/remove-item`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  clear: () =>
+    apiFetch(`${CART_BASE}/clear-cart`, {
+      method: "DELETE",
     }),
 };
 
 const couponApi = {
-  validate: (data, token) =>
+  validate: (data) =>
     apiFetch(`${COUPON_BASE}/validate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
 };
 
 /*
-  Cart item shape (local):
+  Cart item shape (local & mapped from server):
   {
+    itemId:       number (optional, server only),
     variantId:    string,
     productId:    string,
     productName:  string,   // nameEn
@@ -76,101 +92,196 @@ export const useCartStore = create(
       shipping: () =>
         get().subtotal() >= 499 ? 0 : 60,
 
-      // ── local mutations (work without login) ───────────────────────
-      addItem: (item) => {
-        const existing = get().items.find((i) => i.variantId === item.variantId);
-        if (existing) {
-          set({
-            items: get().items.map((i) =>
-              i.variantId === item.variantId
-                ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
-                : i
-            ),
-          });
+      // ── mutations ──────────────────────────────────────────────────
+      addItem: async (item) => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+          try {
+            const res = await cartApi.add({
+              variantId: item.variantId,
+              quantity: item.quantity ?? 1,
+            });
+            const serverItems = (res.cart?.items ?? []).map((i) => ({
+              itemId:       i.itemId,
+              variantId:    i.variantId,
+              productId:    i.productId,
+              productName:  i.nameEn ?? i.name,
+              nameTa:       i.nameTa,
+              image:        i.primaryImage,
+              price:        i.price,
+              comparePrice: i.comparePrice,
+              weight:       i.weightLabel,
+              quantity:     i.quantity,
+            }));
+            set({ items: serverItems });
+          } catch (err) {
+            console.error("addItem server sync failed:", err);
+            throw err;
+          }
         } else {
-          set({ items: [...get().items, { ...item, quantity: item.quantity ?? 1 }] });
+          // Local/guest session
+          const existing = get().items.find((i) => i.variantId === item.variantId);
+          if (existing) {
+            set({
+              items: get().items.map((i) =>
+                i.variantId === item.variantId
+                  ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
+                  : i
+              ),
+            });
+          } else {
+            set({ items: [...get().items, { ...item, quantity: item.quantity ?? 1 }] });
+          }
         }
       },
 
-      updateQty: (variantId, quantity) => {
+      updateQty: async (variantId, quantity) => {
         if (quantity < 1) {
-          get().removeItem(variantId);
+          await get().removeItem(variantId);
           return;
         }
-        set({
-          items: get().items.map((i) =>
-            i.variantId === variantId ? { ...i, quantity } : i
-          ),
-        });
+        const token = useAuthStore.getState().token;
+        if (token) {
+          const item = get().items.find((i) => i.variantId === variantId);
+          if (!item || !item.itemId) return;
+          try {
+            const res = await cartApi.update({
+              itemId: item.itemId,
+              quantity,
+            });
+            const serverItems = (res.cart?.items ?? []).map((i) => ({
+              itemId:       i.itemId,
+              variantId:    i.variantId,
+              productId:    i.productId,
+              productName:  i.nameEn ?? i.name,
+              nameTa:       i.nameTa,
+              image:        i.primaryImage,
+              price:        i.price,
+              comparePrice: i.comparePrice,
+              weight:       i.weightLabel,
+              quantity:     i.quantity,
+            }));
+            set({ items: serverItems });
+          } catch (err) {
+            console.error("updateQty server sync failed:", err);
+            throw err;
+          }
+        } else {
+          set({
+            items: get().items.map((i) =>
+              i.variantId === variantId ? { ...i, quantity } : i
+            ),
+          });
+        }
       },
 
-      removeItem: (variantId) =>
-        set({ items: get().items.filter((i) => i.variantId !== variantId) }),
+      removeItem: async (variantId) => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+          const item = get().items.find((i) => i.variantId === variantId);
+          if (!item || !item.itemId) return;
+          try {
+            const res = await cartApi.remove({
+              itemId: item.itemId,
+            });
+            const serverItems = (res.cart?.items ?? []).map((i) => ({
+              itemId:       i.itemId,
+              variantId:    i.variantId,
+              productId:    i.productId,
+              productName:  i.nameEn ?? i.name,
+              nameTa:       i.nameTa,
+              image:        i.primaryImage,
+              price:        i.price,
+              comparePrice: i.comparePrice,
+              weight:       i.weightLabel,
+              quantity:     i.quantity,
+            }));
+            set({ items: serverItems });
+          } catch (err) {
+            console.error("removeItem server sync failed:", err);
+            throw err;
+          }
+        } else {
+          set({ items: get().items.filter((i) => i.variantId !== variantId) });
+        }
+      },
 
-      clearCart: () => set({ items: [], coupon: null }),
+      clearCart: async () => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+          try {
+            await cartApi.clear();
+          } catch (err) {
+            console.error("clearCart server sync failed:", err);
+          }
+        }
+        set({ items: [], coupon: null });
+      },
 
       // ── coupon ─────────────────────────────────────────────────────
       applyCoupon: (coupon) => set({ coupon }),
       removeCoupon: () => set({ coupon: null }),
 
       // ── validate coupon via API ────────────────────────────────────
-      validateCoupon: async (code, token) => {
-        const res = await couponApi.validate(
-          { code, subtotal: get().subtotal() },
-          token
-        );
-        // API returns { success, coupon: { code, discountType, discountValue, discountAmount } }
+      validateCoupon: async (code) => {
+        const res = await couponApi.validate({
+          code,
+          subtotal: get().subtotal(),
+        });
         set({ coupon: res.coupon });
         return res.coupon;
       },
 
       // ── sync LOCAL cart → server after login ───────────────────────
-      // Call this once right after login if local items exist
       syncToServer: async (token) => {
         const { items } = get();
         if (!items.length) return;
         for (const item of items) {
           try {
-            await cartApi.add(
-              { variantId: item.variantId, quantity: item.quantity },
-              token
-            );
+            // Using raw axios post inside loop to avoid intercepting issues during auth bootstrap
+            await apiFetch(`${CART_BASE}/add-item`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                variantId: item.variantId,
+                quantity: item.quantity,
+              }),
+            });
           } catch {
-            // ignore individual failures — server may already have the item
+            // ignore individual failures
           }
         }
       },
 
-      // ── load cart FROM server (after login / page refresh) ─────────
-      // Merges server items into local, server wins on price
+      // ── load cart FROM server ──────────────────────────────────────
       loadFromServer: async (token) => {
         try {
-          const res = await cartApi.get(token);
-          // API shape: { success, cart: { id, items[] } }
-          // item: { id, variantId, weightLabel, price, comparePrice, quantity, product{...} }
+          // If token is explicitly passed (e.g. at login), map it manually or rely on interceptor
+          const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+          const res = await apiFetch(`${CART_BASE}/get-cart`, { headers });
           const serverItems = (res.cart?.items ?? []).map((i) => ({
+            itemId:       i.itemId,
             variantId:    i.variantId,
-            productId:    i.product?.id,
-            productName:  i.product?.nameEn  ?? i.product?.name,
-            nameTa:       i.product?.nameTa,
-            image:        i.product?.primaryImage,
+            productId:    i.productId,
+            productName:  i.nameEn ?? i.name,
+            nameTa:       i.nameTa,
+            image:        i.primaryImage,
             price:        i.price,
             comparePrice: i.comparePrice,
             weight:       i.weightLabel,
             quantity:     i.quantity,
           }));
-
-          if (serverItems.length) {
-            set({ items: serverItems });
-          }
-        } catch {
-          // stay with local items on error
+          set({ items: serverItems });
+        } catch (err) {
+          console.error("loadFromServer failed:", err);
         }
       },
     }),
     {
       name: "nok-cart",
-      // only persist items + coupon, not function state
       partialize: (state) => ({ items: state.items, coupon: state.coupon }),
     }
   )

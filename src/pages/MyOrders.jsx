@@ -4,46 +4,33 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, CreditCard, Clock, ArrowRight, X,
 } from "lucide-react";
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return initialData;
-  }
-};
-
-const setLocalStorage = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-const getOrders = () => getLocalStorage("nok-mock-orders", []);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
+import { apiFetch } from "../ApiCall/Api";
 
 const orderApi = {
-  mine: async (token) => {
-    await delay();
-    return { success: true, orders: getOrders() };
+  mine: async () => {
+    const res = await apiFetch(`/orders/get-my-orders`);
+    const orders = (res.orders || []).map(o => ({
+      ...o,
+      items: (o.items || []).map(item => ({
+        ...item,
+        productName: item.name,
+        weightLabel: item.weight
+      })),
+      timeline: (o.timeline || []).map(t => ({
+        ...t,
+        note: t.notes,
+        createdAt: t.date
+      }))
+    }));
+    return { success: true, orders };
   },
-  cancel: async (id, token) => {
-    await delay();
-    const orders = getOrders();
-    const idx = orders.findIndex(o => o.id === id);
-    if (idx !== -1) {
-      orders[idx].status = "cancelled";
-      orders[idx].timeline.push({
-        status: "cancelled",
-        message: "Order cancelled by customer",
-        time: new Date().toISOString()
-      });
-      setLocalStorage("nok-mock-orders", orders);
-      return { success: true, order: orders[idx] };
-    }
-    throw new Error("Order not found");
+  cancel: async (id) => {
+    const res = await apiFetch(`/orders/cancel-my-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    return res;
   }
 };
 import { useAuthStore } from "../components/store/AuthStore.jsx";

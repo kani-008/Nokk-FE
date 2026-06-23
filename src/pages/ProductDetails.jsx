@@ -7,106 +7,26 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import productsDb from "../assets/products.json";
-
-const mapProductImages = (p) => ({
-  ...p,
-  primaryImage: comboImg,
-  images: [
-    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
-  ]
-});
-
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return initialData;
-  }
-};
-
-const setLocalStorage = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const getUsers = () => {
-  const users = localStorage.getItem("nok-mock-users");
-  return users ? JSON.parse(users) : [
-    { id: "user-1", fullName: "Balaji Ram", email: "balaji@nammakadai.com", phone: "9876543210", role: "admin", status: "active", createdAt: "2026-05-01" },
-    { id: "user-2", fullName: "Customer Account", email: "customer@nammakadai.com", phone: "9000000000", role: "customer", status: "active", createdAt: "2026-06-01" }
-  ];
-};
-
-const getCurrentUser = (token) => {
-  const users = getUsers();
-  if (token === "admin-token") return users.find(u => u.role === "admin");
-  return users.find(u => u.role !== "admin") || users[0];
-};
+import { apiFetch } from "../ApiCall/Api";
 
 const productApi = {
   bySlug: async (slug) => {
-    await delay();
-    const products = getProducts();
-    const product = products.find(p => p.slug === slug);
-    if (!product) {
-      throw new Error("Product not found");
-    }
-    return { success: true, product };
+    const res = await apiFetch(`/products/get-by-slug?slug=${slug}`);
+    return res;
   },
 
   list: async (params = "") => {
-    await delay();
-    const products = getProducts();
-    const urlParams = new URLSearchParams(params);
-
-    const category     = urlParams.get("category") || "";
-    const limit          = parseInt(urlParams.get("limit") || "4");
-
-    let filtered = products;
-    if (category) {
-      filtered = filtered.filter(p => p.categorySlug === category);
-    }
-
-    return {
-      success: true,
-      products: filtered.slice(0, limit)
-    };
+    const res = await apiFetch(`/products/get-all?${params}`);
+    return res;
   },
 
-  addReview: async (id, data, token) => {
-    await delay();
-    const products = getProducts();
-    const idx = products.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      const user = getCurrentUser(token);
-      const newReview = {
-        id: `rev-${Date.now()}`,
-        userName: user.fullName,
-        rating: data.rating || 5,
-        title: data.title || "",
-        comment: data.comment || "",
-        isVerified: true,
-        createdAt: new Date().toISOString().split("T")[0]
-      };
-      products[idx].reviews = products[idx].reviews || [];
-      products[idx].reviews.unshift(newReview);
-      
-      const totalRatings = products[idx].reviews.reduce((sum, r) => sum + r.rating, 0);
-      products[idx].reviewCount = products[idx].reviews.length;
-      products[idx].avgRating = parseFloat((totalRatings / products[idx].reviewCount).toFixed(1));
-
-      setLocalStorage("nok-mock-products-v3", products);
-      return { success: true, review: newReview };
-    }
-    throw new Error("Product not found");
+  addReview: async (id, data) => {
+    const res = await apiFetch(`/products/add-review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId: id, ...data }),
+    });
+    return res;
   }
 };
 import { useCartStore } from "../components/store/CartStore.jsx";

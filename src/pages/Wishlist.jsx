@@ -4,49 +4,7 @@ import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
-import productsDb from "../assets/products.json";
-
-const mapProductImages = (p) => ({
-  ...p,
-  primaryImage: comboImg,
-  images: [
-    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
-  ]
-});
-
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return initialData;
-  }
-};
-
-const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const productApi = {
-  list: async (params = "") => {
-    await delay();
-    const products = getProducts();
-    const urlParams = new URLSearchParams(params);
-    const idsVal = urlParams.get("ids");
-    let filtered = products;
-    if (idsVal) {
-      const idList = idsVal.split(",");
-      filtered = filtered.filter(p => idList.includes(p.id));
-    }
-    return {
-      success: true,
-      products: filtered
-    };
-  }
-};
+import { apiFetch } from "../ApiCall/Api";
 import comboImg from "../assets/products/combo.jpg";
 
 // ─── placeholder ──────────────────────────────────────────────────────
@@ -205,13 +163,14 @@ export default function Wishlist() {
     if (!localIds.length) { setProducts([]); return; }
     setLoading(true);
 
-    // fetch all wishlisted products in parallel
-    Promise.allSettled(localIds.map((id) => productApi.list(`ids=${id}&limit=1`)))
-      .then((results) => {
-        const fetched = results
-          .filter((r) => r.status === "fulfilled")
-          .flatMap((r) => r.value.products ?? []);
+    apiFetch(`/products/get-all?limit=999`)
+      .then((res) => {
+        const allProducts = res.products || [];
+        const fetched = allProducts.filter(p => localIds.includes(p.id));
         setProducts(fetched);
+      })
+      .catch((err) => {
+        console.error("Failed to load wishlist products:", err);
       })
       .finally(() => setLoading(false));
   }, [localIds]);

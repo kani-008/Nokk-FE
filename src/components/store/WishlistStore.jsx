@@ -1,23 +1,24 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { apiFetch, API_URL } from "../../ApiCall/Api";
+import { useAuthStore } from "./AuthStore";
 
 const WISHLIST_BASE = `${API_URL}/wishlist`;
+
 const wishlistApi = {
-  get: (token) =>
-    apiFetch(WISHLIST_BASE, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  toggle: (data, token) =>
-    apiFetch(WISHLIST_BASE, {
+  get: () =>
+    apiFetch(`${WISHLIST_BASE}/get-wishlist`),
+  add: (productId) =>
+    apiFetch(`${WISHLIST_BASE}/add-item`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
     }),
-  remove: (pid, token) =>
-    apiFetch(`${WISHLIST_BASE}/${pid}`, {
+  remove: (productId) =>
+    apiFetch(`${WISHLIST_BASE}/remove-item`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
     }),
 };
 
@@ -42,7 +43,7 @@ export const useWishlistStore = create(
       count: () => get().ids.length,
 
       // ── toggle — optimistic local update + optional server sync ────
-      toggle: async (productId, token = null) => {
+      toggle: async (productId) => {
         const already = get().ids.includes(productId);
 
         // Optimistic local update first — instant UI feedback
@@ -53,39 +54,38 @@ export const useWishlistStore = create(
         });
 
         // Sync to server if logged in
+        const token = useAuthStore.getState().token;
         if (token) {
           try {
             if (already) {
-              // remove
-              await wishlistApi.remove(productId, token);
+              await wishlistApi.remove(productId);
             } else {
-              // add — API POST /api/wishlist { productId }
-              await wishlistApi.toggle({ productId }, token);
+              await wishlistApi.add(productId);
             }
-          } catch {
+          } catch (err) {
+            console.error("wishlist toggle server sync failed:", err);
             // rollback on server failure
             set({
               ids: already
                 ? [...get().ids, productId]   // re-add
                 : get().ids.filter((id) => id !== productId), // re-remove
             });
+            throw err;
           }
         }
       },
 
       // ── load FROM server after login ───────────────────────────────
-      // Merges server list with local — union so nothing is lost
       loadFromServer: async (token) => {
         try {
-          const res = await wishlistApi.get(token);
-          // API shape: { success, wishlist: { items[]: { productId, product{...} } } }
-          const serverIds = (res.wishlist?.items ?? []).map((i) => i.productId);
-          if (!serverIds.length) return;
-
+          const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+          const res = await apiFetch(`${WISHLIST_BASE}/get-wishlist`, { headers });
+          // API shape: { success, wishlist: [{ productId, ... }] }
+          const serverIds = (res.wishlist ?? []).map((i) => i.productId);
           const merged = Array.from(new Set([...get().ids, ...serverIds]));
           set({ ids: merged });
-        } catch {
-          // stay with local ids on error
+        } catch (err) {
+          console.error("loadFromServer failed:", err);
         }
       },
 

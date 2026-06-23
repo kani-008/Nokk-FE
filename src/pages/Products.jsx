@@ -4,44 +4,13 @@ import {
   SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
   Star, ArrowUpDown,
 } from "lucide-react";
-import productsDb from "../assets/products.json";
-import categoriesDb from "../assets/categories.json";
+import { apiFetch } from "../ApiCall/Api";
 import comboImg from "../assets/products/combo.jpg";
-
-const mapProductImages = (p) => ({
-  ...p,
-  primaryImage: comboImg,
-  images: [
-    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
-  ]
-});
-
-const mapCategoryImage = (c) => ({
-  ...c,
-  imageUrl: comboImg
-});
-
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return initialData;
-  }
-};
-
-const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
-const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const productApi = {
   list: async (params = "") => {
-    await delay();
-    const products = getProducts();
+    const res = await apiFetch(`/products/get-all?limit=999`);
+    const products = res.products || [];
     const urlParams = new URLSearchParams(params);
 
     const search       = urlParams.get("search") || "";
@@ -60,7 +29,7 @@ const productApi = {
     const limit          = parseInt(urlParams.get("limit") || "12");
 
     const minVariantPrice = (p) =>
-      p.variants.length ? Math.min(...p.variants.map(v => v.price)) : (p.minPrice || 0);
+      p.variants && p.variants.length ? Math.min(...p.variants.map(v => v.price)) : (p.minPrice || 0);
 
     let filtered = products;
 
@@ -91,7 +60,7 @@ const productApi = {
     }
 
     if (inStock) {
-      filtered = filtered.filter(p => p.variants.some(v => v.stockQty > 0));
+      filtered = filtered.filter(p => p.variants && p.variants.some(v => v.stockQty > 0));
     }
 
     if (minPrice !== null) {
@@ -107,13 +76,13 @@ const productApi = {
 
     if (weights.length > 0) {
       filtered = filtered.filter(p =>
-        p.variants.some(v => weights.includes(v.weightLabel))
+        p.variants && p.variants.some(v => weights.includes(v.weightLabel))
       );
     }
 
     if (hasOffer) {
       filtered = filtered.filter(p =>
-        p.variants.some(v => v.comparePrice && v.comparePrice > v.price)
+        p.variants && p.variants.some(v => v.comparePrice && v.comparePrice > v.price)
       );
     }
 
@@ -158,8 +127,8 @@ const productApi = {
 
 const categoryApi = {
   list: async () => {
-    await delay();
-    return { success: true, categories: getCategories() };
+    const res = await apiFetch(`/categories/get-all`);
+    return res;
   }
 };
 import { useCartStore } from "../components/store/CartStore";

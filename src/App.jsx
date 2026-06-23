@@ -12,7 +12,7 @@ import Register from "./pages/Register";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
-import Profile from "./pages/Profile";
+import Profile from "./pages/profile";
 import Wishlist from "./pages/Wishlist";
 import Offers from "./pages/Offers";
 /* Admin Pages */

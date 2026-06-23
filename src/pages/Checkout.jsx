@@ -2,67 +2,48 @@ import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
 import comboImg from "../assets/products/combo.jpg";
-import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
+import { apiFetch } from "../ApiCall/Api.jsx";
 
-const USER_BASE = `${API_URL}/users`;
 const userApi = {
-  addresses: (token) =>
-    apiFetch(`${USER_BASE}/me/addresses`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  addresses: () =>
+    apiFetch(`/users/me/addresses`),
 };
-
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return initialData;
-  }
-};
-
-const setLocalStorage = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-const getOrders = () => getLocalStorage("nok-mock-orders", []);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const orderApi = {
-  place: async (data, token) => {
-    await delay();
-    const orders = getOrders();
-    const orderId = `nok-${Math.floor(100000 + Math.random() * 900000)}`;
-    const addressVal = data.shippingAddress || data.address;
-    const newOrder = {
-      id: orderId,
-      createdAt: new Date().toISOString(),
-      customerName: addressVal?.name || "Customer",
-      customerPhone: addressVal?.phone || "N/A",
-      subtotal: data.subtotal,
-      deliveryCharge: data.deliveryCharge || 0,
-      discount: data.discount || 0,
-      couponApplied: data.couponCode || null,
-      total: data.total,
-      status: "pending",
-      paymentStatus: "completed",
-      paymentMethod: data.paymentMethod,
-      address: addressVal,
+  place: async (data) => {
+    const payload = {
       items: data.items.map(i => ({
-        ...i,
-        image: comboImg
+        productId: i.productId,
+        variantId: i.variantId,
+        weight: i.weight,
+        price: i.price,
+        quantity: i.quantity,
+        nameEn: i.productName,
+        nameTa: i.nameTa
       })),
-      timeline: [
-        { status: "pending", message: "Order placed successfully", time: new Date().toISOString() }
-      ]
+      address: {
+        fullName: data.shippingAddress.name,
+        phone: data.shippingAddress.phone,
+        addressLine1: data.shippingAddress.addressLine1,
+        addressLine2: data.shippingAddress.addressLine2,
+        city: data.shippingAddress.city,
+        state: data.shippingAddress.state,
+        pincode: data.shippingAddress.pincode
+      },
+      paymentMethod: data.paymentMethod,
+      couponApplied: data.couponCode || null,
+      subtotal: data.subtotal,
+      deliveryCharge: data.deliveryCharge,
+      discount: data.discount,
+      total: data.total
     };
-    orders.unshift(newOrder);
-    setLocalStorage("nok-mock-orders", orders);
-    return { success: true, order: newOrder };
+
+    const res = await apiFetch(`/orders/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    return res;
   }
 };
 import { useCartStore }          from "../components/store/CartStore";
@@ -129,9 +110,20 @@ export default function Checkout() {
   // ── load saved addresses on mount ─────────────────────────────────
   useEffect(() => {
     if (!token) return;
-    userApi.addresses(token)
+    userApi.addresses()
       .then((r) => {
-        const list = r.addresses || [];
+        const list = (r.addresses || []).map((addr) => ({
+          id: addr.id,
+          label: addr.label,
+          name: addr.full_name,
+          phone: addr.phone,
+          addressLine1: addr.address_line1,
+          addressLine2: addr.address_line2,
+          city: addr.city,
+          state: addr.state,
+          pincode: addr.pincode,
+          isDefault: addr.is_default
+        }));
         setSavedAddresses(list);
         if (list.length > 0) {
           setSelectedSaved(list[0]);
@@ -175,8 +167,12 @@ export default function Checkout() {
       const res = await orderApi.place({
         items: items.map((i) => ({
           variantId: i.variantId,
+          productId: i.productId,
+          productName: i.productName,
+          nameTa: i.nameTa,
+          weight: i.weight,
+          price: i.price,
           quantity:  i.quantity,
-          price:     i.price,
         })),
         shippingAddress: {
           name:         address.name,
@@ -196,7 +192,7 @@ export default function Checkout() {
         total:          tot,
       }, token);
 
-      clearCart();
+      await clearCart();
 
       navigate("/my-orders", { state: { newOrderId: res.order?.id } });
     } catch (err) {

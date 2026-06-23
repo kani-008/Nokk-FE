@@ -120,7 +120,7 @@ export default function Login() {
                 : { identifier: trimmedId.toLowerCase(), password: form.password };
             const response = await API.post("/auth/user-login", payload);
             const res = response.data;
-            login(res.user, res.accessToken, res.refreshToken);
+            login(res.user, res.accessToken || res.token, res.refreshToken);
             navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
             setError(err.response?.data?.message || err.message || "Invalid credentials. Please try again.");
