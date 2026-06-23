@@ -11,10 +11,6 @@ import { useToast } from "../components/useToast";
 // ─── Logo URL — replace with real cloud URL when available ────────────
 const LOGO_URL = null;
 
-// ─── MOCK BYPASS — remove once the real backend is wired up ───────────
-const MOCK_PHONE = "9999999999";
-const MOCK_OTP = "123456";
-
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
 
@@ -145,14 +141,7 @@ export default function Login() {
 
         setLoading(true);
         try {
-            // ── REAL API CALL — uncomment once the backend is live ──────
-            // await authApi.sendOtp({ phone, purpose: "reset-password" });
-
-            // ── MOCK BYPASS ──────────────────────────────────────────────
-            if (phone.trim() !== MOCK_PHONE) {
-                throw new Error(`Use the test number ${MOCK_PHONE} for now — OTP sending isn't live yet.`);
-            }
-
+            await authApi.sendOtp({ phone });
             setView("forgot-otp");
             setOtpExpiryTime(Date.now() + 180 * 1000); // 3 minutes background expiry
         } catch (err) {
@@ -172,8 +161,7 @@ export default function Login() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            // ── REAL API CALL ────────────────────────────────────────────
-            // await authApi.sendOtp({ phone, purpose: "reset-password" });
+            await authApi.sendOtp({ phone });
             setOtpExpiryTime(Date.now() + 180 * 1000); // restart 3 minutes timer
         } catch (err) {
             setError(err.message || "Could not resend OTP.");
@@ -182,18 +170,20 @@ export default function Login() {
         }
     };
 
-    const handleVerifyOtp = (e) => {
+    const handleVerifyOtp = async (e) => {
         e.preventDefault();
         const otpValue = otp.join("");
         if (otp.some((d) => d === "")) { setForgotErrors({ otp: "Enter the 6-digit OTP" }); return; }
 
-        // ── MOCK BYPASS ──────────────────────────────────────────────────
-        if (otpValue !== MOCK_OTP) {
-            setError(`Use the test OTP ${MOCK_OTP} for now — OTP verification isn't live yet.`);
-            return;
+        setLoading(true);
+        try {
+            await authApi.verifyOtp({ phone, otp: otpValue });
+            setView("forgot-reset");
+        } catch (err) {
+            setError(err.message || "Invalid or expired OTP.");
+        } finally {
+            setLoading(false);
         }
-
-        setView("forgot-reset");
     };
 
     // ── Individual OTP box change handler — auto-advances focus ──
@@ -247,13 +237,7 @@ export default function Login() {
 
         setLoading(true);
         try {
-            // ── REAL API CALL — uncomment once the backend is live ──────
-            // await authApi.resetPassword({
-            //     phone: phone.trim(),
-            //     otp: otp.join(""),
-            //     newPassword: newPw,
-            // });
-
+            await authApi.resetPassword({ phone: phone.trim(), newPassword: newPw });
             setSuccess("Password reset successful.");
             resetForgotFlow(true); // reset and go back to login form, keeping the success toast
         } catch (err) {

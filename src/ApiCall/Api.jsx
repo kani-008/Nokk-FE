@@ -103,6 +103,35 @@ export const authApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     }, false),
+
+  // Forgot-password OTP flow
+  sendOtp: (data) =>
+    apiFetch(`${AUTH_BASE}/otp-create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }, false),
+
+  verifyOtp: (data) =>
+    apiFetch(`${AUTH_BASE}/otp-verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }, false),
+
+  resetPassword: (data) =>
+    apiFetch(`${AUTH_BASE}/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }, false),
+
+  register: (data) =>
+    apiFetch(`${AUTH_BASE}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }, false),
 };
 
 // ═════════════════════════════════════════════════════════════════════
@@ -470,35 +499,36 @@ async function apiFetch(url, options = {}, _retry = true) {
 export const bannerApi = {
   // public — active banners only (Home page)
   active: () =>
-    apiFetch(BANNER_BASE),
+    apiFetch(`${BANNER_BASE}/get-banners`),
 
   // admin — all banners including inactive
   all: (token) =>
-    apiFetch(`${BANNER_BASE}/all`, {
+    apiFetch(`${BANNER_BASE}/get-all`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   // admin — create: { title, subtitle?, imageUrl?, videoUrl?, linkUrl?, sortOrder?, isActive? }
   create: (data, token) =>
-    apiFetch(BANNER_BASE, {
+    apiFetch(`${BANNER_BASE}/create-banner`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     }),
 
-  // admin — update a banner by id
+  // admin — update a banner; id travels in the body
   update: (id, data, token) =>
-    apiFetch(`${BANNER_BASE}/${id}`, {
+    apiFetch(`${BANNER_BASE}/update-banner`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, id }),
     }),
 
-  // admin — delete a banner
+  // admin — delete a banner; id travels in the body
   remove: (id, token) =>
-    apiFetch(`${BANNER_BASE}/${id}`, {
+    apiFetch(`${BANNER_BASE}/delete-banner`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
     }),
 };
 
@@ -510,41 +540,42 @@ const BTEXT_BASE = `${import.meta.env.VITE_LHOST_API_URL}/btext`;
 export const btextApi = {
   // public — overlays for a specific banner (used by HeroBanner)
   byBanner: (bannerId) =>
-    apiFetch(`${BTEXT_BASE}?bannerId=${bannerId}`),
+    apiFetch(`${BTEXT_BASE}/get-by-banner?bannerId=${bannerId}`),
 
   // admin — all btext entries
   all: (token) =>
-    apiFetch(`${BTEXT_BASE}/all`, {
+    apiFetch(`${BTEXT_BASE}/get-all`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  // admin — overlays for a specific banner
+  // admin — overlays for a specific banner; bannerId travels as query param
   forBanner: (bannerId, token) =>
-    apiFetch(`${BTEXT_BASE}/banner/${bannerId}`, {
+    apiFetch(`${BTEXT_BASE}/get-for-banner?bannerId=${bannerId}`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   // admin — create: { bannerId, heading, subtext?, isActive? }
   create: (data, token) =>
-    apiFetch(BTEXT_BASE, {
+    apiFetch(`${BTEXT_BASE}/create-btext`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     }),
 
-  // admin — update an overlay by bt_id
+  // admin — update an overlay; id travels in the body
   update: (id, data, token) =>
-    apiFetch(`${BTEXT_BASE}/${id}`, {
+    apiFetch(`${BTEXT_BASE}/update-btext`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, id }),
     }),
 
-  // admin — delete an overlay
+  // admin — delete an overlay; id travels in the body
   remove: (id, token) =>
-    apiFetch(`${BTEXT_BASE}/${id}`, {
+    apiFetch(`${BTEXT_BASE}/delete-btext`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
     }),
 };
 
@@ -943,25 +974,27 @@ export const userApi = {
     return { success: true };
   },
   all: (params = "", token) =>
-    apiFetch(`${USER_BASE}?${params}`, {
+    apiFetch(`${USER_BASE}/get-all?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
+  // id travels in the body for all mutating admin user calls
   block: (id, token) =>
-    apiFetch(`${USER_BASE}/${id}/status`, {
+    apiFetch(`${USER_BASE}/toggle-status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ status: "blocked" })
+      body: JSON.stringify({ id, status: "blocked" })
     }),
   unblock: (id, token) =>
-    apiFetch(`${USER_BASE}/${id}/status`, {
+    apiFetch(`${USER_BASE}/toggle-status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ status: "active" })
+      body: JSON.stringify({ id, status: "active" })
     }),
   remove: (id, token) =>
-    apiFetch(`${USER_BASE}/${id}`, {
+    apiFetch(`${USER_BASE}/delete-user`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id })
     })
 };
 
