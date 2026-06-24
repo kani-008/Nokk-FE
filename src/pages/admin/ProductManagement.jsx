@@ -6,6 +6,7 @@ import {
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH    = comboImg;
@@ -203,10 +204,14 @@ export default function ProductManagement() {
 
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
         <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-[56%] sm:w-[1100px]" />
-        <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1); }} className="field-input w-[20%] sm:w-36">
-          <option value="">All categories</option>
-          {categories.map((c) => <option key={c.id} value={c.slug}>{c.nameEn}</option>)}
-        </select>
+        <div className="w-[20%] sm:w-36">
+          <Dropdown
+            value={catFilter}
+            onChange={(v) => { setCatFilter(v); setPage(1); }}
+            placeholder="All categories"
+            options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+          />
+        </div>
         {(search || catFilter) && (
           <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500">
             <X size={14} /> Clear

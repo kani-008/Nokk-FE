@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { AlertTriangle, PackageX, Save, X, RefreshCw, } from "lucide-react";
+import { AlertTriangle, PackageX, RefreshCw, CheckCircle } from "lucide-react";
 import API from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
 import { AdminPage, AdminButton, SearchBar, AdminCard, } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
+import Toggle from "../../components/admin/Toggle.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN",
@@ -18,73 +19,34 @@ import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
 
-function stockBadge(qty) {
-  if (qty === 0) return <span className="badge-red">Out of stock</span>;
-  if (qty <= 5) return <span className="badge-orange">Low · {qty}</span>;
-  if (qty <= 20) return <span className="badge-amber">{qty} units</span>;
-  return <span className="badge-green">{qty} units</span>;
-}
-
 // ── Inline stock edit cell ─────────────────────────────────────────────
 function StockEditCell({ item, onSave }) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(item.stockQty);
   const [saving, setSaving] = useState(false);
-  const { token } = useAuthStore();
 
-  const handleSave = async () => {
-    const num = Number(val);
-    if (isNaN(num) || num < 0) return;
+  const handleToggle = async () => {
+    const nextInStock = !(item.stockQty > 0);
     setSaving(true);
     try {
-      await API.patch(`/inventory/${item.variantId}`, { stockQty: num });
-      onSave(item.variantId, num);
-      setEditing(false);
-    } catch (e) { alert(e.message || "Failed"); }
-    finally { setSaving(false); }
+      await API.put("/inventory/update-stock", {
+        variantId: item.variantId,
+        inStock: nextInStock,
+      });
+      onSave(item.variantId, nextInStock ? 1 : 0);
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update stock");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleCancel = () => { setVal(item.stockQty); setEditing(false); };
-
-  if (!editing) {
-    return (
-      <div className="flex items-center gap-2">
-        {stockBadge(item.stockQty)}
-        <button
-          onClick={() => setEditing(true)}
-          className="font-body text-xs text-brand-700 hover:underline ml-1">
-          Edit
-        </button>
-      </div>
-    );
-  }
+  const isInStock = item.stockQty > 0;
 
   return (
     <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        min={0}
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        className="w-20 border border-amber-200 rounded-lg px-2 py-1 text-sm font-num focus:outline-none focus:ring-2 focus:ring-amber-400/30"
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === "Enter")
-            handleSave(); if (e.key === "Escape")
-            handleCancel();
-        }} />
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors">
-        <Save size={13} />
-      </button>
-      <button
-        onClick={handleCancel}
-        className="p-1.5 bg-gray-50 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-      >
-        <X size={13} />
-      </button>
+      <Toggle checked={isInStock} onChange={handleToggle} disabled={saving} />
+      <span className={`font-body text-xs font-semibold select-none ${isInStock ? "text-green-600" : "text-red-500"}`}>
+        {isInStock ? "In Stock" : "OOS"}
+      </span>
     </div>
   );
 }
@@ -97,7 +59,7 @@ export default function InventoryManagement() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all"); // all | low | out
+  const [filter, setFilter] = useState("all"); // all | out
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
@@ -108,11 +70,10 @@ export default function InventoryManagement() {
     }, 0);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (filter === "low") params.set("lowStock", "true");
     if (filter === "out") params.set("outOfStock", "true");
     params.set("page", page); params.set("limit", 20);
     try {
-      const response = await API.get(`/inventory?${params.toString()}`);
+      const response = await API.get(`/inventory/get-inventory?${params.toString()}`);
       console.log(response.data);
       setItems(response.data.inventory || []);
       setTotalPages(response.data.pagination?.totalPages || 1);
@@ -136,7 +97,7 @@ export default function InventoryManagement() {
 
   // summary stats
   const outOfStock = items.filter((i) => i.stockQty === 0).length;
-  const lowStock = items.filter((i) => i.stockQty > 0 && i.stockQty <= 5).length;
+  const inStock = items.filter((i) => i.stockQty > 0).length;
   const totalValue = items.reduce((s, i) => s + i.price * i.stockQty, 0);
 
   const COLS = [
@@ -198,17 +159,17 @@ export default function InventoryManagement() {
       {/* summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <AdminCard className="flex items-center gap-3 py-3.5">
+          <div className="p-2 rounded-xl bg-green-50"><CheckCircle size={16} className="text-green-500" /></div>
+          <div>
+            <p className="font-num text-xl font-bold text-gray-900 leading-none">{inStock}</p>
+            <p className="font-body text-xs text-gray-500 mt-0.5">In Stock</p>
+          </div>
+        </AdminCard>
+        <AdminCard className="flex items-center gap-3 py-3.5">
           <div className="p-2 rounded-xl bg-red-50"><PackageX size={16} className="text-red-500" /></div>
           <div>
             <p className="font-num text-xl font-bold text-gray-900 leading-none">{outOfStock}</p>
             <p className="font-body text-xs text-gray-500 mt-0.5">Out of Stock</p>
-          </div>
-        </AdminCard>
-        <AdminCard className="flex items-center gap-3 py-3.5">
-          <div className="p-2 rounded-xl bg-orange-50"><AlertTriangle size={16} className="text-orange-500" /></div>
-          <div>
-            <p className="font-num text-xl font-bold text-gray-900 leading-none">{lowStock}</p>
-            <p className="font-body text-xs text-gray-500 mt-0.5">Low Stock (≤5)</p>
           </div>
         </AdminCard>
         <AdminCard className="flex items-center gap-3 py-3.5 sm:col-span-2">
@@ -230,7 +191,6 @@ export default function InventoryManagement() {
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-[100%] sm:w-auto sm:flex-1">
           {[
             { key: "all", label: "All" },
-            { key: "low", label: "Low Stock" },
             { key: "out", label: "Out of Stock" },
           ].map((f) => (
             <button

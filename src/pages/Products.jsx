@@ -56,7 +56,7 @@ const filterProducts = (products, params = "") => {
   }
 
   if (inStock) {
-    filtered = filtered.filter(p => p.variants && p.variants.some(v => v.stockQty > 0));
+    filtered = filtered.filter(p => p.variants && p.variants.some(v => v.inStock));
   }
 
   if (minPrice !== null) {

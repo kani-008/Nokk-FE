@@ -43,7 +43,7 @@ export default function ProductCard({ product }) {
   const hasDisc = compare > price;
   const disc = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
   const image = product.primaryImage || PH;
-  const inStock = (firstV?.stockQty ?? 1) > 0;
+  const inStock = firstV?.inStock ?? true;
   const cartItem = firstV ? items.find((i) => i.variantId === firstV.id) : null;
   const inCart = !!cartItem;
 

@@ -239,7 +239,7 @@ export default function ProductDetails() {
     ? (activeVariant?.comparePrice ?? product.minComparePrice)
     : null;
   const disc = compare ? Math.round(((compare - price) / compare) * 100) : 0;
-  const inStock = (activeVariant?.stockQty ?? product.totalStock ?? 0) > 0;
+  const inStock = activeVariant?.inStock ?? product.inStock ?? false;
 
   const handleAddToCart = async () => {
     if (!activeVariant || !inStock) return;
@@ -516,22 +516,22 @@ export default function ProductDetails() {
                     <button
                       key={v.id}
                       onClick={() => { setActiveVariant(v); setQty(1); }}
-                      disabled={v.stockQty === 0}
+                      disabled={!v.inStock}
                       className={`font-body text-sm px-4 py-2 rounded-xl border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${activeVariant?.id === v.id
                         ? "border-brand-700 bg-brand-700 text-white font-semibold"
                         : "border-amber-200 text-amber-800 hover:border-brand-600 bg-white"
                         }`}
                     >
                       {v.weightLabel}
-                      {v.stockQty === 0 && <span className="ml-1 text-[10px]">(OOS)</span>}
+                      {!v.inStock && <span className="ml-1 text-[10px]">(OOS)</span>}
                     </button>
                   ))}
                 </div>
-                {/* {activeVariant && (
-                  <p className="font-body text-xs text-amber-500">
-                    {activeVariant.stockQty} left
+                {activeVariant && (
+                  <p className={`font-body text-xs font-semibold ${activeVariant.inStock ? "text-green-600" : "text-red-500"}`}>
+                    {activeVariant.inStock ? "In Stock" : "Out of Stock"}
                   </p>
-                )} */}
+                )}
               </div>
             )}
 

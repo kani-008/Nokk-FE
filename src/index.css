@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Noto+Sans+Tamil:wght@400..800&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
@@ -55,7 +55,7 @@
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-tamil: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-tamil: 'Noto Sans Tamil', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-num: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
@@ -337,5 +337,15 @@ body {
 
   .animate-modal-slide-up {
     animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Remove input spinner arrows for numeric fields with .no-spinner */
+  input.no-spinner::-webkit-outer-spin-button,
+  input.no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input.no-spinner[type=number] {
+    -moz-appearance: textfield;
   }
 }

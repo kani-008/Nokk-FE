@@ -3,6 +3,7 @@ import { Plus, X, Loader2 } from "lucide-react";
 import API from "../../ApiCall/Api.jsx";
 import { AdminButton } from "./AdminUI.jsx";
 import Toggle from "./Toggle.jsx";
+import Dropdown from "./Dropdown.jsx";
 
 const EMPTY = {
   nameEn: "", nameTa: "", slug: "", description: "", howToUse: "", storageTips: "",
@@ -10,6 +11,47 @@ const EMPTY = {
 };
 
 const V_EMPTY = { weightGrams: "", weightLabel: "", price: "", comparePrice: "", stockQty: "" };
+
+const WEIGHT_OPTIONS = [
+  { value: "100g", label: "100g", grams: 100 },
+  { value: "250g", label: "250g", grams: 250 },
+  { value: "500g", label: "500g", grams: 500 },
+  { value: "1kg",  label: "1kg",  grams: 1000 },
+];
+
+// Auto-pricing: the variant with the smallest weightGrams (that has a
+// price filled in) is the "base unit". Every other variant's price and
+// MRP are prefilled as (otherWeight / baseWeight) * basePrice, rounded
+// to the nearest rupee. Once an admin manually edits a row's price or
+// MRP by hand, that field is marked "touched" and the auto-calc stops
+// overwriting it — it only ever pre-fills, never fights a manual edit.
+function computeAutoPricedVariants(variants) {
+  const withWeight = variants.filter((v) => Number(v.weightGrams) > 0 && Number(v.price) > 0);
+  if (withWeight.length === 0) return variants;
+
+  const base = withWeight.reduce((min, v) =>
+    Number(v.weightGrams) < Number(min.weightGrams) ? v : min
+  );
+  const baseWeight = Number(base.weightGrams);
+  const basePrice = Number(base.price);
+  const baseCompare = Number(base.comparePrice) || null;
+
+  return variants.map((v) => {
+    if (v._uid === base._uid) return v; // base row drives the calc, never overwritten by it
+    const w = Number(v.weightGrams);
+    if (!w || w === baseWeight) return v;
+
+    const scale = w / baseWeight;
+    const next = { ...v };
+    if (!v._priceTouched) {
+      next.price = String(Math.round(basePrice * scale));
+    }
+    if (!v._comparePriceTouched && baseCompare) {
+      next.comparePrice = String(Math.round(baseCompare * scale));
+    }
+    return next;
+  });
+}
 
 // stable client-side id for variant rows (React keys must not be the
 // array index when rows can be added/removed, or inputs bind to the
@@ -33,33 +75,95 @@ const slugify = (val) =>
 // crushed five fields into unreadable slivers on phone widths. Below
 // `sm`, each field stacks two-per-row in its own labelled block; from
 // `sm` up it collapses back into one compact row, matching desktop.
-function VariantRow({ v, idx, canRemove, onChange, onRemove }) {
+function VariantRow({ v, idx, canRemove, isBase, onChange, onRemove, variants = [] }) {
   const set = (k, val) => onChange(idx, k, val);
+  const priceAutoFilled = !isBase && !v._priceTouched && v.price;
+
+  // Filter out options already selected by OTHER variants
+  const filteredOptions = WEIGHT_OPTIONS.filter((opt) => {
+    const isUsedByOther = variants.some((otherV, otherIdx) => {
+      if (otherIdx === idx) return false;
+      return otherV.weightLabel === opt.value;
+    });
+    return !isUsedByOther;
+  });
+
+  // Ensure current selected label is in the options list so it displays properly
+  const selectedLabel = v.weightLabel || "";
+  const displayOptions = [...filteredOptions];
+  if (selectedLabel && !displayOptions.some((o) => o.value === selectedLabel)) {
+    const originalOpt = WEIGHT_OPTIONS.find((o) => o.value === selectedLabel);
+    if (originalOpt) {
+      displayOptions.push(originalOpt);
+    } else {
+      displayOptions.push({ value: selectedLabel, label: selectedLabel, grams: Number(v.weightGrams) || 0 });
+    }
+    displayOptions.sort((a, b) => a.grams - b.grams);
+  }
+
+  const handleWeightChange = (newVal) => {
+    const opt = WEIGHT_OPTIONS.find((o) => o.value === newVal) || { value: newVal, label: newVal, grams: 0 };
+    onChange(idx, "weightLabel", opt.value);
+    onChange(idx, "weightGrams", opt.grams);
+  };
+
   return (
-    <div className="border border-gray-100 rounded-xl p-3 sm:border-0 sm:p-0">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:items-end">
+    <div className={`border rounded-xl p-3 sm:border-0 sm:p-0 ${isBase ? "border-sandal-200 bg-sandal-50/30 sm:bg-transparent sm:border-transparent" : "border-gray-100"}`}>
+      {isBase && (
+        <p className="font-body text-[10px] font-bold text-sandal-700 mb-1.5 sm:hidden">Base unit — sets the per-gram rate</p>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:items-end">
         <div>
-          <label className="field-label text-[10px]">Weight (g)</label>
-          <input type="number" value={v.weightGrams} onChange={(e) => set("weightGrams", e.target.value)} placeholder="250" className="field-input" />
+          <label className="field-label text-[10px]">
+            Weight {isBase && <span className="text-sandal-600">· base</span>}
+          </label>
+          <Dropdown
+            value={v.weightLabel || ""}
+            onChange={handleWeightChange}
+            placeholder="Select weight"
+            options={displayOptions}
+            direction="up"
+          />
         </div>
         <div>
-          <label className="field-label text-[10px]">Label</label>
-          <input value={v.weightLabel} onChange={(e) => set("weightLabel", e.target.value)} placeholder="250g" className="field-input" />
-        </div>
-        <div>
-          <label className="field-label text-[10px]">Price ₹</label>
-          <input type="number" value={v.price} onChange={(e) => set("price", e.target.value)} placeholder="299" className="field-input" />
+          <label className="field-label text-[10px]">
+            Price ₹ {priceAutoFilled && <span className="text-gray-400 font-normal">(auto)</span>}
+          </label>
+          <input
+            type="number"
+            value={v.price}
+            onChange={(e) => set("price", e.target.value)}
+            placeholder="299"
+            className="field-input no-spinner"
+          />
         </div>
         <div>
           <label className="field-label text-[10px]">MRP ₹</label>
-          <input type="number" value={v.comparePrice} onChange={(e) => set("comparePrice", e.target.value)} placeholder="399" className="field-input" />
+          <input
+            type="number"
+            value={v.comparePrice}
+            onChange={(e) => set("comparePrice", e.target.value)}
+            placeholder="399"
+            className="field-input no-spinner"
+          />
         </div>
         {/* Stock + remove span both mobile columns so the remove button
             never gets squeezed into its own tiny third row */}
         <div className="col-span-2 sm:col-span-1 flex items-end gap-1">
-          <div className="flex-1">
-            <label className="field-label text-[10px]">Stock</label>
-            <input type="number" value={v.stockQty} onChange={(e) => set("stockQty", e.target.value)} placeholder="50" className="field-input" />
+          <div className="flex-1 flex flex-col items-start pb-1">
+            <span className="field-label text-[10px] mb-2 block">Status</span>
+            <div className="flex items-center gap-1.5 h-[34px] sm:h-[38px]">
+              <Toggle
+                checked={v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)}
+                onChange={() => {
+                  const currentVal = v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true);
+                  set("inStock", !currentVal);
+                }}
+              />
+              <span className={`font-body text-xs font-semibold select-none ${(v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)) ? "text-green-600" : "text-red-500"}`}>
+                {(v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)) ? "In Stock" : "out of stock"}
+              </span>
+            </div>
           </div>
           <button
             type="button"
@@ -83,7 +187,7 @@ function VariantRow({ v, idx, canRemove, onChange, onRemove }) {
 // Handles both flows: pass `product={null}` (or omit it) to add a new
 // product, or pass an existing product row to edit it.
 export default function EditProduct({ product, categories, onClose, onSaved }) {
-  const isEdit    = !!product?.id;
+  const isEdit = !!product?.id;
 
   // Resolve categoryId robustly: the product row from the list endpoint
   // may only carry categoryName/categorySlug, not categoryId — without
@@ -110,19 +214,32 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
   const [savedImages, setSavedImages] = useState(
     (product?.images || []).slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
   );
-  const [staged,      setStaged]      = useState([]); // [{ _uid, file, previewUrl }]
-  const [imgError,    setImgError]    = useState("");
+  const [staged, setStaged] = useState([]); // [{ _uid, file, previewUrl }]
+  const [imgError, setImgError] = useState("");
   const [removingImg, setRemovingImg] = useState(null); // id of saved image currently being deleted
-  const [saving,      setSaving]      = useState(false);
-  const [error,       setError]       = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const imgInputRef = useRef(null);
+  const uploadedUrlsRef = useRef([]); // tracks files uploaded to Supabase Storage (for new products)
+  const uploadedDbImagesRef = useRef([]); // tracks database image records added during the edit save session
 
   const totalImageCount = savedImages.length + staged.length;
 
-  const setF    = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const setV    = (i, k, v) => setVariants((arr) => arr.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
-  const addV    = () => setVariants((arr) => [...arr, newVariant()]);
-  const removeV = (i) => setVariants((arr) => (arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr));
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const setV = (i, k, val) => setVariants((arr) => {
+    const next = arr.map((x, idx) => {
+      if (idx !== i) return x;
+      const updated = { ...x, [k]: val };
+      // Direct edits to price/comparePrice "lock" that field so the
+      // auto-calc below stops overwriting it for this row.
+      if (k === "price") updated._priceTouched = true;
+      if (k === "comparePrice") updated._comparePriceTouched = true;
+      return updated;
+    });
+    return computeAutoPricedVariants(next);
+  });
+  const addV = () => setVariants((arr) => computeAutoPricedVariants([...arr, newVariant()]));
+  const removeV = (i) => setVariants((arr) => (arr.length > 1 ? computeAutoPricedVariants(arr.filter((_, idx) => idx !== i)) : arr));
 
   // Pick one or more files — just stage them as local previews.
   // No network call here, so a wrong pick costs nothing to undo.
@@ -184,20 +301,26 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.nameEn.trim())            { setError("Product name is required"); return; }
-    if (!form.slug?.trim())             { setError("Slug is required"); return; }
-    if (!form.categoryId)               { setError("Category is required"); return; }
-    if (!variants.length)               { setError("At least one variant is required"); return; }
+    if (!form.nameEn.trim()) { setError("Product name is required"); return; }
+    if (!form.slug?.trim()) { setError("Slug is required"); return; }
+    if (!form.categoryId) { setError("Category is required"); return; }
+    if (!variants.length) { setError("At least one variant is required"); return; }
     if (variants.some((v) => !v.price)) { setError("Every variant needs a price"); return; }
 
     setSaving(true); setError("");
     try {
-      const cleanVariants = variants.map(({ _uid, ...rest }) => rest);
+      const cleanVariants = variants.map(({ _uid, _priceTouched, _comparePriceTouched, ...rest }) => {
+        const computedInStock = rest.inStock !== undefined ? rest.inStock : (rest.stockQty !== undefined ? parseInt(rest.stockQty) > 0 : true);
+        return {
+          ...rest,
+          inStock: computedInStock
+        };
+      });
 
       if (isEdit) {
         // ── Variant diff ─────────────────────────────────────────────
         const originalIds = new Set((product.variants || []).map((v) => v.id));
-        const currentIds  = new Set(cleanVariants.filter((v) => v.id).map((v) => v.id));
+        const currentIds = new Set(cleanVariants.filter((v) => v.id).map((v) => v.id));
 
         // deleted
         for (const orig of (product.variants || [])) {
@@ -214,7 +337,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               weightLabel: v.weightLabel,
               price: v.price,
               comparePrice: v.comparePrice || null,
-              stockQty: Number(v.stockQty) || 0,
+              inStock: v.inStock,
             });
           }
         }
@@ -228,7 +351,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               weightLabel: v.weightLabel,
               price: v.price,
               comparePrice: v.comparePrice || null,
-              stockQty: Number(v.stockQty) || 0,
+              inStock: v.inStock,
             });
           }
         }
@@ -238,31 +361,41 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           const body = new FormData();
           body.append("productId", product.id);
           staged.forEach((s) => body.append("imageFiles", s.file));
-          await API.post("/products/add-images", body, {
+          const addImgsRes = await API.post("/products/add-images", body, {
             headers: { "Content-Type": "multipart/form-data" },
           });
+          if (addImgsRes.data.images) {
+            uploadedDbImagesRef.current = [...uploadedDbImagesRef.current, ...addImgsRes.data.images];
+          }
         }
 
         // ── Core fields ───────────────────────────────────────────────
-        const response = await API.put("/products/update-product", { id: product.id, ...form });
+        const { variants: _v, images: _i, ...coreForm } = form;
+        const response = await API.put("/products/update-product", { id: product.id, ...coreForm });
+        uploadedDbImagesRef.current = []; // save succeeded, clear tracked images
         console.log(response.data);
         onSaved(response.data.product || { ...form, id: product.id });
       } else {
-        // New product: upload any staged files first (slug is known from
-        // the form even though the product row doesn't exist yet), then
-        // send the resulting URLs to create-product.
-        const uploadedImages = [];
-        for (const s of staged) {
+        // New product: upload any staged files first in parallel
+        const uploadPromises = staged.map(async (s) => {
           const body = new FormData();
           body.append("file", s.file);
           body.append("slug", form.slug.trim());
           const up = await API.post("/upload/product", body, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-          uploadedImages.push({ imageUrl: up.data.url, isPrimary: uploadedImages.length === 0 });
-        }
+          return up.data.url;
+        });
+        const urls = await Promise.all(uploadPromises);
+        uploadedUrlsRef.current = [...uploadedUrlsRef.current, ...urls];
+
+        const uploadedImages = urls.map((url, idx) => ({
+          imageUrl: url,
+          isPrimary: idx === 0
+        }));
         const payload = { ...form, variants: cleanVariants, images: uploadedImages };
         const response = await API.post("/products/create-product", payload);
+        uploadedUrlsRef.current = []; // save succeeded, clear tracked URLs
         console.log(response.data);
         onSaved(response.data.product || { ...payload });
       }
@@ -275,10 +408,38 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     // Staged files were never uploaded anywhere, so there's nothing to
     // clean up on Supabase. Just release the local blob: preview URLs.
     staged.forEach((s) => URL.revokeObjectURL(s.previewUrl));
+
+    // Cleanup files from Supabase if they were uploaded but user canceled (failed save)
+    try {
+      if (uploadedUrlsRef.current.length > 0) {
+        await Promise.all(
+          uploadedUrlsRef.current.map((url) =>
+            API.delete("/upload/delete-file", { data: { url } }).catch((err) =>
+              console.error("[Cleanup] Failed to delete file:", url, err)
+            )
+          )
+        );
+        uploadedUrlsRef.current = [];
+      }
+
+      if (uploadedDbImagesRef.current.length > 0) {
+        await Promise.all(
+          uploadedDbImagesRef.current.map((img) =>
+            API.delete("/products/delete-image", { data: { productId: product.id, imageId: img.id } }).catch((err) =>
+              console.error("[Cleanup] Failed to delete DB image record:", img.id, err)
+            )
+          )
+        );
+        uploadedDbImagesRef.current = [];
+      }
+    } catch (err) {
+      console.error("[Cleanup] Error during cancellation cleanup:", err);
+    }
+
     onClose();
   };
 
@@ -315,7 +476,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               </div>
               <div>
                 <label className="field-label">Tamil Name</label>
-                <input value={form.nameTa || ""} onChange={(e) => setF("nameTa", e.target.value)} placeholder="நெத்திலி கருவாடு" className="field-input" />
+                <input value={form.nameTa || ""} onChange={(e) => setF("nameTa", e.target.value)} placeholder="நெத்திலி கருவாடு" className="field-input font-tamil" lang="ta" />
               </div>
               <div>
                 <label className="field-label">Slug *</label>
@@ -323,44 +484,14 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               </div>
               <div>
                 <label className="field-label">Category *</label>
-                <select value={form.categoryId || ""} onChange={(e) => setF("categoryId", e.target.value)} className="field-input">
-                  <option value="">Select category</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.nameEn}</option>)}
-                </select>
+                <Dropdown
+                  value={form.categoryId || ""}
+                  onChange={(v) => setF("categoryId", v)}
+                  placeholder="Select category"
+                  options={categories.map((c) => ({ value: c.id, label: c.nameEn }))}
+                />
               </div>
             </div>
-
-            {/* ── Description, How to Use, Storage Tips ── */}
-            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-              <div>
-                <label className="field-label">Description</label>
-                <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />
-              </div>
-              <div>
-                <label className="field-label">How to Use</label>
-                <textarea value={form.howToUse || ""} onChange={(e) => setF("howToUse", e.target.value)} rows={2} placeholder="Rinse, soak for 10 min before cooking…" className="field-input resize-none" />
-              </div>
-              <div>
-                <label className="field-label">Storage Tips</label>
-                <textarea value={form.storageTips || ""} onChange={(e) => setF("storageTips", e.target.value)} rows={2} placeholder="Store in an airtight container, refrigerate after opening…" className="field-input resize-none" />
-              </div>
-            </div>
-
-            {/* toggles — whole control is one button so the label text is
-                clickable too, and they wrap cleanly on narrow screens */}
-            <div className="flex flex-wrap gap-x-5 gap-y-3">
-              {[
-                { key: "isBestseller", label: "Best Seller" },
-                { key: "isNew",        label: "New Arrival" },
-                { key: "isActive",     label: "Active" },
-              ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
-                  <Toggle checked={form[key]} onChange={() => setF(key, !form[key])} />
-                  <span className="font-body text-sm text-gray-700">{label}</span>
-                </label>
-              ))}
-            </div>
-
             {/* image upload — up to 5 images, staged locally until Save */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -436,6 +567,36 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
                 <p className="font-body text-xs text-red-500 mt-1.5">{imgError}</p>
               )}
             </div>
+            {/* ── Description, How to Use, Storage Tips ── */}
+            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+              <div>
+                <label className="field-label">Description</label>
+                <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />
+              </div>
+              <div>
+                <label className="field-label">How to Use</label>
+                <textarea value={form.howToUse || ""} onChange={(e) => setF("howToUse", e.target.value)} rows={2} placeholder="Rinse, soak for 10 min before cooking…" className="field-input resize-none" />
+              </div>
+              <div>
+                <label className="field-label">Storage Tips</label>
+                <textarea value={form.storageTips || ""} onChange={(e) => setF("storageTips", e.target.value)} rows={2} placeholder="Store in an airtight container, refrigerate after opening…" className="field-input resize-none" />
+              </div>
+            </div>
+
+            {/* toggles — whole control is one button so the label text is
+                clickable too, and they wrap cleanly on narrow screens */}
+            <div className="flex flex-wrap gap-x-5 gap-y-3">
+              {[
+                { key: "isBestseller", label: "Best Seller" },
+                { key: "isNew", label: "New Arrival" },
+                { key: "isActive", label: "Active" },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
+                  <Toggle checked={form[key]} onChange={() => setF(key, !form[key])} />
+                  <span className="font-body text-sm text-gray-700">{label}</span>
+                </label>
+              ))}
+            </div>
 
             {/* variants */}
             <div>
@@ -445,15 +606,26 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
                   <Plus size={12} /> Add Variant
                 </button>
               </div>
+              {variants.length > 1 && (
+                <p className="font-body text-[11px] text-gray-400 mb-2">
+                  The lightest weight sets the per-gram rate — other variants' prices prefill from it, and you can still edit any of them by hand.
+                </p>
+              )}
               <div className="space-y-3 sm:space-y-2">
-                {variants.map((v, i) => (
-                  <VariantRow key={v._uid} v={v} idx={i} canRemove={variants.length > 1} onChange={setV} onRemove={removeV} />
-                ))}
+                {variants.map((v, i) => {
+                  const baseUid = (() => {
+                    const withWeight = variants.filter((x) => Number(x.weightGrams) > 0 && Number(x.price) > 0);
+                    if (!withWeight.length) return null;
+                    return withWeight.reduce((min, x) => Number(x.weightGrams) < Number(min.weightGrams) ? x : min)._uid;
+                  })();
+                  return (
+                    <VariantRow key={v._uid} v={v} idx={i} canRemove={variants.length > 1} isBase={v._uid === baseUid} onChange={setV} onRemove={removeV} variants={variants} />
+                  );
+                })}
               </div>
             </div>
           </form>
         </div>
-
         {/* footer — sticky so Save/Cancel are always reachable, even on a
             long form, instead of requiring a scroll to the very bottom */}
         <div className="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-gray-100 shrink-0 bg-white">
