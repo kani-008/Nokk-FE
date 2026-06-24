@@ -10,7 +10,7 @@ const EMPTY = {
   categoryId: "", isBestseller: false, isNew: false, isActive: true,
 };
 
-const V_EMPTY = { weightGrams: "", weightLabel: "", price: "", comparePrice: "", stockQty: "" };
+const V_EMPTY = { weightGrams: "", weightLabel: "", price: "", comparePrice: "", stockQty: "", inStock: true };
 
 const WEIGHT_OPTIONS = [
   { value: "100g", label: "100g", grams: 100 },
@@ -154,14 +154,14 @@ function VariantRow({ v, idx, canRemove, isBase, onChange, onRemove, variants = 
             <span className="field-label text-[10px] mb-2 block">Status</span>
             <div className="flex items-center gap-1.5 h-[34px] sm:h-[38px]">
               <Toggle
-                checked={v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)}
+                checked={v.inStock !== undefined ? v.inStock : true}
                 onChange={() => {
-                  const currentVal = v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true);
+                  const currentVal = v.inStock !== undefined ? v.inStock : true;
                   set("inStock", !currentVal);
                 }}
               />
-              <span className={`font-body text-xs font-semibold select-none ${(v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)) ? "text-green-600" : "text-red-500"}`}>
-                {(v.inStock !== undefined ? v.inStock : (v.stockQty !== undefined ? parseInt(v.stockQty) > 0 : true)) ? "In Stock" : "out of stock"}
+              <span className={`font-body text-xs font-semibold select-none ${(v.inStock !== undefined ? v.inStock : true) ? "text-green-600" : "text-red-500"}`}>
+                {(v.inStock !== undefined ? v.inStock : true) ? "In Stock" : "out of stock"}
               </span>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     setSaving(true); setError("");
     try {
       const cleanVariants = variants.map(({ _uid, _priceTouched, _comparePriceTouched, ...rest }) => {
-        const computedInStock = rest.inStock !== undefined ? rest.inStock : (rest.stockQty !== undefined ? parseInt(rest.stockQty) > 0 : true);
+        const computedInStock = rest.inStock !== undefined ? rest.inStock : true;
         return {
           ...rest,
           inStock: computedInStock
