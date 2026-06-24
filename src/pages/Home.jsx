@@ -101,7 +101,13 @@ export default function Home() {
       productApi.list("isBestseller=true&limit=8"),
       productApi.list("sort=newest&limit=8"),
     ]).then(([banRes, catRes, bestRes, newRes]) => {
-      if (banRes.status  === "fulfilled") setBanners(banRes.value.banners         || []);
+      console.log("[Home] bannerApi result:", banRes.status, banRes.status === "fulfilled" ? banRes.value : banRes.reason);
+      if (banRes.status === "fulfilled") {
+        console.log("[Home] banners received:", banRes.value.banners);
+        setBanners(banRes.value.banners || []);
+      } else {
+        console.error("[Home] bannerApi failed:", banRes.reason);
+      }
       if (catRes.status  === "fulfilled") setCategories(catRes.value.categories   || []);
       if (bestRes.status === "fulfilled") setBestsellers(bestRes.value.products   || []);
       if (newRes.status  === "fulfilled") setNewest(newRes.value.products         || []);
