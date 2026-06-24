@@ -7,15 +7,16 @@ const PRODUCT_BASE = `${API_URL}/products`;
 const CATEGORY_BASE = `${API_URL}/categories`;
 
 const categoryApi = {
-  list: () => apiFetch(CATEGORY_BASE),
+  list: () => apiFetch(`${CATEGORY_BASE}/get-all`),
 };
 
 const productApi = {
-  list: (params = "") => apiFetch(`${PRODUCT_BASE}?${params}`),
+  list: (params = "") => apiFetch(`${PRODUCT_BASE}/get-all?${params}`),
   remove: (id, token) =>
-    apiFetch(`${PRODUCT_BASE}/${id}`, {
+    apiFetch(`${PRODUCT_BASE}/delete-product`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
     }),
 };
 import {
@@ -134,13 +135,16 @@ export default function ProductManagement() {
     {
       key: "product", label: "Product",
       render: (r) => (
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => setModal(r)}
+          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+        >
           <img src={r.primaryImage || PH} alt={r.nameEn} className="w-10 h-10 rounded-xl object-cover bg-amber-50 border border-amber-100 shrink-0" onError={(e) => { e.target.src = PH; }} />
           <div>
-            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">{r.nameEn}</p>
+            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1 hover:text-brand-700 transition-colors">{r.nameEn}</p>
             {r.nameTa && <p className="font-tamil text-[11px] text-gray-400">{r.nameTa}</p>}
           </div>
-        </div>
+        </button>
       ),
     },
     { key: "categoryName", label: "Category", render: (r) => <span className="font-body text-sm text-gray-600">{r.categoryName || "—"}</span> },
@@ -158,13 +162,15 @@ export default function ProductManagement() {
     },
     {
       key: "flags", label: "Flags",
-      render: (r) => (
-        <div className="flex gap-1 flex-wrap">
-          {r.isBestseller && <span className="badge-amber">Best Seller</span>}
-          {r.isNew        && <span className="badge-green">New</span>}
-          {!r.isActive    && <span className="badge-red">Inactive</span>}
-        </div>
-      ),
+      render: (r) => {
+        const badges = [];
+        if (r.isBestseller) badges.push(<span key="bs" className="badge-amber">Best Seller</span>);
+        if (r.isNew)        badges.push(<span key="new" className="badge-green">New</span>);
+        if (!r.isActive)    badges.push(<span key="inactive" className="badge-red">Inactive</span>);
+        return badges.length > 0
+          ? <div className="flex gap-1 flex-wrap">{badges}</div>
+          : <span className="font-body text-xs text-gray-400">—</span>;
+      },
     },
     {
       key: "rating", label: "Rating",
@@ -175,7 +181,7 @@ export default function ProductManagement() {
       ) : <span className="font-body text-xs text-gray-400">—</span>,
     },
     {
-      key: "action", label: "", width: "80px",
+      key: "action", label: "Action", width: "80px",
       render: (r) => (
         <div className="flex gap-1">
           <button onClick={() => setModal(r)} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></button>
@@ -198,9 +204,9 @@ export default function ProductManagement() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-56" />
-        <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1); }} className="field-input w-44">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-[56%] sm:w-[1100px]" />
+        <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1); }} className="field-input w-[20%] sm:w-36">
           <option value="">All categories</option>
           {categories.map((c) => <option key={c.id} value={c.slug}>{c.nameEn}</option>)}
         </select>

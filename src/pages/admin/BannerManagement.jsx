@@ -1,66 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus, Pencil, Trash2, X, Image as ImageIcon,
-  Eye, EyeOff, Loader2, Video,
+  Eye, EyeOff, Loader2, Video, Upload, Link as LinkIcon,
 } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+import { uploadBannerFile } from "../../ApiCall/supabase.js";
 import { useAuthStore } from "../../components/store/AuthStore";
+import {
+  AdminPage, AdminButton, AdminCard,
+} from "../../components/admin/AdminUI.jsx";
+import comboImg from "../../assets/products/combo.jpg";
 
 const BANNER_BASE = `${API_URL}/banners`;
 const BTEXT_BASE = `${API_URL}/btext`;
 
 const bannerApi = {
+  // GET /api/banners/get-all  (admin — all banners including inactive)
   all: (token) =>
-    apiFetch(`${BANNER_BASE}/all`, {
+    apiFetch(`${BANNER_BASE}/get-all`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
+  // POST /api/banners/create-banner  (body: { title, subtitle, imageUrl, videoUrl, isActive })
   create: (data, token) =>
-    apiFetch(BANNER_BASE, {
+    apiFetch(`${BANNER_BASE}/create-banner`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     }),
+  // PUT /api/banners/update-banner  (body: { id, ...fields })
   update: (id, data, token) =>
-    apiFetch(`${BANNER_BASE}/${id}`, {
+    apiFetch(`${BANNER_BASE}/update-banner`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     }),
+  // DELETE /api/banners/delete-banner  (body: { id })
   remove: (id, token) =>
-    apiFetch(`${BANNER_BASE}/${id}`, {
+    apiFetch(`${BANNER_BASE}/delete-banner`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
     }),
 };
 
 const btextApi = {
+  // GET /api/btext/get-for-banner?bannerId=  (admin — all btexts for a banner)
   forBanner: (bannerId, token) =>
-    apiFetch(`${BTEXT_BASE}/banner/${bannerId}`, {
+    apiFetch(`${BTEXT_BASE}/get-for-banner?bannerId=${bannerId}`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
+  // POST /api/btext/create-btext  (body: { bannerId, heading, subtext, isActive })
   create: (data, token) =>
-    apiFetch(BTEXT_BASE, {
+    apiFetch(`${BTEXT_BASE}/create-btext`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     }),
+  // PUT /api/btext/update-btext  (body: { id, ...fields })
   update: (id, data, token) =>
-    apiFetch(`${BTEXT_BASE}/${id}`, {
+    apiFetch(`${BTEXT_BASE}/update-btext`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     }),
+  // DELETE /api/btext/delete-btext  (body: { id })
   remove: (id, token) =>
-    apiFetch(`${BTEXT_BASE}/${id}`, {
+    apiFetch(`${BTEXT_BASE}/delete-btext`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
     }),
 };
-import {
-  AdminPage, AdminButton, AdminCard,
-} from "../../components/admin/AdminUI.jsx";
-
-import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
 
@@ -71,29 +81,99 @@ const ICON_CLS = "w-5 h-5 sm:w-[15px] sm:h-[15px]";
 // responsive touch target for the action buttons
 const ACTION_BTN = "p-2.5 sm:p-1.5 rounded-lg transition-colors";
 
+// ── File upload + URL field ────────────────────────────────────────────
+// Kept outside BannerModal so React never remounts it mid-render.
+function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrlChange }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="field-label block">{label}</label>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={status === "uploading"}
+          className={`inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 ${
+            status === "done"
+              ? "border-green-200 bg-green-50 text-green-700"
+              : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
+          }`}
+        >
+          {status === "uploading"
+            ? <><Loader2 size={14} className="animate-spin" /> Uploading…</>
+            : status === "done"
+            ? <><Upload size={14} /> Uploaded ✓</>
+            : <><Upload size={14} /> Upload {kind === "video" ? "Video" : "Image"}</>
+          }
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={onUpload}
+        />
+      </div>
+      <div className="relative">
+        <LinkIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="url"
+          value={url}
+          onChange={onUrlChange}
+          placeholder={`Or paste ${kind} URL directly…`}
+          className="field-input pl-8 font-mono text-xs"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Banner form modal ──────────────────────────────────────────────────
 function BannerModal({ banner, onClose, onSaved }) {
   const { token } = useAuthStore();
-  const [form,   setForm]   = useState(banner ? { ...banner } : { ...EMPTY_FORM });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState("");
+  const [form,     setForm]     = useState(banner ? { ...banner } : { ...EMPTY_FORM });
+  const [saving,   setSaving]   = useState(false);
+  const [error,    setError]    = useState("");
+  // "uploading" | "done" | null
+  const [uploading, setUploading] = useState({ video: null, image: null });
+
+  const videoInputRef = useRef(null);
+  const imageInputRef = useRef(null);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleFileUpload = async (e, kind) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading((u) => ({ ...u, [kind]: "uploading" }));
+    setError("");
+    try {
+      const url = await uploadBannerFile(file, kind);
+      set(kind === "video" ? "videoUrl" : "imageUrl", url);
+      setUploading((u) => ({ ...u, [kind]: "done" }));
+    } catch (err) {
+      setError(`${kind} upload failed: ${err.message}`);
+      setUploading((u) => ({ ...u, [kind]: null }));
+    }
+    e.target.value = "";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) { setError("Title is required"); return; }
+    if (!form.imageUrl)     { setError("Poster image is required — upload a file or paste a URL"); return; }
     setSaving(true);
     setError("");
     try {
-      let res;
-      if (banner?.id) res = await bannerApi.update(banner.id, form, token);
-      else            res = await bannerApi.create(form, token);
+      const res = banner?.id
+        ? await bannerApi.update(banner.id, form, token)
+        : await bannerApi.create(form, token);
       onSaved(res.banner || form);
       onClose();
-    } catch (e) { setError(e.message || "Failed to save"); }
+    } catch (err) { setError(err.message || "Failed to save"); }
     finally { setSaving(false); }
   };
+
+  const isUploading = uploading.video === "uploading" || uploading.image === "uploading";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -108,25 +188,18 @@ function BannerModal({ banner, onClose, onSaved }) {
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
-          {/* preview */}
+          {/* live preview */}
           <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 mb-5 border border-gray-200">
             {form.videoUrl ? (
-              <video
-                src={form.videoUrl}
-                className="w-full h-full object-cover"
-                muted autoPlay loop playsInline
-                poster={form.imageUrl || undefined}
-              />
+              <video src={form.videoUrl} className="w-full h-full object-cover"
+                muted autoPlay loop playsInline poster={form.imageUrl || undefined} />
             ) : form.imageUrl ? (
-              <img
-                src={form.imageUrl} alt="preview"
-                className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = PH; }}
-              />
+              <img src={form.imageUrl} alt="preview" className="w-full h-full object-cover"
+                onError={(e) => { e.target.src = PH; }} />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                 <ImageIcon size={28} className="text-gray-300" />
-                <p className="font-body text-xs text-gray-400">Preview</p>
+                <p className="font-body text-xs text-gray-400">Preview appears here</p>
               </div>
             )}
           </div>
@@ -140,21 +213,40 @@ function BannerModal({ banner, onClose, onSaved }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="field-label">Title *</label>
-              <input type="text" value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Banner headline" className="field-input" />
+              <input type="text" value={form.title}
+                onChange={(e) => set("title", e.target.value)}
+                placeholder="Banner headline" className="field-input" />
             </div>
             <div>
               <label className="field-label">Subtitle</label>
-              <input type="text" value={form.subtitle} onChange={(e) => set("subtitle", e.target.value)} placeholder="Supporting text" className="field-input" />
+              <input type="text" value={form.subtitle}
+                onChange={(e) => set("subtitle", e.target.value)}
+                placeholder="Supporting text" className="field-input" />
             </div>
-            <div>
-              <label className="field-label">Video URL <span className="text-gray-400 font-normal">(Supabase mp4)</span></label>
-              <input type="url" value={form.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} placeholder="https://…/banner.mp4?token=…" className="field-input" />
-            </div>
-            <div>
-              <label className="field-label">Image URL <span className="text-gray-400 font-normal">(fallback poster)</span></label>
-              <input type="url" value={form.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://…/banner.jpg?token=…" className="field-input" />
-            </div>
-            <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200 mt-2">
+
+            <FileField
+              kind="video"
+              label={<>Video <span className="text-gray-400 font-normal text-xs">(mp4 — background loop)</span></>}
+              accept="video/mp4,video/*"
+              inputRef={videoInputRef}
+              url={form.videoUrl}
+              status={uploading.video}
+              onUpload={(e) => handleFileUpload(e, "video")}
+              onUrlChange={(e) => { set("videoUrl", e.target.value); setUploading((u) => ({ ...u, video: null })); }}
+            />
+
+            <FileField
+              kind="image"
+              label={<>Poster Image * <span className="text-gray-400 font-normal text-xs">(shown instantly while video loads)</span></>}
+              accept="image/jpeg,image/png,image/webp,image/*"
+              inputRef={imageInputRef}
+              url={form.imageUrl}
+              status={uploading.image}
+              onUpload={(e) => handleFileUpload(e, "image")}
+              onUrlChange={(e) => { set("imageUrl", e.target.value); setUploading((u) => ({ ...u, image: null })); }}
+            />
+
+            <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200">
               <span className="font-body text-sm font-semibold text-gray-700">Active Status</span>
               <button
                 type="button"
@@ -164,17 +256,15 @@ function BannerModal({ banner, onClose, onSaved }) {
                   form.isActive ? "bg-brand-700" : "bg-gray-200"
                 }`}
               >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    form.isActive ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  form.isActive ? "translate-x-5" : "translate-x-0"
+                }`} />
               </button>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
               <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
-              <AdminButton type="submit" disabled={saving}>
+              <AdminButton type="submit" disabled={saving || isUploading}>
                 {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : "Save Banner"}
               </AdminButton>
             </div>
@@ -194,7 +284,7 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
   const handleToggle = async () => {
     setToggling(true);
     try {
-      await bannerApi.update(banner.id, { ...banner, isActive: !banner.isActive }, token);
+      await bannerApi.update(banner.id, { isActive: !banner.isActive }, token);
       onToggle(banner.id, !banner.isActive);
     } catch (e) { alert(e.message || "Failed"); }
     finally { setToggling(false); }

@@ -1,21 +1,36 @@
-import { useState } from "react";
-import { Plus, X, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, X, Loader2, Upload, Image as ImageIcon } from "lucide-react";
 import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../store/AuthStore.jsx";
+import { uploadProductImage } from "../../ApiCall/supabase.js";
 
 const PRODUCT_BASE = `${API_URL}/products`;
+
 const productApi = {
-  create: (data, token) =>
-    apiFetch(PRODUCT_BASE, {
+  create: (data) =>
+    apiFetch(`${PRODUCT_BASE}/create-product`, { method: "POST", body: JSON.stringify(data) }),
+
+  update: (id, data) =>
+    apiFetch(`${PRODUCT_BASE}/update-product`, { method: "PUT", body: JSON.stringify({ id, ...data }) }),
+
+  addVariant: (productId, v) =>
+    apiFetch(`${PRODUCT_BASE}/add-variant`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ productId, weightGrams: Number(v.weightGrams) || 0, weightLabel: v.weightLabel, price: v.price, comparePrice: v.comparePrice || null, stockQty: Number(v.stockQty) || 0 }),
     }),
-  update: (id, data, token) =>
-    apiFetch(`${PRODUCT_BASE}/${id}`, {
+
+  updateVariant: (productId, variantId, v) =>
+    apiFetch(`${PRODUCT_BASE}/update-variant`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ productId, variantId, weightGrams: Number(v.weightGrams) || 0, weightLabel: v.weightLabel, price: v.price, comparePrice: v.comparePrice || null, stockQty: Number(v.stockQty) || 0 }),
+    }),
+
+  deleteVariant: (productId, variantId) =>
+    apiFetch(`${PRODUCT_BASE}/delete-variant`, { method: "DELETE", body: JSON.stringify({ productId, variantId }) }),
+
+  addImage: (productId, imageUrl) =>
+    apiFetch(`${PRODUCT_BASE}/add-image`, {
+      method: "POST",
+      body: JSON.stringify({ productId, imageUrl, isPrimary: true, sortOrder: 0 }),
     }),
 };
 import { AdminButton } from "./AdminUI.jsx";
@@ -100,7 +115,6 @@ function VariantRow({ v, idx, canRemove, onChange, onRemove }) {
 // Handles both flows: pass `product={null}` (or omit it) to add a new
 // product, or pass an existing product row to edit it.
 export default function EditProduct({ product, categories, onClose, onSaved }) {
-  const { token } = useAuthStore();
   const isEdit    = !!product?.id;
 
   // Resolve categoryId robustly: the product row from the list endpoint
@@ -117,14 +131,33 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
   const [variants, setVariants] = useState(
     product?.variants?.length ? product.variants.map((v) => ({ ...v, _uid: v.id ?? uid() })) : [newVariant()]
   );
-  const [imageUrl, setImageUrl] = useState(product?.images?.[0]?.imageUrl || "");
-  const [saving,   setSaving]   = useState(false);
-  const [error,    setError]    = useState("");
+  const [imageUrl,   setImageUrl]   = useState(product?.images?.[0]?.imageUrl || product?.primaryImage || "");
+  const [imgUpload,  setImgUpload]  = useState(null); // null | "uploading" | "done" | "error"
+  const [imgError,   setImgError]   = useState("");
+  const [saving,     setSaving]     = useState(false);
+  const [error,      setError]      = useState("");
+  const imgInputRef = useRef(null);
 
   const setF    = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setV    = (i, k, v) => setVariants((arr) => arr.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
   const addV    = () => setVariants((arr) => [...arr, newVariant()]);
   const removeV = (i) => setVariants((arr) => (arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr));
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImgUpload("uploading");
+    setImgError("");
+    try {
+      const url = await uploadProductImage(file);
+      setImageUrl(url);
+      setImgUpload("done");
+    } catch (err) {
+      setImgError(err.message || "Image upload failed");
+      setImgUpload("error");
+    }
+    e.target.value = "";
+  };
 
   const handleNameChange = (val) => {
     setF("nameEn", val);
@@ -141,16 +174,43 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
     setSaving(true); setError("");
     try {
-      const cleanVariants = variants.map((v) => {
-        const rest = { ...v };
-        delete rest._uid;
-        return rest;
-      });
-      const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
-      let res;
-      if (isEdit) res = await productApi.update(product.id, payload, token);
-      else        res = await productApi.create(payload, token);
-      onSaved(res.product || { ...payload, id: product?.id });
+      const cleanVariants = variants.map(({ _uid, ...rest }) => rest);
+
+      if (isEdit) {
+        // ── Variant diff ─────────────────────────────────────────────
+        const originalIds = new Set((product.variants || []).map((v) => v.id));
+        const currentIds  = new Set(cleanVariants.filter((v) => v.id).map((v) => v.id));
+
+        // deleted
+        for (const orig of (product.variants || [])) {
+          if (!currentIds.has(orig.id))
+            await productApi.deleteVariant(product.id, orig.id);
+        }
+        // new
+        for (const v of cleanVariants) {
+          if (!v.id)
+            await productApi.addVariant(product.id, v);
+        }
+        // updated
+        for (const v of cleanVariants) {
+          if (v.id && originalIds.has(v.id))
+            await productApi.updateVariant(product.id, v.id, v);
+        }
+
+        // ── Image update ─────────────────────────────────────────────
+        const originalImage = product?.images?.[0]?.imageUrl || product?.primaryImage || "";
+        if (imageUrl && imageUrl !== originalImage)
+          await productApi.addImage(product.id, imageUrl);
+
+        // ── Core fields ───────────────────────────────────────────────
+        const res = await productApi.update(product.id, form);
+        onSaved(res.product || { ...form, id: product.id });
+      } else {
+        const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
+        const res = await productApi.create(payload);
+        onSaved(res.product || { ...payload });
+      }
+
       onClose();
     } catch (e) {
       setError(e.message || "Failed to save product");
@@ -190,22 +250,59 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
           <form id="edit-product-form" onSubmit={handleSubmit} className="space-y-5">
 
-            {/* image preview */}
+            {/* image upload */}
             <div>
-              <label className="field-label">Primary Image URL</label>
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://…"
-                className="field-input mb-2"
-              />
-              {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt="preview"
-                  className="h-24 w-24 rounded-xl object-cover border border-amber-100"
-                  onError={(e) => { e.target.style.display = "none"; }}
+              <label className="field-label">Product Image</label>
+
+              {/* preview box */}
+              <div className="w-full h-40 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 mb-3 flex items-center justify-center">
+                {imgUpload === "uploading" ? (
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <Loader2 size={24} className="animate-spin" />
+                    <p className="font-body text-xs">Uploading…</p>
+                  </div>
+                ) : imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-gray-300">
+                    <ImageIcon size={28} />
+                    <p className="font-body text-xs">Preview appears here</p>
+                  </div>
+                )}
+              </div>
+
+              {/* upload button */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => imgInputRef.current?.click()}
+                  disabled={imgUpload === "uploading"}
+                  className={`inline-flex items-center gap-2 font-body text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 ${
+                    imgUpload === "done"
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
+                  }`}
+                >
+                  <Upload size={14} />
+                  {imgUpload === "done" ? "Uploaded ✓" : imgUpload === "uploading" ? "Uploading…" : "Upload Image"}
+                </button>
+                <span className="font-body text-xs text-gray-400">JPEG · PNG · WebP · max 5 MB</span>
+                <input
+                  ref={imgInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleImageUpload}
                 />
+              </div>
+
+              {imgError && (
+                <p className="font-body text-xs text-red-500 mt-1.5">{imgError}</p>
               )}
             </div>
 
@@ -231,18 +328,19 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               </div>
             </div>
 
-            <div>
-              <label className="field-label">Description</label>
-              <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* ── Description, How to Use, Storage Tips ── */}
+            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+              <div>
+                <label className="field-label">Description</label>
+                <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />
+              </div>
               <div>
                 <label className="field-label">How to Use</label>
-                <textarea value={form.howToUse || ""} onChange={(e) => setF("howToUse", e.target.value)} rows={2} placeholder="Cooking tips…" className="field-input resize-none" />
+                <textarea value={form.howToUse || ""} onChange={(e) => setF("howToUse", e.target.value)} rows={2} placeholder="Rinse, soak for 10 min before cooking…" className="field-input resize-none" />
               </div>
               <div>
                 <label className="field-label">Storage Tips</label>
-                <textarea value={form.storageTips || ""} onChange={(e) => setF("storageTips", e.target.value)} rows={2} placeholder="Store in airtight…" className="field-input resize-none" />
+                <textarea value={form.storageTips || ""} onChange={(e) => setF("storageTips", e.target.value)} rows={2} placeholder="Store in an airtight container, refrigerate after opening…" className="field-input resize-none" />
               </div>
             </div>
 

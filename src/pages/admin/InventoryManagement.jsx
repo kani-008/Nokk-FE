@@ -226,11 +226,10 @@ export default function InventoryManagement() {
         </AdminCard>
       </div>
 
-      {/* filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search product, SKU…" className="w-56" />
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search product, SKU…" className="w-[100%] sm:w-[600px]" />
 
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-[100%] sm:w-auto sm:flex-1">
           {[
             { key: "all", label: "All" },
             { key: "low", label: "Low Stock" },
@@ -239,7 +238,7 @@ export default function InventoryManagement() {
             <button
               key={f.key}
               onClick={() => { setFilter(f.key); setPage(1); }}
-              className={`font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              className={`font-body text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex-1 text-center whitespace-nowrap ${
                 filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}
             >

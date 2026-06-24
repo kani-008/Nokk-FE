@@ -14,7 +14,7 @@ import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
 
 const CATEGORY_BASE = `${API_URL}/categories`;
 const categoryApi = {
-  list: () => apiFetch(CATEGORY_BASE),
+  list: () => apiFetch(`${CATEGORY_BASE}/get-all`),
 };
 
 const NAV_LINKS = [

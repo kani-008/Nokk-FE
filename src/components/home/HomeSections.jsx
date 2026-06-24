@@ -24,7 +24,7 @@ export function TrustStrip() {
             className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left justify-center"
           >
             <span className="text-sandal-600 shrink-0">{item.icon}</span>
-            <span className="font-body text-xs sm:text-sm text-gray-700 font-bold leading-tight">
+            <span className="font-body text-[11px] sm:text-sm text-gray-700 font-bold leading-tight">
               {item.label}
             </span>
           </div>
@@ -40,8 +40,8 @@ export function TrustStrip() {
 export function CategoryScroll({ categories }) {
   if (!categories.length) return null;
   return (
-    <section className="page-wrap pt-12 pb-4">
-      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-center">
+    <section className="page-wrap pt-10 sm:pt-12 pb-4">
+      <h2 className="font-display text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6 text-center">
         Shop by Category
       </h2>
       <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
@@ -51,7 +51,7 @@ export function CategoryScroll({ categories }) {
             to={`/products?category=${cat.slug}`}
             className="shrink-0 flex flex-col items-center gap-2 group"
           >
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
+            <div className="w-[68px] h-[68px] sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
               <img
                 src={cat.imageUrl || PH_CAT}
                 alt={cat.nameEn}
@@ -59,11 +59,11 @@ export function CategoryScroll({ categories }) {
                 onError={(e) => { e.target.src = PH_CAT; }}
               />
             </div>
-            <span className="font-body text-xs font-bold text-gray-700 text-center w-20 sm:w-24 leading-tight group-hover:text-sandal-700 transition-colors">
+            <span className="font-body text-xs font-bold text-gray-700 text-center w-[68px] sm:w-24 leading-tight group-hover:text-sandal-700 transition-colors">
               {cat.nameEn}
             </span>
             {cat.nameTa && (
-              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-20 sm:w-24 leading-tight -mt-0.5">
+              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-[68px] sm:w-24 leading-tight -mt-0.5">
                 {cat.nameTa}
               </span>
             )}
@@ -99,17 +99,17 @@ function ProductSkeleton() {
 // ══════════════════════════════════════════════════════════════════════
 export function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyText }) {
   return (
-    <section className="page-wrap py-12">
-      <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">{title}</h2>
+    <section className="page-wrap py-10 sm:py-12">
+      <div className="flex items-end justify-between mb-5 sm:mb-6 border-b border-sandal-100 pb-3 gap-3">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-gray-800">{title}</h2>
           {subtitle && (
-            <p className="font-body text-xs text-sandal-600 mt-1 font-semibold">{subtitle}</p>
+            <p className="font-body text-[11px] sm:text-xs text-sandal-600 mt-1 font-semibold">{subtitle}</p>
           )}
         </div>
         <Link
           to={viewAllTo}
-          className="font-body text-xs sm:text-sm text-sandal-700 font-bold flex items-center gap-1 hover:text-gray-900 transition-colors"
+          className="shrink-0 font-body text-xs sm:text-sm text-sandal-700 font-bold flex items-center gap-1 hover:text-gray-900 transition-colors"
         >
           View all <ArrowRight size={14} />
         </Link>
@@ -136,23 +136,23 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
 export function PromoBanner() {
   return (
     <div className="page-wrap py-6">
-      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
-        <div>
+      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center text-center sm:text-left justify-between gap-5 sm:gap-6 shadow-md">
+        <div className="min-w-0">
           <p className="font-num text-sandal-400 text-xs font-bold uppercase tracking-widest mb-1.5">
             Limited Time Deal
           </p>
-          <h3 className="font-display text-white font-extrabold text-xl leading-tight">
+          <h3 className="font-display text-white font-extrabold text-lg sm:text-xl leading-tight">
             Get 10% off on orders above ₹499
           </h3>
-          <p className="font-body text-sandal-100/90 text-sm mt-1">
-            Use code{" "}
+          <p className="font-body text-sandal-100/90 text-sm mt-1.5 flex flex-wrap items-center justify-center sm:justify-start gap-x-1.5 gap-y-1">
+            <span>Use code</span>
             <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">NAMMA10</span>
-            {" "}at checkout
+            <span>at checkout</span>
           </p>
         </div>
         <Link
           to="/products"
-          className="shrink-0 bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-7 py-3.5 rounded-full text-sm transition-all shadow-md"
+          className="w-full sm:w-auto shrink-0 bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-7 py-3.5 rounded-full text-sm transition-all shadow-md text-center"
         >
           Shop Now
         </Link>
@@ -169,7 +169,7 @@ export function WhyUs() {
     {
       emoji: "🎣",
       title: "Direct from Fishermen",
-      desc: "We partner directly with Rameswaram fishing families — no middleman, ensuring maximum freshness.",
+      desc: "We partner directly with coastal fishing families — no middleman, ensuring maximum freshness.",
     },
     {
       emoji: "☀️",
@@ -183,17 +183,17 @@ export function WhyUs() {
     },
   ];
   return (
-    <section className="bg-gray-900 py-16 px-4 border-t border-b border-gray-850 my-8">
+    <section className="bg-gray-900 py-12 sm:py-16 px-4 border-t border-b border-gray-850 my-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="font-display text-3xl font-bold text-white mb-3">
+        <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3">
           Why Namma Oor Karuvattu Kadai?
         </h2>
-        <p className="font-body text-sandal-300/80 text-sm mb-12 max-w-md mx-auto">
+        <p className="font-body text-sandal-300/80 text-sm mb-10 sm:mb-12 max-w-md mx-auto">
           We don't just sell dry fish — we preserve a tradition of purity.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
           {reasons.map((r) => (
-            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 text-left">
+            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6 sm:p-6.5 text-left">
               <span className="text-3xl block mb-4">{r.emoji}</span>
               <h3 className="font-display text-white font-bold text-lg mb-2">{r.title}</h3>
               <p className="font-body text-gray-400 text-sm leading-relaxed">{r.desc}</p>
@@ -213,7 +213,7 @@ export function Testimonials() {
     {
       name: "Meena Sundaram",
       location: "Chennai",
-      text: "The nethili is exactly like what my paati used to buy in Rameswaram. Freshness and quality is unmatched. Ordering for 6 months now.",
+      text: "The nethili is exactly like what my paati used to buy by the coast. Freshness and quality is unmatched. Ordering for 6 months now.",
       rating: 5,
     },
     {
@@ -231,10 +231,10 @@ export function Testimonials() {
   ];
 
   return (
-    <section className="bg-sandal-50/50 py-16 px-4">
+    <section className="bg-sandal-50/50 py-12 sm:py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-10 sm:mb-12">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
             What Our Customers Say
           </h2>
           <p className="font-body text-sm font-semibold text-sandal-600">
@@ -242,7 +242,7 @@ export function Testimonials() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
           {reviews.map((r) => (
             <div key={r.name} className="card p-6 flex flex-col gap-3.5 shadow-sm border border-sandal-100">
               {/* stars */}
@@ -295,9 +295,9 @@ export function NewsletterCTA() {
 
   return (
     <section className="page-wrap py-12">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-12 sm:px-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-10 sm:px-12 sm:py-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
         <div className="flex-1 text-center sm:text-left">
-          <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-2">
+          <h3 className="font-display text-white text-lg sm:text-2xl font-bold mb-2">
             Get fresh catch alerts & exclusive deals
           </h3>
           <p className="font-body text-sandal-300 text-sm font-medium">
@@ -306,17 +306,17 @@ export function NewsletterCTA() {
         </div>
 
         <div className="w-full sm:w-auto shrink-0">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
             <input
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setStatus("idle"); }}
               placeholder="your@email.com"
-              className="flex-1 sm:w-60 bg-white/5 border border-sandal-300/20 text-white placeholder:text-gray-500 rounded-xl px-4 py-3 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
+              className="w-full sm:w-60 bg-white/5 border border-sandal-300/20 text-white placeholder:text-gray-500 rounded-xl px-4 py-3 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
             />
             <button
               type="submit"
-              className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
+              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
             >
               Subscribe
             </button>

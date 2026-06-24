@@ -1,337 +1,334 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+import { ArrowRight, Star, ShieldCheck, Truck } from "lucide-react";
+import { useState } from "react";
+import ProductCard from "../Product/ProductCard.jsx";
+import comboImg from "../../assets/products/combo.jpg";
 
-const BTEXT_BASE = `${API_URL}/btext`;
-const btextApi = {
-  byBanner: (bannerId) => apiFetch(`${BTEXT_BASE}?bannerId=${bannerId}`),
-};
+const PH_CAT = comboImg;
 
-// premium royalty-free ocean/coastal loop video URL
-const HERO_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-crashing-waves-of-the-ocean-close-up-12628-large.mp4";
-/*
-  HERO BANNER SLIDER
-  ───────────────────────────────────────────────────────────────────
-  1. The slide track is sized to `trackLength * 100%`, and each slide
-     to `100 / trackLength%`, so the translateX percentage math always
-     lines up with the actual rendered widths.
+// ══════════════════════════════════════════════════════════════════════
+// TRUST STRIP
+// ══════════════════════════════════════════════════════════════════════
+export function TrustStrip() {
+  const items = [
+    { icon: <Truck size={18} />, label: "Free shipping above ₹499" },
+    { icon: <ShieldCheck size={18} />, label: "100% natural & authentic" },
+    { icon: <ShieldCheck size={18} />, label: "Secure Payment Checkout" },
+  ];
+  return (
+    <div className="bg-white border-b border-sandal-100">
+      <div className="page-wrap py-4.5 grid grid-cols-3 gap-2 sm:gap-6">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left justify-center"
+          >
+            <span className="text-sandal-600 shrink-0">{item.icon}</span>
+            <span className="font-body text-[11px] sm:text-sm text-gray-700 font-bold leading-tight">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  2. Navigation never gets "stuck": clicks are only blocked during the
-     literal clone-reset frame (via a ref, not a fixed timeout).
+// ══════════════════════════════════════════════════════════════════════
+// CATEGORY SCROLL
+// ══════════════════════════════════════════════════════════════════════
+export function CategoryScroll({ categories }) {
+  if (!categories.length) return null;
+  return (
+    <section className="page-wrap pt-10 sm:pt-12 pb-4">
+      <h2 className="font-display text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6 text-center">
+        Shop by Category
+      </h2>
+      <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            to={`/products?category=${cat.slug}`}
+            className="shrink-0 flex flex-col items-center gap-2 group"
+          >
+            <div className="w-[68px] h-[68px] sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
+              <img
+                src={cat.imageUrl || PH_CAT}
+                alt={cat.nameEn}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                onError={(e) => { e.target.src = PH_CAT; }}
+              />
+            </div>
+            <span className="font-body text-xs font-bold text-gray-700 text-center w-[68px] sm:w-24 leading-tight group-hover:text-sandal-700 transition-colors">
+              {cat.nameEn}
+            </span>
+            {cat.nameTa && (
+              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-[68px] sm:w-24 leading-tight -mt-0.5">
+                {cat.nameTa}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-  3. Direction: every transition animates strictly left-to-right.
+// ══════════════════════════════════════════════════════════════════════
+// PRODUCT SKELETON (used while a ProductSection is loading)
+// ══════════════════════════════════════════════════════════════════════
+function ProductSkeleton() {
+  return (
+    <div className="card overflow-hidden">
+      <div className="aspect-square skeleton" />
+      <div className="p-4.5 space-y-2.5">
+        <div className="skeleton h-2 w-1/3" />
+        <div className="skeleton h-3 w-4/5" />
+        <div className="skeleton h-3 w-3/5" />
+        <div className="flex justify-between mt-3">
+          <div className="skeleton h-4.5 w-1/4" />
+          <div className="skeleton h-8 w-8 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  4. MOBILE VIDEO AUTOPLAY (the important part):
-     - The `muted` PROPERTY (not just attribute) is forced via a ref.
-     - The video starts at opacity-0 and ONLY fades in when the real
-       `onPlaying` event fires. If autoplay is blocked (Android data/
-       battery saver) the video stays transparent and the poster shows
-       instead of a black rectangle.
-     - play() is retried on canplay, on tab re-focus, and on the first
-       user touch anywhere on the page (a gesture unblocks playback
-       that a saver mode refused to autoplay).
-*/
-export default function HeroBanner({ banners }) {
-  const [slides, setSlides] = useState([]);
+// ══════════════════════════════════════════════════════════════════════
+// PRODUCT SECTION (reusable grid wrapper — Best Sellers / New Arrivals etc.)
+// ══════════════════════════════════════════════════════════════════════
+export function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyText }) {
+  return (
+    <section className="page-wrap py-10 sm:py-12">
+      <div className="flex items-end justify-between mb-5 sm:mb-6 border-b border-sandal-100 pb-3 gap-3">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-gray-800">{title}</h2>
+          {subtitle && (
+            <p className="font-body text-[11px] sm:text-xs text-sandal-600 mt-1 font-semibold">{subtitle}</p>
+          )}
+        </div>
+        <Link
+          to={viewAllTo}
+          className="shrink-0 font-body text-xs sm:text-sm text-sandal-700 font-bold flex items-center gap-1 hover:text-gray-900 transition-colors"
+        >
+          View all <ArrowRight size={14} />
+        </Link>
+      </div>
 
-  useEffect(() => {
-    const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
-    if (!activeBanner?.id) return;
-    btextApi.byBanner(activeBanner.id)
-      .then((res) => setSlides((res.btexts || []).filter((o) => o.isActive)))
-      .catch(() => {});
-  }, [banners]);
+      {loading ? (
+        <div className="product-grid">
+          {Array.from({ length: 4 }).map((_, i) => <ProductSkeleton key={i} />)}
+        </div>
+      ) : products.length === 0 ? (
+        <p className="font-body text-sandal-500 text-sm py-10 text-center">{emptyText}</p>
+      ) : (
+        <div className="product-grid">
+          {products.map((p) => <ProductCard key={p.id} product={p} />)}
+        </div>
+      )}
+    </section>
+  );
+}
 
-  const count = slides.length;
+// ══════════════════════════════════════════════════════════════════════
+// PROMO BANNER
+// ══════════════════════════════════════════════════════════════════════
+export function PromoBanner() {
+  return (
+    <div className="page-wrap py-6">
+      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center text-center sm:text-left justify-between gap-5 sm:gap-6 shadow-md">
+        <div className="min-w-0">
+          <p className="font-num text-sandal-400 text-xs font-bold uppercase tracking-widest mb-1.5">
+            Limited Time Deal
+          </p>
+          <h3 className="font-display text-white font-extrabold text-lg sm:text-xl leading-tight">
+            Get 10% off on orders above ₹499
+          </h3>
+          <p className="font-body text-sandal-100/90 text-sm mt-1.5 flex flex-wrap items-center justify-center sm:justify-start gap-x-1.5 gap-y-1">
+            <span>Use code</span>
+            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">NAMMA10</span>
+            <span>at checkout</span>
+          </p>
+        </div>
+        <Link
+          to="/products"
+          className="w-full sm:w-auto shrink-0 bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-7 py-3.5 rounded-full text-sm transition-all shadow-md text-center"
+        >
+          Shop Now
+        </Link>
+      </div>
+    </div>
+  );
+}
 
-  // Clones front and back enable seamless looping.
-  const slidesWithClones = count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
-  const trackLength = slidesWithClones.length;
+// ══════════════════════════════════════════════════════════════════════
+// WHY US
+// ══════════════════════════════════════════════════════════════════════
+export function WhyUs() {
+  const reasons = [
+    {
+      emoji: "🎣",
+      title: "Direct from Fishermen",
+      desc: "We partner directly with coastal fishing families — no middleman, ensuring maximum freshness.",
+    },
+    {
+      emoji: "☀️",
+      title: "Sun-Dried Naturally",
+      desc: "Traditional coastal sun-drying process under optimal hygienic standards. Zero chemicals.",
+    },
+    {
+      emoji: "📦",
+      title: "Hygienic Packaging",
+      desc: "Premium multi-layer, odour-proof packaging that seals in coastal freshness for months.",
+    },
+  ];
+  return (
+    <section className="bg-gray-900 py-12 sm:py-16 px-4 border-t border-b border-gray-850 my-8">
+      <div className="max-w-7xl mx-auto text-center">
+        <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3">
+          Why Namma Oor Karuvattu Kadai?
+        </h2>
+        <p className="font-body text-sandal-300/80 text-sm mb-10 sm:mb-12 max-w-md mx-auto">
+          We don't just sell dry fish — we preserve a tradition of purity.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+          {reasons.map((r) => (
+            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6 sm:p-6.5 text-left">
+              <span className="text-3xl block mb-4">{r.emoji}</span>
+              <h3 className="font-display text-white font-bold text-lg mb-2">{r.title}</h3>
+              <p className="font-body text-gray-400 text-sm leading-relaxed">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-  const [domIdx, setDomIdx] = useState(count > 1 ? 1 : 0);
-  const [animate, setAnimate] = useState(true);
-  const touchStartRef = useRef(null);
-  const touchEndRef = useRef(null);
-  const isResetting = useRef(false);
-  const trackRef = useRef(null);
-  const videoRef = useRef(null);
-
-  // true once the video element emits a real `playing` event
-  const [videoReady, setVideoReady] = useState(false);
-
-  const minSwipeDistance = 50;
-
-  const logicalIdx = count > 1 ? (domIdx - 1 + count) % count : 0;
-
-  // ── derive the background video + poster ──
-  const activeVideoBanner =
-    banners?.find((b) => b.videoUrl && b.isActive) ||
-    banners?.find((b) => b.videoUrl) ||
-    banners?.[0];
-  const videoUrl = activeVideoBanner?.videoUrl || HERO_VIDEO_URL;
-  const posterUrl =
-    activeVideoBanner?.imageUrl ||
-    banners?.find((b) => b.imageUrl)?.imageUrl ||
-    undefined;
-
-  // ── advance forward by exactly one slide ──
-  const stepForward = useCallback(() => {
-    if (count <= 1 || isResetting.current) return;
-    setAnimate(true);
-    setDomIdx((d) => d + 1);
-  }, [count]);
-
-  const stepToPrevious = useCallback(() => {
-    if (count <= 1 || isResetting.current) return;
-    setAnimate(true);
-    setDomIdx((d) => d - 1);
-  }, [count]);
-
-  const goToLogical = useCallback((targetLogical) => {
-    if (count <= 1 || isResetting.current) return;
-    setAnimate(true);
-    setDomIdx((d) => {
-      const currentLogical = (d - 1 + count) % count;
-      let forwardSteps = targetLogical - currentLogical;
-      if (forwardSteps <= 0) forwardSteps += count;
-      return d + forwardSteps;
-    });
-  }, [count]);
-
-  const handleTransitionEnd = () => {
-    if (count <= 1) return;
-    if (domIdx > count) {
-      isResetting.current = true;
-      setAnimate(false);
-      setDomIdx(1);
-    } else if (domIdx < 1) {
-      isResetting.current = true;
-      setAnimate(false);
-      setDomIdx(count);
-    }
-  };
-
-  useEffect(() => {
-    if (!animate) {
-      const t = requestAnimationFrame(() => {
-        setAnimate(true);
-        isResetting.current = false;
-      });
-      return () => cancelAnimationFrame(t);
-    }
-  }, [animate, domIdx]);
-
-  // ── stable autoplay slider — one interval for the component's lifetime ──
-  useEffect(() => {
-    if (count <= 1) return;
-    const t = setInterval(stepForward, 5000);
-    return () => clearInterval(t);
-  }, [count, stepForward]);
-
-  // ── force the BACKGROUND VIDEO to autoplay on real mobile ──
-  // React only sets the muted *attribute*, not the *property*, and Android/iOS
-  // block autoplay unless the element is genuinely muted. We also retry play()
-  // on several signals because a single attempt is unreliable on mobile.
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-
-    setVideoReady(false); // new source → wait for it to actually play
-
-    v.muted = true;
-    v.defaultMuted = true;
-    v.setAttribute("muted", "");
-
-    const tryPlay = () => {
-      const p = v.play();
-      if (p && typeof p.catch === "function") {
-        p.catch(() => { /* blocked by saver mode — poster stays visible */ });
-      }
-    };
-
-    tryPlay();
-    v.addEventListener("loadeddata", tryPlay);
-    v.addEventListener("canplay", tryPlay);
-
-    // Android pauses backgrounded video; retry when the tab is visible again.
-    const onVisible = () => { if (!document.hidden) tryPlay(); };
-    document.addEventListener("visibilitychange", onVisible);
-
-    // Last resort: the FIRST user gesture anywhere unblocks playback that a
-    // data/battery saver refused to autoplay. Fires once, then cleans up.
-    const onFirstGesture = () => tryPlay();
-    document.addEventListener("touchstart", onFirstGesture, { once: true, passive: true });
-    document.addEventListener("pointerdown", onFirstGesture, { once: true });
-
-    return () => {
-      v.removeEventListener("loadeddata", tryPlay);
-      v.removeEventListener("canplay", tryPlay);
-      document.removeEventListener("visibilitychange", onVisible);
-      document.removeEventListener("touchstart", onFirstGesture);
-      document.removeEventListener("pointerdown", onFirstGesture);
-    };
-  }, [videoUrl]);
-
-  // ── swipe handling ──
-  const onTouchStart = (e) => {
-    // a touch on the hero is also a gesture — nudge the video to play
-    videoRef.current?.play?.().catch(() => {});
-    if (count <= 1 || isResetting.current) return;
-    touchEndRef.current = null;
-    touchStartRef.current = e.targetTouches[0].clientX;
-    if (trackRef.current) trackRef.current.style.transition = "none";
-  };
-
-  const onTouchMove = (e) => {
-    if (count <= 1 || isResetting.current || touchStartRef.current === null) return;
-    const currentX = e.targetTouches[0].clientX;
-    touchEndRef.current = currentX;
-    const diffX = currentX - touchStartRef.current;
-    if (trackRef.current) {
-      const baseTranslatePercent = -domIdx * (100 / trackLength);
-      trackRef.current.style.transform = `translateX(calc(${baseTranslatePercent}% + ${diffX}px))`;
-    }
-  };
-
-  const onTouchEnd = () => {
-    if (count <= 1 || isResetting.current) return;
-    if (trackRef.current) trackRef.current.style.transition = "";
-
-    const start = touchStartRef.current;
-    const end = touchEndRef.current;
-    touchStartRef.current = null;
-    touchEndRef.current = null;
-
-    if (start === null || end === null) {
-      if (trackRef.current) {
-        trackRef.current.style.transform = `translateX(-${domIdx * (100 / trackLength)}%)`;
-      }
-      return;
-    }
-
-    const distance = start - end;
-    if (Math.abs(distance) > minSwipeDistance) {
-      if (distance > 0) stepForward();
-      else stepToPrevious();
-    } else if (trackRef.current) {
-      trackRef.current.style.transform = `translateX(-${domIdx * (100 / trackLength)}%)`;
-    }
-  };
+// ══════════════════════════════════════════════════════════════════════
+// TESTIMONIALS
+// ══════════════════════════════════════════════════════════════════════
+export function Testimonials() {
+  const reviews = [
+    {
+      name: "Meena Sundaram",
+      location: "Chennai",
+      text: "The nethili is exactly like what my paati used to buy by the coast. Freshness and quality is unmatched. Ordering for 6 months now.",
+      rating: 5,
+    },
+    {
+      name: "Rajan Pillai",
+      location: "Coimbatore",
+      text: "Packaging is excellent — no smell leakage, arrived sealed and dry. The sura karuvadu is perfectly dried, not too salty. Will reorder.",
+      rating: 5,
+    },
+    {
+      name: "Divya Krishnamurthy",
+      location: "Bengaluru",
+      text: "Living away used to mean missing authentic dry fish. Found NammaOor and now I order every month. The pickle combo is outstanding!",
+      rating: 5,
+    },
+  ];
 
   return (
-    <section
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      className="relative h-[480px] overflow-hidden group select-none flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-950"
-      style={{ touchAction: "pan-y" }}
-    >
-      {/* poster image layer — sits BEHIND the video and shows instantly, so a
-          slow / blocked video never produces a black screen */}
-      {posterUrl && (
-        <img
-          src={posterUrl}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      )}
+    <section className="bg-sandal-50/50 py-12 sm:py-16 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-10 sm:mb-12">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            What Our Customers Say
+          </h2>
+          <p className="font-body text-sm font-semibold text-sandal-600">
+            Real reviews from real karuvadu lovers
+          </p>
+        </div>
 
-      {/* loop video background — opacity 0 until it ACTUALLY plays (onPlaying),
-          then fades in over the poster. If autoplay is blocked on mobile it
-          stays transparent and the poster / gradient shows through. */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        webkit-playsinline="true"
-        preload="auto"
-        src={videoUrl}
-        onPlaying={() => setVideoReady(true)}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-          videoReady ? "opacity-100" : "opacity-0"
-        }`}
-      />
-
-      {/* dark vignette overlay — sits above the video, below the text */}
-      <div className="absolute inset-0 z-[5] bg-black/45" />
-
-      {/* slide track */}
-      <div className="relative z-10 w-full overflow-hidden">
-        <div
-          ref={trackRef}
-          className={`flex ${animate ? "transition-transform duration-700 ease-in-out" : ""}`}
-          style={{
-            width: `${trackLength * 100}%`,
-            transform: `translateX(-${domIdx * (100 / trackLength)}%)`,
-          }}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          {slidesWithClones.map((slide, i) => (
-            <div
-              key={i}
-              className="shrink-0 flex flex-col items-center justify-center text-center px-4"
-              style={{ width: `${100 / trackLength}%` }}
-            >
-              <div className="max-w-4xl w-full mx-auto">
-                <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
-                  Namma Oor Karuvattu Kadai
-                </p>
-                <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md">
-                  {slide.heading}
-                </h1>
-                {slide.subtext && (
-                  <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed drop-shadow">
-                    {slide.subtext}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+          {reviews.map((r) => (
+            <div key={r.name} className="card p-6 flex flex-col gap-3.5 shadow-sm border border-sandal-100">
+              {/* stars */}
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    size={14}
+                    className={s <= r.rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-200"}
+                  />
+                ))}
+              </div>
+              {/* text */}
+              <p className="font-body text-sm text-gray-700 leading-relaxed flex-1 italic">
+                "{r.text}"
+              </p>
+              {/* author */}
+              <div className="flex items-center gap-3 pt-3 border-t border-sandal-100/50">
+                <div className="w-9 h-9 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
+                  {r.name[0]}
+                </div>
+                <div>
+                  <p className="font-body text-sm font-bold text-gray-800 leading-none">
+                    {r.name}
                   </p>
-                )}
-                <Link
-                  to="/products"
-                  className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2"
-                >
-                  Shop Now <ArrowRight size={16} />
-                </Link>
+                  <p className="font-body text-xs text-sandal-500 font-semibold mt-1">{r.location}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+    </section>
+  );
+}
 
-      {/* arrows */}
-      {count > 1 && (
-        <>
-          <button
-            onClick={stepToPrevious}
-            aria-label="Previous slide"
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm z-20"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={stepForward}
-            aria-label="Next slide"
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm z-20"
-          >
-            <ChevronRight size={20} />
-          </button>
+// ══════════════════════════════════════════════════════════════════════
+// NEWSLETTER CTA
+// ══════════════════════════════════════════════════════════════════════
+export function NewsletterCTA() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | success | error
 
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goToLogical(i)}
-                aria-label={`Slide ${i + 1}`}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  i === logicalIdx ? "bg-sandal-400 w-6" : "bg-white/40 w-2.5"
-                }`}
-              />
-            ))}
-          </div>
-        </>
-      )}
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) { setStatus("error"); return; }
+    setStatus("success");
+    setEmail("");
+  };
+
+  return (
+    <section className="page-wrap py-12">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-10 sm:px-12 sm:py-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
+        <div className="flex-1 text-center sm:text-left">
+          <h3 className="font-display text-white text-lg sm:text-2xl font-bold mb-2">
+            Get fresh catch alerts & exclusive deals
+          </h3>
+          <p className="font-body text-sandal-300 text-sm font-medium">
+            Subscribe to know when seasonal specials and new arrivals drop.
+          </p>
+        </div>
+
+        <div className="w-full sm:w-auto shrink-0">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setStatus("idle"); }}
+              placeholder="your@email.com"
+              className="w-full sm:w-60 bg-white/5 border border-sandal-300/20 text-white placeholder:text-gray-500 rounded-xl px-4 py-3 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
+            />
+            <button
+              type="submit"
+              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
+            >
+              Subscribe
+            </button>
+          </form>
+          {status === "success" && (
+            <p className="font-body text-sandal-300 text-xs mt-2 text-center">✓ You're subscribed!</p>
+          )}
+          {status === "error" && (
+            <p className="font-body text-red-400 text-xs mt-2 text-center">Please enter a valid email.</p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

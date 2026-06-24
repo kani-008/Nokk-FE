@@ -24,7 +24,7 @@ export default function TableFormat({ columns, rows, emptyText = "No data found.
                 <th
                   key={col.key}
                   style={col.width ? { width: col.width } : undefined}
-                  className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className={`px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap ${col.className || ""}`}
                 >
                   {col.label}
                 </th>
@@ -48,7 +48,7 @@ export default function TableFormat({ columns, rows, emptyText = "No data found.
                   className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors duration-100"
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3 font-body text-gray-700 align-middle">
+                    <td key={col.key} className={`px-4 py-3 font-body text-gray-700 align-middle ${col.className || ""}`}>
                       {col.render ? col.render(row) : row[col.key] ?? "—"}
                     </td>
                   ))}

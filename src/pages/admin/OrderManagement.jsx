@@ -312,13 +312,13 @@ export default function OrderManagement() {
     <AdminPage title="Orders" sub="Manage and track all customer orders">
 
       {/* filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-56" />
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full">
+        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-[52%] sm:w-[918px]" />
 
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="field-input w-44"
+          className="field-input w-[20%] sm:w-36"
         >
           <option value="">All statuses</option>
           {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
@@ -327,7 +327,7 @@ export default function OrderManagement() {
         <select
           value={payment}
           onChange={(e) => { setPayment(e.target.value); setPage(1); }}
-          className="field-input w-36"
+          className="field-input w-[20%] sm:w-36"
         >
           <option value="">All payment</option>
           {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
