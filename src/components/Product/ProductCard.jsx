@@ -27,10 +27,12 @@ const rupee = (n) =>
     variants[]: [{ id, price, comparePrice, weightLabel, stockQty }]
   }
 */
+import API from "../../ApiCall/Api.jsx";
+
 export default function ProductCard({ product }) {
-  const { addItem, items } = useCartStore();
-  const { toggle, isWishlisted } = useWishlistStore();
-  const { token } = useAuthStore();
+  const { items } = useCartStore();
+  const { isWishlisted } = useWishlistStore();
+  const { token, isAuthenticated } = useAuthStore();
 
   const [shakeKey, setShakeKey] = useState(0);
 
@@ -51,7 +53,7 @@ export default function ProductCard({ product }) {
   // CSS animation restarts even on rapid repeat clicks.
   const shake = () => setShakeKey((k) => k + 1);
 
-  const handleCart = (e) => {
+  const handleCart = async (e) => {
     e.preventDefault();
     if (!firstV || !inStock) return;
 
@@ -62,7 +64,7 @@ export default function ProductCard({ product }) {
       return;
     }
 
-    addItem({
+    const itemData = {
       variantId: firstV.id,
       productId: product.id,
       productName: product.nameEn,
@@ -71,13 +73,65 @@ export default function ProductCard({ product }) {
       price: firstV.price,
       comparePrice: firstV.comparePrice,
       weight: firstV.weightLabel,
-    });
+      quantity: 1,
+    };
+
+    if (isAuthenticated && token) {
+      try {
+        const response = await API.post("/cart/add-item", {
+          variantId: firstV.id,
+          quantity: 1,
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("addItem server sync failed:", err);
+      }
+    } else {
+      useCartStore.getState().addItemLocal(itemData);
+    }
     shake();
   };
 
-  const handleWishlist = (e) => {
+  const handleWishlist = async (e) => {
     e.preventDefault();
-    toggle(product.id, token);
+    const already = wishlisted;
+    // optimistic local update
+    if (already) {
+      useWishlistStore.getState().removeId(product.id);
+    } else {
+      useWishlistStore.getState().addId(product.id);
+    }
+
+    if (isAuthenticated && token) {
+      try {
+        if (already) {
+          await API.delete("/wishlist/remove-item", { data: { productId: product.id } });
+        } else {
+          await API.post("/wishlist/add-item", { productId: product.id });
+        }
+      } catch (err) {
+        console.error("wishlist sync failed, reverting:", err);
+        // revert local change
+        if (already) {
+          useWishlistStore.getState().addId(product.id);
+        } else {
+          useWishlistStore.getState().removeId(product.id);
+        }
+      }
+    }
   };
 
   return (

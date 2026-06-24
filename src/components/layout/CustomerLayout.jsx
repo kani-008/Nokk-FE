@@ -6,6 +6,8 @@ import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 
+import API from "../../ApiCall/Api.jsx";
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [pathname]);
@@ -17,15 +19,61 @@ export default function CustomerLayout() {
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   const { token, isAuthenticated } = useAuthStore();
-  const { loadFromServer: loadCart, syncToServer: syncCart } = useCartStore();
-  const { loadFromServer: loadWishlist } = useWishlistStore();
 
   useEffect(() => {
     if (isAuthenticated && token) {
-      syncCart(token).then(() => loadCart(token));
-      loadWishlist(token);
+      const syncAndLoad = async () => {
+        // 1. Sync local cart items to server
+        const localItems = useCartStore.getState().items;
+        if (localItems.length > 0) {
+          for (const item of localItems) {
+            try {
+              await API.post("/cart/add-item", {
+                variantId: item.variantId,
+                quantity: item.quantity,
+              });
+            } catch (err) {
+              // ignore individual failure
+            }
+          }
+        }
+
+        // 2. Load cart from server
+        try {
+          const res = await API.get("/cart/get-cart");
+          console.log(res.data);
+          const serverItems = (res.data.cart?.items ?? []).map((i) => ({
+            itemId:       i.itemId,
+            variantId:    i.variantId,
+            productId:    i.productId,
+            productName:  i.nameEn ?? i.name,
+            nameTa:       i.nameTa,
+            image:        i.primaryImage,
+            price:        i.price,
+            comparePrice: i.comparePrice,
+            weight:       i.weightLabel,
+            quantity:     i.quantity,
+          }));
+          useCartStore.getState().setItems(serverItems);
+        } catch (err) {
+          console.error("loadFromServer cart failed:", err);
+        }
+
+        // 3. Load wishlist from server
+        try {
+          const res = await API.get("/wishlist/get-wishlist");
+          console.log(res.data);
+          const serverIds = (res.data.wishlist ?? []).map((i) => i.productId);
+          const merged = Array.from(new Set([...useWishlistStore.getState().ids, ...serverIds]));
+          useWishlistStore.getState().setIds(merged);
+        } catch (err) {
+          console.error("loadFromServer wishlist failed:", err);
+        }
+      };
+
+      syncAndLoad();
     }
-  }, [isAuthenticated, token, syncCart, loadCart, loadWishlist]);
+  }, [isAuthenticated, token]);
 
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">

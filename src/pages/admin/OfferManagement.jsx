@@ -1,58 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore";
-
-const OFFER_BASE = `${API_URL}/offers`;
-const COUPON_BASE = `${API_URL}/coupons`;
-
-const offerApi = {
-  all: (token) =>
-    apiFetch(OFFER_BASE, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  create: (data, token) =>
-    apiFetch(OFFER_BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-  update: (id, data, token) =>
-    apiFetch(`${OFFER_BASE}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-  remove: (id, token) =>
-    apiFetch(`${OFFER_BASE}/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-};
-
-const couponApi = {
-  all: (token) =>
-    apiFetch(COUPON_BASE, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  create: (data, token) =>
-    apiFetch(COUPON_BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-  update: (id, data, token) =>
-    apiFetch(`${COUPON_BASE}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-  remove: (id, token) =>
-    apiFetch(`${COUPON_BASE}/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-};
+import API from "../../ApiCall/Api.jsx";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -67,7 +15,6 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-dig
 
 // ── Offer modal ────────────────────────────────────────────────────────
 function OfferModal({ offer, onClose, onSaved }) {
-  const { token } = useAuthStore();
   const isEdit = !!offer?.id;
   const [form, setForm] = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
   const [saving, setSaving] = useState(false);
@@ -80,12 +27,22 @@ function OfferModal({ offer, onClose, onSaved }) {
     setSaving(true); setError("");
     try {
       let res;
-      if (isEdit) res = await offerApi.update(offer.id, form, token);
-      else res = await offerApi.create(form, token);
+      if (isEdit) {
+        const response = await API.put(`/offers/${offer.id}`, form);
+        console.log(response.data);
+        res = response.data;
+      } else {
+        const response = await API.post(`/offers`, form);
+        console.log(response.data);
+        res = response.data;
+      }
       onSaved(res.offer || form);
       onClose();
-    } catch (e) { setError(e.message || "Failed"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -135,7 +92,6 @@ function OfferModal({ offer, onClose, onSaved }) {
 
 // ── Coupon modal ───────────────────────────────────────────────────────
 function CouponModal({ coupon, onClose, onSaved }) {
-  const { token } = useAuthStore();
   const isEdit = !!coupon?.id;
   const [form, setForm] = useState(coupon ? { ...coupon } : { ...COUPON_EMPTY });
   const [saving, setSaving] = useState(false);
@@ -148,12 +104,22 @@ function CouponModal({ coupon, onClose, onSaved }) {
     setSaving(true); setError("");
     try {
       let res;
-      if (isEdit) res = await couponApi.update(coupon.id, form, token);
-      else res = await couponApi.create(form, token);
+      if (isEdit) {
+        const response = await API.put(`/coupons/${coupon.id}`, form);
+        console.log(response.data);
+        res = response.data;
+      } else {
+        const response = await API.post(`/coupons`, form);
+        console.log(response.data);
+        res = response.data;
+      }
       onSaved(res.coupon || form);
       onClose();
-    } catch (e) { setError(e.message || "Failed"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -200,33 +166,59 @@ function CouponModal({ coupon, onClose, onSaved }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function OfferManagement() {
-  const { token } = useAuthStore();
   const [tab, setTab] = useState("offers");
   const [offers, setOffers] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
-  const loadOffers = useCallback(() => offerApi.all(token).then((r) => setOffers(r.offers || [])).catch(() => { }), [token]);
-  const loadCoupons = useCallback(() => couponApi.all(token).then((r) => setCoupons(r.coupons || [])).catch(() => { }), [token]);
+  const loadOffers = useCallback(async () => {
+    try {
+      const response = await API.get("/offers");
+      console.log(response.data);
+      setOffers(response.data.offers || []);
+    } catch (err) {
+      console.error("Failed to load offers:", err);
+    }
+  }, []);
+
+  const loadCoupons = useCallback(async () => {
+    try {
+      const response = await API.get("/coupons");
+      console.log(response.data);
+      setCoupons(response.data.coupons || []);
+    } catch (err) {
+      console.error("Failed to load coupons:", err);
+    }
+  }, []);
 
   useEffect(() => {
     setTimeout(() => {
       setLoading(true);
     }, 0);
     Promise.allSettled([loadOffers(), loadCoupons()]).finally(() => setLoading(false));
-  }, [token, loadOffers, loadCoupons]);
+  }, [loadOffers, loadCoupons]);
 
   const handleDeleteOffer = async (id) => {
     if (!confirm("Delete this offer?")) return;
-    await offerApi.remove(id, token).catch(() => { });
-    setOffers((p) => p.filter((o) => o.id !== id));
+    try {
+      const response = await API.delete(`/offers/${id}`);
+      console.log(response.data);
+      setOffers((p) => p.filter((o) => o.id !== id));
+    } catch (err) {
+      console.error("Failed to delete offer:", err);
+    }
   };
 
   const handleDeleteCoupon = async (id) => {
     if (!confirm("Delete this coupon?")) return;
-    await couponApi.remove(id, token).catch(() => { });
-    setCoupons((p) => p.filter((c) => c.id !== id));
+    try {
+      const response = await API.delete(`/coupons/${id}`);
+      console.log(response.data);
+      setCoupons((p) => p.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Failed to delete coupon:", err);
+    }
   };
 
   const upsertOffer = (o) => setOffers((p) => { const i = p.findIndex((x) => x.id === o.id); if (i >= 0) { const n = [...p]; n[i] = o; return n; } return [o, ...p]; });

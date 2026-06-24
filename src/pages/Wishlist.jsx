@@ -4,7 +4,7 @@ import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
-import { apiFetch } from "../ApiCall/Api";
+import API from "../ApiCall/Api";
 import comboImg from "../assets/products/combo.jpg";
 
 // ─── placeholder ──────────────────────────────────────────────────────
@@ -58,11 +58,17 @@ function WishCard({ product, onRemove }) {
     });
   };
 
-  const handleRemove = (e) => {
+  const handleRemove = async (e) => {
     e.preventDefault();
-    // toggle removes if already in wishlist — pass token for server sync
-    toggle(product.id, token);
-    onRemove(product.id);
+    try {
+      if (token) {
+        await API.delete("/wishlist/remove-item", { data: { productId: product.id } });
+      }
+      toggle(product.id);
+      onRemove(product.id);
+    } catch (err) {
+      console.error("Failed to remove item from wishlist:", err);
+    }
   };
 
   return (
@@ -144,7 +150,7 @@ function WishCard({ product, onRemove }) {
 // WISHLIST PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function Wishlist() {
-  const { ids, loadFromServer, clear } = useWishlistStore();
+  const { ids, clear } = useWishlistStore();
   const { token, isAuthenticated }             = useAuthStore();
 
   const [products, setProducts] = useState([]);   // fetched product details
@@ -154,9 +160,21 @@ export default function Wishlist() {
   // ── On mount: sync from server if logged in ───────────────────────
   useEffect(() => {
     if (isAuthenticated && token) {
-      loadFromServer(token).then(() => setLocalIds(useWishlistStore.getState().ids));
+      const load = async () => {
+        try {
+          const res = await API.get("/wishlist/get-wishlist");
+          console.log(res.data);
+          const serverIds = (res.data.wishlist ?? []).map((i) => i.productId);
+          const merged = Array.from(new Set([...useWishlistStore.getState().ids, ...serverIds]));
+          useWishlistStore.getState().setIds(merged);
+          setLocalIds(merged);
+        } catch (err) {
+          console.error("loadFromServer failed:", err);
+        }
+      };
+      load();
     }
-  }, [isAuthenticated, token, loadFromServer]);
+  }, [isAuthenticated, token]);
 
   // ── Fetch product details whenever localIds change ────────────────
   useEffect(() => {
@@ -175,19 +193,21 @@ export default function Wishlist() {
       if (active) setLoading(true);
     }, 0);
 
-    apiFetch(`/products/get-all?limit=999`)
-      .then((res) => {
+    const fetchProducts = async () => {
+      try {
+        const response = await API.get(`/products/get-all?limit=999`);
+        console.log(response.data);
         if (!active) return;
-        const allProducts = res.products || [];
+        const allProducts = response.data.products || [];
         const fetched = allProducts.filter(p => localIds.includes(p.id));
         setProducts(fetched);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Failed to load wishlist products:", err);
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    };
+    fetchProducts();
 
     return () => {
       active = false;

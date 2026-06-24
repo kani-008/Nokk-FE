@@ -1,24 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-import { useAuthStore }            from "../../components/store/AuthStore";
-
-const PRODUCT_BASE = `${API_URL}/products`;
-const CATEGORY_BASE = `${API_URL}/categories`;
-
-const categoryApi = {
-  list: () => apiFetch(`${CATEGORY_BASE}/get-all`),
-};
-
-const productApi = {
-  list: (params = "") => apiFetch(`${PRODUCT_BASE}/get-all?${params}`),
-  remove: (id, token) =>
-    apiFetch(`${PRODUCT_BASE}/delete-product`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id }),
-    }),
-};
+import API from "../../ApiCall/Api.jsx";
 import {
   AdminPage, AdminButton, SearchBar,
 } from "../../components/admin/AdminUI.jsx";
@@ -62,7 +44,6 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductManagement() {
-  const { token }   = useAuthStore();
   const [products,        setProducts]        = useState([]);
   const [categories,      setCategories]      = useState([]);
   const [loading,         setLoading]         = useState(true);
@@ -76,13 +57,24 @@ export default function ProductManagement() {
   const [deleteTarget,    setDeleteTarget]    = useState(null);
   const [deleting,        setDeleting]        = useState(false);
 
-  useEffect(() => { categoryApi.list().then((r) => setCategories(r.categories || [])).catch(() => {}); }, []);
-
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
     return () => clearTimeout(t);
   }, [search]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await API.get("/categories/get-all");
+        console.log(response.data);
+        setCategories(response.data.categories || []);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const load = useCallback(async () => {
     setTimeout(() => {
@@ -93,7 +85,9 @@ export default function ProductManagement() {
     if (catFilter)       p.set("category", catFilter);
     p.set("page", page); p.set("limit", 15);
     try {
-      const res = await productApi.list(p.toString());
+      const response = await API.get(`/products/get-all?${p.toString()}`);
+      console.log(response.data);
+      const res = response.data;
       setProducts(res.products || []);
       setTotalPages(res.pagination?.totalPages || 1);
     } catch {
@@ -114,11 +108,14 @@ export default function ProductManagement() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await productApi.remove(deleteTarget.id, token);
+      const response = await API.delete("/products/delete-product", {
+        data: { id: deleteTarget.id }
+      });
+      console.log(response.data);
       setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (e) {
-      setPageError(e.message || "Failed to delete product.");
+      setPageError(e.response?.data?.message || e.message || "Failed to delete product.");
       setDeleteTarget(null);
     } finally { setDeleting(false); }
   };

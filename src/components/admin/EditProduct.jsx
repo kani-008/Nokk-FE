@@ -1,38 +1,6 @@
 import { useState, useRef } from "react";
 import { Plus, X, Loader2, Upload, Image as ImageIcon } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-import { uploadProductImage } from "../../ApiCall/supabase.js";
-
-const PRODUCT_BASE = `${API_URL}/products`;
-
-const productApi = {
-  create: (data) =>
-    apiFetch(`${PRODUCT_BASE}/create-product`, { method: "POST", body: JSON.stringify(data) }),
-
-  update: (id, data) =>
-    apiFetch(`${PRODUCT_BASE}/update-product`, { method: "PUT", body: JSON.stringify({ id, ...data }) }),
-
-  addVariant: (productId, v) =>
-    apiFetch(`${PRODUCT_BASE}/add-variant`, {
-      method: "POST",
-      body: JSON.stringify({ productId, weightGrams: Number(v.weightGrams) || 0, weightLabel: v.weightLabel, price: v.price, comparePrice: v.comparePrice || null, stockQty: Number(v.stockQty) || 0 }),
-    }),
-
-  updateVariant: (productId, variantId, v) =>
-    apiFetch(`${PRODUCT_BASE}/update-variant`, {
-      method: "PUT",
-      body: JSON.stringify({ productId, variantId, weightGrams: Number(v.weightGrams) || 0, weightLabel: v.weightLabel, price: v.price, comparePrice: v.comparePrice || null, stockQty: Number(v.stockQty) || 0 }),
-    }),
-
-  deleteVariant: (productId, variantId) =>
-    apiFetch(`${PRODUCT_BASE}/delete-variant`, { method: "DELETE", body: JSON.stringify({ productId, variantId }) }),
-
-  addImage: (productId, imageUrl) =>
-    apiFetch(`${PRODUCT_BASE}/add-image`, {
-      method: "POST",
-      body: JSON.stringify({ productId, imageUrl, isPrimary: true, sortOrder: 0 }),
-    }),
-};
+import API from "../../ApiCall/Api.jsx";
 import { AdminButton } from "./AdminUI.jsx";
 import Toggle from "./Toggle.jsx";
 
@@ -149,8 +117,13 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     setImgUpload("uploading");
     setImgError("");
     try {
-      const url = await uploadProductImage(file);
-      setImageUrl(url);
+      const body = new FormData();
+      body.append("file", file);
+      const response = await API.post("/upload/product", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log(response.data);
+      setImageUrl(response.data.url);
       setImgUpload("done");
     } catch (err) {
       setImgError(err.message || "Image upload failed");
@@ -183,32 +156,58 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
         // deleted
         for (const orig of (product.variants || [])) {
-          if (!currentIds.has(orig.id))
-            await productApi.deleteVariant(product.id, orig.id);
+          if (!currentIds.has(orig.id)) {
+            await API.delete("/products/delete-variant", { data: { productId: product.id, variantId: orig.id } });
+          }
         }
         // new
         for (const v of cleanVariants) {
-          if (!v.id)
-            await productApi.addVariant(product.id, v);
+          if (!v.id) {
+            await API.post("/products/add-variant", {
+              productId: product.id,
+              weightGrams: Number(v.weightGrams) || 0,
+              weightLabel: v.weightLabel,
+              price: v.price,
+              comparePrice: v.comparePrice || null,
+              stockQty: Number(v.stockQty) || 0,
+            });
+          }
         }
         // updated
         for (const v of cleanVariants) {
-          if (v.id && originalIds.has(v.id))
-            await productApi.updateVariant(product.id, v.id, v);
+          if (v.id && originalIds.has(v.id)) {
+            await API.put("/products/update-variant", {
+              productId: product.id,
+              variantId: v.id,
+              weightGrams: Number(v.weightGrams) || 0,
+              weightLabel: v.weightLabel,
+              price: v.price,
+              comparePrice: v.comparePrice || null,
+              stockQty: Number(v.stockQty) || 0,
+            });
+          }
         }
 
         // ── Image update ─────────────────────────────────────────────
         const originalImage = product?.images?.[0]?.imageUrl || product?.primaryImage || "";
-        if (imageUrl && imageUrl !== originalImage)
-          await productApi.addImage(product.id, imageUrl);
+        if (imageUrl && imageUrl !== originalImage) {
+          await API.post("/products/add-image", {
+            productId: product.id,
+            imageUrl,
+            isPrimary: true,
+            sortOrder: 0,
+          });
+        }
 
         // ── Core fields ───────────────────────────────────────────────
-        const res = await productApi.update(product.id, form);
-        onSaved(res.product || { ...form, id: product.id });
+        const response = await API.put("/products/update-product", { id: product.id, ...form });
+        console.log(response.data);
+        onSaved(response.data.product || { ...form, id: product.id });
       } else {
         const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
-        const res = await productApi.create(payload);
-        onSaved(res.product || { ...payload });
+        const response = await API.post("/products/create-product", payload);
+        console.log(response.data);
+        onSaved(response.data.product || { ...payload });
       }
 
       onClose();

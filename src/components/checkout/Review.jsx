@@ -1,17 +1,7 @@
 import { useState } from "react";
 import { MapPin, CreditCard, Truck, ArrowLeft, Loader2, Check } from "lucide-react";
 import { PAYMENT_METHODS } from "./Payment";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-
-const ORDER_BASE = `${API_URL}/orders`;
-const orderApi = {
-  submitUpiReference: (id, upiRefId, token) =>
-    apiFetch(`${ORDER_BASE}/${id}/upi-reference`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ upiRefId }),
-    }),
-};
+import API from "../../ApiCall/Api.jsx";
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -80,7 +70,7 @@ export default function Review({
     setRefError("");
     setRefSuccess(false);
     try {
-      await orderApi.submitUpiReference(placedOrderId, upiRefId.trim(), token);
+      await API.patch(`/orders/${placedOrderId}/upi-reference`, { upiRefId: upiRefId.trim() });
       setRefSuccess(true);
     } catch (err) {
       setRefError(err.message || "Failed to submit UPI reference ID");

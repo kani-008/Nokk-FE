@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import productsDb from "../assets/products.json";
 import categoriesDb from "../assets/categories.json";
 import comboImg from "../assets/products/combo.jpg";
-import { apiFetch, API_URL } from "../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 
 const mapProductImages = (p) => ({
   ...p,
@@ -33,10 +33,6 @@ const getLocalStorage = (key, initialData) => {
 const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
 const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
 const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const bannerApi = {
-  active: () => apiFetch(`${API_URL}/banners/get-banners`),
-};
 
 const categoryApi = {
   list: async () => {
@@ -95,23 +91,39 @@ export default function Home() {
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
-    Promise.allSettled([
-      bannerApi.active(),
-      categoryApi.list(),
-      productApi.list("isBestseller=true&limit=8"),
-      productApi.list("sort=newest&limit=8"),
-    ]).then(([banRes, catRes, bestRes, newRes]) => {
-      console.log("[Home] bannerApi result:", banRes.status, banRes.status === "fulfilled" ? banRes.value : banRes.reason);
-      if (banRes.status === "fulfilled") {
-        console.log("[Home] banners received:", banRes.value.banners);
-        setBanners(banRes.value.banners || []);
-      } else {
-        console.error("[Home] bannerApi failed:", banRes.reason);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await API.get("/banners/get-banners");
+        console.log(response.data);
+        setBanners(response.data.banners || []);
+      } catch (err) {
+        console.error("Failed to load banners:", err);
       }
-      if (catRes.status  === "fulfilled") setCategories(catRes.value.categories   || []);
-      if (bestRes.status === "fulfilled") setBestsellers(bestRes.value.products   || []);
-      if (newRes.status  === "fulfilled") setNewest(newRes.value.products         || []);
-    }).finally(() => setLoading(false));
+
+      try {
+        const catRes = await categoryApi.list();
+        setCategories(catRes.categories || []);
+      } catch (err) {
+        console.error(err);
+      }
+
+      try {
+        const bestRes = await productApi.list("isBestseller=true&limit=8");
+        setBestsellers(bestRes.products || []);
+      } catch (err) {
+        console.error(err);
+      }
+
+      try {
+        const newRes = await productApi.list("sort=newest&limit=8");
+        setNewest(newRes.products || []);
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   return (

@@ -7,28 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { apiFetch } from "../ApiCall/Api";
-
-const productApi = {
-  bySlug: async (slug) => {
-    const res = await apiFetch(`/products/get-by-slug?slug=${slug}`);
-    return res;
-  },
-
-  list: async (params = "") => {
-    const res = await apiFetch(`/products/get-all?${params}`);
-    return res;
-  },
-
-  addReview: async (id, data) => {
-    const res = await apiFetch(`/products/add-review`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId: id, ...data }),
-    });
-    return res;
-  }
-};
+import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
@@ -216,20 +195,29 @@ export default function ProductDetails() {
     setTimeout(() => {
       setLoading(true);
     }, 0);
-    productApi.bySlug(slug)
-      .then((r) => {
-        setProduct(r.product);
-        setActiveVariant(r.product.variants?.[0] || null);
-        // fetch related
-        if (r.product.categorySlug) {
-          productApi.list(`category=${r.product.categorySlug}&limit=4`)
-            .then((rr) => setRelated((rr.products || []).filter((p) => p.slug !== slug)));
+    const load = async () => {
+      try {
+        const response = await API.get(`/products/get-by-slug?slug=${slug}`);
+        console.log(response.data);
+        const prod = response.data.product;
+        setProduct(prod);
+        setActiveVariant(prod.variants?.[0] || null);
+
+        if (prod.categorySlug) {
+          try {
+            const relRes = await API.get(`/products/get-all?category=${prod.categorySlug}&limit=4`);
+            setRelated((relRes.data.products || []).filter((p) => p.slug !== slug));
+          } catch (relErr) {
+            console.error(relErr);
+          }
         }
-      })
-      .catch((err) => {
-        if (err.status === 404) setNotFound(true);
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        if (err.response?.status === 404) setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [slug]);
 
   useEffect(() => { fetchProduct(); }, [fetchProduct]);
@@ -253,19 +241,62 @@ export default function ProductDetails() {
   const disc = compare ? Math.round(((compare - price) / compare) * 100) : 0;
   const inStock = (activeVariant?.stockQty ?? product.totalStock ?? 0) > 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!activeVariant || !inStock) return;
-    addItem({
-      variantId: activeVariant.id,
-      productId: product.id,
-      productName: product.nameEn,
-      nameTa: product.nameTa,
-      image: product.primaryImage,
-      price: activeVariant.price,
-      comparePrice: activeVariant.comparePrice,
-      weight: activeVariant.weightLabel,
-      quantity: qty,
-    });
+    if (token) {
+      try {
+        const response = await API.post("/cart/add-item", {
+          variantId: activeVariant.id,
+          quantity: qty,
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("addItem server sync failed:", err);
+      }
+    } else {
+      useCartStore.getState().addItemLocal({
+        variantId: activeVariant.id,
+        productId: product.id,
+        productName: product.nameEn,
+        nameTa: product.nameTa,
+        image: product.primaryImage,
+        price: activeVariant.price,
+        comparePrice: activeVariant.comparePrice,
+        weight: activeVariant.weightLabel,
+        quantity: qty,
+      });
+    }
+  };
+
+  const handleWishlist = async () => {
+    try {
+      if (wishlisted) {
+        if (token) {
+          await API.delete("/wishlist/remove-item", { data: { productId: product.id } });
+        }
+        useWishlistStore.getState().removeId(product.id);
+      } else {
+        if (token) {
+          await API.post("/wishlist/add-item", { productId: product.id });
+        }
+        useWishlistStore.getState().addId(product.id);
+      }
+    } catch (err) {
+      console.error("wishlist sync failed:", err);
+    }
   };
 
   const handleCartClick = () => {
@@ -521,7 +552,7 @@ export default function ProductDetails() {
                 Buy Now
               </button>
               <button
-                onClick={() => toggle(product.id, token)}
+                onClick={handleWishlist}
                 className={`p-3.5 border-2 rounded-2xl transition-colors ${wishlisted
                   ? "border-rose-300 bg-rose-50 text-rose-500"
                   : "border-amber-200 text-amber-400 hover:border-rose-300 hover:text-rose-400"
@@ -593,7 +624,7 @@ export default function ProductDetails() {
           Add to Cart flips to "Go to Cart" after the item is added. */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <button
-          onClick={() => toggle(product.id, token)}
+          onClick={handleWishlist}
           className="shrink-0 p-1.5 transition-colors"
           aria-label="Toggle wishlist"
         >

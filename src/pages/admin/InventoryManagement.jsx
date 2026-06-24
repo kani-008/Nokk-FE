@@ -2,22 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle, PackageX, Save, X, RefreshCw,
 } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+import API from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
-
-const INVENTORY_BASE = `${API_URL}/inventory`;
-const inventoryApi = {
-  list: (params = "", token) =>
-    apiFetch(`${INVENTORY_BASE}?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  update: (variantId, data, token) =>
-    apiFetch(`${INVENTORY_BASE}/${variantId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-};
 import {
   AdminPage, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
@@ -49,7 +35,7 @@ function StockEditCell({ item, onSave }) {
     if (isNaN(num) || num < 0) return;
     setSaving(true);
     try {
-      await inventoryApi.update(item.variantId, { stockQty: num }, token);
+      await API.patch(`/inventory/${item.variantId}`, { stockQty: num });
       onSave(item.variantId, num);
       setEditing(false);
     } catch (e) { alert(e.message || "Failed"); }
@@ -123,9 +109,10 @@ export default function InventoryManagement() {
     if (filter === "out") params.set("outOfStock", "true");
     params.set("page", page); params.set("limit", 20);
     try {
-      const res = await inventoryApi.list(params.toString(), token);
-      setItems(res.inventory || []);
-      setTotalPages(res.pagination?.totalPages || 1);
+      const response = await API.get(`/inventory?${params.toString()}`);
+      console.log(response.data);
+      setItems(response.data.inventory || []);
+      setTotalPages(response.data.pagination?.totalPages || 1);
     } catch {
       // fail silently
     } finally {

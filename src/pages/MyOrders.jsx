@@ -4,35 +4,7 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, Clock, ArrowRight, X,
 } from "lucide-react";
-import { apiFetch } from "../ApiCall/Api";
-
-const orderApi = {
-  mine: async () => {
-    const res = await apiFetch(`/orders/get-my-orders`);
-    const orders = (res.orders || []).map(o => ({
-      ...o,
-      items: (o.items || []).map(item => ({
-        ...item,
-        productName: item.name,
-        weightLabel: item.weight
-      })),
-      timeline: (o.timeline || []).map(t => ({
-        ...t,
-        note: t.notes,
-        createdAt: t.date
-      }))
-    }));
-    return { success: true, orders };
-  },
-  cancel: async (id) => {
-    const res = await apiFetch(`/orders/cancel-my-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    return res;
-  }
-};
+import API from "../ApiCall/Api";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
@@ -82,11 +54,15 @@ function OrderCard({ order }) {
     if (!confirm("Cancel this order?")) return;
     setCancelling(true);
     try {
-      await orderApi.cancel(order.id, token);
+      const response = await API.post(`/orders/cancel-my-order`, { id: order.id });
+      console.log(response.data);
       setStatus("cancelled");
       setCancelled(true);
-    } catch (e) { alert(e.message || "Could not cancel order"); }
-    finally { setCancelling(false); }
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Could not cancel order");
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -259,10 +235,33 @@ export default function MyOrders() {
   const newOrderId = location.state?.newOrderId;
 
   useEffect(() => {
-    orderApi.mine(token)
-      .then((r) => setOrders(r.orders || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    if (!token) return;
+    const fetchOrders = async () => {
+      try {
+        const response = await API.get(`/orders/get-my-orders`);
+        console.log(response.data);
+        const res = response.data;
+        const mappedOrders = (res.orders || []).map(o => ({
+          ...o,
+          items: (o.items || []).map(item => ({
+            ...item,
+            productName: item.name,
+            weightLabel: item.weight
+          })),
+          timeline: (o.timeline || []).map(t => ({
+            ...t,
+            note: t.notes,
+            createdAt: t.date
+          }))
+        }));
+        setOrders(mappedOrders);
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
   }, [token]);
 
   const FILTERS = [

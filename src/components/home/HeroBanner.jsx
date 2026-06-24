@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-
-const BTEXT_BASE = `${API_URL}/btext`;
-const btextApi = {
-  // GET /api/btext/get-by-banner?bannerId=  (public — active slides only)
-  byBanner: (bannerId) => apiFetch(`${BTEXT_BASE}/get-by-banner?bannerId=${bannerId}`),
-};
+import API from "../../ApiCall/Api.jsx";
 
 /*
   HERO BANNER SLIDER
@@ -37,9 +31,16 @@ export default function HeroBanner({ banners }) {
   useEffect(() => {
     const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
     if (!activeBanner?.id) return;
-    btextApi.byBanner(activeBanner.id)
-      .then((res) => setSlides((res.btexts || []).filter((o) => o.isActive)))
-      .catch(() => {});
+    const fetchBtexts = async () => {
+      try {
+        const res = await API.get(`/btext/get-by-banner?bannerId=${activeBanner.id}`);
+        console.log(res.data);
+        setSlides((res.data.btexts || []).filter((o) => o.isActive));
+      } catch (err) {
+        console.error("Failed to load banner texts:", err);
+      }
+    };
+    fetchBtexts();
   }, [banners]);
 
   const count = slides.length;

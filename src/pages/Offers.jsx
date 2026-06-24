@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
 import { Link }     from "react-router-dom";
 
-import { apiFetch } from "../ApiCall/Api";
-
-const offerApi = {
-  active: async () => {
-    const res = await apiFetch(`/offers/get-active`);
-    return res;
-  }
-};
+import API from "../ApiCall/Api";
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);
@@ -118,10 +111,18 @@ export default function Offers() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    offerApi.active()
-      .then((r) => setOffers(r.offers || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const fetchOffers = async () => {
+      try {
+        const response = await API.get(`/offers/get-active`);
+        console.log(response.data);
+        setOffers(response.data.offers || []);
+      } catch (err) {
+        console.error("Failed to fetch offers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOffers();
   }, []);
 
   return (

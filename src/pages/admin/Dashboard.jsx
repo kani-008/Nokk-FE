@@ -5,29 +5,8 @@ import {
   TrendingUp, Clock, CheckCircle2, XCircle,
   ArrowRight, RefreshCw,
 } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+import API from "../../ApiCall/Api.jsx";
 import { useAuthStore }           from "../../components/store/AuthStore";
-
-const DASHBOARD_BASE = `${API_URL}/dashboard`;
-const ORDER_BASE = `${API_URL}/orders`;
-
-const dashboardApi = {
-  kpis: (token) =>
-    apiFetch(`${DASHBOARD_BASE}/kpis`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  charts: (token) =>
-    apiFetch(`${DASHBOARD_BASE}/charts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-};
-
-const orderApi = {
-  all: (params = "", token) =>
-    apiFetch(`${ORDER_BASE}?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-};
 import {
   StatCard, AdminPage, DataTable, StatusBadge, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
@@ -103,19 +82,28 @@ export default function Dashboard() {
     }, 0);
     try {
       const [kRes, cRes, oRes] = await Promise.allSettled([
-        dashboardApi.kpis(token),
-        dashboardApi.charts(token),
-        orderApi.all("limit=8&sort=newest", token),
+        API.get("/dashboard/kpis"),
+        API.get("/dashboard/charts"),
+        API.get("/orders?limit=8&sort=newest"),
       ]);
-      if (kRes.status === "fulfilled") setKpis(kRes.value?.kpis   || kRes.value || {});
-      if (cRes.status === "fulfilled") setCharts(cRes.value?.charts || cRes.value || {});
-      if (oRes.status === "fulfilled") setRecentOrders(oRes.value?.orders || []);
+      if (kRes.status === "fulfilled") {
+        console.log(kRes.value.data);
+        setKpis(kRes.value.data?.kpis || kRes.value.data || {});
+      }
+      if (cRes.status === "fulfilled") {
+        console.log(cRes.value.data);
+        setCharts(cRes.value.data?.charts || cRes.value.data || {});
+      }
+      if (oRes.status === "fulfilled") {
+        console.log(oRes.value.data);
+        setRecentOrders(oRes.value.data?.orders || []);
+      }
     } finally {
       clearTimeout(timer);
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 

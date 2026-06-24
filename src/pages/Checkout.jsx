@@ -1,50 +1,7 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
-import { apiFetch } from "../ApiCall/Api.jsx";
-
-const userApi = {
-  addresses: () =>
-    apiFetch(`/users/me/addresses`),
-};
-
-const orderApi = {
-  place: async (data) => {
-    const payload = {
-      items: data.items.map(i => ({
-        productId: i.productId,
-        variantId: i.variantId,
-        weight: i.weight,
-        price: i.price,
-        quantity: i.quantity,
-        nameEn: i.productName,
-        nameTa: i.nameTa
-      })),
-      address: {
-        fullName: data.shippingAddress.name,
-        phone: data.shippingAddress.phone,
-        addressLine1: data.shippingAddress.addressLine1,
-        addressLine2: data.shippingAddress.addressLine2,
-        city: data.shippingAddress.city,
-        state: data.shippingAddress.state,
-        pincode: data.shippingAddress.pincode
-      },
-      paymentMethod: data.paymentMethod,
-      couponApplied: data.couponCode || null,
-      subtotal: data.subtotal,
-      deliveryCharge: data.deliveryCharge,
-      discount: data.discount,
-      total: data.total
-    };
-
-    const res = await apiFetch(`/orders/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    return res;
-  }
-};
+import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
 import StepBar      from "../components/checkout/StepBar";
@@ -109,8 +66,11 @@ export default function Checkout() {
   // ── load saved addresses on mount ─────────────────────────────────
   useEffect(() => {
     if (!token) return;
-    userApi.addresses()
-      .then((r) => {
+    const fetchAddresses = async () => {
+      try {
+        const response = await API.get(`/users/me/addresses`);
+        console.log(response.data);
+        const r = response.data;
         const list = (r.addresses || []).map((addr) => ({
           id: addr.id,
           label: addr.label,
@@ -130,8 +90,11 @@ export default function Checkout() {
         } else {
           setShowNewForm(true);
         }
-      })
-      .catch(() => setShowNewForm(true));
+      } catch (err) {
+        setShowNewForm(true);
+      }
+    };
+    fetchAddresses();
   }, [token]);
 
   // ── redirect if cart emptied ───────────────────────────────────────
@@ -163,42 +126,53 @@ export default function Checkout() {
     setOrderErr("");
     try {
       const address = showNewForm ? newAddress : selectedSaved;
-      const res = await orderApi.place({
-        items: items.map((i) => ({
-          variantId: i.variantId,
+      const payload = {
+        items: items.map(i => ({
           productId: i.productId,
-          productName: i.productName,
-          nameTa: i.nameTa,
+          variantId: i.variantId,
           weight: i.weight,
           price: i.price,
-          quantity:  i.quantity,
+          quantity: i.quantity,
+          nameEn: i.productName,
+          nameTa: i.nameTa
         })),
-        shippingAddress: {
-          name:         address.name,
-          phone:        address.phone,
+        address: {
+          fullName: address.name,
+          phone: address.phone,
           addressLine1: address.addressLine1,
           addressLine2: address.addressLine2 || "",
-          city:         address.city,
-          state:        address.state,
-          pincode:      address.pincode,
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode
         },
-        paymentMethod:  payMethod,
-        couponCode:     coupon?.code || undefined,
-        customerUpiId:  customerUpiId || undefined,
-        subtotal:       sub,
+        paymentMethod: payMethod,
+        couponApplied: coupon?.code || null,
+        subtotal: sub,
         deliveryCharge: ship,
-        discount:       disc,
-        total:          tot,
-      }, token);
+        discount: disc,
+        total: tot
+      };
 
-      await clearCart();
+      const response = await API.post(`/orders/checkout`, payload);
+      console.log(response.data);
+      const res = response.data;
+
+      // Make API call inline to clear cart on server if logged in
+      if (token) {
+        try {
+          await API.delete("/cart/clear-cart");
+        } catch (clearErr) {
+          console.error("Failed to clear server cart:", clearErr);
+        }
+      }
+      useCartStore.getState().clearCartLocal();
 
       setPlacedOrderId(res.order?.id);
       if (payMethod !== "upi") {
         navigate("/my-orders", { state: { newOrderId: res.order?.id } });
       }
     } catch (err) {
-      setOrderErr(err.message || "Failed to place order. Please try again.");
+      setOrderErr(err.response?.data?.message || err.message || "Failed to place order. Please try again.");
     } finally {
       setPlacing(false);
     }

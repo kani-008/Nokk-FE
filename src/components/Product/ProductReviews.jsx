@@ -1,17 +1,7 @@
 import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
+import API from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../store/AuthStore.jsx";
-
-const PRODUCT_BASE = `${API_URL}/products`;
-const productApi = {
-  addReview: (id, data, token) =>
-    apiFetch(`${PRODUCT_BASE}/${id}/reviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-};
 import { Link } from "react-router-dom";
 
 // Helper to distribute total review counts realistically if actual review logs are empty or partial.
@@ -110,7 +100,7 @@ function ReviewForm({ productId, onSubmit }) {
     if (!form.comment.trim()) { setError("Please write your review comment"); return; }
     setLoading(true);
     try {
-      await productApi.addReview(productId, form, token);
+      await API.post(`/products/${productId}/reviews`, form);
       setDone(true);
       onSubmit?.();
     } catch (err) {

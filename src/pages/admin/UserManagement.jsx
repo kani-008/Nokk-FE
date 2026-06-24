@@ -1,40 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-
-const USER_BASE = `${API_URL}/users`;
-const userApi = {
-  all: (params = "", token) =>
-    apiFetch(`${USER_BASE}/get-all?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-
-  getById: (id, token) =>
-    apiFetch(`${USER_BASE}/get-by-id?id=${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-
-  block: (id, token) =>
-    apiFetch(`${USER_BASE}/toggle-status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id, status: "blocked" }),
-    }),
-
-  unblock: (id, token) =>
-    apiFetch(`${USER_BASE}/toggle-status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id, status: "active" }),
-    }),
-
-  remove: (id, token) =>
-    apiFetch(`${USER_BASE}/delete-user`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id }),
-    }),
-};
 import { useAuthStore } from "../../components/store/AuthStore";
 import {
   AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
@@ -109,10 +74,10 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     let active = true;
     setLoadingDetail(true);
     setError("");
-    userApi.getById(user.id, token)
-      .then((data) => {
+    API.get(`/users/get-by-id?id=${user.id}`)
+      .then((res) => {
         if (active) {
-          setDetail(data);
+          setDetail(res.data);
         }
       })
       .catch((err) => {
@@ -126,7 +91,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
         }
       });
     return () => { active = false; };
-  }, [user.id, token]);
+  }, [user.id]);
 
   if (!user) return null;
 
@@ -136,10 +101,10 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     setActing(true); setError("");
     try {
       if (isBlocked) {
-        await userApi.unblock(user.id, token);
+        await API.patch("/users/toggle-status", { id: user.id, status: "active" });
         onUnblock(user.id);
       } else {
-        await userApi.block(user.id, token);
+        await API.patch("/users/toggle-status", { id: user.id, status: "blocked" });
         onBlock(user.id);
       }
       onClose();
@@ -152,7 +117,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     if (!confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) return;
     setActing(true); setError("");
     try {
-      await userApi.remove(user.id, token);
+      await API.delete("/users/delete-user", { data: { id: user.id } });
       onDelete(user.id);
       onClose();
     } catch (e) {
@@ -441,15 +406,16 @@ export default function UserManagement() {
     if (status) params.set("status", status);
     params.set("page", page); params.set("limit", 15);
     try {
-      const res = await userApi.all(params.toString(), token);
-      setUsers(res.users || []);
-      setTotalPages(res.pagination?.totalPages || 1);
+      const response = await API.get(`/users/get-all?${params.toString()}`);
+      console.log(response.data);
+      setUsers(response.data.users || []);
+      setTotalPages(response.data.pagination?.totalPages || 1);
     } catch (e) {
       setError(e.message || "Failed to load users");
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, roleFilter, status, page, token]);
+  }, [debouncedSearch, roleFilter, status, page]);
 
   useEffect(() => {
     load();

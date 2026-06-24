@@ -3,16 +3,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import { apiFetch, API_URL }  from "../../ApiCall/Api.jsx";
-import { useAuthStore }  from "../../components/store/AuthStore";
-
-const DASHBOARD_BASE = `${API_URL}/dashboard`;
-const dashboardApi = {
-  reports: (params = "", token) =>
-    apiFetch(`${DASHBOARD_BASE}/reports?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-};
+import API from "../../ApiCall/Api.jsx";
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -53,7 +44,6 @@ function HBarChart({ data = [], valueKey = "value", labelKey = "label", color = 
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ReportManagement() {
-  const { token }   = useAuthStore();
   const [period,    setPeriod]    = useState("30d");
   const [report,    setReport]    = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -64,7 +54,9 @@ export default function ReportManagement() {
       showRefresh ? setRefreshing(true) : setLoading(true);
     }, 0);
     try {
-      const res = await dashboardApi.reports(`period=${period}`, token);
+      const response = await API.get(`/dashboard/reports?period=${period}`);
+      console.log(response.data);
+      const res = response.data;
       setReport(res.report || res || {});
     } catch {
       // ignore
@@ -72,7 +64,7 @@ export default function ReportManagement() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [period, token]);
+  }, [period]);
 
   useEffect(() => {
     const t = setTimeout(() => {

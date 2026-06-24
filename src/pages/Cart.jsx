@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, X, Loader2 } from "lucide-react";
 import { useCartStore }    from "../components/store/CartStore";
 import { useAuthStore }    from "../components/store/AuthStore";
+import API from "../ApiCall/Api";
 
 import comboImg from "../assets/products/combo.jpg";
 
@@ -267,9 +268,6 @@ export default function Cart() {
   const {
     items,
     coupon,
-    updateQty,
-    removeItem,
-    validateCoupon,
     removeCoupon,
     subtotal,
     discount,
@@ -277,7 +275,7 @@ export default function Cart() {
     total,
   } = useCartStore();
 
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
 
   // ── Computed values (call as functions) ───────────────────────────
   const sub  = subtotal();
@@ -286,6 +284,85 @@ export default function Cart() {
   const tot  = total();
 
   // ── Handlers ─────────────────────────────────────────────────────
+  const handleUpdateQty = async (variantId, quantity) => {
+    if (quantity < 1) {
+      await handleRemoveItem(variantId);
+      return;
+    }
+    if (isAuthenticated && token) {
+      const item = items.find((i) => i.variantId === variantId);
+      if (!item || !item.itemId) return;
+      try {
+        const response = await API.put("/cart/update-item", {
+          itemId: item.itemId,
+          quantity,
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("updateQty server sync failed:", err);
+      }
+    } else {
+      useCartStore.getState().updateQtyLocal(variantId, quantity);
+    }
+  };
+
+  const handleRemoveItem = async (variantId) => {
+    if (isAuthenticated && token) {
+      const item = items.find((i) => i.variantId === variantId);
+      if (!item || !item.itemId) return;
+      try {
+        const response = await API.delete("/cart/remove-item", {
+          data: { itemId: item.itemId },
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("removeItem server sync failed:", err);
+      }
+    } else {
+      useCartStore.getState().removeItemLocal(variantId);
+    }
+  };
+
+  const handleValidateCoupon = async (code) => {
+    try {
+      const response = await API.post("/coupons/validate", {
+        code,
+        subtotal: sub,
+      });
+      console.log(response.data);
+      useCartStore.getState().setCoupon(response.data.coupon);
+      return response.data.coupon;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || "Invalid coupon code");
+    }
+  };
+
   const handleCheckout = () => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: "/checkout" } });
@@ -314,8 +391,8 @@ export default function Cart() {
             <CartItem
               key={item.variantId}
               item={item}
-              onQty={updateQty}
-              onRemove={removeItem}
+              onQty={handleUpdateQty}
+              onRemove={handleRemoveItem}
             />
           ))}
 
@@ -327,7 +404,7 @@ export default function Cart() {
               shipping={ship}
               total={tot}
               coupon={coupon}
-              onApply={validateCoupon}
+              onApply={handleValidateCoupon}
               onRemove={removeCoupon}
               onCheckout={handleCheckout}
               loading={false}
@@ -343,7 +420,7 @@ export default function Cart() {
             shipping={ship}
             total={tot}
             coupon={coupon}
-            onApply={validateCoupon}
+            onApply={handleValidateCoupon}
             onRemove={removeCoupon}
             onCheckout={handleCheckout}
             loading={false}

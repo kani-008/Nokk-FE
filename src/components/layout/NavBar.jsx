@@ -10,12 +10,7 @@ import MobileDrawer from "./MobileDrawer.jsx";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-
-const CATEGORY_BASE = `${API_URL}/categories`;
-const categoryApi = {
-  list: () => apiFetch(`${CATEGORY_BASE}/get-all`),
-};
+import API from "../../ApiCall/Api.jsx";
 
 const NAV_LINKS = [
   { label: "Products", to: "/products" },
@@ -46,9 +41,16 @@ export default function NavBar() {
 
   // fetch categories once for the category strip
   useEffect(() => {
-    categoryApi.list()
-      .then((r) => setCategories((r.categories || []).filter((c) => c.isActive)))
-      .catch(() => { });
+    const fetchCats = async () => {
+      try {
+        const res = await API.get("/categories/get-all");
+        console.log(res.data);
+        setCategories((res.data.categories || []).filter((c) => c.isActive));
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCats();
   }, []);
 
   // close dropdowns on outside click

@@ -3,22 +3,9 @@ import {
   X, Eye,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
-import { apiFetch, API_URL } from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore.jsx";
+import API from "../../ApiCall/Api.jsx";
 
-const ORDER_BASE = `${API_URL}/orders`;
-const orderApi = {
-  all: (params = "", token) =>
-    apiFetch(`${ORDER_BASE}?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  updateStatus: (id, data, token) =>
-    apiFetch(`${ORDER_BASE}/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }),
-};
+
 import comboImg from "../../assets/products/combo.jpg";
 import {
   AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
@@ -41,7 +28,6 @@ const PAYMENT_METHODS = ["cod", "upi", "card"];
 
 // ── Order detail modal ────────────────────────────────────────────────
 function OrderModal({ order, onClose, onStatusChange }) {
-  const { token } = useAuthStore();
   const [newStatus, setNewStatus] = useState(order?.status || "");
   const [saving,    setSaving]    = useState(false);
   const [trackData, setTrackData] = useState({ courierName: order?.courierName || "", trackingNumber: order?.trackingNumber || "" });
@@ -52,11 +38,11 @@ function OrderModal({ order, onClose, onStatusChange }) {
     if (newStatus === order.status) return;
     setSaving(true);
     try {
-      await orderApi.updateStatus(order.id, { status: newStatus, ...trackData }, token);
+      await API.patch(`/orders/${order.id}/status`, { status: newStatus, ...trackData });
       onStatusChange(order.id, newStatus);
       onClose();
     } catch (e) {
-      alert(e.message || "Failed to update status");
+      alert(e.response?.data?.message || e.message || "Failed to update status");
     } finally { setSaving(false); }
   };
 
@@ -226,7 +212,6 @@ function OrderModal({ order, onClose, onStatusChange }) {
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
-  const { token } = useAuthStore();
   const [orders,    setOrders]    = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState("");
@@ -247,15 +232,15 @@ export default function OrderManagement() {
     params.set("page", page);
     params.set("limit", 15);
     try {
-      const res = await orderApi.all(params.toString(), token);
-      setOrders(res.orders || []);
-      setTotalPages(res.pagination?.totalPages || 1);
+      const res = await API.get(`/orders?${params.toString()}`);
+      setOrders(res.data.orders || []);
+      setTotalPages(res.data.pagination?.totalPages || 1);
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [search, status, payment, page, token]);
+  }, [search, status, payment, page]);
 
   useEffect(() => {
     const t = setTimeout(() => {
