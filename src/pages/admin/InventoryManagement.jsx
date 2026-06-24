@@ -1,33 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  AlertTriangle, PackageX, Save, X, RefreshCw,
-} from "lucide-react";
+import { AlertTriangle, PackageX, Save, X, RefreshCw, } from "lucide-react";
 import API from "../../ApiCall/Api.jsx";
 import { useAuthStore } from "../../components/store/AuthStore";
-import {
-  AdminPage, AdminButton, SearchBar, AdminCard,
-} from "../../components/admin/AdminUI.jsx";
+import { AdminPage, AdminButton, SearchBar, AdminCard, } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 
 const rupee = (n) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
+  new Intl.NumberFormat("en-IN",
+    {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0
+    }
+  ).format(Number(n) || 0);
 
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
 
 function stockBadge(qty) {
-  if (qty === 0)  return <span className="badge-red">Out of stock</span>;
-  if (qty <= 5)   return <span className="badge-orange">Low · {qty}</span>;
-  if (qty <= 20)  return <span className="badge-amber">{qty} units</span>;
+  if (qty === 0) return <span className="badge-red">Out of stock</span>;
+  if (qty <= 5) return <span className="badge-orange">Low · {qty}</span>;
+  if (qty <= 20) return <span className="badge-amber">{qty} units</span>;
   return <span className="badge-green">{qty} units</span>;
 }
 
 // ── Inline stock edit cell ─────────────────────────────────────────────
 function StockEditCell({ item, onSave }) {
   const [editing, setEditing] = useState(false);
-  const [val,     setVal]     = useState(item.stockQty);
-  const [saving,  setSaving]  = useState(false);
+  const [val, setVal] = useState(item.stockQty);
+  const [saving, setSaving] = useState(false);
   const { token } = useAuthStore();
 
   const handleSave = async () => {
@@ -50,8 +52,7 @@ function StockEditCell({ item, onSave }) {
         {stockBadge(item.stockQty)}
         <button
           onClick={() => setEditing(true)}
-          className="font-body text-xs text-brand-700 hover:underline ml-1"
-        >
+          className="font-body text-xs text-brand-700 hover:underline ml-1">
           Edit
         </button>
       </div>
@@ -67,13 +68,15 @@ function StockEditCell({ item, onSave }) {
         onChange={(e) => setVal(e.target.value)}
         className="w-20 border border-amber-200 rounded-lg px-2 py-1 text-sm font-num focus:outline-none focus:ring-2 focus:ring-amber-400/30"
         autoFocus
-        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") handleCancel(); }}
-      />
+        onKeyDown={(e) => {
+          if (e.key === "Enter")
+            handleSave(); if (e.key === "Escape")
+            handleCancel();
+        }} />
       <button
         onClick={handleSave}
         disabled={saving}
-        className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-      >
+        className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors">
         <Save size={13} />
       </button>
       <button
@@ -91,13 +94,13 @@ function StockEditCell({ item, onSave }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function InventoryManagement() {
   const { token } = useAuthStore();
-  const [items,     setItems]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [search,    setSearch]    = useState("");
-  const [filter,    setFilter]    = useState("all"); // all | low | out
-  const [page,      setPage]      = useState(1);
-  const [totalPages,setTotalPages]= useState(1);
-  const [refreshing,setRefreshing]= useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all"); // all | low | out
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (showRefresh = false) => {
     setTimeout(() => {
@@ -132,9 +135,9 @@ export default function InventoryManagement() {
     setItems((prev) => prev.map((i) => i.variantId === variantId ? { ...i, stockQty: newQty } : i));
 
   // summary stats
-  const outOfStock  = items.filter((i) => i.stockQty === 0).length;
-  const lowStock    = items.filter((i) => i.stockQty > 0 && i.stockQty <= 5).length;
-  const totalValue  = items.reduce((s, i) => s + i.price * i.stockQty, 0);
+  const outOfStock = items.filter((i) => i.stockQty === 0).length;
+  const lowStock = items.filter((i) => i.stockQty > 0 && i.stockQty <= 5).length;
+  const totalValue = items.reduce((s, i) => s + i.price * i.stockQty, 0);
 
   const COLS = [
     {
@@ -147,25 +150,33 @@ export default function InventoryManagement() {
             onError={(e) => { e.target.src = PH; }}
           />
           <div>
-            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">{r.productName}</p>
+            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">
+              {r.productName}</p>
             <p className="font-body text-xs text-gray-400">{r.categoryName}</p>
           </div>
         </div>
       ),
     },
-    { key: "weightLabel", label: "Variant",  render: (r) => <span className="font-num text-sm text-gray-700">{r.weightLabel}</span> },
+    {
+      key: "weightLabel", label: "Variant", render: (r) =>
+        <span className="font-num text-sm text-gray-700">{r.weightLabel}</span>
+    },
     {
       key: "sku", label: "SKU",
       render: (r) => <span className="font-num text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">{r.sku || "—"}</span>,
     },
-    { key: "price",  label: "Price",  render: (r) => <span className="font-num text-sm font-semibold text-gray-900">{rupee(r.price)}</span> },
+    {
+      key: "price", label: "Price", render: (r) =>
+        <span className="font-num text-sm font-semibold text-gray-900">{rupee(r.price)}</span>
+    },
     {
       key: "stockQty", label: "Stock",
       render: (r) => <StockEditCell item={r} onSave={patchStock} />,
     },
     {
       key: "value", label: "Stock Value",
-      render: (r) => <span className="font-num text-sm text-gray-600">{rupee(r.price * r.stockQty)}</span>,
+      render: (r) =>
+        <span className="font-num text-sm text-gray-600">{rupee(r.price * r.stockQty)}</span>,
     },
   ];
 
@@ -203,7 +214,7 @@ export default function InventoryManagement() {
         <AdminCard className="flex items-center gap-3 py-3.5 sm:col-span-2">
           <div className="p-2 rounded-xl bg-green-50">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
           <div>
@@ -225,9 +236,8 @@ export default function InventoryManagement() {
             <button
               key={f.key}
               onClick={() => { setFilter(f.key); setPage(1); }}
-              className={`font-body text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex-1 text-center whitespace-nowrap ${
-                filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`font-body text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg transition-colors flex-1 text-center whitespace-nowrap ${filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               {f.label}
             </button>

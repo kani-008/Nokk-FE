@@ -100,7 +100,7 @@ function ReviewForm({ productId, onSubmit }) {
     if (!form.comment.trim()) { setError("Please write your review comment"); return; }
     setLoading(true);
     try {
-      await API.post(`/products/${productId}/reviews`, form);
+      await API.post("/products/add-review", { productId, ...form });
       setDone(true);
       onSubmit?.();
     } catch (err) {

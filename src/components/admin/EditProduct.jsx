@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus, X, Loader2, Upload, Image as ImageIcon } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import API from "../../ApiCall/Api.jsx";
 import { AdminButton } from "./AdminUI.jsx";
 import Toggle from "./Toggle.jsx";
@@ -99,37 +99,82 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
   const [variants, setVariants] = useState(
     product?.variants?.length ? product.variants.map((v) => ({ ...v, _uid: v.id ?? uid() })) : [newVariant()]
   );
-  const [imageUrl,   setImageUrl]   = useState(product?.images?.[0]?.imageUrl || product?.primaryImage || "");
-  const [imgUpload,  setImgUpload]  = useState(null); // null | "uploading" | "done" | "error"
-  const [imgError,   setImgError]   = useState("");
-  const [saving,     setSaving]     = useState(false);
-  const [error,      setError]      = useState("");
+  // ── Images ────────────────────────────────────────────────────────────
+  // savedImages: images that already exist in the DB (have an `id`).
+  //   Removing one calls /delete-image immediately — it's a real file.
+  // staged: newly picked files NOT yet uploaded anywhere. Just objects
+  //   { file, previewUrl } held in memory. Nothing touches Supabase
+  //   until Save is clicked — so "wrong file" or "closed the form
+  //   without saving" never leaves an orphaned file in storage.
+  const MAX_IMAGES = 5;
+  const [savedImages, setSavedImages] = useState(
+    (product?.images || []).slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+  );
+  const [staged,      setStaged]      = useState([]); // [{ _uid, file, previewUrl }]
+  const [imgError,    setImgError]    = useState("");
+  const [removingImg, setRemovingImg] = useState(null); // id of saved image currently being deleted
+  const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState("");
   const imgInputRef = useRef(null);
+
+  const totalImageCount = savedImages.length + staged.length;
 
   const setF    = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setV    = (i, k, v) => setVariants((arr) => arr.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
   const addV    = () => setVariants((arr) => [...arr, newVariant()]);
   const removeV = (i) => setVariants((arr) => (arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr));
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImgUpload("uploading");
+  // Pick one or more files — just stage them as local previews.
+  // No network call here, so a wrong pick costs nothing to undo.
+  const handlePickFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-picking the same file later
+    if (!files.length) return;
+
+    setImgError("");
+
+    if (totalImageCount + files.length > MAX_IMAGES) {
+      setImgError(`You can have at most ${MAX_IMAGES} images per product (currently ${totalImageCount}).`);
+      return;
+    }
+    const tooBig = files.find((f) => f.size > 5 * 1024 * 1024);
+    if (tooBig) {
+      setImgError(`"${tooBig.name}" is over 5 MB.`);
+      return;
+    }
+
+    const newStaged = files.map((file) => ({
+      _uid: uid(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setStaged((arr) => [...arr, ...newStaged]);
+  };
+
+  // Remove a staged (not-yet-uploaded) file — purely local, nothing to
+  // clean up on Supabase since it was never sent there.
+  const removeStaged = (_uid) => {
+    setStaged((arr) => {
+      const target = arr.find((s) => s._uid === _uid);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return arr.filter((s) => s._uid !== _uid);
+    });
+  };
+
+  // Remove an already-saved image — this IS a real file in Supabase,
+  // so delete it immediately rather than waiting for Save.
+  const removeSaved = async (img) => {
+    if (!isEdit) return;
+    setRemovingImg(img.id);
     setImgError("");
     try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await API.post("/upload/product", body, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      console.log(response.data);
-      setImageUrl(response.data.url);
-      setImgUpload("done");
+      await API.delete("/products/delete-image", { data: { productId: product.id, imageId: img.id } });
+      setSavedImages((arr) => arr.filter((i) => i.id !== img.id));
     } catch (err) {
-      setImgError(err.message || "Image upload failed");
-      setImgUpload("error");
+      setImgError(err.response?.data?.message || err.message || "Failed to remove image");
+    } finally {
+      setRemovingImg(null);
     }
-    e.target.value = "";
   };
 
   const handleNameChange = (val) => {
@@ -188,14 +233,13 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           }
         }
 
-        // ── Image update ─────────────────────────────────────────────
-        const originalImage = product?.images?.[0]?.imageUrl || product?.primaryImage || "";
-        if (imageUrl && imageUrl !== originalImage) {
-          await API.post("/products/add-image", {
-            productId: product.id,
-            imageUrl,
-            isPrimary: true,
-            sortOrder: 0,
+        // ── New images: upload any staged files now via bulk endpoint ──
+        if (staged.length > 0) {
+          const body = new FormData();
+          body.append("productId", product.id);
+          staged.forEach((s) => body.append("imageFiles", s.file));
+          await API.post("/products/add-images", body, {
+            headers: { "Content-Type": "multipart/form-data" },
           });
         }
 
@@ -204,7 +248,20 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
         console.log(response.data);
         onSaved(response.data.product || { ...form, id: product.id });
       } else {
-        const payload = { ...form, variants: cleanVariants, images: imageUrl ? [{ imageUrl, isPrimary: true }] : [] };
+        // New product: upload any staged files first (slug is known from
+        // the form even though the product row doesn't exist yet), then
+        // send the resulting URLs to create-product.
+        const uploadedImages = [];
+        for (const s of staged) {
+          const body = new FormData();
+          body.append("file", s.file);
+          body.append("slug", form.slug.trim());
+          const up = await API.post("/upload/product", body, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          uploadedImages.push({ imageUrl: up.data.url, isPrimary: uploadedImages.length === 0 });
+        }
+        const payload = { ...form, variants: cleanVariants, images: uploadedImages };
         const response = await API.post("/products/create-product", payload);
         console.log(response.data);
         onSaved(response.data.product || { ...payload });
@@ -218,14 +275,16 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     }
   };
 
+  const handleClose = () => {
+    // Staged files were never uploaded anywhere, so there's nothing to
+    // clean up on Supabase. Just release the local blob: preview URLs.
+    staged.forEach((s) => URL.revokeObjectURL(s.previewUrl));
+    onClose();
+  };
+
   return (
-    // Mobile fix: was `items-start justify-end` with a flush right-hand
-    // panel at all sizes. Now it's a bottom sheet on mobile (full width,
-    // rounded top, slides from the bottom edge) and the original
-    // right-hand drawer from `sm` up — matching how the rest of the app's
-    // mobile sheets behave instead of reusing the desktop drawer verbatim.
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
-      <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : handleClose} />
 
       <div className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-modal-slide-up">
 
@@ -234,7 +293,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           <h3 className="font-display text-base font-bold text-gray-900">
             {isEdit ? "Edit Product" : "Add Product"}
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close">
+          <button onClick={handleClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -248,62 +307,6 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           )}
 
           <form id="edit-product-form" onSubmit={handleSubmit} className="space-y-5">
-
-            {/* image upload */}
-            <div>
-              <label className="field-label">Product Image</label>
-
-              {/* preview box */}
-              <div className="w-full h-40 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 mb-3 flex items-center justify-center">
-                {imgUpload === "uploading" ? (
-                  <div className="flex flex-col items-center gap-2 text-gray-400">
-                    <Loader2 size={24} className="animate-spin" />
-                    <p className="font-body text-xs">Uploading…</p>
-                  </div>
-                ) : imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => { e.target.style.display = "none"; }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-gray-300">
-                    <ImageIcon size={28} />
-                    <p className="font-body text-xs">Preview appears here</p>
-                  </div>
-                )}
-              </div>
-
-              {/* upload button */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => imgInputRef.current?.click()}
-                  disabled={imgUpload === "uploading"}
-                  className={`inline-flex items-center gap-2 font-body text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 ${
-                    imgUpload === "done"
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
-                  }`}
-                >
-                  <Upload size={14} />
-                  {imgUpload === "done" ? "Uploaded ✓" : imgUpload === "uploading" ? "Uploading…" : "Upload Image"}
-                </button>
-                <span className="font-body text-xs text-gray-400">JPEG · PNG · WebP · max 5 MB</span>
-                <input
-                  ref={imgInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </div>
-
-              {imgError && (
-                <p className="font-body text-xs text-red-500 mt-1.5">{imgError}</p>
-              )}
-            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -358,6 +361,82 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               ))}
             </div>
 
+            {/* image upload — up to 5 images, staged locally until Save */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="field-label mb-0">Product Images</label>
+                <span className="font-body text-xs text-gray-400">{totalImageCount}/{MAX_IMAGES}</span>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                {/* already-saved images — removing calls the API immediately */}
+                {savedImages.map((img) => (
+                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-gray-200 group">
+                    <img src={img.imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                    {img.isPrimary && (
+                      <span className="absolute bottom-1 left-1 font-body text-[9px] font-bold bg-brand-600 text-white px-1.5 py-0.5 rounded-md">Primary</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeSaved(img)}
+                      disabled={removingImg === img.id}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors disabled:opacity-50"
+                      aria-label="Remove image"
+                    >
+                      {removingImg === img.id ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
+                    </button>
+                  </div>
+                ))}
+
+                {/* newly staged images — not uploaded yet, removing is free */}
+                {staged.map((s) => (
+                  <div key={s._uid} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-dashed border-brand-300 group">
+                    <img src={s.previewUrl} alt="" className="w-full h-full object-cover" />
+                    <span className="absolute bottom-1 left-1 font-body text-[9px] font-bold bg-gray-700 text-white px-1.5 py-0.5 rounded-md">New</span>
+                    <button
+                      type="button"
+                      onClick={() => removeStaged(s._uid)}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors"
+                      aria-label="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* add-more tile */}
+                {totalImageCount < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    onClick={() => imgInputRef.current?.click()}
+                    disabled={!form.slug?.trim()}
+                    title={!form.slug?.trim() ? "Enter a product name first" : undefined}
+                    className="aspect-square rounded-xl border border-dashed border-gray-300 hover:border-brand-400 hover:bg-brand-50/40 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-brand-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={18} />
+                    <span className="font-body text-[10px] font-semibold">Add</span>
+                  </button>
+                )}
+              </div>
+
+              <input
+                ref={imgInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePickFiles}
+              />
+
+              <p className="font-body text-xs text-gray-400">JPEG · PNG · WebP · max 5 MB each · up to {MAX_IMAGES} images</p>
+              {!form.slug?.trim() && (
+                <p className="font-body text-xs text-gray-400 mt-1">Enter a product name above to enable image upload.</p>
+              )}
+              {imgError && (
+                <p className="font-body text-xs text-red-500 mt-1.5">{imgError}</p>
+              )}
+            </div>
+
             {/* variants */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -378,7 +457,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
         {/* footer — sticky so Save/Cancel are always reachable, even on a
             long form, instead of requiring a scroll to the very bottom */}
         <div className="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-gray-100 shrink-0 bg-white">
-          <AdminButton variant="outline" onClick={onClose} type="button" disabled={saving}>
+          <AdminButton variant="outline" onClick={handleClose} type="button" disabled={saving}>
             Cancel
           </AdminButton>
           <AdminButton type="submit" form="edit-product-form" disabled={saving}>
