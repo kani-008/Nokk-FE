@@ -224,6 +224,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
   const uploadedDbImagesRef = useRef([]); // tracks database image records added during the edit save session
 
   const totalImageCount = savedImages.length + staged.length;
+  console.log("EditProduct rendering: product =", product, "savedImages =", savedImages);
 
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setV = (i, k, val) => setVariants((arr) => {
