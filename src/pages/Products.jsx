@@ -6,123 +6,11 @@ import {
 } from "lucide-react";
 import API from "../ApiCall/Api";
 
-const filterProducts = (products, params = "") => {
-  const urlParams = new URLSearchParams(params);
-
-  const search       = urlParams.get("search") || "";
-  const category     = urlParams.get("category") || "";
-  const sort         = urlParams.get("sort") || "popular";
-  const inStock      = urlParams.get("inStock") === "true";
-  const isBestseller = urlParams.get("isBestseller") === "true";
-  const isNew        = urlParams.get("isNew") === "true";
-  const minPrice     = urlParams.get("minPrice") ? parseFloat(urlParams.get("minPrice")) : null;
-  const maxPrice      = urlParams.get("maxPrice") ? parseFloat(urlParams.get("maxPrice")) : null;
-  const minRating     = urlParams.get("rating") ? parseFloat(urlParams.get("rating")) : null;
-  const weights        = (urlParams.get("weight") || "").split(",").filter(Boolean);
-  const hasOffer       = urlParams.get("hasOffer") === "true";
-  const idsVal         = urlParams.get("ids");
-  const page          = parseInt(urlParams.get("page") || "1");
-  const limit          = parseInt(urlParams.get("limit") || "12");
-
-  const minVariantPrice = (p) =>
-    p.variants && p.variants.length ? Math.min(...p.variants.map(v => v.price)) : (p.minPrice || 0);
-
-  let filtered = products;
-
-  if (idsVal) {
-    const idList = idsVal.split(",");
-    filtered = filtered.filter(p => idList.includes(p.id));
-  }
-
-  if (search) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(
-      p => p.nameEn.toLowerCase().includes(q) ||
-           (p.nameTa && p.nameTa.toLowerCase().includes(q)) ||
-           p.description.toLowerCase().includes(q)
-    );
-  }
-
-  if (category) {
-    filtered = filtered.filter(p => p.categorySlug === category);
-  }
-
-  if (isBestseller) {
-    filtered = filtered.filter(p => p.isBestseller);
-  }
-
-  if (isNew) {
-    filtered = filtered.filter(p => p.isNew);
-  }
-
-  if (inStock) {
-    filtered = filtered.filter(p => p.variants && p.variants.some(v => v.inStock));
-  }
-
-  if (minPrice !== null) {
-    filtered = filtered.filter(p => minVariantPrice(p) >= minPrice);
-  }
-  if (maxPrice !== null) {
-    filtered = filtered.filter(p => minVariantPrice(p) <= maxPrice);
-  }
-
-  if (minRating !== null) {
-    filtered = filtered.filter(p => (p.avgRating || 0) >= minRating);
-  }
-
-  if (weights.length > 0) {
-    filtered = filtered.filter(p =>
-      p.variants && p.variants.some(v => weights.includes(v.weightLabel))
-    );
-  }
-
-  if (hasOffer) {
-    filtered = filtered.filter(p =>
-      p.variants && p.variants.some(v => v.comparePrice && v.comparePrice > v.price)
-    );
-  }
-
-  if (sort === "newest") {
-    filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
-  } else if (sort === "price-low-high") {
-    filtered = [...filtered].sort((a, b) => minVariantPrice(a) - minVariantPrice(b));
-  } else if (sort === "price-high-low") {
-    filtered = [...filtered].sort((a, b) => minVariantPrice(b) - minVariantPrice(a));
-  } else if (sort === "popularity" || sort === "popular") {
-    filtered = [...filtered].sort((a, b) =>
-      (b.reviewCount || 0) - (a.reviewCount || 0) || (b.avgRating || 0) - (a.avgRating || 0)
-    );
-  } else if (sort === "relevance") {
-    if (search) {
-      const q = search.toLowerCase();
-      const score = (p) => {
-        const name = p.nameEn.toLowerCase();
-        if (name === q) return 3;
-        if (name.startsWith(q)) return 2;
-        if (name.includes(q)) return 1;
-        return 0;
-      };
-      filtered = [...filtered].sort((a, b) => score(b) - score(a));
-    } else {
-      filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
-    }
-  }
-
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const paginated = filtered.slice(start, start + limit);
-
-  return {
-    success: true,
-    products: paginated,
-    pagination: { total, page, limit, totalPages }
-  };
-};
 
 import ProductCard from "../components/Product/ProductCard";
 
-// ── sort options — value must match the productApi.list() `sort` contract ──
+
+// ── sort options — must match the backend getAllProducts sortMap keys ──
 const SORT_OPTIONS = [
   { value: "popular", label: "Popularity" },
   { value: "newest", label: "Newest First" },
@@ -497,22 +385,31 @@ export default function Products() {
     fetchCategories();
   }, []);
 
-  // ── fetch products whenever filters change ────────────────────────
+  // ── distinct pack sizes — fetched once from the dedicated endpoint ──────────────
+  const [allWeightLabels, setAllWeightLabels] = useState([]);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(true);
-    }, 0);
+    const fetchWeightLabels = async () => {
+      try {
+        const response = await API.get("/products/weight-labels");
+        setAllWeightLabels(response.data.weightLabels || []);
+      } catch (err) {
+        console.error("Failed to load weight labels:", err);
+      }
+    };
+    fetchWeightLabels();
+  }, []);
+
+  // ── fetch products whenever filters change (full server-side) ───────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => { setLoading(true); }, 0);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const fetchProducts = async () => {
       try {
-        const response = await API.get(`/products/get-all?limit=999`);
-        console.log(response.data);
-        const allProducts = response.data.products || [];
-        const result = filterProducts(allProducts, buildQuery());
-        setProducts(result.products || []);
-        setPagination(result.pagination || null);
-      } catch (err) {
+        const response = await API.get(`/products/get-all?${buildQuery()}`);
+        setProducts(response.data.products || []);
+        setPagination(response.data.pagination || null);
+      } catch {
         setProducts([]);
       } finally {
         setLoading(false);
@@ -523,24 +420,6 @@ export default function Products() {
     return () => clearTimeout(timer);
   }, [buildQuery]);
 
-  // ── distinct pack sizes available, derived from current result set ─
-  // (kept stable across paginated fetches by deriving from the full mock
-  //  product catalogue once, rather than just the current page's products)
-  const [allWeightLabels, setAllWeightLabels] = useState([]);
-  useEffect(() => {
-    const fetchWeightLabels = async () => {
-      try {
-        const response = await API.get(`/products/get-all?limit=999`);
-        const allProducts = response.data.products || [];
-        const labels = new Set();
-        allProducts.forEach((p) => p.variants.forEach((v) => labels.add(v.weightLabel)));
-        setAllWeightLabels([...labels]);
-      } catch (err) {
-        console.error("Failed to load weight labels:", err);
-      }
-    };
-    fetchWeightLabels();
-  }, []);
 
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [

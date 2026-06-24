@@ -1,72 +1,5 @@
 import { useState, useEffect } from "react";
-import productsDb from "../assets/products.json";
-import categoriesDb from "../assets/categories.json";
-import comboImg from "../assets/products/combo.jpg";
 import API from "../ApiCall/Api.jsx";
-
-const mapProductImages = (p) => ({
-  ...p,
-  primaryImage: comboImg,
-  images: [
-    { id: "img-1", imageUrl: comboImg, sortOrder: 1, isPrimary: true }
-  ]
-});
-
-const mapCategoryImage = (c) => ({
-  ...c,
-  imageUrl: comboImg
-});
-
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch {
-    return initialData;
-  }
-};
-
-const getProducts = () => getLocalStorage("nok-mock-products-v3", productsDb).map(mapProductImages);
-const getCategories = () => getLocalStorage("nok-mock-categories", categoriesDb).map(mapCategoryImage);
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const categoryApi = {
-  list: async () => {
-    await delay();
-    return { success: true, categories: getCategories() };
-  }
-};
-
-const productApi = {
-  list: async (params = "") => {
-    await delay();
-    const products = getProducts();
-    const urlParams = new URLSearchParams(params);
-
-    const sort         = urlParams.get("sort") || "popular";
-    const isBestseller = urlParams.get("isBestseller") === "true";
-    const limit          = parseInt(urlParams.get("limit") || "8");
-
-    let filtered = products;
-
-    if (isBestseller) {
-      filtered = filtered.filter(p => p.isBestseller);
-    }
-
-    if (sort === "newest") {
-      filtered = [...filtered].sort((a, b) => b.id.localeCompare(a.id));
-    }
-
-    return {
-      success: true,
-      products: filtered.slice(0, limit)
-    };
-  }
-};
 import HeroBanner from "../components/home/HeroBanner.jsx";
 import {
   CategoryScroll,
@@ -95,31 +28,30 @@ export default function Home() {
       setLoading(true);
       try {
         const response = await API.get("/banners/get-banners");
-        console.log(response.data);
         setBanners(response.data.banners || []);
       } catch (err) {
         console.error("Failed to load banners:", err);
       }
 
       try {
-        const catRes = await categoryApi.list();
-        setCategories(catRes.categories || []);
+        const catRes = await API.get("/categories/get-all");
+        setCategories(catRes.data.categories || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load categories:", err);
       }
 
       try {
-        const bestRes = await productApi.list("isBestseller=true&limit=8");
-        setBestsellers(bestRes.products || []);
+        const bestRes = await API.get("/products/get-all?isBestseller=true&limit=8");
+        setBestsellers(bestRes.data.products || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load bestsellers:", err);
       }
 
       try {
-        const newRes = await productApi.list("sort=newest&limit=8");
-        setNewest(newRes.products || []);
+        const newRes = await API.get("/products/get-all?sort=newest&limit=8");
+        setNewest(newRes.data.products || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load new arrivals:", err);
       }
       setLoading(false);
     };
