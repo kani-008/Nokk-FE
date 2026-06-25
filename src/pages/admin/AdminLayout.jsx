@@ -150,15 +150,17 @@ function Sidebar({ collapsed, onClose }) {
 
 // ── Notification helpers ───────────────────────────────────────────────
 const NOTIF_ICONS = {
-  new_order:            { Icon: ShoppingCart,   color: "text-amber-500",  bg: "bg-amber-50"  },
-  order_status_changed: { Icon: ShoppingBag,    color: "text-blue-500",   bg: "bg-blue-50"   },
-  payment_failed:       { Icon: AlertCircle,    color: "text-red-500",    bg: "bg-red-50"    },
-  return_requested:     { Icon: RotateCcw,      color: "text-pink-500",   bg: "bg-pink-50"   },
-  new_review:           { Icon: MessageSquare,  color: "text-purple-500", bg: "bg-purple-50" },
-  stock_changed:        { Icon: Warehouse,      color: "text-orange-500", bg: "bg-orange-50" },
-  new_signup:           { Icon: UserPlus,       color: "text-green-500",  bg: "bg-green-50"  },
-  coupon_limit_near:    { Icon: Tag,            color: "text-yellow-600", bg: "bg-yellow-50" },
-  default:              { Icon: Bell,           color: "text-gray-500",   bg: "bg-gray-100"  },
+  new_order:               { Icon: ShoppingCart,   color: "text-amber-500",  bg: "bg-amber-50"  },
+  order_status_changed:    { Icon: ShoppingBag,    color: "text-blue-500",   bg: "bg-blue-50"   },
+  payment_failed:          { Icon: AlertCircle,    color: "text-red-500",    bg: "bg-red-50"    },
+  replacement_requested:   { Icon: RotateCcw,      color: "text-pink-500",   bg: "bg-pink-50"   },
+  replacement_completed:   { Icon: RotateCcw,      color: "text-teal-600",   bg: "bg-teal-50"   },
+  upi_reference_submitted: { Icon: Tag,            color: "text-indigo-500", bg: "bg-indigo-50" },
+  new_review:              { Icon: MessageSquare,  color: "text-purple-500", bg: "bg-purple-50" },
+  stock_changed:           { Icon: Warehouse,      color: "text-orange-500", bg: "bg-orange-50" },
+  new_signup:              { Icon: UserPlus,       color: "text-green-500",  bg: "bg-green-50"  },
+  coupon_limit_near:       { Icon: Tag,            color: "text-yellow-600", bg: "bg-yellow-50" },
+  default:                 { Icon: Bell,           color: "text-gray-500",   bg: "bg-gray-100"  },
 };
 
 const fmtRelative = (d) => {
@@ -170,8 +172,9 @@ const fmtRelative = (d) => {
 };
 
 // ── NotificationPanel ──────────────────────────────────────────────────
-// open  — animation state (true = slid in, false = slid out)
-// onClose — called immediately by backdrop / close button; parent unmounts after 300 ms
+// open         — animation state (true = slid in, false = slid out)
+// onClose       — called immediately by backdrop / close button; parent unmounts after 300 ms
+// onCountChange — called with latest unread count after load / mark-read actions
 function NotificationPanel({ open, onClose, onCountChange }) {
   const navigate = useNavigate();
   const [items,   setItems]   = useState([]);
@@ -184,6 +187,7 @@ function NotificationPanel({ open, onClose, onCountChange }) {
       const notifs = res.data?.notifications ?? [];
       setItems(notifs);
       onCountChange?.(notifs.filter((n) => !n.isRead).length);
+      console.log(res.data);
     } catch { /* silently ignore */ }
     finally { setLoading(false); }
   }, [onCountChange]);
@@ -191,25 +195,22 @@ function NotificationPanel({ open, onClose, onCountChange }) {
   useEffect(() => { load(); }, [load]);
 
   const markAllRead = async () => {
-    // optimistic update
-    setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    onCountChange?.(0);
     try {
       await API.patch("/notifications/mark-all-read");
-    } catch { load(); } // revert on failure
+      setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      onCountChange?.(0);
+    } catch { /* */ }
   };
 
   const handleClick = async (item) => {
     if (!item.isRead) {
-      // optimistic update
-      setItems((prev) => prev.map((n) => n.id === item.id ? { ...n, isRead: true } : n));
-      onCountChange?.((c) => Math.max(0, c - 1));
       try {
         await API.patch("/notifications/mark-read", { notificationId: item.id });
-      } catch { /* best-effort */ }
+        setItems((prev) => prev.map((n) => n.id === item.id ? { ...n, isRead: true } : n));
+        onCountChange?.((c) => Math.max(0, c - 1));
+      } catch { /* */ }
     }
     if (item.link) navigate(item.link);
-    else if (item.entityType === "orders") navigate(`/admin/orders`);
     onClose();
   };
 
@@ -294,13 +295,11 @@ function NotificationPanel({ open, onClose, onCountChange }) {
     <>
       {/* ── Mobile: full-height slide drawer from the right ── */}
       <div className="md:hidden">
-        {/* backdrop */}
         <div
           aria-hidden="true"
           onClick={onClose}
           className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         />
-        {/* drawer */}
         <div
           className={`fixed inset-y-0 right-0 z-50 w-3/4 flex flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
         >
@@ -350,16 +349,16 @@ function TopBar({ onToggle, onMobileOpen, pathname }) {
 
   const toggleNotif = () => (notifOpen ? closeNotif() : openNotif());
 
-  // poll unread count every 60 s
+  // poll unread notification count every 60 s
   useEffect(() => {
-    const fetchUnread = async () => {
+    const computeUnread = async () => {
       try {
         const res = await API.get("/notifications/unread-count");
         setUnreadCount(res.data?.unreadCount ?? 0);
       } catch { /* */ }
     };
-    fetchUnread();
-    const t = setInterval(fetchUnread, 60_000);
+    computeUnread();
+    const t = setInterval(computeUnread, 60_000);
     return () => { clearInterval(t); clearTimeout(closeTimerRef.current); };
   }, []);
 

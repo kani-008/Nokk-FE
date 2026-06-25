@@ -70,10 +70,10 @@ export default function Review({
     setRefError("");
     setRefSuccess(false);
     try {
-      await API.patch(`/orders/${placedOrderId}/upi-reference`, { upiRefId: upiRefId.trim() });
+      await API.post(`/orders/submit-upi-reference`, { id: placedOrderId, upiRefId: upiRefId.trim() });
       setRefSuccess(true);
     } catch (err) {
-      setRefError(err.message || "Failed to submit UPI reference ID");
+      setRefError(err.response?.data?.message || err.message || "Failed to submit UPI reference ID");
     } finally {
       setSubmittingRef(false);
     }
@@ -141,7 +141,7 @@ export default function Review({
       </div>
 
       {/* ── UPI Reference Submission Card (only if order is placed via UPI) ── */}
-      {placedOrderId && (
+      {placedOrderId && payMethod === "upi" && (
         <div className="card p-4 sm:p-5 border-brand-700 bg-brand-50/20 space-y-4">
           <h3 className="font-body text-sm font-bold text-brand-900">
             Submit UPI Reference ID

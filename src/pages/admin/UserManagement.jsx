@@ -159,8 +159,8 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const addresses = detail?.addresses || [];
   const stats = detail?.stats || { totalOrders: 0, totalSpent: 0, delivered: 0, cancelled: 0 };
   const orders = detail?.orders || [];
-  const returnRequests = detail?.returnRequests || [];
-  const hasReturns = returnRequests.length > 0;
+  const replacementRequests = detail?.replacementRequests || [];
+  const hasReplacements = replacementRequests.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
@@ -177,7 +177,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
           {[
             { key: "overview", label: "Overview" },
             { key: "orders", label: `Orders (${orders.length})` },
-            ...(hasReturns ? [{ key: "returns", label: `Returns (${returnRequests.length})` }] : [])
+            ...(hasReplacements ? [{ key: "replacements", label: `Replacements (${replacementRequests.length})` }] : [])
           ].map(tab => (
             <button
               key={tab.key}
@@ -319,24 +319,29 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
             </div>
           )}
 
-          {activeTab === "returns" && (
+          {activeTab === "replacements" && (
             <div className="space-y-3 animate-in fade-in duration-200">
-              {returnRequests.map((ret) => (
-                <AdminCard key={ret.id} className="border-pink-100 bg-pink-50/10">
+              {replacementRequests.map((rep) => (
+                <AdminCard key={rep.id} className="border-pink-100 bg-pink-50/10">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="font-semibold text-gray-900 font-body text-sm">Order #{ret.order_id}</span>
-                      <p className="text-xs text-gray-400 mt-0.5">{fmtDate(ret.created_at)}</p>
+                      <span className="font-semibold text-gray-900 font-body text-sm">Order #{rep.order_id}</span>
+                      <p className="text-xs text-gray-400 mt-0.5">{fmtDate(rep.created_at)}</p>
                     </div>
-                    <StatusBadge status={ret.status} />
+                    <StatusBadge status={rep.status} />
                   </div>
                   <div className="mt-3 text-xs sm:text-sm font-body space-y-2">
-                    <p className="text-gray-700 leading-relaxed"><span className="font-bold text-gray-600">Reason:</span> {ret.reason}</p>
-                    {ret.details && <p className="text-gray-500 leading-relaxed"><span className="font-bold text-gray-600">Details:</span> {ret.details}</p>}
-                    {ret.admin_notes && (
+                    <p className="text-gray-700 leading-relaxed"><span className="font-bold text-gray-600">Reason:</span> {rep.reason}</p>
+                    {rep.details && <p className="text-gray-500 leading-relaxed"><span className="font-bold text-gray-600">Details:</span> {rep.details}</p>}
+                    {rep.admin_notes && (
                       <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl mt-2 leading-relaxed">
-                        <span className="font-bold text-amber-800">Admin Notes:</span> {ret.admin_notes}
+                        <span className="font-bold text-amber-800">Admin Notes:</span> {rep.admin_notes}
                       </div>
+                    )}
+                    {rep.new_order_id && (
+                      <p className="text-green-700 leading-relaxed">
+                        <span className="font-bold">Replacement order created:</span> #{rep.new_order_id}
+                      </p>
                     )}
                   </div>
                 </AdminCard>

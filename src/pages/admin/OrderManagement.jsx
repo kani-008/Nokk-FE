@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, Eye,
+  X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
 import API from "../../ApiCall/Api.jsx";
@@ -21,10 +21,11 @@ const fmtDate = (d) =>
 const ALL_STATUSES = [
   "pending","confirmed","processing","shipped",
   "out_for_delivery","delivered","cancelled",
-  "return_requested","returned","refunded",
+  "replacement_requested","replacement_approved",
+  "replacement_rejected","replacement_completed",
 ];
 
-const PAYMENT_METHODS = ["cod", "upi", "card"];
+const PAYMENT_STATUSES = ["pending", "paid"];
 
 // ── Order detail modal ────────────────────────────────────────────────
 function OrderModal({ order, onClose, onStatusChange }) {
@@ -38,7 +39,7 @@ function OrderModal({ order, onClose, onStatusChange }) {
     if (newStatus === order.status) return;
     setSaving(true);
     try {
-      await API.patch(`/orders/${order.id}/status`, { status: newStatus, ...trackData });
+      await API.put(`/orders/admin/update-status`, { id: order.id, status: newStatus, ...trackData });
       onStatusChange(order.id, newStatus);
       onClose();
     } catch (e) {
@@ -208,10 +209,133 @@ function OrderModal({ order, onClose, onStatusChange }) {
   );
 }
 
+// ── Replacements panel ────────────────────────────────────────────────
+function ReplacementsPanel() {
+  const [items,   setItems]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter,  setFilter]  = useState("requested");
+  const [busyId,  setBusyId]  = useState(null);
+
+  const load = useCallback(async () => {
+    setTimeout(() => {
+      setLoading(true);
+    }, 0);
+    try {
+      const params = new URLSearchParams();
+      if (filter) params.set("status", filter);
+      const res = await API.get(`/orders/admin/get-replacements?${params.toString()}`);
+      setItems(res.data.replacements || []);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  const act = async (requestId, status) => {
+    if (status === "completed" && !confirm("This will create a NEW zero-cost order with the same items and mark the original as replacement_completed. Continue?")) return;
+    setBusyId(requestId);
+    try {
+      const res = await API.put("/orders/admin/update-replacement", { requestId, status });
+      if (status === "completed" && res.data?.newOrderId) {
+        alert(`Replacement order ${res.data.newOrderId} created successfully.`);
+      }
+      load();
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update replacement request");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const FILTERS = [
+    { key: "requested", label: "Pending" },
+    { key: "approved",  label: "Approved" },
+    { key: "rejected",  label: "Rejected" },
+    { key: "completed", label: "Completed" },
+    { key: "",          label: "All" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-fit">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key || "all"}
+            onClick={() => setFilter(f.key)}
+            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${
+              filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="font-body text-sm text-gray-400 text-center py-10">Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="font-body text-sm text-gray-400 text-center py-10">No replacement requests found.</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((r) => (
+            <AdminCard key={r.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-body text-sm font-bold text-gray-900">Order #{String(r.order_id).slice(0, 8).toUpperCase()}</p>
+                  <p className="font-body text-xs text-gray-500 mt-0.5">{r.customer_name} · {r.customer_phone}</p>
+                  <p className="font-body text-xs text-gray-400 mt-0.5">{fmtDate(r.created_at)}</p>
+                </div>
+                <StatusBadge status={r.status} />
+              </div>
+
+              <div className="mt-3 font-body text-sm space-y-1.5">
+                <p className="text-gray-700"><span className="font-semibold text-gray-500">Reason:</span> {r.reason}</p>
+                {r.details && <p className="text-gray-500 text-xs">{r.details}</p>}
+                {r.new_order_id && (
+                  <p className="text-green-700 text-xs font-semibold">
+                    Replacement order created: #{String(r.new_order_id).slice(0, 8).toUpperCase()}
+                  </p>
+                )}
+              </div>
+
+              {r.status === "requested" && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <AdminButton size="sm" onClick={() => act(r.id, "approved")} disabled={busyId === r.id}>
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Approve
+                  </AdminButton>
+                  <AdminButton size="sm" variant="outline" onClick={() => act(r.id, "rejected")} disabled={busyId === r.id}>
+                    <Ban size={13} /> Reject
+                  </AdminButton>
+                </div>
+              )}
+              {r.status === "approved" && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <AdminButton size="sm" onClick={() => act(r.id, "completed")} disabled={busyId === r.id}>
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} Mark Item Received & Complete
+                  </AdminButton>
+                </div>
+              )}
+            </AdminCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
+  const [tab, setTab] = useState("orders");
   const [orders,    setOrders]    = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState("");
@@ -228,11 +352,11 @@ export default function OrderManagement() {
     const params = new URLSearchParams();
     if (search)  params.set("search",        search);
     if (status)  params.set("status",        status);
-    if (payment) params.set("paymentMethod", payment);
+    if (payment) params.set("paymentStatus", payment);
     params.set("page", page);
     params.set("limit", 15);
     try {
-      const res = await API.get(`/orders?${params.toString()}`);
+      const res = await API.get(`/orders/admin/get-all?${params.toString()}`);
       setOrders(res.data.orders || []);
       setTotalPages(res.data.pagination?.totalPages || 1);
     } catch {
@@ -296,53 +420,79 @@ export default function OrderManagement() {
   return (
     <AdminPage title="Orders" sub="Manage and track all customer orders">
 
-      {/* filters */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
-        <div className="w-full sm:flex-1">
-          <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-full" />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="field-input flex-1 sm:w-36"
-          >
-            <option value="">All statuses</option>
-            {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
-
-          <select
-            value={payment}
-            onChange={(e) => { setPayment(e.target.value); setPage(1); }}
-            className="field-input flex-1 sm:w-36"
-          >
-            <option value="">All payment</option>
-            {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
-          </select>
-
-          {hasFilters && (
-            <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
-              <X size={14} /> Clear
-            </button>
-          )}
-        </div>
+      {/* top-level tabs */}
+      <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setTab("orders")}
+          className={`font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+            tab === "orders" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+          }`}
+        >
+          All Orders
+        </button>
+        <button
+          onClick={() => setTab("replacements")}
+          className={`font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+            tab === "replacements" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+          }`}
+        >
+          <RotateCcw size={13} /> Replacements
+        </button>
       </div>
 
-      <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
+      {tab === "replacements" ? (
+        <ReplacementsPanel />
+      ) : (
+        <>
+          {/* filters */}
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
+            <div className="w-full sm:flex-1">
+              <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-full" />
+            </div>
 
-      {/* pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
-          <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
-          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
-        </div>
-      )}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <select
+                value={status}
+                onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                className="field-input flex-1 sm:w-36"
+              >
+                <option value="">All statuses</option>
+                {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+              </select>
 
-      {/* detail modal */}
-      {selected && (
-        <OrderModal order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+              <select
+                value={payment}
+                onChange={(e) => { setPayment(e.target.value); setPage(1); }}
+                className="field-input flex-1 sm:w-36"
+              >
+                <option value="">All payment status</option>
+                {PAYMENT_STATUSES.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
+              </select>
+
+              {hasFilters && (
+                <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
+                  <X size={14} /> Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
+
+          {/* pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
+              <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
+              <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
+            </div>
+          )}
+
+          {/* detail modal */}
+          {selected && (
+            <OrderModal order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+          )}
+        </>
       )}
     </AdminPage>
   );

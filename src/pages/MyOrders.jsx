@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation }   from "react-router-dom";
 import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
-  MapPin, Clock, ArrowRight, X,
+  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check,
 } from "lucide-react";
 import API from "../ApiCall/Api";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
@@ -18,16 +18,17 @@ const fmtDate = (d) =>
 
 // ── Status pill ────────────────────────────────────────────────────────
 const STATUS_STYLE = {
-  pending:          "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed:        "bg-blue-50 text-blue-700 border-blue-200",
-  processing:       "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped:          "bg-purple-50 text-purple-700 border-purple-200",
-  out_for_delivery: "bg-orange-50 text-orange-700 border-orange-200",
-  delivered:        "bg-green-50 text-green-700 border-green-200",
-  cancelled:        "bg-red-50 text-red-600 border-red-200",
-  return_requested: "bg-pink-50 text-pink-700 border-pink-200",
-  returned:         "bg-gray-50 text-gray-600 border-gray-200",
-  refunded:         "bg-teal-50 text-teal-700 border-teal-200",
+  pending:               "bg-yellow-50 text-yellow-700 border-yellow-200",
+  confirmed:             "bg-blue-50 text-blue-700 border-blue-200",
+  processing:            "bg-indigo-50 text-indigo-700 border-indigo-200",
+  shipped:               "bg-purple-50 text-purple-700 border-purple-200",
+  out_for_delivery:      "bg-orange-50 text-orange-700 border-orange-200",
+  delivered:             "bg-green-50 text-green-700 border-green-200",
+  cancelled:             "bg-red-50 text-red-600 border-red-200",
+  replacement_requested: "bg-pink-50 text-pink-700 border-pink-200",
+  replacement_approved:  "bg-blue-50 text-blue-700 border-blue-200",
+  replacement_rejected:  "bg-red-50 text-red-600 border-red-200",
+  replacement_completed: "bg-teal-50 text-teal-700 border-teal-200",
 };
 function StatusPill({ status }) {
   const cls = STATUS_STYLE[status] ?? "bg-gray-50 text-gray-600 border-gray-200";
@@ -38,6 +39,87 @@ function StatusPill({ status }) {
   );
 }
 
+// ── Replacement request modal ────────────────────────────────────────────
+const REPLACEMENT_REASONS = [
+  "Item damaged on arrival",
+  "Wrong item delivered",
+  "Quality not as expected",
+  "Missing item(s) in package",
+  "Other",
+];
+
+function ReplacementModal({ orderId, onClose, onSuccess }) {
+  const [reason, setReason]   = useState("");
+  const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]     = useState("");
+
+  const handleSubmit = async () => {
+    if (!reason) { setError("Please select a reason."); return; }
+    setSubmitting(true);
+    setError("");
+    try {
+      await API.post("/orders/request-replacement", { id: orderId, reason, details: details.trim() || undefined });
+      onSuccess();
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Could not submit replacement request");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-base font-bold text-brand-900">Request Replacement</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={16} /></button>
+        </div>
+
+        <div>
+          <label className="font-body text-xs font-semibold text-amber-700 mb-1.5 block">Reason</label>
+          <div className="space-y-1.5">
+            {REPLACEMENT_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => { setReason(r); setError(""); }}
+                className={`w-full text-left font-body text-sm px-3 py-2 rounded-xl border transition-colors ${
+                  reason === r ? "border-brand-700 bg-brand-50 text-brand-900 font-semibold" : "border-amber-100 text-amber-700 hover:bg-amber-50"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="font-body text-xs font-semibold text-amber-700 mb-1.5 block">Additional details (optional)</label>
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={3}
+            placeholder="Tell us more so we can help faster…"
+            className="field-input resize-none"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">
+            {error}
+          </div>
+        )}
+
+        <button onClick={handleSubmit} disabled={submitting} className="btn-md btn-primary w-full">
+          {submitting ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : "Submit Request"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Order card ─────────────────────────────────────────────────────────
 function OrderCard({ order }) {
   const { token }   = useAuthStore();
@@ -45,9 +127,14 @@ function OrderCard({ order }) {
   const [cancelling,setCancelling]= useState(false);
   const [cancelled, setCancelled] = useState(order.status === "cancelled");
   const [status,    setStatus]    = useState(order.status);
+  const [showReplacementModal, setShowReplacementModal] = useState(false);
+  const [replacementRequested, setReplacementRequested] = useState(
+    ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
+  );
 
   const canCancel  = ["pending","confirmed"].includes(status);
   const isDelivered = status === "delivered";
+  const canRequestReplacement = isDelivered && !replacementRequested;
   const addr = order.address || {};
 
   const handleCancel = async () => {
@@ -191,14 +278,33 @@ function OrderCard({ order }) {
                 <X size={13} /> {cancelling ? "Cancelling…" : "Cancel Order"}
               </button>
             )}
-            {isDelivered && (
-              <button className="btn-sm btn-outline">Request Return</button>
+            {canRequestReplacement && (
+              <button onClick={() => setShowReplacementModal(true)} className="btn-sm btn-outline">
+                <RotateCcw size={13} /> Request Replacement
+              </button>
+            )}
+            {replacementRequested && (
+              <span className="font-body text-xs text-amber-500 self-center flex items-center gap-1.5">
+                <Check size={13} className="text-green-600" /> Replacement requested
+              </span>
             )}
             <Link to="/products" className="btn-sm btn-ghost ml-auto">
               Buy Again <ArrowRight size={13} />
             </Link>
           </div>
         </div>
+      )}
+
+      {showReplacementModal && (
+        <ReplacementModal
+          orderId={order.id}
+          onClose={() => setShowReplacementModal(false)}
+          onSuccess={() => {
+            setReplacementRequested(true);
+            setStatus("replacement_requested");
+            setShowReplacementModal(false);
+          }}
+        />
       )}
     </div>
   );
@@ -273,9 +379,9 @@ export default function MyOrders() {
 
   const filtered = orders.filter((o) => {
     if (filter === "all")       return true;
-    if (filter === "active")    return !["delivered","cancelled","returned","refunded"].includes(o.status);
+    if (filter === "active")    return !["delivered","cancelled","replacement_completed"].includes(o.status);
     if (filter === "delivered") return o.status === "delivered";
-    if (filter === "cancelled") return ["cancelled","returned","refunded"].includes(o.status);
+    if (filter === "cancelled") return ["cancelled","replacement_completed"].includes(o.status);
     return true;
   });
 
@@ -310,9 +416,9 @@ export default function MyOrders() {
             {f.key !== "all" && (
               <span className="ml-1 font-num">
                 ({orders.filter((o) => {
-                  if (f.key === "active")    return !["delivered","cancelled","returned","refunded"].includes(o.status);
+                  if (f.key === "active")    return !["delivered","cancelled","replacement_completed"].includes(o.status);
                   if (f.key === "delivered") return o.status === "delivered";
-                  if (f.key === "cancelled") return ["cancelled","returned","refunded"].includes(o.status);
+                  if (f.key === "cancelled") return ["cancelled","replacement_completed"].includes(o.status);
                   return false;
                 }).length})
               </span>
