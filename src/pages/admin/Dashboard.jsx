@@ -82,22 +82,39 @@ export default function Dashboard() {
     }, 0);
     try {
       const [kRes, cRes, oRes] = await Promise.allSettled([
-        API.get("/dashboard/kpis"),
-        API.get("/dashboard/charts"),
-        API.get("/orders?limit=8&sort=newest"),
+        API.get("/dashboard/summary"),
+        API.get("/dashboard/revenue-chart", { params: { period: "daily" } }),
+        API.get("/orders/admin/get-all", { params: { limit: 8 } }),
       ]);
       if (kRes.status === "fulfilled") {
-        console.log(kRes.value.data);
-        setKpis(kRes.value.data?.kpis || kRes.value.data || {});
+        const s = kRes.value.data?.summary ?? {};
+        setKpis({
+          totalRevenue:  s.allTime?.revenue       ?? 0,
+          totalOrders:   s.allTime?.orders        ?? 0,
+          totalProducts: s.products?.total        ?? 0,
+          totalUsers:    s.customers?.total       ?? 0,
+          ordersToday:   s.today?.orders          ?? 0,
+          pending:       s.orderStatus?.pending   ?? 0,
+          delivered:     s.orderStatus?.delivered ?? 0,
+          cancelled:     s.orderStatus?.cancelled ?? 0,
+          breakdown:     s.orderStatus            ?? {},
+        });
       }
       if (cRes.status === "fulfilled") {
-        console.log(cRes.value.data);
-        setCharts(cRes.value.data?.charts || cRes.value.data || {});
+        const raw = cRes.value.data?.chart ?? [];
+        setCharts({
+          revenueByDay: raw.slice(-7).map((r) => ({
+            label: new Date(r.period).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+            value: r.revenue,
+          })),
+        });
       }
       if (oRes.status === "fulfilled") {
-        console.log(oRes.value.data);
         setRecentOrders(oRes.value.data?.orders || []);
       }
+      console.log(kRes);
+      console.log(cRes);
+      console.log(oRes);
     } finally {
       clearTimeout(timer);
       setLoading(false);
@@ -187,7 +204,7 @@ export default function Dashboard() {
 
         <AdminCard>
           <p className="font-body text-sm font-bold text-gray-900 mb-4">Order Status</p>
-          <StatusBreakdown breakdown={charts?.ordersByStatus || {}} />
+          <StatusBreakdown breakdown={kpis?.breakdown || {}} />
         </AdminCard>
       </div>
 

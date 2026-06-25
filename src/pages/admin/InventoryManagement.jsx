@@ -110,7 +110,7 @@ export default function InventoryManagement() {
             className="w-10 h-10 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
             onError={(e) => { e.target.src = PH; }}
           />
-          <div>
+          <div className="min-w-0">
             <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">
               {r.productName}</p>
             <p className="font-body text-xs text-gray-400">{r.categoryName}</p>
@@ -172,7 +172,7 @@ export default function InventoryManagement() {
             <p className="font-body text-xs text-gray-500 mt-0.5">Out of Stock</p>
           </div>
         </AdminCard>
-        <AdminCard className="flex items-center gap-3 py-3.5 sm:col-span-2">
+        <AdminCard className="flex items-center gap-3 py-3.5 col-span-2 sm:col-span-2">
           <div className="p-2 rounded-xl bg-green-50">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
               <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />

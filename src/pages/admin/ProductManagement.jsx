@@ -135,10 +135,10 @@ export default function ProductManagement() {
       render: (r) => (
         <button
           onClick={() => setModal(r)}
-          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity w-full min-w-0"
         >
           <img src={r.primaryImage || PH} alt={r.nameEn} className="w-10 h-10 rounded-xl object-cover bg-amber-50 border border-amber-100 shrink-0" onError={(e) => { e.target.src = PH; }} />
-          <div>
+          <div className="min-w-0">
             <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1 hover:text-brand-700 transition-colors">{r.nameEn}</p>
             {r.nameTa && <p className="font-tamil text-[11px] text-gray-400">{r.nameTa}</p>}
           </div>
@@ -202,23 +202,25 @@ export default function ProductManagement() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 w-full">
-        <div className="w-[73%] sm:flex-1">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
+        <div className="w-full sm:flex-1">
           <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-full" />
         </div>
-        <div className="w-[27%] sm:w-36 shrink-0">
-          <Dropdown
-            value={catFilter}
-            onChange={(v) => { setCatFilter(v); setPage(1); }}
-            placeholder="All categories"
-            options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-36 shrink-0">
+            <Dropdown
+              value={catFilter}
+              onChange={(v) => { setCatFilter(v); setPage(1); }}
+              placeholder="All categories"
+              options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+            />
+          </div>
+          {(search || catFilter) && (
+            <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1">
+              <X size={14} /> <span>Clear</span>
+            </button>
+          )}
         </div>
-        {(search || catFilter) && (
-          <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0">
-            <X size={14} /> <span className="hidden sm:inline">Clear</span>
-          </button>
-        )}
       </div>
 
       <TableFormat columns={COLS} rows={products} loading={loading} emptyText="No products found." />
