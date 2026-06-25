@@ -23,36 +23,61 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Intercept 401/403 errors and attempt a silent token refresh
+// Single in-flight refresh promise shared across all concurrent 401 responses.
+// Without this, if 3 requests expire at the same time all 3 would independently
+// call /refresh-token — wasting calls now, and breaking outright if refresh
+// tokens are ever rotated (the 2nd and 3rd calls would use an already-invalidated token).
+let refreshPromise = null;
+
+// Response Interceptor: silent token refresh on 401
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry
-    ) {
-      originalRequest._retry = true;
-      const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
-      if (refreshToken) {
-        try {
-          // Use standard axios to perform refresh post so we don't trigger the interceptor request loop
-          const res = await axios.post(`${API_URL}/auth/refresh-token`, { refreshToken });
-          if (res.data && res.data.accessToken) {
-            setAccessToken(res.data.accessToken);
-            originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
-            return API(originalRequest);
-          }
-        } catch (refreshErr) {
-          console.error("Silent token refresh failed:", refreshErr);
-        }
-      }
-      // Log out if token refresh fails or no refresh token is found
+
+    // Only intercept first-time 401s — anything else passes through as-is
+    if (!error.response || error.response.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+    const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
+
+    if (!refreshToken) {
       logout();
       return Promise.reject(new Error("Session expired. Please log in again."));
     }
-    return Promise.reject(error);
+
+    try {
+      // Reuse the in-flight refresh if one is already running (deduplication).
+      // All concurrent 401 responses await the same single refresh call.
+      if (!refreshPromise) {
+        refreshPromise = axios
+          .post(`${API_URL}/auth/refresh-token`, { refreshToken })
+          .finally(() => { refreshPromise = null; });
+      }
+
+      const res = await refreshPromise;
+
+      if (!res.data?.accessToken) {
+        logout();
+        return Promise.reject(new Error("Session expired. Please log in again."));
+      }
+
+      setAccessToken(res.data.accessToken);
+      originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
+      return API(originalRequest);
+    } catch (refreshErr) {
+      // Only force-logout when the server explicitly rejected the refresh token.
+      // A network error (refreshErr.response is undefined) means the server was
+      // temporarily unreachable — keep the user logged in so they can retry once
+      // connectivity is restored (important on cold-start deploys).
+      const status = refreshErr.response?.status;
+      if (status === 401 || status === 403) {
+        logout();
+      }
+      return Promise.reject(refreshErr);
+    }
   }
 );
 

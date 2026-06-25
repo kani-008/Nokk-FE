@@ -297,32 +297,36 @@ export default function OrderManagement() {
     <AdminPage title="Orders" sub="Manage and track all customer orders">
 
       {/* filters */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap w-full">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-[52%] sm:w-[918px]" />
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
+        <div className="w-full sm:flex-1">
+          <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-full" />
+        </div>
 
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="field-input w-[20%] sm:w-36"
-        >
-          <option value="">All statuses</option>
-          {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-        </select>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            className="field-input flex-1 sm:w-36"
+          >
+            <option value="">All statuses</option>
+            {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
 
-        <select
-          value={payment}
-          onChange={(e) => { setPayment(e.target.value); setPage(1); }}
-          className="field-input w-[20%] sm:w-36"
-        >
-          <option value="">All payment</option>
-          {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
-        </select>
+          <select
+            value={payment}
+            onChange={(e) => { setPayment(e.target.value); setPage(1); }}
+            className="field-input flex-1 sm:w-36"
+          >
+            <option value="">All payment</option>
+            {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
+          </select>
 
-        {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors">
-            <X size={14} /> Clear
-          </button>
-        )}
+          {hasFilters && (
+            <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
+              <X size={14} /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />

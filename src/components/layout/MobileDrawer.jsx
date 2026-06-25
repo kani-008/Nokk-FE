@@ -118,7 +118,7 @@ export default function MobileDrawer({
             )}
             */}
 
-            {navLinks.map((l) => (
+            {navLinks.filter((l) => l.label !== "Orders").map((l) => (
               <MobileNavLink key={l.label} to={l.to} onClick={onClose}>
                 {l.label}
               </MobileNavLink>

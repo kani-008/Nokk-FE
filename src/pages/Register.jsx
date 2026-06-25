@@ -8,15 +8,15 @@ import API from "../ApiCall/Api.jsx";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 
-// ─── Logo URL — replace with real cloud URL when available ────────────
+//Logo URL — replace with real cloud URL when available
 const LOGO_URL = null;
 
-// ─── MOCK BYPASS — remove once the real backend is wired up ───────────
+//MOCK BYPASS — remove once the real backend is wired up
 
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
 
-// ── tiny helpers ───────────────────────────────────────────────────────
+//tiny helpers
 const isValidPhone = (v) => /^[6-9]\d{9}$/.test(v.trim());
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -138,16 +138,24 @@ export default function Register() {
         return Object.keys(e).length === 0;
     };
 
-    // ── Step 1 → 2 : send OTP ────────────────────────────────────────────
+    // ── Step 1 → 2 : send OTP (or bypass to step 3 in dev) ──────────────
     const handleSendOtp = async (e) => {
         e.preventDefault();
         if (!validateStep1()) return;
-
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone: form.phone, identifier: form.phone });
+            // Always check for duplicate phone first, regardless of env
+            await API.post("/auth/check-phone", { phone: form.phone });
+
+            if (import.meta.env.DEV) {
+                // Skip OTP entirely in local dev — jump straight to password step
+                setView("password");
+                return;
+            }
+
+            await API.post("/auth/register-otp", { phone: form.phone });
             setView("otp");
-            setOtpExpiryTime(Date.now() + 180 * 1000); // 3 minutes background expiry
+            setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
             setApiErr(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
@@ -160,8 +168,8 @@ export default function Register() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone: form.phone, identifier: form.phone });
-            setOtpExpiryTime(Date.now() + 180 * 1000); // restart 3 minutes timer
+            await API.post("/auth/register-otp", { phone: form.phone });
+            setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
             setApiErr(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {

@@ -442,10 +442,20 @@ export default function Login() {
                                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
                                         {isPhoneLike(form.identifier) ? <Phone size={18} /> : <Mail size={18} />}
                                     </span>
-                                    <input
+                                                                    <input
                                         type="text"
                                         value={form.identifier}
-                                        onChange={(e) => set("identifier", e.target.value)}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            const isNumeric = /^[0-9+\s-]*$/.test(val);
+                                            if (isNumeric) {
+                                                const digits = val.replace(/\D/g, "");
+                                                if (digits.length > 10) {
+                                                    val = digits.slice(0, 10);
+                                                }
+                                            }
+                                            set("identifier", val);
+                                        }}
                                         onKeyDown={handleLoginKeyDown}
                                         placeholder="10-digit mobile number or you@example.com"
                                         className="field-input pl-10"

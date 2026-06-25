@@ -168,7 +168,7 @@ export default function Checkout() {
       useCartStore.getState().clearCartLocal();
 
       setPlacedOrderId(res.order?.id);
-      if (payMethod !== "upi") {
+      if (payMethod !== "upi" || import.meta.env.DEV) {
         navigate("/my-orders", { state: { newOrderId: res.order?.id } });
       }
     } catch (err) {

@@ -453,38 +453,42 @@ export default function UserManagement() {
   return (
     <AdminPage title="Users" sub="Manage customer accounts and permissions">
 
-      <div className="flex items-center gap-2 sm:gap-5 flex-wrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-[5%6] sm:w-[918px]" />
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
+        <div className="w-full sm:flex-1">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-full" />
+        </div>
 
-        <CustomDropdown
-          value={roleFilter}
-          onChange={(val) => { setRoleFilter(val); setPage(1); }}
-          options={[
-            { value: "", label: "All" },
-            { value: "customer", label: "Customer" },
-            { value: "admin", label: "Admin" },
-          ]}
-          placeholder="All"
-          className="w-[19.5%] sm:w-34"
-        />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <CustomDropdown
+            value={roleFilter}
+            onChange={(val) => { setRoleFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All" },
+              { value: "customer", label: "Customer" },
+              { value: "admin", label: "Admin" },
+            ]}
+            placeholder="All"
+            className="flex-1 sm:w-34"
+          />
 
-        <CustomDropdown
-          value={status}
-          onChange={(val) => { setStatus(val); setPage(1); }}
-          options={[
-            { value: "", label: "All" },
-            { value: "active", label: "Active" },
-            { value: "blocked", label: "Blocked" },
-          ]}
-          placeholder="All"
-          className="w-[19.5%] sm:w-34"
-        />
+          <CustomDropdown
+            value={status}
+            onChange={(val) => { setStatus(val); setPage(1); }}
+            options={[
+              { value: "", label: "All" },
+              { value: "active", label: "Active" },
+              { value: "blocked", label: "Blocked" },
+            ]}
+            placeholder="All"
+            className="flex-1 sm:w-34"
+          />
 
-        {(search || roleFilter || status) && (
-          <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors">
-          <X size={14} /> Clear
-          </button>
-        )}
+          {(search || roleFilter || status) && (
+            <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
+              <X size={14} /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (

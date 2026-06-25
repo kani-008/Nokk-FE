@@ -103,6 +103,14 @@ export default function NavBar() {
     return location.pathname === to;
   };
 
+  const navLinks = [
+    { label: "Products", to: "/products" },
+    { label: "Offers", to: "/offers" },
+    { label: "Bestsellers", to: "/products?isBestseller=true" },
+    { label: "Today's Deals", to: "/offers" },
+    ...(isAuthenticated ? [{ label: "Orders", to: "/my-orders" }] : []),
+  ];
+
   return (
     <header className="sticky top-0 z-50 shadow-sm">
 
@@ -189,7 +197,7 @@ export default function NavBar() {
                 )}
               </div>
 
-              {NAV_LINKS.map((l) => (
+              {navLinks.map((l) => (
                 <Link
                   key={l.label}
                   to={l.to}
@@ -359,7 +367,7 @@ export default function NavBar() {
       <MobileDrawer
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        navLinks={NAV_LINKS}
+        navLinks={navLinks}
         categories={categories}
         mobileCatOpen={mobileCatOpen}
         onToggleMobileCat={() => setMobileCatOpen((s) => !s)}

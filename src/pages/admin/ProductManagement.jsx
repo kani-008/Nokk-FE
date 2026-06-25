@@ -202,9 +202,11 @@ export default function ProductManagement() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-[56%] sm:w-[1100px]" />
-        <div className="w-[20%] sm:w-36">
+      <div className="flex items-center gap-2 w-full">
+        <div className="w-[73%] sm:flex-1">
+          <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-full" />
+        </div>
+        <div className="w-[27%] sm:w-36 shrink-0">
           <Dropdown
             value={catFilter}
             onChange={(v) => { setCatFilter(v); setPage(1); }}
@@ -213,8 +215,8 @@ export default function ProductManagement() {
           />
         </div>
         {(search || catFilter) && (
-          <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500">
-            <X size={14} /> Clear
+          <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0">
+            <X size={14} /> <span className="hidden sm:inline">Clear</span>
           </button>
         )}
       </div>

@@ -185,10 +185,12 @@ export default function InventoryManagement() {
         </AdminCard>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search product, SKU…" className="w-[100%] sm:w-[600px]" />
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
+        <div className="w-full sm:w-[600px]">
+          <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search product, SKU…" className="w-full" />
+        </div>
 
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-[100%] sm:w-auto sm:flex-1">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-full sm:w-auto sm:flex-1">
           {[
             { key: "all", label: "All" },
             { key: "out", label: "Out of Stock" },
