@@ -169,7 +169,7 @@ export function WhyUs() {
     {
       emoji: "🎣",
       title: "Direct from Fishermen",
-      desc: "We partner directly with Rameswaram fishing families — no middleman, ensuring maximum freshness.",
+      desc: "We partner directly with coastal fishing families — no middleman, ensuring maximum freshness.",
     },
     {
       emoji: "☀️",
@@ -213,7 +213,7 @@ export function Testimonials() {
     {
       name: "Meena Sundaram",
       location: "Chennai",
-      text: "The nethili is exactly like what my paati used to buy in Rameswaram. Freshness and quality is unmatched. Ordering for 6 months now.",
+      text: "The nethili is exactly like what my paati used to buy from the coast. Freshness and quality is unmatched. Ordering for 6 months now.",
       rating: 5,
     },
     {

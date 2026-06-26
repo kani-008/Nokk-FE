@@ -4,7 +4,7 @@
     "nameEn": "Nethili Karuvadu (Sun-Dried Anchovy)",
     "nameTa": "நெத்திலி கருவாடு",
     "slug": "nethili-karuvadu",
-    "description": "Authentic sun-dried Nethili (Anchovies) sourced directly from Rameswaram fishermen. Traditionally processed with optimal salt and sun-dried under hygienic conditions. Rich in protein, Omega-3 fatty acids, and calcium.",
+    "description": "Authentic sun-dried Nethili (Anchovies) sourced directly from coastal fishermen. Traditionally processed with optimal salt and sun-dried under hygienic conditions. Rich in protein, Omega-3 fatty acids, and calcium.",
     "howToUse": "Wash thoroughly in warm water 2-3 times before cooking. Best suited for spicy karuvadu gravy (Kuzhambu) or crispy shallow fry.",
     "storageTips": "Store in an airtight container in a cool, dry place. Refrigiration extends shelf life up to 6 months.",
     "categoryId": "cat-1",
@@ -22,7 +22,7 @@
       { "id": "v-1-3", "weightLabel": "1kg", "weightGrams": 1000, "price": 850, "comparePrice": 1050, "stockQty": 15 }
     ],
     "reviews": [
-      { "id": "r-1", "userName": "Karthik R.", "rating": 5, "title": "Excellent Quality", "comment": "Very clean and perfectly salted. Tastes just like the ones we get directly at Rameswaram.", "isVerified": true, "createdAt": "2026-05-10" },
+      { "id": "r-1", "userName": "Karthik R.", "rating": 5, "title": "Excellent Quality", "comment": "Very clean and perfectly salted. Tastes just like the ones we get directly from the coast.", "isVerified": true, "createdAt": "2026-05-10" },
       { "id": "r-2", "userName": "Meera S.", "rating": 4.5, "title": "Very Tasty", "comment": "Good packaging. No smell leakage. The fish fry turned out extremely crispy.", "isVerified": true, "createdAt": "2026-05-15" }
     ]
   },

@@ -54,8 +54,10 @@ export const useCartStore = create(
       // ── mutations ──────────────────────────────────────────────────
       setItems: (items) => set({ items }),
       setCoupon: (coupon) => set({ coupon }),
-      applyCoupon: (coupon) => set({ coupon }),
       removeCoupon: () => set({ coupon: null }),
+
+      // alias used by ProductDetails.jsx and Wishlist.jsx
+      addItem: (item) => get().addItemLocal(item),
 
       addItemLocal: (item) => {
         const existing = get().items.find((i) => i.variantId === item.variantId);

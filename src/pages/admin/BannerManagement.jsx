@@ -384,7 +384,7 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
               <textarea
                 value={form.subtext}
                 onChange={(e) => set("subtext", e.target.value)}
-                placeholder="e.g. Sourced directly from Rameswaram fishermen — traditionally sun-dried, naturally preserved."
+                placeholder="e.g. Sourced directly from coastal fishermen — traditionally sun-dried, naturally preserved."
                 rows={3}
                 className="field-input resize-none"
               />

@@ -120,7 +120,7 @@ export default function NavBar() {
 
           {/* thin shipping note — folded into the top of the gray bar, not a separate row */}
           <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
-            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from Rameswaram fishermen &nbsp;·&nbsp;
+            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
             <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
           </div>
 

@@ -23,25 +23,19 @@ export default function CustomerLayout() {
   useEffect(() => {
     if (isAuthenticated && token) {
       const syncAndLoad = async () => {
-        // 1. Sync local cart items to server
+        // 1. Sync local cart items to server — all in parallel, ignore individual failures
         const localItems = useCartStore.getState().items;
         if (localItems.length > 0) {
-          for (const item of localItems) {
-            try {
-              await API.post("/cart/add-item", {
-                variantId: item.variantId,
-                quantity: item.quantity,
-              });
-            } catch (err) {
-              // ignore individual failure
-            }
-          }
+          await Promise.all(
+            localItems.map((item) =>
+              API.post("/cart/add-item", { variantId: item.variantId, quantity: item.quantity }).catch(() => {})
+            )
+          );
         }
 
         // 2. Load cart from server
         try {
           const res = await API.get("/cart/get-cart");
-          console.log(res.data);
           const serverItems = (res.data.cart?.items ?? []).map((i) => ({
             itemId:       i.itemId,
             variantId:    i.variantId,
@@ -53,6 +47,8 @@ export default function CustomerLayout() {
             comparePrice: i.comparePrice,
             weight:       i.weightLabel,
             quantity:     i.quantity,
+            slug:         i.slug,
+            inStock:      i.inStock,
           }));
           useCartStore.getState().setItems(serverItems);
         } catch (err) {
