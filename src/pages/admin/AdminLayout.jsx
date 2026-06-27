@@ -9,24 +9,20 @@ import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
 import NotificationPanel from "./Notification.jsx";
 
-// ── Nav items ──────────────────────────────────────────────────────────
-const NAV_GROUPS = [
-  { label: "Overview",  items: [{ to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true }] },
-  { label: "Catalogue", items: [
-      { to: "/admin/products",  label: "Products",  icon: Package },
-      { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
-  ] },
-  { label: "Sales", items: [
-      { to: "/admin/orders",  label: "Orders",  icon: ShoppingBag },
-      { to: "/admin/offers",  label: "Offers",  icon: Tag },
-      { to: "/admin/banners", label: "Banners", icon: Image },
-  ] },
-  { label: "People",   items: [{ to: "/admin/users",   label: "Users",   icon: Users }] },
-  { label: "Insights", items: [{ to: "/admin/reports", label: "Reports", icon: BarChart2 }] },
-  { label: "System",   items: [{ to: "/admin/settings", label: "Settings", icon: Settings }] },
+// ── Nav items — single flat list, no section grouping/labels ───────────
+const NAV_ITEMS = [
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/admin/products",  label: "Products",  icon: Package },
+  { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
+  { to: "/admin/orders",  label: "Orders",  icon: ShoppingBag },
+  { to: "/admin/offers",  label: "Offers",  icon: Tag },
+  { to: "/admin/banners", label: "Banners", icon: Image },
+  { to: "/admin/users",   label: "Users",   icon: Users },
+  { to: "/admin/reports", label: "Reports", icon: BarChart2 },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-const TITLE_LOOKUP = NAV_GROUPS.flatMap((g) => g.items);
+const TITLE_LOOKUP = NAV_ITEMS;
 
 function useIsActive() {
   const { pathname } = useLocation();
@@ -92,18 +88,10 @@ function Sidebar({ collapsed, onClose }) {
         )}
       </div>
 
-      {/* Nav */}
+      {/* Nav — single continuous list, no group labels or dividers */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="mb-1">
-            {!collapsed && (
-              <p className="font-body text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-5 py-1.5">{group.label}</p>
-            )}
-            {collapsed && <div className="border-t border-gray-100 my-2 mx-3" />}
-            {group.items.map((item) => (
-              <NavLink key={item.to} item={item} collapsed={collapsed} onClick={onClose} />
-            ))}
-          </div>
+        {NAV_ITEMS.map((item) => (
+          <NavLink key={item.to} item={item} collapsed={collapsed} onClick={onClose} />
         ))}
       </nav>
 
@@ -147,17 +135,31 @@ function Sidebar({ collapsed, onClose }) {
 }
 
 // ── Top header bar ─────────────────────────────────────────────────────
-function TopBar({ onToggle, onMobileOpen, pathname }) {
+// `searchConfig` — { placeholder, value, onChange } registered by whichever
+// child admin page wants the topbar's search box to drive its own filtering.
+// When no page has registered, the box still renders (desktop) / the icon
+// still renders (mobile) but typing is a no-op — purely cosmetic until a
+// page opts in via useOutletContext().registerSearch(...).
+function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
   const { user } = useAuthStore();
-  const [searchVal,   setSearchVal]   = useState("");
+  const [localSearchVal, setLocalSearchVal] = useState(""); // fallback when no page has registered
   const [notifOpen,   setNotifOpen]   = useState(false);   // drives CSS transition
   const [notifMounted, setNotifMounted] = useState(false); // drives DOM presence
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // mobile expand/collapse state
   const notifRef    = useRef(null);
   const closeTimerRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   const title =
     TITLE_LOOKUP.find((i) => (i.exact ? pathname === i.to : pathname.startsWith(i.to)))?.label ?? "Admin";
+
+  const placeholder = searchConfig?.placeholder ?? "Quick search…";
+  const searchValue = searchConfig?.value ?? localSearchVal;
+  const handleSearchChange = (val) => {
+    if (searchConfig?.onChange) searchConfig.onChange(val);
+    else setLocalSearchVal(val);
+  };
 
   const openNotif = () => {
     clearTimeout(closeTimerRef.current);
@@ -173,6 +175,16 @@ function TopBar({ onToggle, onMobileOpen, pathname }) {
   };
 
   const toggleNotif = () => (notifOpen ? closeNotif() : openNotif());
+
+  const openMobileSearch = () => {
+    setMobileSearchOpen(true);
+    // focus once the expand transition has had a frame to start
+    requestAnimationFrame(() => mobileSearchInputRef.current?.focus());
+  };
+
+  const closeMobileSearch = () => {
+    setMobileSearchOpen(false);
+  };
 
   // poll unread notification count every 60 s
   useEffect(() => {
@@ -202,10 +214,10 @@ function TopBar({ onToggle, onMobileOpen, pathname }) {
   return (
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
 
-      {/* Mobile: opens sidebar drawer */}
+      {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <button
         onClick={onMobileOpen}
-        className="md:hidden p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+        className="md:hidden p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
         aria-label="Open menu"
       >
         <Menu size={20} />
@@ -220,23 +232,66 @@ function TopBar({ onToggle, onMobileOpen, pathname }) {
         <Menu size={19} />
       </button>
 
-      <h1 className="font-display text-base font-bold text-gray-900">{title}</h1>
+      {/* Title — always visible on desktop; hidden on mobile while the search is expanded */}
+      <h1 className={`font-display text-base font-bold text-gray-900 md:inline ${mobileSearchOpen ? "hidden" : ""}`}>
+        {title}
+      </h1>
 
-      <div className="flex-1" />
+      {/* Mobile expanded search — fills the row between hamburger and the right edge,
+          replacing title/notification/avatar for the duration it's open. Explicitly
+          md:hidden so this can never render on desktop even if mobileSearchOpen
+          were somehow true there. */}
+      {mobileSearchOpen && (
+        <div className="md:hidden flex-1 flex items-center gap-2 min-w-0">
+          <div className="relative flex-1 min-w-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={mobileSearchInputRef}
+              type="text"
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={placeholder}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400"
+            />
+          </div>
+          <button
+            onClick={closeMobileSearch}
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+            aria-label="Close search"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
+      {/* Spacer — only when the mobile search isn't occupying the flex-1 slot itself */}
+      <div className={`flex-1 ${mobileSearchOpen ? "hidden md:block" : ""}`} />
+
+      {/* Desktop search box — always visible, page-aware via searchConfig */}
       <div className="relative hidden md:block">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          value={searchVal}
-          onChange={(e) => setSearchVal(e.target.value)}
-          placeholder="Quick search…"
+          value={searchValue}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          placeholder={placeholder}
           className="w-52 bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400"
         />
       </div>
 
-      {/* Notification bell */}
-      <div className="relative" ref={notifRef}>
+      {/* Mobile search icon — hidden once expanded (input above takes its place) */}
+      {!mobileSearchOpen && (
+        <button
+          onClick={openMobileSearch}
+          className="md:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+          aria-label="Open search"
+        >
+          <Search size={18} />
+        </button>
+      )}
+
+      {/* Notification bell + avatar — always visible on desktop; hidden on mobile while search is expanded */}
+      <div className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`} ref={notifRef}>
         <button
           onClick={toggleNotif}
           className={`relative p-2 rounded-xl transition-colors ${notifOpen ? "bg-gray-100 text-gray-700" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
@@ -252,7 +307,7 @@ function TopBar({ onToggle, onMobileOpen, pathname }) {
         {notifMounted && <NotificationPanel open={notifOpen} onClose={closeNotif} onCountChange={setUnreadCount} />}
       </div>
 
-      <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">
+      <div className={`w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0 ${mobileSearchOpen ? "hidden md:flex" : ""}`}>
         {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
       </div>
     </header>
@@ -266,6 +321,23 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const [collapsed,  setCollapsed]  = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ── Page-aware topbar search ──
+  // Any child admin page can call `registerSearch({ placeholder, value, onChange })`
+  // (via useOutletContext()) to make the shared topbar search box drive its own
+  // filtering. Calling `unregisterSearch()` (or unmounting without cleanup) falls
+  // back to the topbar's local, no-op search state.
+  //
+  // No pathname-watching reset is needed here: when navigating to a different
+  // admin page, React unmounts the old page (firing its `unregisterSearch()`
+  // cleanup) before mounting the new one, so stale config never lingers.
+  // (A pathname-effect here would actually be a bug — parent effects run
+  // *after* child effects on mount, so it would wipe out the new page's
+  // registration immediately after it registers.)
+  const [searchConfig, setSearchConfig] = useState(null);
+
+  const registerSearch = useCallback((config) => setSearchConfig(config), []);
+  const unregisterSearch = useCallback(() => setSearchConfig(null), []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -320,10 +392,11 @@ export default function AdminLayout() {
           onToggle={() => setCollapsed((s) => !s)}
           onMobileOpen={() => setMobileOpen(true)}
           pathname={pathname}
+          searchConfig={searchConfig}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 max-w-[1400px] mx-auto">
-            <Outlet />
+            <Outlet context={{ registerSearch, unregisterSearch }} />
           </div>
         </main>
       </div>

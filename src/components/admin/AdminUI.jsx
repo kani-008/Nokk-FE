@@ -168,7 +168,7 @@ export function AdminButton({ children, variant = "primary", size = "md", onClic
       onClick={onClick}
       disabled={disabled}
       className={`
-        inline-flex items-center justify-center font-body font-semibold rounded-xl
+        inline-flex items-center justify-center font-body font-semibold rounded-md
         transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed
         ${sizes[size]} ${variants[variant]} ${className}
       `}

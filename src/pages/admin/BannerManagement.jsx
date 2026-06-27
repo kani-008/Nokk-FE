@@ -546,8 +546,6 @@ export default function BannerManagement() {
 
   return (
     <AdminPage
-      title="Banners"
-      sub="Manage background videos and slide text overlays"
       action={
         activeTab === "videos" ? (
           <AdminButton onClick={() => setModal("new")}>

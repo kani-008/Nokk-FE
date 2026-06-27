@@ -96,10 +96,10 @@ export default function Dashboard() {
   ];
 
   const QUICK_STATS = [
-    { label: "Orders Today", value: kpis?.ordersToday ?? "—", icon: <Clock        size={15} className="text-amber-500"  /> },
-    { label: "Pending",      value: kpis?.pending      ?? "—", icon: <Clock        size={15} className="text-yellow-500" /> },
-    { label: "Delivered",    value: kpis?.delivered    ?? "—", icon: <CheckCircle2 size={15} className="text-green-500"  /> },
-    { label: "Cancelled",    value: kpis?.cancelled    ?? "—", icon: <XCircle      size={15} className="text-red-400"    /> },
+    { label:"Today's Order", value: kpis?.ordersToday ?? "—", icon: <Clock        size={15} className="text-amber-500"  /> },
+    { label: "Pending Order",      value: kpis?.pending      ?? "—", icon: <Clock        size={15} className="text-yellow-500" /> },
+    { label: "Order Delivered",    value: kpis?.delivered    ?? "—", icon: <CheckCircle2 size={15} className="text-green-500"  /> },
+    { label: "Cancelled Order",    value: kpis?.cancelled    ?? "—", icon: <XCircle      size={15} className="text-red-400"    /> },
   ];
 
   const ORDER_COLS = [
@@ -124,8 +124,6 @@ export default function Dashboard() {
 
   return (
     <AdminPage
-      title="Dashboard"
-      sub="Your store at a glance"
       action={
         <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh

@@ -387,8 +387,7 @@ export default function OrderManagement() {
   ];
 
   return (
-    <AdminPage title="Orders" sub="Manage and track all customer orders">
-
+    <AdminPage>
       {/* top-level tabs */}
       <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-fit">
         <button

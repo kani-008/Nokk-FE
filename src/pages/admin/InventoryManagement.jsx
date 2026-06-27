@@ -113,8 +113,6 @@ export default function InventoryManagement() {
 
   return (
     <AdminPage
-      title="Inventory"
-      sub="Track stock levels and update quantities"
       action={
         <button
           onClick={() => refetch()}

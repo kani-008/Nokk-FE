@@ -222,7 +222,7 @@ export default function OfferManagement() {
   ];
 
   return (
-    <AdminPage title="Offers & Coupons" sub="Manage promotional offers and discount codes"
+    <AdminPage
       action={
         <div className="flex gap-2">
           <AdminButton size="sm" variant="outline" onClick={() => setModal({ type: "coupon", data: null })}>

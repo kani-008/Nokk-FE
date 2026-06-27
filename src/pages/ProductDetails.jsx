@@ -117,6 +117,7 @@ function ImageGallery({ images, onShare }) {
               <img
                 src={img.imageUrl || PH}
                 alt={`Product view ${i + 1}`}
+                loading="lazy"
                 className="w-full h-full object-cover"
                 onError={(e) => { e.target.src = PH; }}
               />
@@ -587,6 +588,7 @@ export default function ProductDetails() {
                     <img
                       src={p.primaryImage || PH}
                       alt={p.nameEn}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => { e.target.src = PH; }}
                     />

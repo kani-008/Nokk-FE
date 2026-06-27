@@ -55,6 +55,7 @@ export function CategoryScroll({ categories }) {
               <img
                 src={cat.imageUrl || PH_CAT}
                 alt={cat.nameEn}
+                loading="lazy"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 onError={(e) => { e.target.src = PH_CAT; }}
               />

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
 import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
 import {
-  AdminPage, AdminButton, SearchBar,
+  AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
@@ -11,6 +12,77 @@ import comboImg from "../../assets/products/combo.jpg";
 
 const PH    = comboImg;
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
+
+/**
+ * ── Mobile-only fluid sizing for the Clear / Filter / Add Product cluster ──
+ * Tailwind's `w-40`, `text-sm`, `px-4` etc. are static — they only change
+ * value AT the md breakpoint (768px), so a 340px phone and a 420px phone
+ * render identically below that point. That's fine for most rows, but this
+ * cluster (filter dropdown + button text + Add Product button) is the
+ * widest fixed-content row on this page and can feel cramped on narrow
+ * phones even though it fits fine on a slightly wider one.
+ *
+ * clamp(min, vw-based-preferred, max) scales continuously with the actual
+ * viewport width instead of jumping once, so padding/font-size/width keep
+ * shrinking all the way down to small phones without needing extra
+ * breakpoints or ever overflowing.
+ *
+ * The minimum values below were verified with a headless-browser measurement
+ * pass (not guessed) against the longest realistic category label
+ * ("Prawns & Shrimp") at viewport widths from 320px to 375px: the whole
+ * cluster fits on a single row with zero truncation and zero overflow at
+ * every width in that range, so `flex-wrap` is intentionally NOT used here.
+ *
+ * Wrapped in `@media (max-width: 767.98px)` — one pixel below Tailwind's
+ * `md:` cutoff — so it can never apply at md+ widths. Desktop keeps its
+ * exact original fixed Tailwind sizing (w-40/sm:w-44, AdminButton's default
+ * px-4 py-2 text-sm), completely untouched.
+ */
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .pm-filter-wrap-fluid {
+      width: clamp(9rem, 40vw, 12.5rem) !important;
+    }
+    .pm-filter-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid span.truncate {
+      overflow: visible !important;
+      text-overflow: unset !important;
+      white-space: nowrap !important;
+    }
+    .pm-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .pm-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .pm-add-btn-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
+    }
+    .pm-add-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 15px);
+      height: clamp(12px, 2.8vw, 15px);
+    }
+    .pm-cluster-fluid {
+      gap: clamp(0.3rem, 1.4vw, 0.75rem);
+    }
+  }
+`;
 
 // ── Confirm dialog (replaces native confirm()) ─────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -52,6 +124,20 @@ export default function ProductManagement() {
   const [modal,           setModal]           = useState(null);
   const [pageError,       setPageError]       = useState("");
   const [deleteTarget,    setDeleteTarget]    = useState(null);
+
+  // ── Hand this page's search state to AdminLayout's shared topbar search.
+  // Typing in the topbar box now filters this table directly; no separate
+  // search input is rendered in the page body anymore. Re-registers whenever
+  // `search` changes (e.g. the page's own "Clear" button resetting it) so
+  // the topbar always displays the current value; React batches the
+  // cleanup + re-register within one commit, so there's no visible flicker.
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  useEffect(() => {
+    registerSearch({ placeholder: "Search products…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
@@ -157,9 +243,7 @@ export default function ProductManagement() {
   ];
 
   return (
-    <AdminPage title="Products" sub="Manage your product catalogue"
-      action={<AdminButton onClick={() => setModal("new")}><Plus size={15} /> Add Product</AdminButton>}
-    >
+    <AdminPage>
       {/* page-level error banner (replaces native alert) */}
       {pageError && (
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
@@ -169,25 +253,36 @@ export default function ProductManagement() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
-        <div className="w-full sm:flex-1">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-full" />
+      {/* Clear -> Filter -> Add Product — single cluster, right-aligned, both above
+          the table, always on one line. Search now lives in the topbar (see
+          AdminLayout). On mobile, the dropdown width, Clear button, and Add
+          Product button all shrink smoothly via clamp() (see
+          MOBILE_FLUID_STYLES) instead of jumping at a breakpoint or wrapping —
+          sizing was verified against the longest realistic category label
+          down to 320px viewport width. Desktop sizing (w-40/sm:w-44,
+          AdminButton's default padding) is completely untouched. */}
+      <style>{MOBILE_FLUID_STYLES}</style>
+      <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full">
+        {(search || catFilter) && (
+          <button
+            onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }}
+            className="pm-clear-fluid flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1"
+          >
+            <X size={14} /> <span>Clear</span>
+          </button>
+        )}
+
+        <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+          <Dropdown
+            value={catFilter}
+            onChange={(v) => { setCatFilter(v); setPage(1); }}
+            placeholder="All categories"
+            options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+            className="pm-filter-fluid"
+          />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="w-full sm:w-36 shrink-0">
-            <Dropdown
-              value={catFilter}
-              onChange={(v) => { setCatFilter(v); setPage(1); }}
-              placeholder="All categories"
-              options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
-            />
-          </div>
-          {(search || catFilter) && (
-            <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1">
-              <X size={14} /> <span>Clear</span>
-            </button>
-          )}
-        </div>
+
+        <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0"><Plus size={15} /> Add Product</AdminButton>
       </div>
 
       <TableFormat columns={COLS} rows={products} loading={loading} emptyText="No products found." />

@@ -74,8 +74,6 @@ export default function ReportManagement() {
 
   return (
     <AdminPage
-      title="Reports"
-      sub="Sales analytics and performance insights"
       action={
         <div className="flex gap-2">
           <AdminButton variant="outline" size="sm" onClick={() => refetch()} disabled={refreshing}>

@@ -379,7 +379,7 @@ function ThemeSection({ themeColor, bgColor, onChange }) {
   );
 }
 
-// ── Social Links section ───────────────────────────────────────────────
+// Social Links section 
 function SocialField({ icon: Icon, label, name, value, onChange, placeholder, color }) {
   return (
     <div>
@@ -393,14 +393,13 @@ function SocialField({ icon: Icon, label, name, value, onChange, placeholder, co
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
+
 export default function Settings() {
   const [form,    setForm]    = useState({ ...DEFAULTS });
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState("");
-
   const [payForm,     setPayForm]     = useState({ ...PAYMENT_DEFAULTS });
   const [paySaved,    setPaySaved]    = useState(false);
   const [payError,    setPayError]    = useState("");
@@ -410,14 +409,12 @@ export default function Settings() {
 
   useEffect(() => {
     if (paySettings) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPayForm(paySettings);
     }
   }, [paySettings]);
 
   useEffect(() => {
     if (payQueryError) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPayError("Failed to load payment details.");
     }
   }, [payQueryError]);
@@ -490,8 +487,6 @@ export default function Settings() {
 
   return (
     <AdminPage
-      title="Settings"
-      sub="Configure store preferences, appearance, and integrations"
       action={
         <AdminButton onClick={handleSave} disabled={saving}>
           {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> :

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
 import {
@@ -417,7 +417,7 @@ export default function UserManagement() {
   ];
 
   return (
-    <AdminPage title="Users" sub="Manage customer accounts and permissions">
+    <AdminPage>
 
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
         <div className="w-full sm:flex-1">
