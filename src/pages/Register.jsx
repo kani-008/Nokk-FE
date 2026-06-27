@@ -229,9 +229,6 @@ export default function Register() {
         setErrors({});
         setOtpExpiryTime(0);
     };
-
-    // On success we DON'T auto-login — we send the person to /login so they
-    // sign in with their new credentials themselves.
     const handleSetPassword = async (e) => {
         e.preventDefault();
         if (!validateStep3()) return;

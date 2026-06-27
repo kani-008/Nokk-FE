@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart, Star, Trash2, ArrowRight } from "lucide-react";
 import { useWishlistStore } from "../components/store/WishlistStore";
@@ -43,10 +43,11 @@ function WishCard({ product, onRemove }) {
   const image    = product.primaryImage || PH;
   const firstV   = product.variants?.[0];
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.preventDefault();
     if (!firstV) return;
-    addItem({
+
+    const itemData = {
       variantId:    firstV.id,
       productId:    product.id,
       productName:  product.nameEn,
@@ -55,7 +56,35 @@ function WishCard({ product, onRemove }) {
       price:        firstV.price,
       comparePrice: firstV.comparePrice,
       weight:       firstV.weightLabel,
-    });
+      quantity:     1
+    };
+
+    if (token) {
+      try {
+        const response = await API.post("/cart/add-item", {
+          variantId: firstV.id,
+          quantity: 1,
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("addItem server sync failed:", err);
+      }
+    } else {
+      addItem(itemData);
+    }
   };
 
   const handleRemove = async (e) => {
@@ -157,6 +186,9 @@ export default function Wishlist() {
   const [loading,  setLoading]  = useState(false);
   const [localIds, setLocalIds] = useState(ids);   // local mirror so removal is instant
 
+  const productsRef = useRef(products);
+  productsRef.current = products;
+
   // ── On mount: sync from server if logged in ───────────────────────
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -179,6 +211,20 @@ export default function Wishlist() {
   // ── Fetch product details whenever localIds change ────────────────
   useEffect(() => {
     let active = true;
+
+    // Check if all needed product details are already loaded
+    const currentProductIds = productsRef.current.map((p) => p.id);
+    const hasAllProducts = localIds.every((id) => currentProductIds.includes(id));
+
+    if (hasAllProducts) {
+      // If we already have the data, just filter the list locally (handles removals without API requests)
+      const filtered = productsRef.current.filter((p) => localIds.includes(p.id));
+      if (filtered.length !== productsRef.current.length) {
+        setProducts(filtered);
+      }
+      return;
+    }
+
     if (!localIds.length) {
       const timer = setTimeout(() => {
         if (active) setProducts([]);
@@ -189,18 +235,19 @@ export default function Wishlist() {
       };
     }
 
+    // Only set loading to true (show skeletons) if we don't have any products loaded yet
     const timer = setTimeout(() => {
-      if (active) setLoading(true);
-    }, 0);
+      if (active && productsRef.current.length === 0) setLoading(true);
+    }, 50);
 
     const fetchProducts = async () => {
       try {
-        const response = await API.get(`/products/get-all?limit=999`);
+        // Fetch only the specific wishlisted product IDs
+        const response = await API.get(`/products/get-all?ids=${localIds.join(",")}&limit=999`);
         console.log(response.data);
         if (!active) return;
         const allProducts = response.data.products || [];
-        const fetched = allProducts.filter(p => localIds.includes(p.id));
-        setProducts(fetched);
+        setProducts(allProducts);
       } catch (err) {
         console.error("Failed to load wishlist products:", err);
       } finally {

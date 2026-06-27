@@ -1,31 +1,42 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-/* Customer Layouts */
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+/* Layouts & Guards */
 import CustomerLayout from "./components/layout/CustomerLayout";
-/* Route Guard */
 import ProtectedRoute from "./components/route/ProtectedRoute";
-/* Customer Pages */
+
+/* Core / Home Page */
 import Home from "./pages/Home";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetails";
+
+/* Authentication & Profile Features */
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/profile";
+
+/* Catalog & Shopping Features */
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetails";
+import Wishlist from "./pages/Wishlist";
+import Offers from "./pages/Offers";
+
+/* Cart & Checkout Features */
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
-import Profile from "./pages/profile";
-import Wishlist from "./pages/Wishlist";
-import Offers from "./pages/Offers";
-/* Admin Pages */
-import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
-import ProductManagement from "./pages/admin/ProductManagement";
-import OrderManagement from "./pages/admin/OrderManagement";
-import UserManagement from "./pages/admin/UserManagement";
-import OfferManagement from "./pages/admin/OfferManagement";
-import BannerManagement from "./pages/admin/BannerManagement";
-import InventoryManagement from "./pages/admin/InventoryManagement";
-import ReportManagement from "./pages/admin/ReportManagement";
-import Settings from "./pages/admin/Settings";
+
+/* Lazy Loaded Admin Pages (reduces initial bundle size) */
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const ProductManagement = lazy(() => import("./pages/admin/ProductManagement"));
+const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const OfferManagement = lazy(() => import("./pages/admin/OfferManagement"));
+const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
+const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
+const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -40,19 +51,33 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/offers" element={<Offers />} />
+          <Route path="/wishlist" element={<Wishlist />} />
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/wishlist" element={<Wishlist />} />
           </Route>
         </Route>
 
         {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute adminOnly redirectTo="/login" />}>
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route
+            path="/admin"
+            element={
+              <Suspense
+                fallback={
+                  <div className="min-h-screen flex flex-col items-center justify-center bg-sandal-50">
+                    <Loader2 className="animate-spin text-amber-500 mb-2" size={32} />
+                    <p className="font-body text-sm text-amber-600 font-semibold">Loading Admin Panel...</p>
+                  </div>
+                }
+              >
+                <AdminLayout />
+              </Suspense>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="orders" element={<OrderManagement />} />

@@ -125,13 +125,13 @@ export default function MobileDrawer({
             ))}
 
             <div className="border-t border-sandal-100 mt-1 pt-1">
+              <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={onClose}>
+                Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
+              </MobileNavLink>
               {isAuthenticated ? (
                 <>
                   <MobileNavLink to="/profile"   icon={<User size={16} />}    onClick={onClose}>My Profile</MobileNavLink>
                   <MobileNavLink to="/my-orders" icon={<ClipboardList size={16} />} onClick={onClose}>My Orders</MobileNavLink>
-                  <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={onClose}>
-                    Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
-                  </MobileNavLink>
                   {user?.role === "admin" && (
                     <MobileNavLink to="/admin" icon={<Settings size={16} />} onClick={onClose} highlight>
                       Admin Panel

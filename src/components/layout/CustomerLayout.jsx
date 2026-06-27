@@ -55,15 +55,21 @@ export default function CustomerLayout() {
           console.error("loadFromServer cart failed:", err);
         }
 
-        // 3. Load wishlist from server
+        // 3. Sync and merge local guest wishlist items to server
+        const localWishlistIds = useWishlistStore.getState().ids;
         try {
-          const res = await API.get("/wishlist/get-wishlist");
+          let res;
+          if (localWishlistIds.length > 0) {
+            res = await API.post("/wishlist/merge", { productIds: localWishlistIds });
+          } else {
+            res = await API.get("/wishlist/get-wishlist");
+          }
           console.log(res.data);
           const serverIds = (res.data.wishlist ?? []).map((i) => i.productId);
           const merged = Array.from(new Set([...useWishlistStore.getState().ids, ...serverIds]));
           useWishlistStore.getState().setIds(merged);
         } catch (err) {
-          console.error("loadFromServer wishlist failed:", err);
+          console.error("sync/load wishlist failed:", err);
         }
       };
 
@@ -75,7 +81,7 @@ export default function CustomerLayout() {
     <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
       <NavBar />
-      <main className="flex-1">
+      <main className="flex-1 pt-16 sm:pt-[88px]">
         <Outlet />
       </main>
       {/* Hide footer on mobile view alone for the login and register pages */}

@@ -1,9 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  ShoppingCart, Heart, User, Menu, X, Search,
-  ChevronDown, Package, LogOut, Settings,
-  Tag, Grid3x3,
+  ShoppingCart,
+  Heart,
+  User,
+  Menu,
+  X,
+  Search,
+  ChevronDown,
+  Package,
+  LogOut,
+  Settings,
+  Tag,
+  Grid3x3,
 } from "lucide-react";
 import Logo from "./Logo";
 import MobileDrawer from "./MobileDrawer.jsx";
@@ -36,7 +45,9 @@ export default function NavBar() {
   const catDropdownRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
-  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const cartCount = useCartStore((s) =>
+    s.items.reduce((n, i) => n + i.quantity, 0),
+  );
   const wishlistCount = useWishlistStore((s) => s.ids.length);
 
   // fetch categories once for the category strip
@@ -56,9 +67,12 @@ export default function NavBar() {
   // close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
-      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target)) setCatDropdownOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target))
+        setProfileOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setSearchOpen(false);
+      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target))
+        setCatDropdownOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -78,7 +92,9 @@ export default function NavBar() {
   // lock page scroll while the mobile drawer is open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   const handleSearch = (e) => {
@@ -112,26 +128,32 @@ export default function NavBar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 shadow-sm">
-
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-sm">
       {/* ── Main bar — single unified gray bar (Amazon-style) ──────── */}
       <div className="bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-
           {/* thin shipping note — folded into the top of the gray bar, not a separate row */}
           <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
-            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
-            <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
+            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal
+            fishermen &nbsp;·&nbsp;
+            <Link
+              to="/offers"
+              className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1"
+            >
+              Today's Deals
+            </Link>
           </div>
 
           <div className="flex items-center h-16 gap-3">
-
             {/* Logo — pinned to the true far-left edge */}
             <Logo className="shrink-0 mr-2" inverse />
 
             {/* Desktop search — grows to fill center space */}
             {location.pathname !== "/products" && (
-              <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
+              <form
+                onSubmit={handleSearch}
+                className="hidden md:flex flex-1 max-w-md mx-4"
+              >
                 <div className="relative w-full">
                   <input
                     type="text"
@@ -161,14 +183,18 @@ export default function NavBar() {
               >
                 <button
                   onClick={() => setCatDropdownOpen((prev) => !prev)}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${catDropdownOpen
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                    catDropdownOpen
                       ? "bg-white/10 text-white"
                       : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                    }`}
+                  }`}
                 >
                   <Grid3x3 size={14} />
                   Categories
-                  <ChevronDown size={14} className={`transition-transform duration-200 ${catDropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${catDropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
 
                 {catDropdownOpen && (
@@ -190,7 +216,11 @@ export default function NavBar() {
                         className="flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-700 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
                       >
                         <span>{cat.nameEn}</span>
-                        {cat.nameTa && <span className="font-tamil text-[10px] text-sandal-400 font-normal">{cat.nameTa}</span>}
+                        {cat.nameTa && (
+                          <span className="font-tamil text-[10px] text-sandal-400 font-normal">
+                            {cat.nameTa}
+                          </span>
+                        )}
                       </Link>
                     ))}
                   </div>
@@ -201,10 +231,11 @@ export default function NavBar() {
                 <Link
                   key={l.label}
                   to={l.to}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${isActive(l.to)
+                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
+                    isActive(l.to)
                       ? "bg-white/10 text-white"
                       : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                    }`}
+                  }`}
                 >
                   {l.label}
                 </Link>
@@ -213,7 +244,6 @@ export default function NavBar() {
 
             {/* Right icon group */}
             <div className="flex items-center gap-1.5 ml-auto">
-
               {/* Mobile search toggle */}
               {location.pathname !== "/products" && (
                 <button
@@ -265,9 +295,16 @@ export default function NavBar() {
                       {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
                     </div>
                     <span className="font-body text-sm font-semibold max-w-[80px] truncate text-sandal-100">
-                      {(user?.fullName ?? user?.name ?? "Account").split(" ")[0]}
+                      {
+                        (user?.fullName ?? user?.name ?? "Account").split(
+                          " ",
+                        )[0]
+                      }
                     </span>
-                    <ChevronDown size={14} className={`transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
 
                   {/* Desktop dropdown */}
@@ -282,14 +319,35 @@ export default function NavBar() {
                           {user?.phone ?? user?.email}
                         </p>
                       </div>
-                      <DropItem to="/profile" icon={<User size={14} />} label="My Profile" />
-                      <DropItem to="/my-orders" icon={<Package size={14} />} label="My Orders" />
-                      <DropItem to="/wishlist" icon={<Heart size={14} />} label="Wishlist" />
-                      <DropItem to="/offers" icon={<Tag size={14} />} label="Offers" />
+                      <DropItem
+                        to="/profile"
+                        icon={<User size={14} />}
+                        label="My Profile"
+                      />
+                      <DropItem
+                        to="/my-orders"
+                        icon={<Package size={14} />}
+                        label="My Orders"
+                      />
+                      <DropItem
+                        to="/wishlist"
+                        icon={<Heart size={14} />}
+                        label="Wishlist"
+                      />
+                      <DropItem
+                        to="/offers"
+                        icon={<Tag size={14} />}
+                        label="Offers"
+                      />
                       {user?.role === "admin" && (
                         <>
                           <div className="border-t border-sandal-100 my-1" />
-                          <DropItem to="/admin" icon={<Settings size={14} />} label="Admin Panel" highlight />
+                          <DropItem
+                            to="/admin"
+                            icon={<Settings size={14} />}
+                            label="Admin Panel"
+                            highlight
+                          />
                         </>
                       )}
                       <div className="border-t border-sandal-100 mt-1 pt-1">
@@ -341,7 +399,10 @@ export default function NavBar() {
 
       {/* Mobile search bar (slides down)*/}
       {searchOpen && (
-        <div className="md:hidden border-b border-sandal-100 bg-white px-4 py-3" ref={searchRef}>
+        <div
+          className="md:hidden border-b border-sandal-100 bg-white px-4 py-3"
+          ref={searchRef}
+        >
           <form onSubmit={handleSearch}>
             <div className="relative">
               <input
@@ -385,10 +446,11 @@ function DropItem({ to, icon, label, highlight }) {
   return (
     <Link
       to={to}
-      className={`flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-medium transition-colors ${highlight
+      className={`flex items-center gap-2.5 px-4 py-2.5 font-body text-sm font-medium transition-colors ${
+        highlight
           ? "text-sandal-700 font-bold hover:bg-sandal-50"
           : "text-gray-700 hover:bg-gray-100"
-        }`}
+      }`}
     >
       <span className="text-sandal-500">{icon}</span>
       {label}
