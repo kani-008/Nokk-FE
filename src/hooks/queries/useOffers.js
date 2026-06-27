@@ -38,8 +38,7 @@ export function useAdminOfferDetail(id) {
     queryKey: ["offer", "admin", id],
     queryFn: async () => {
       if (!id) return null;
-      // TODO: backend route is /getby-id, should be /get-by-id — rename when BE is patched
-      const res = await API.get(`/offers/getby-id?id=${id}`);
+      const res = await API.get(`/offers/get-by-id?id=${id}`);
       return res.data.offer;
     },
     enabled: !!id,
