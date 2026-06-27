@@ -178,6 +178,24 @@ function Sidebar({ collapsed, onClose }) {
 }
 
 // ── Top header bar ─────────────────────────────────────────────────────
+const SEARCH_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .topbar-search-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.35rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.35rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .topbar-search-fluid::placeholder {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+    }
+    .topbar-search-fluid-container svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+`;
+
 // `searchConfig` — { placeholder, value, onChange } registered by whichever
 // child admin page wants the topbar's search box to drive its own filtering.
 // When no page has registered, the box still renders (desktop) / the icon
@@ -265,6 +283,8 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
   return (
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
+      <style>{SEARCH_FLUID_STYLES}</style>
+
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <button
         onClick={onMobileOpen}
@@ -296,7 +316,7 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
           were somehow true there. */}
       {mobileSearchOpen && (
         <div className="md:hidden flex-1 flex items-center gap-2 min-w-0">
-          <div className="relative flex-1 min-w-0">
+          <div className="relative flex-1 min-w-0 topbar-search-fluid-container">
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -307,7 +327,7 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={placeholder}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400 topbar-search-fluid"
             />
           </div>
           <button

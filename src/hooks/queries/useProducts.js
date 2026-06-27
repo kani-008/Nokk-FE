@@ -95,6 +95,7 @@ export function useCreateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
   });
 }
@@ -108,6 +109,7 @@ export function useUpdateProduct() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
@@ -124,6 +126,7 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },
   });
 }
@@ -136,6 +139,7 @@ export function useAddProductVariant() {
       return res.data;
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
@@ -151,6 +155,7 @@ export function useUpdateProductVariant() {
       return res.data;
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
@@ -166,6 +171,7 @@ export function useDeleteProductVariant() {
       return res.data;
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
@@ -183,6 +189,7 @@ export function useAddProductImages() {
       return res.data;
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
@@ -198,6 +205,7 @@ export function useDeleteProductImage() {
       return res.data;
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }

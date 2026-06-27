@@ -19,7 +19,7 @@ export function useBannerTextOverlays(bannerId) {
     queryFn: async () => {
       if (!bannerId) return [];
       const res = await API.get(`/btext/get-for-banner?bannerId=${bannerId}`);
-      return res.data.overlays || [];
+      return res.data.btexts || [];
     },
     enabled: !!bannerId,
   });

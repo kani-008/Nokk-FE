@@ -29,6 +29,7 @@ export default function Dropdown({
   disabled = false,
   className = "",
   optionClassName,
+  listClassName = "",
   direction = "down",
 }) {
   const [open, setOpen] = useState(false);
@@ -108,7 +109,7 @@ export default function Dropdown({
           ${className}
         `}
       >
-        <span className={`truncate ${selected ? "text-gray-800" : "text-gray-400"} ${selected && optionClassName ? optionClassName(selected) : ""}`}>
+        <span className={`truncate ${selected ? "text-gray-800" : "text-gray-400"} ${optionClassName ? (typeof optionClassName === "function" ? (selected ? optionClassName(selected) : "") : optionClassName) : ""}`}>
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown size={15} className={`shrink-0 text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
@@ -121,7 +122,7 @@ export default function Dropdown({
           role="listbox"
           tabIndex={-1}
           onKeyDown={handleListKeyDown}
-          className={`absolute z-30 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg focus:outline-none ${direction === "up" ? "bottom-full mb-1.5" : "mt-1.5"}`}
+          className={`absolute z-30 w-full max-h-60 overflow-y-auto rounded-md border border-gray-200 bg-white py-1.5 shadow-lg focus:outline-none ${direction === "up" ? "bottom-full mb-1.5" : "mt-1.5"} ${listClassName}`}
         >
           {options.length === 0 && (
             <li className="px-4 py-2.5 font-body text-sm text-gray-400">No options</li>
@@ -140,7 +141,7 @@ export default function Dropdown({
                   flex items-center justify-between gap-2 px-4 py-2.5 text-sm font-body cursor-pointer truncate
                   ${isActive ? "bg-sandal-50" : ""}
                   ${isSelected ? "text-sandal-700 font-semibold" : "text-gray-700"}
-                  ${optionClassName ? optionClassName(opt) : ""}
+                  ${optionClassName ? (typeof optionClassName === "function" ? optionClassName(opt) : optionClassName) : ""}
                 `}
               >
                 <span className="truncate">{opt.label}</span>

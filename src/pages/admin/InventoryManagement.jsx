@@ -1,23 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
+import { Fragment, useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { PackageX, RefreshCw, CheckCircle } from "lucide-react";
-import { useInventoryList, useUpdateStock } from "../../hooks/queries/useInventory";
+import { PackageX, RefreshCw, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { useInventoryList, useUpdateStock, useBulkUpdateStock } from "../../hooks/queries/useInventory";
 import { AdminPage, AdminButton, AdminCard } from "../../components/admin/AdminUI.jsx";
-import TableFormat from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 
 const rupee = (n) =>
-  new Intl.NumberFormat("en-IN",
-    {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0
-    }
-  ).format(Number(n) || 0);
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(n) || 0);
 
 import comboImg from "../../assets/products/combo.jpg";
-
 const PH = comboImg;
 
 /**
@@ -67,13 +63,43 @@ const MOBILE_FLUID_STYLES = `
     .inv-stats-fluid {
       gap: clamp(0.4rem, 1.8vw, 1rem) !important;
     }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      max-height: 0;
+      opacity: 1;
+    }
+    to {
+      max-height: 800px;
+      opacity: 1;
+    }
+  }
+  .animate-expand {
+    animation: slideDown 1000ms ease-out forwards;
+    overflow: hidden;
   }
 `;
 
-// ── Inline stock edit cell ─────────────────────────────────────────────
-function StockEditCell({ item, queryParams }) {
+// ── Inline stock toggle cell ───────────────────────────────────────────
+function StockEditCell({ item, queryParams, disabled }) {
   const updateStockMutation = useUpdateStock(queryParams);
-  const saving = updateStockMutation.isPending;
+  const saving = updateStockMutation.isPending || disabled;
 
   const handleToggle = async () => {
     const nextInStock = !(item.stockQty > 0);
@@ -96,21 +122,43 @@ function StockEditCell({ item, queryParams }) {
   );
 }
 
+// ── Product-level stock status badge ──────────────────────────────────
+function StatusBadge({ variants }) {
+  const inCount = variants.filter((v) => v.stockQty > 0).length;
+  const total = variants.length;
+
+  if (inCount === 0)
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-red-50 text-red-600 whitespace-nowrap">
+        Out of Stock
+      </span>
+    );
+  if (inCount === total)
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-green-50 text-green-600 whitespace-nowrap">
+        In Stock
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-amber-50 text-amber-600 whitespace-nowrap">
+      Partial ({inCount}/{total})
+    </span>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // INVENTORY MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function InventoryManagement() {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all"); // all | out
+  const [filter, setFilter] = useState("all"); // all | out | in
   const [page, setPage] = useState(1);
+  const [expandedKey, setExpandedKey] = useState(null);
 
-  // ── Hand this page's search state to AdminLayout's shared topbar search,
-  // same pattern as ProductManagement.jsx. No separate search input is
-  // rendered in the page body anymore.
   const { registerSearch, unregisterSearch } = useOutletContext();
 
   useEffect(() => {
-    registerSearch({ placeholder: "Search product, SKU…", value: search, onChange: setSearch });
+    registerSearch({ placeholder: "Search product…", value: search, onChange: setSearch });
     return () => unregisterSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
@@ -123,63 +171,98 @@ export default function InventoryManagement() {
     return p;
   }, [search, filter, page]);
 
+  const bulkUpdateStockMutation = useBulkUpdateStock(queryParams);
+  const bulkSaving = bulkUpdateStockMutation.isPending;
+
+  const handleParentToggle = async (product) => {
+    const inCount = product.variants.filter((v) => v.stockQty > 0).length;
+    const total = product.variants.length;
+    const nextInStock = inCount < total; // toggles everything to in stock if partial or OOS
+
+    const updates = product.variants.map((v) => ({
+      variantId: v.variantId,
+      inStock: nextInStock,
+    }));
+
+    try {
+      await bulkUpdateStockMutation.mutateAsync({ updates });
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update stock");
+    }
+  };
+
   const { data, isLoading: loading, isFetching, refetch } = useInventoryList(queryParams);
-  const items = data?.inventory || [];
+  const items = useMemo(() => data?.inventory || [], [data?.inventory]);
   const totalPages = data?.pagination?.totalPages || 1;
   const refreshing = isFetching && !loading;
 
-  // summary stats
+  // Group flat variant rows by product
+  const products = useMemo(() => {
+    const map = new Map();
+    items.forEach((item) => {
+      const key = item.productId ?? item.nameEn;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          nameEn: item.nameEn,
+          categoryName: item.categoryName,
+          primaryImage: item.primaryImage,
+          variants: [],
+        });
+      }
+      map.get(key).variants.push(item);
+    });
+    const list = Array.from(map.values());
+    // Sort products alphabetically by nameEn to prevent shifting
+    list.sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+    
+    // Sort variants within each product by weightGrams
+    list.forEach((p) => {
+      p.variants.sort((a, b) => (a.weightGrams || 0) - (b.weightGrams || 0));
+    });
+
+    return list;
+  }, [items]);
+
+  const toggleExpand = (key) => {
+    setExpandedKey((prev) => (prev === key ? null : key));
+  };
+
+  // Summary stats (variant-level)
   const outOfStock = items.filter((i) => i.stockQty === 0).length;
   const inStock    = items.filter((i) => i.stockQty > 0).length;
   const totalValue = items.reduce((s, i) => s + i.price * i.stockQty, 0);
-
-
-  const COLS = [
-    {
-      key: "product", label: "Product",
-      render: (r) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={r.primaryImage || PH} alt={r.productName}
-            className="w-10 h-10 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-            onError={(e) => { e.target.src = PH; }}
-          />
-          <div className="min-w-0">
-            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">
-              {r.productName}</p>
-            <p className="font-body text-xs text-gray-400">{r.categoryName}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "weightLabel", label: "Variant", render: (r) =>
-        <span className="font-num text-sm text-gray-700">{r.weightLabel}</span>
-    },
-    {
-      key: "sku", label: "SKU",
-      render: (r) => <span className="font-num text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">{r.sku || "—"}</span>,
-    },
-    {
-      key: "price", label: "Price", render: (r) =>
-        <span className="font-num text-sm font-semibold text-gray-900">{rupee(r.price)}</span>
-    },
-    {
-      key: "stockQty", label: "Stock",
-      render: (r) => <StockEditCell item={r} queryParams={queryParams} />,
-    },
-    {
-      key: "value", label: "Stock Value",
-      render: (r) =>
-        <span className="font-num text-sm text-gray-600">{rupee(r.price * r.stockQty)}</span>,
-    },
-  ];
 
   return (
     <AdminPage className="space-y-3">
       <style>{MOBILE_FLUID_STYLES}</style>
 
-      {/* summary cards — row 1 */}
+      {/* Refresh + Filter cluster */}
+      <div className="inv-cluster-fluid flex items-center justify-end gap-3 w-full">
+        <button
+          onClick={() => refetch()}
+          disabled={refreshing}
+          className="inv-refresh-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors shrink-0 disabled:opacity-60"
+        >
+          <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
+        </button>
+        <div className="inv-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+          <Dropdown
+            value={filter}
+            onChange={(v) => { setFilter(v); setPage(1); }}
+            placeholder="All"
+            options={[
+              { value: "all",  label: "All" },
+              { value: "out", label: "Out of Stock" },
+              { value: "in",  label: "In Stock" },
+            ]}
+            className="inv-filter-fluid"
+            optionClassName="inv-filter-fluid"
+          />
+        </div>
+      </div>
+
+      {/* Summary cards */}
       <div className="inv-stats-fluid grid grid-cols-2 sm:grid-cols-4 gap-4">
         <AdminCard className="flex items-center gap-3 py-3.5">
           <div className="p-2 rounded-xl bg-green-50"><CheckCircle size={16} className="text-green-500" /></div>
@@ -208,43 +291,182 @@ export default function InventoryManagement() {
         </AdminCard>
       </div>
 
-      {/* Refresh -> Filter — single cluster, right-aligned, above the table,
-          always on one line. Search now lives in the topbar (see
-          AdminLayout, same pattern as ProductManagement.jsx). On mobile, the
-          filter dropdown and Refresh button shrink smoothly via clamp()
-          instead of jumping at a breakpoint or wrapping. Desktop sizing is
-          untouched. */}
-      <div className="inv-cluster-fluid flex items-center justify-end gap-3 w-full">
-        <button
-          onClick={() => refetch()}
-          disabled={refreshing}
-          className="inv-refresh-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors shrink-0 disabled:opacity-60"
-        >
-          <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
-        </button>
+      {/* Master-detail expandable table */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex gap-4 px-4 py-3.5 border-b border-gray-50 last:border-0">
+                  {[1, 2, 3, 4, 5].map((c) => (
+                    <div key={c} className="h-4 skeleton rounded flex-1" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              {/* Parent-level header */}
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="w-10 px-4 py-3" />
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    Variants
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    Total Value
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="font-body text-center py-16 text-gray-400 text-sm">
+                      No inventory items found.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => {
+                    const isOpen = expandedKey === product.key;
+                    const totalProductValue = product.variants.reduce(
+                      (s, v) => s + v.price * v.stockQty,
+                      0
+                    );
+                    return (
+                      <Fragment key={product.key}>
+                        {/* ── Parent row ── */}
+                        <tr
+                          className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors duration-100 cursor-pointer select-none"
+                          onClick={() => toggleExpand(product.key)}
+                        >
+                          <td className="px-4 py-3 align-middle text-gray-400">
+                            {isOpen
+                              ? <ChevronDown size={15} className="text-gray-500" />
+                              : <ChevronRight size={15} />}
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={product.primaryImage || PH}
+                                alt={product.nameEn}
+                                className="w-10 h-10 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+                                onError={(e) => { e.target.src = PH; }}
+                              />
+                              <div className="min-w-0">
+                                <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">
+                                  {product.nameEn}
+                                </p>
+                                <p className="font-body text-xs text-gray-400">{product.categoryName}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <span className="font-body text-sm text-gray-500">
+                              {product.variants.length}{" "}
+                              {product.variants.length === 1 ? "variant" : "variants"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <span className="font-num text-sm font-semibold text-gray-900">
+                              {rupee(totalProductValue)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-3.5" onClick={(e) => e.stopPropagation()}>
+                              <Toggle
+                                checked={product.variants.filter((v) => v.stockQty > 0).length === product.variants.length}
+                                onChange={() => handleParentToggle(product)}
+                                disabled={bulkSaving}
+                              />
+                              <StatusBadge variants={product.variants} />
+                            </div>
+                          </td>
+                        </tr>
 
-        <div className="inv-filter-wrap-fluid w-40 sm:w-44 shrink-0">
-          <Dropdown
-            value={filter}
-            onChange={(v) => { setFilter(v); setPage(1); }}
-            placeholder="All"
-            options={[
-              { value: "all", label: "All" },
-              { value: "out", label: "Out of Stock" },
-              { value: "in", label: "In Stock" },
-            ]}
-            className="inv-filter-fluid"
-          />
+                        {/* ── Expanded variant detail section ── */}
+                        {isOpen && (
+                          <tr className={products[products.length - 1].key !== product.key ? "border-b border-gray-100" : ""}>
+                            <td colSpan={5} className="p-0">
+                              <div className="bg-gray-50/60 animate-expand">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="border-b border-gray-100">
+                                      <th className="w-10" />
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Variant
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Price
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Stock
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                        Stock Value
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {product.variants.map((variant) => (
+                                      <tr
+                                        key={variant.variantId}
+                                        className="border-b border-gray-100 last:border-0 hover:bg-white/60 transition-colors"
+                                      >
+                                        <td className="w-10 pl-4">
+                                          <div className="w-px h-8 bg-gray-200 mx-auto" />
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm text-gray-700">
+                                            {variant.weightLabel}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm font-semibold text-gray-900">
+                                            {rupee(variant.price)}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <StockEditCell item={variant} queryParams={queryParams} disabled={bulkSaving} />
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm text-gray-600">
+                                            {rupee(variant.price * variant.stockQty)}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      <TableFormat columns={COLS} rows={items} loading={loading} emptyText="No inventory items found." />
-
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
+          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Prev
+          </AdminButton>
           <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
-          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
+          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </AdminButton>
         </div>
       )}
     </AdminPage>

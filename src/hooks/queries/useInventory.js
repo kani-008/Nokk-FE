@@ -54,3 +54,41 @@ export function useUpdateStock(params) {
     },
   });
 }
+
+export function useBulkUpdateStock(params) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ updates }) => {
+      const res = await API.post("/inventory/bulk-update", { updates });
+      return res.data;
+    },
+    onMutate: async ({ updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["inventory", params] });
+      const previousInventory = queryClient.getQueryData(["inventory", params]);
+
+      queryClient.setQueryData(["inventory", params], (old) => {
+        if (!old) return old;
+        const updateMap = new Map(updates.map(u => [u.variantId, u.inStock]));
+        return {
+          ...old,
+          inventory: (old.inventory || []).map((item) => {
+            if (updateMap.has(item.variantId)) {
+              return { ...item, stockQty: updateMap.get(item.variantId) ? 1 : 0 };
+            }
+            return item;
+          }),
+        };
+      });
+
+      return { previousInventory };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousInventory) {
+        queryClient.setQueryData(["inventory", params], context.previousInventory);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", params] });
+    },
+  });
+}

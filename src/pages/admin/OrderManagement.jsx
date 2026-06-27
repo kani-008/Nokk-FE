@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
@@ -13,9 +14,10 @@ import {
 
 import comboImg from "../../assets/products/combo.jpg";
 import {
-  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -31,6 +33,54 @@ const ALL_STATUSES = [
 ];
 
 const PAYMENT_STATUSES = ["pending", "paid"];
+
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .ord-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+    .ord-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .ord-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .ord-cluster-fluid {
+      gap: clamp(0.25rem, 1.2vw, 0.75rem);
+    }
+    .ord-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .ord-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .ord-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .ord-filter-fluid + ul li {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+  }
+`;
 
 // ── Order detail modal ────────────────────────────────────────────────
 function OrderModal({ order, onClose, onStatusChange }) {
@@ -332,6 +382,15 @@ export default function OrderManagement() {
   const [page,      setPage]      = useState(1);
   const [selected,  setSelected]  = useState(null);
 
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  useEffect(() => {
+    if (tab !== "orders") { unregisterSearch(); return; }
+    registerSearch({ placeholder: "Search order ID, customer…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, tab]);
+
   const queryParams = useMemo(() => {
     const params = { page, limit: 15 };
     if (search)  params.search        = search;
@@ -387,64 +446,86 @@ export default function OrderManagement() {
   ];
 
   return (
-    <AdminPage>
-      {/* top-level tabs */}
-      <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-fit">
-        <button
-          onClick={() => setTab("orders")}
-          className={`font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-            tab === "orders" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          All Orders
-        </button>
-        <button
-          onClick={() => setTab("replacements")}
-          className={`font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-            tab === "replacements" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <RotateCcw size={13} /> Replacements
-        </button>
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
+
+      {/* Row 1 (mobile) / left side (desktop): top-level tabs — Orders / Replacements */}
+      {/* Row 2 (mobile) / right side (desktop): Status -> Payment -> Clear filters,
+          rendered inline in the same flex row as the tabs on desktop (justify-between),
+          but stacked onto its own row below the tabs on mobile (flex-col -> sm:flex-row),
+          exactly matching the Clear/Filter/Add-Product cluster pattern used on
+          Products/Inventory. On mobile, dropdown width/padding/font-size shrink
+          smoothly via clamp() instead of jumping at a breakpoint.
+          `items-center` (not just `sm:items-center`) horizontally centers both
+          rows as blocks on mobile — without it they default to stretch/left,
+          since the tabs pill is `w-fit` and the cluster is `w-full justify-end`,
+          neither of which centers the row itself within the page. */}
+      <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:items-center sm:justify-between w-full">
+        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
+          <button
+            onClick={() => setTab("orders")}
+            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "orders" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            All Orders
+          </button>
+          <button
+            onClick={() => setTab("replacements")}
+            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              tab === "replacements" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <RotateCcw size={13} /> Replacements
+          </button>
+        </div>
+
+        {tab === "orders" && (
+          <div className="ord-cluster-fluid flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="ord-clear-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1"
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
+
+            <div className="flex-1 sm:w-40 sm:shrink-0">
+              <Dropdown
+                value={status}
+                onChange={(v) => { setStatus(v); setPage(1); }}
+                placeholder="All Statuses"
+                options={[
+                  { value: "", label: "All Statuses" },
+                  ...ALL_STATUSES.map((s) => ({ value: s, label: s.replace(/_/g, " ") })),
+                ]}
+                className="ord-filter-fluid"
+                optionClassName="ord-filter-fluid"
+              />
+            </div>
+
+            <div className="flex-1 sm:w-40 sm:shrink-0">
+              <Dropdown
+                value={payment}
+                onChange={(v) => { setPayment(v); setPage(1); }}
+                placeholder="All Payment Status"
+                options={[
+                  { value: "", label: "All Payment Status" },
+                  ...PAYMENT_STATUSES.map((m) => ({ value: m, label: m.toUpperCase() })),
+                ]}
+                className="ord-filter-fluid"
+                optionClassName="ord-filter-fluid"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {tab === "replacements" ? (
         <ReplacementsPanel />
       ) : (
         <>
-          {/* filters */}
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
-            <div className="w-full sm:flex-1">
-              <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-full" />
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <select
-                value={status}
-                onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-                className="field-input flex-1 sm:w-36"
-              >
-                <option value="">All statuses</option>
-                {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-
-              <select
-                value={payment}
-                onChange={(e) => { setPayment(e.target.value); setPage(1); }}
-                className="field-input flex-1 sm:w-36"
-              >
-                <option value="">All payment status</option>
-                {PAYMENT_STATUSES.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
-              </select>
-
-              {hasFilters && (
-                <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
-                  <X size={14} /> Clear
-                </button>
-              )}
-            </div>
-          </div>
-
           <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
 
           {/* pagination */}

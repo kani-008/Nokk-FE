@@ -81,6 +81,21 @@ const MOBILE_FLUID_STYLES = `
     .pm-cluster-fluid {
       gap: clamp(0.3rem, 1.4vw, 0.75rem);
     }
+    .pm-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .pm-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
   }
 `;
 
@@ -279,6 +294,7 @@ export default function ProductManagement() {
             placeholder="All categories"
             options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
             className="pm-filter-fluid"
+            optionClassName="pm-filter-fluid"
           />
         </div>
 

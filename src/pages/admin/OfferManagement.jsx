@@ -18,6 +18,30 @@ const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "perc
 const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", isActive: true, expiresAt: "" };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+`;
+
 
 
 // ── Offer modal ────────────────────────────────────────────────────────
@@ -222,26 +246,47 @@ export default function OfferManagement() {
   ];
 
   return (
-    <AdminPage
-      action={
-        <div className="flex gap-2">
-          <AdminButton size="sm" variant="outline" onClick={() => setModal({ type: "coupon", data: null })}>
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
+
+      {/* Row 1 (mobile) / Left & Right side (desktop) */}
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between w-full mb-4">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
+          <button
+            onClick={() => setTab("offers")}
+            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "offers" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Offers ({offers.length})
+          </button>
+          <button
+            onClick={() => setTab("coupons")}
+            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "coupons" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Coupons ({coupons.length})
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <AdminButton
+            variant="outline"
+            onClick={() => setModal({ type: "coupon", data: null })}
+            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+          >
             <Plus size={14} /> Coupon
           </AdminButton>
-          <AdminButton size="sm" onClick={() => setModal({ type: "offer", data: null })}>
+          <AdminButton
+            onClick={() => setModal({ type: "offer", data: null })}
+            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+          >
             <Plus size={14} /> Offer
           </AdminButton>
         </div>
-      }
-    >
-      {/* tab bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-        {[{ key: "offers", label: `Offers (${offers.length})` }, { key: "coupons", label: `Coupons (${coupons.length})` }].map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`font-body text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${tab === t.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-            {t.label}
-          </button>
-        ))}
       </div>
 
       {tab === "offers" && <DataTable columns={OFFER_COLS} rows={offers} loading={loading} emptyText="No offers yet." />}

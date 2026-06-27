@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, X, Eye, EyeOff, Video,
   Image as ImageIcon, Loader2, Link as LinkIcon, Upload,
@@ -17,11 +18,36 @@ import {
 import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
 
 const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", videoUrl: "", isActive: true };
+
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .bm-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .bm-btn-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .bm-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+`;
 
 // responsive icon size: bigger on mobile, compact on desktop
 const ICON_CLS = "w-5 h-5 sm:w-[15px] sm:h-[15px]";
@@ -523,6 +549,7 @@ export default function BannerManagement() {
   }, [bannersData]);
 
   const { data: overlaysData = [], isLoading: overlaysLoading } = useBannerTextOverlays(selectedBannerId);
+  console.log("BannerManagement browser log [overlaysData]:", overlaysData);
   const overlays = overlaysData;
 
   const handleSaved = () => {};
@@ -545,41 +572,61 @@ export default function BannerManagement() {
   const inactiveOverlays = overlays.filter((o) => !o.isActive).length;
 
   return (
-    <AdminPage
-      action={
-        activeTab === "videos" ? (
-          <AdminButton onClick={() => setModal("new")}>
-            <Plus size={15} /> Add Video
-          </AdminButton>
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
+
+      {/* Unified Header Row — Tabs on the left, Actions on the right on desktop; stacked on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 mb-6">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
+          <button
+            onClick={() => setActiveTab("videos")}
+            className={`bm-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              activeTab === "videos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Background Video
+          </button>
+          <button
+            onClick={() => setActiveTab("overlays")}
+            className={`bm-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              activeTab === "overlays" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Slide Text Overlay
+          </button>
+        </div>
+
+        {/* Actions (tab-dependent) */}
+        {activeTab === "videos" ? (
+          <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
+            <AdminButton onClick={() => setModal("new")} className="bm-btn-fluid w-full sm:w-auto text-sm font-semibold h-[38px]">
+              <Plus size={14} /> Add Video
+            </AdminButton>
+          </div>
         ) : (
-          <AdminButton onClick={() => setOverlayModal("new")} disabled={!selectedBannerId}>
-            <Plus size={15} /> Add Overlay Text
-          </AdminButton>
-        )
-      }
-    >
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-150 mb-6">
-        <button
-          onClick={() => setActiveTab("videos")}
-          className={`pb-2.5 px-4 font-body text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-            activeTab === "videos"
-              ? "border-brand-700 text-brand-900 font-bold"
-              : "border-transparent text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          Background Videos
-        </button>
-        <button
-          onClick={() => setActiveTab("overlays")}
-          className={`pb-2.5 px-4 font-body text-sm font-semibold border-b-2 transition-all cursor-pointer ${
-            activeTab === "overlays"
-              ? "border-brand-700 text-brand-900 font-bold"
-              : "border-transparent text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          Slide Text Overlays
-        </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+            <div className="w-full sm:w-64">
+              <Dropdown
+                value={selectedBannerId ? String(selectedBannerId) : ""}
+                onChange={(val) => setSelectedBannerId(val ? Number(val) : null)}
+                placeholder="— choose a banner —"
+                options={[
+                  { value: "", label: "— choose a banner —" },
+                  ...banners.map((b) => ({ value: String(b.id), label: b.title || `Banner #${b.id}` })),
+                ]}
+                className="w-full"
+              />
+            </div>
+            <AdminButton
+              onClick={() => setOverlayModal("new")}
+              disabled={!selectedBannerId}
+              className="bm-btn-fluid w-full sm:w-auto shrink-0 text-sm font-semibold h-[38px]"
+            >
+              <Plus size={14} /> Add Overlay
+            </AdminButton>
+          </div>
+        )}
       </div>
 
       {activeTab === "videos" ? (
@@ -634,21 +681,6 @@ export default function BannerManagement() {
         </>
       ) : (
         <>
-          {/* banner selector */}
-          <div className="mb-5">
-            <label className="field-label mb-1.5 block">Select Banner</label>
-            <select
-              value={selectedBannerId ?? ""}
-              onChange={(e) => setSelectedBannerId(e.target.value ? Number(e.target.value) : null)}
-              className="field-input max-w-xs"
-            >
-              <option value="">— choose a banner —</option>
-              {banners.map((b) => (
-                <option key={b.id} value={b.id}>{b.title}</option>
-              ))}
-            </select>
-          </div>
-
           {/* summary */}
           {selectedBannerId && (
             <div className="grid grid-cols-3 gap-4 mb-6">

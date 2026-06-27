@@ -30,7 +30,23 @@ export function useAdminOrders(params) {
     queryKey: ["orders", "admin", params],
     queryFn: async () => {
       const res = await API.get("/orders/admin/get-all", { params });
-      return res.data;
+      const data = res.data;
+      return {
+        ...data,
+        orders: (data.orders || []).map(o => ({
+          ...o,
+          items: (o.items || []).map(item => ({
+            ...item,
+            productName: item.name,
+            weightLabel: item.weight,
+          })),
+          timeline: (o.timeline || []).map(t => ({
+            ...t,
+            note: t.notes,
+            createdAt: t.date,
+          })),
+        })),
+      };
     },
   });
 }
