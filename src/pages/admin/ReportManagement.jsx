@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import { useReportsData } from "../../hooks/queries/useReports";
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -44,34 +44,11 @@ function HBarChart({ data = [], valueKey = "value", labelKey = "label", color = 
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ReportManagement() {
-  const [period,    setPeriod]    = useState("30d");
-  const [report,    setReport]    = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [refreshing,setRefreshing]= useState(false);
+  const [period, setPeriod] = useState("30d");
 
-  const load = useCallback(async (showRefresh = false) => {
-    setTimeout(() => {
-      showRefresh ? setRefreshing(true) : setLoading(true);
-    }, 0);
-    try {
-      const response = await API.get(`/dashboard/reports?period=${period}`);
-      console.log(response.data);
-      const res = response.data;
-      setReport(res.report || res || {});
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [period]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      load();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [load]);
+  const { data: rawReport, isLoading: loading, isFetching, refetch } = useReportsData(period);
+  const report = rawReport?.report || rawReport || null;
+  const refreshing = isFetching && !loading;
 
   const handleExport = () => {
     if (!report) return;
@@ -101,7 +78,7 @@ export default function ReportManagement() {
       sub="Sales analytics and performance insights"
       action={
         <div className="flex gap-2">
-          <AdminButton variant="outline" size="sm" onClick={() => load(true)} disabled={refreshing}>
+          <AdminButton variant="outline" size="sm" onClick={() => refetch()} disabled={refreshing}>
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
           </AdminButton>
           <AdminButton variant="outline" size="sm" onClick={handleExport} disabled={!report}>

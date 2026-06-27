@@ -1,9 +1,19 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
-  Plus, Pencil, Trash2, X, Image as ImageIcon,
-  Eye, EyeOff, Loader2, Video, Upload, Link as LinkIcon,
+  Plus, Pencil, Trash2, X, Eye, EyeOff, Video,
+  Image as ImageIcon, Loader2, Link as LinkIcon, Upload,
 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import {
+  useAdminBanners,
+  useBannerTextOverlays,
+  useUploadBannerImage,
+  useCreateBanner,
+  useUpdateBanner,
+  useDeleteBanner,
+  useCreateBannerText,
+  useUpdateBannerText,
+  useDeleteBannerText
+} from "../../hooks/queries/useBanners";
 import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
@@ -67,13 +77,17 @@ function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrl
 // ── Banner form modal ──────────────────────────────────────────────────
 function BannerModal({ banner, onClose, onSaved }) {
   const [form,     setForm]     = useState(banner ? { ...banner } : { ...EMPTY_FORM });
-  const [saving,   setSaving]   = useState(false);
-  const [error,    setError]    = useState("");
-  // "uploading" | "done" | null
   const [uploading, setUploading] = useState({ video: null, image: null });
 
   const videoInputRef = useRef(null);
   const imageInputRef = useRef(null);
+
+  const uploadMutation = useUploadBannerImage();
+  const createBannerMutation = useCreateBanner();
+  const updateBannerMutation = useUpdateBanner();
+
+  const saving = createBannerMutation.isPending || updateBannerMutation.isPending;
+  const [error, setError] = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -86,11 +100,8 @@ function BannerModal({ banner, onClose, onSaved }) {
       const body = new FormData();
       body.append("file", file);
       body.append("kind", kind);
-      const response = await API.post("/upload/banner", body, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      console.log(response.data);
-      const url = response.data.url;
+      const res = await uploadMutation.mutateAsync(body);
+      const url = res.url;
       set(kind === "video" ? "videoUrl" : "imageUrl", url);
       setUploading((u) => ({ ...u, [kind]: "done" }));
     } catch (err) {
@@ -104,17 +115,17 @@ function BannerModal({ banner, onClose, onSaved }) {
     e.preventDefault();
     if (!form.title.trim()) { setError("Title is required"); return; }
     if (!form.imageUrl)     { setError("Poster image is required — upload a file or paste a URL"); return; }
-    setSaving(true);
     setError("");
     try {
-      const res = banner?.id
-        ? await API.put("/banners/update-banner", { id: banner.id, ...form })
-        : await API.post("/banners/create-banner", form);
-      console.log(res.data);
-      onSaved(res.data.banner || form);
+      let res;
+      if (banner?.id) {
+        res = await updateBannerMutation.mutateAsync({ id: banner.id, ...form });
+      } else {
+        res = await createBannerMutation.mutateAsync(form);
+      }
+      onSaved(res.banner || form);
       onClose();
     } catch (err) { setError(err.response?.data?.message || err.message || "Failed to save"); }
-    finally { setSaving(false); }
   };
 
   const isUploading = uploading.video === "uploading" || uploading.image === "uploading";
@@ -221,26 +232,25 @@ function BannerModal({ banner, onClose, onSaved }) {
 
 // ── Banner card ────────────────────────────────────────────────────────
 function BannerCard({ banner, onEdit, onDelete, onToggle }) {
-  const [toggling, setToggling] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const toggleBannerMutation = useUpdateBanner();
+  const deleteBannerMutation = useDeleteBanner();
+
+  const toggling = toggleBannerMutation.isPending;
+  const deleting = deleteBannerMutation.isPending;
 
   const handleToggle = async () => {
-    setToggling(true);
     try {
-      await API.put("/banners/update-banner", { id: banner.id, isActive: !banner.isActive });
+      await toggleBannerMutation.mutateAsync({ id: banner.id, isActive: !banner.isActive });
       onToggle(banner.id, !banner.isActive);
     } catch (e) { alert(e.response?.data?.message || e.message || "Failed"); }
-    finally { setToggling(false); }
   };
 
   const handleDelete = async () => {
     if (!confirm(`Delete banner "${banner.title}"?`)) return;
-    setDeleting(true);
     try {
-      await API.delete("/banners/delete-banner", { data: { id: banner.id } });
+      await deleteBannerMutation.mutateAsync(banner.id);
       onDelete(banner.id);
     } catch (e) { alert(e.response?.data?.message || e.message || "Failed to delete"); }
-    finally { setDeleting(false); }
   };
 
   // tapping the card body opens the editor
@@ -325,7 +335,11 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
     overlay ? { heading: overlay.heading, subtext: overlay.subtext || "", isActive: overlay.isActive }
             : { heading: "", subtext: "", isActive: true }
   );
-  const [saving, setSaving] = useState(false);
+
+  const createBtextMutation = useCreateBannerText();
+  const updateBtextMutation = useUpdateBannerText();
+
+  const saving = createBtextMutation.isPending || updateBtextMutation.isPending;
   const [error,  setError]  = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -333,20 +347,17 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.heading.trim()) { setError("Heading is required"); return; }
-    setSaving(true);
     setError("");
     try {
       let res;
       if (overlay?.id) {
-        res = await API.put("/btext/update-btext", { id: overlay.id, ...form });
+        res = await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId, ...form });
       } else {
-        res = await API.post("/btext/create-btext", { bannerId, ...form });
+        res = await createBtextMutation.mutateAsync({ bannerId, ...form });
       }
-      console.log(res.data);
-      onSaved(res.data.btext);
+      onSaved(res.btext || form);
       onClose();
     } catch (e) { setError(e.response?.data?.message || e.message || "Failed to save"); }
-    finally { setSaving(false); }
   };
 
   return (
@@ -421,26 +432,25 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
 
 // ── Overlay card ────────────────────────────────────────────────────────
 function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
-  const [toggling, setToggling] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const updateBtextMutation = useUpdateBannerText();
+  const deleteBtextMutation = useDeleteBannerText();
+
+  const toggling = updateBtextMutation.isPending;
+  const deleting = deleteBtextMutation.isPending;
 
   const handleToggle = async () => {
-    setToggling(true);
     try {
-      await API.put("/btext/update-btext", { id: overlay.id, isActive: !overlay.isActive });
+      await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId, isActive: !overlay.isActive });
       onToggled(overlay.id, !overlay.isActive);
     } catch (e) { alert(e.response?.data?.message || e.message || "Failed"); }
-    finally { setToggling(false); }
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this text overlay?")) return;
-    setDeleting(true);
     try {
-      await API.delete("/btext/delete-btext", { data: { id: overlay.id } });
+      await deleteBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId });
       onDelete(overlay.id);
     } catch (e) { alert(e.response?.data?.message || e.message || "Failed to delete"); }
-    finally { setDeleting(false); }
   };
 
   // tapping the card body opens the editor
@@ -501,97 +511,32 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
 // BANNERS PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function BannerManagement() {
-  const [banners, setBanners] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [modal,   setModal]   = useState(null); // null | "new" | banner object
 
   const [activeTab,       setActiveTab]       = useState("videos");
-  const [overlays,        setOverlays]        = useState([]);
-  const [overlaysLoading, setOverlaysLoading] = useState(false);
   const [selectedBannerId, setSelectedBannerId] = useState(null);
   const [overlayModal,    setOverlayModal]    = useState(null); // null | "new" | overlay object
 
-  // load banners from API
-  useEffect(() => {
-    let active = true;
-    const timer = setTimeout(() => {
-      if (active) setLoading(true);
-    }, 0);
-    API.get("/banners/get-all")
-      .then((r) => {
-        if (!active) return;
-        const sorted = (r.data.banners || []).sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-        setBanners(sorted);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, []);
+  const { data: bannersData = [], isLoading: loading } = useAdminBanners();
+  const banners = useMemo(() => {
+    return [...bannersData].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+  }, [bannersData]);
 
-  // load overlays from backend when a banner is selected
-  useEffect(() => {
-    let active = true;
-    if (!selectedBannerId) {
-      const timer = setTimeout(() => {
-        if (active) setOverlays([]);
-      }, 0);
-      return () => {
-        active = false;
-        clearTimeout(timer);
-      };
-    }
-    const timer = setTimeout(() => {
-      if (active) setOverlaysLoading(true);
-    }, 0);
-    API.get(`/btext/get-for-banner?bannerId=${selectedBannerId}`)
-      .then((r) => {
-        if (!active) return;
-        setOverlays(r.data.btexts || []);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setOverlaysLoading(false);
-      });
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [selectedBannerId]);
+  const { data: overlaysData = [], isLoading: overlaysLoading } = useBannerTextOverlays(selectedBannerId);
+  const overlays = overlaysData;
 
-  const handleSaved = (banner) => {
-    setBanners((prev) => {
-      const idx = prev.findIndex((b) => b.id === banner.id);
-      if (idx >= 0) { const next = [...prev]; next[idx] = banner; return next; }
-      return [...prev, banner];
-    });
-  };
-
-  const handleDelete = (id) => setBanners((prev) => prev.filter((b) => b.id !== id));
-
-  const handleToggle = (id, isActive) =>
-    setBanners((prev) => prev.map((b) => b.id === id ? { ...b, isActive } : b));
+  const handleSaved = () => {};
+  const handleDelete = () => {};
+  const handleToggle = () => {};
 
   // called after btextApi.create or btextApi.update succeeds inside OverlayModal
-  const handleOverlaySaved = (item) => {
-    setOverlays((prev) => {
-      const idx = prev.findIndex((o) => o.id === item.id);
-      if (idx >= 0) { const next = [...prev]; next[idx] = item; return next; }
-      return [...prev, item];
-    });
-  };
+  const handleOverlaySaved = () => {};
 
   // called after btextApi.remove succeeds inside OverlayCard
-  const handleOverlayDelete = (id) =>
-    setOverlays((prev) => prev.filter((o) => o.id !== id));
+  const handleOverlayDelete = () => {};
 
   // called after btextApi.update (toggle) succeeds inside OverlayCard
-  const handleOverlayToggled = (id, isActive) =>
-    setOverlays((prev) => prev.map((o) => o.id === id ? { ...o, isActive } : o));
+  const handleOverlayToggled = () => {};
 
   const active   = banners.filter((b) => b.isActive).length;
   const inactive = banners.filter((b) => !b.isActive).length;

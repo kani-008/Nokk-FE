@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
 import { Link }     from "react-router-dom";
-
-import API from "../ApiCall/Api";
+import { useActiveOffers } from "../hooks/queries/useOffers";
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);
@@ -107,23 +106,7 @@ function OfferSkeleton() {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function Offers() {
-  const [offers,  setOffers]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        const response = await API.get(`/offers/get-active`);
-        console.log(response.data);
-        setOffers(response.data.offers || []);
-      } catch (err) {
-        console.error("Failed to fetch offers:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOffers();
-  }, []);
+  const { data: offers = [], isLoading: loading } = useActiveOffers();
 
   return (
     <div className="page-wrap py-8">

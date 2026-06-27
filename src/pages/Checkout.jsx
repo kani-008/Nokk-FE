@@ -1,6 +1,8 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
+import { useAddresses } from "../hooks/queries/useProfile";
+import { useCheckout } from "../hooks/queries/useOrders";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
@@ -40,7 +42,10 @@ export default function Checkout() {
   const [step, setStep] = useState("address");
 
   // ── address state ──────────────────────────────────────────────────
-  const [savedAddresses, setSavedAddresses] = useState([]);
+  // ── address state ──────────────────────────────────────────────────
+  const { data: addressesList = [], isLoading: addressesLoading } = useAddresses();
+  const savedAddresses = addressesList;
+
   const [selectedSaved,  setSelectedSaved]  = useState(null);
   const [showNewForm,    setShowNewForm]     = useState(false);
   const [newAddress,     setNewAddress]      = useState({
@@ -59,43 +64,17 @@ export default function Checkout() {
   const [customerUpiId, setCustomerUpiId] = useState("");
 
   // ── order submit ───────────────────────────────────────────────────
-  const [placing,  setPlacing]  = useState(false);
   const [orderErr, setOrderErr] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
-  // ── load saved addresses on mount ─────────────────────────────────
   useEffect(() => {
-    if (!token) return;
-    const fetchAddresses = async () => {
-      try {
-        const response = await API.get(`/users/me/addresses`);
-        console.log(response.data);
-        const r = response.data;
-        const list = (r.addresses || []).map((addr) => ({
-          id: addr.id,
-          label: addr.label,
-          name: addr.full_name,
-          phone: addr.phone,
-          addressLine1: addr.address_line1,
-          addressLine2: addr.address_line2,
-          city: addr.city,
-          state: addr.state,
-          pincode: addr.pincode,
-          isDefault: addr.is_default
-        }));
-        setSavedAddresses(list);
-        if (list.length > 0) {
-          setSelectedSaved(list[0]);
-          setShowNewForm(false);
-        } else {
-          setShowNewForm(true);
-        }
-      } catch (err) {
-        setShowNewForm(true);
-      }
-    };
-    fetchAddresses();
-  }, [token]);
+    if (addressesList.length > 0) {
+      setSelectedSaved(addressesList[0]);
+      setShowNewForm(false);
+    } else {
+      setShowNewForm(true);
+    }
+  }, [addressesList]);
 
   // ── redirect if cart emptied ───────────────────────────────────────
   useEffect(() => {
@@ -121,8 +100,10 @@ export default function Checkout() {
     setShowNewForm(false);
   };
 
+  const checkoutMutation = useCheckout();
+  const placing = checkoutMutation.isPending;
+
   const handlePlaceOrder = async () => {
-    setPlacing(true);
     setOrderErr("");
     try {
       const address = showNewForm ? newAddress : selectedSaved;
@@ -153,9 +134,7 @@ export default function Checkout() {
         total: tot
       };
 
-      const response = await API.post(`/orders/checkout`, payload);
-      console.log(response.data);
-      const res = response.data;
+      const res = await checkoutMutation.mutateAsync(payload);
 
       // Make API call inline to clear cart on server if logged in
       if (token) {
@@ -173,8 +152,6 @@ export default function Checkout() {
       }
     } catch (err) {
       setOrderErr(err.response?.data?.message || err.message || "Failed to place order. Please try again.");
-    } finally {
-      setPlacing(false);
     }
   };
 

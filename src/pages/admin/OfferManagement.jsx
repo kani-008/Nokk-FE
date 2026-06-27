@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import {
+  useAdminOfferList,
+  useAdminCouponList,
+  useSaveOffer,
+  useSaveCoupon,
+  useDeleteOffer,
+  useDeleteCoupon
+} from "../../hooks/queries/useOffers";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -17,31 +24,22 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-dig
 function OfferModal({ offer, onClose, onSaved }) {
   const isEdit = !!offer?.id;
   const [form, setForm] = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const saveOfferMutation = useSaveOffer();
+  const saving = saveOfferMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
-    setSaving(true); setError("");
+    setError("");
     try {
-      let res;
-      if (isEdit) {
-        const response = await API.put(`/offers/${offer.id}`, form);
-        console.log(response.data);
-        res = response.data;
-      } else {
-        const response = await API.post(`/offers`, form);
-        console.log(response.data);
-        res = response.data;
-      }
+      const res = await saveOfferMutation.mutateAsync({ id: offer?.id, form });
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -94,31 +92,22 @@ function OfferModal({ offer, onClose, onSaved }) {
 function CouponModal({ coupon, onClose, onSaved }) {
   const isEdit = !!coupon?.id;
   const [form, setForm] = useState(coupon ? { ...coupon } : { ...COUPON_EMPTY });
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const saveCouponMutation = useSaveCoupon();
+  const saving = saveCouponMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.code.trim() || !form.discountValue) { setError("Code and discount value required"); return; }
-    setSaving(true); setError("");
+    setError("");
     try {
-      let res;
-      if (isEdit) {
-        const response = await API.put(`/coupons/${coupon.id}`, form);
-        console.log(response.data);
-        res = response.data;
-      } else {
-        const response = await API.post(`/coupons`, form);
-        console.log(response.data);
-        res = response.data;
-      }
+      const res = await saveCouponMutation.mutateAsync({ id: coupon?.id, form });
       onSaved(res.coupon || form);
       onClose();
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -167,44 +156,19 @@ function CouponModal({ coupon, onClose, onSaved }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function OfferManagement() {
   const [tab, setTab] = useState("offers");
-  const [offers, setOffers] = useState([]);
-  const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
-  const loadOffers = useCallback(async () => {
-    try {
-      const response = await API.get("/offers");
-      console.log(response.data);
-      setOffers(response.data.offers || []);
-    } catch (err) {
-      console.error("Failed to load offers:", err);
-    }
-  }, []);
+  const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
+  const { data: coupons = [], isLoading: couponsLoading } = useAdminCouponList();
+  const loading = offersLoading || couponsLoading;
 
-  const loadCoupons = useCallback(async () => {
-    try {
-      const response = await API.get("/coupons");
-      console.log(response.data);
-      setCoupons(response.data.coupons || []);
-    } catch (err) {
-      console.error("Failed to load coupons:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setLoading(true);
-    }, 0);
-    Promise.allSettled([loadOffers(), loadCoupons()]).finally(() => setLoading(false));
-  }, [loadOffers, loadCoupons]);
+  const deleteOfferMutation = useDeleteOffer();
+  const deleteCouponMutation = useDeleteCoupon();
 
   const handleDeleteOffer = async (id) => {
     if (!confirm("Delete this offer?")) return;
     try {
-      const response = await API.delete(`/offers/${id}`);
-      console.log(response.data);
-      setOffers((p) => p.filter((o) => o.id !== id));
+      await deleteOfferMutation.mutateAsync(id);
     } catch (err) {
       console.error("Failed to delete offer:", err);
     }
@@ -213,16 +177,14 @@ export default function OfferManagement() {
   const handleDeleteCoupon = async (id) => {
     if (!confirm("Delete this coupon?")) return;
     try {
-      const response = await API.delete(`/coupons/${id}`);
-      console.log(response.data);
-      setCoupons((p) => p.filter((c) => c.id !== id));
+      await deleteCouponMutation.mutateAsync(id);
     } catch (err) {
       console.error("Failed to delete coupon:", err);
     }
   };
 
-  const upsertOffer = (o) => setOffers((p) => { const i = p.findIndex((x) => x.id === o.id); if (i >= 0) { const n = [...p]; n[i] = o; return n; } return [o, ...p]; });
-  const upsertCoupon = (c) => setCoupons((p) => { const i = p.findIndex((x) => x.id === c.id); if (i >= 0) { const n = [...p]; n[i] = c; return n; } return [c, ...p]; });
+  const upsertOffer = () => {};
+  const upsertCoupon = () => {};
 
   const OFFER_COLS = [
     { key: "title", label: "Title", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },

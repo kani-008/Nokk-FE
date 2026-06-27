@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { AlertTriangle, PackageX, RefreshCw, CheckCircle } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore";
+import { useInventoryList, useUpdateStock } from "../../hooks/queries/useInventory";
 import { AdminPage, AdminButton, SearchBar, AdminCard, } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
@@ -20,22 +19,16 @@ import comboImg from "../../assets/products/combo.jpg";
 const PH = comboImg;
 
 // ── Inline stock edit cell ─────────────────────────────────────────────
-function StockEditCell({ item, onSave }) {
-  const [saving, setSaving] = useState(false);
+function StockEditCell({ item, queryParams }) {
+  const updateStockMutation = useUpdateStock(queryParams);
+  const saving = updateStockMutation.isPending;
 
   const handleToggle = async () => {
     const nextInStock = !(item.stockQty > 0);
-    setSaving(true);
     try {
-      await API.put("/inventory/update-stock", {
-        variantId: item.variantId,
-        inStock: nextInStock,
-      });
-      onSave(item.variantId, nextInStock ? 1 : 0);
+      await updateStockMutation.mutateAsync({ variantId: item.variantId, inStock: nextInStock });
     } catch (e) {
       alert(e.response?.data?.message || e.message || "Failed to update stock");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -55,50 +48,27 @@ function StockEditCell({ item, onSave }) {
 // INVENTORY MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function InventoryManagement() {
-  const { token } = useAuthStore();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all | out
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async (showRefresh = false) => {
-    setTimeout(() => {
-      showRefresh ? setRefreshing(true) : setLoading(true);
-    }, 0);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (filter === "out") params.set("outOfStock", "true");
-    params.set("page", page); params.set("limit", 20);
-    try {
-      const response = await API.get(`/inventory/get-inventory?${params.toString()}`);
-      console.log(response.data);
-      setItems(response.data.inventory || []);
-      setTotalPages(response.data.pagination?.totalPages || 1);
-    } catch {
-      // fail silently
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [search, filter, page, token]);
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 20 };
+    if (search) p.search = search;
+    if (filter === "out") p.outOfStock = "true";
+    return p;
+  }, [search, filter, page]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      load();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [load]);
-
-  const patchStock = (variantId, newQty) =>
-    setItems((prev) => prev.map((i) => i.variantId === variantId ? { ...i, stockQty: newQty } : i));
+  const { data, isLoading: loading, isFetching, refetch } = useInventoryList(queryParams);
+  const items = data?.inventory || [];
+  const totalPages = data?.pagination?.totalPages || 1;
+  const refreshing = isFetching && !loading;
 
   // summary stats
   const outOfStock = items.filter((i) => i.stockQty === 0).length;
-  const inStock = items.filter((i) => i.stockQty > 0).length;
+  const inStock    = items.filter((i) => i.stockQty > 0).length;
   const totalValue = items.reduce((s, i) => s + i.price * i.stockQty, 0);
+
 
   const COLS = [
     {
@@ -132,7 +102,7 @@ export default function InventoryManagement() {
     },
     {
       key: "stockQty", label: "Stock",
-      render: (r) => <StockEditCell item={r} onSave={patchStock} />,
+      render: (r) => <StockEditCell item={r} queryParams={queryParams} />,
     },
     {
       key: "value", label: "Stock Value",
@@ -147,7 +117,7 @@ export default function InventoryManagement() {
       sub="Track stock levels and update quantities"
       action={
         <button
-          onClick={() => load(true)}
+          onClick={() => refetch()}
           disabled={refreshing}
           className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors"
         >

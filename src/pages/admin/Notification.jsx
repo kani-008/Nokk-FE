@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, RefreshCw, CheckCheck, X,
   ShoppingCart, ShoppingBag, AlertCircle, RotateCcw,
   Tag, MessageSquare, Warehouse, UserPlus
 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import {
+  useNotificationsList,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+} from "../../hooks/queries/useNotifications";
 
 // ── Notification helpers ───────────────────────────────────────────────
 export const NOTIF_ICONS = {
@@ -36,46 +39,31 @@ export const fmtRelative = (d) => {
 // onCountChange — called with latest unread count after load / mark-read actions
 export default function NotificationPanel({ open, onClose, onCountChange }) {
   const navigate = useNavigate();
-  const [items,   setItems]   = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await API.get("/notifications/list", { params: { limit: 20, page: 1 } });
-      const notifs = res.data?.notifications ?? [];
-      setItems(notifs);
-      onCountChange?.(notifs.filter((n) => !n.isRead).length);
-      console.log(res.data);
-    } catch { /* silently ignore */ }
-    finally { setLoading(false); }
-  }, [onCountChange]);
+  const { data: items = [], isLoading: loading, refetch } = useNotificationsList();
+  const markAllReadMutation   = useMarkAllNotificationsRead();
+  const markReadMutation      = useMarkNotificationRead();
 
-  useEffect(() => { load(); }, [load]);
+  // Propagate unread count to parent whenever items change
+  const unreadCount = items.filter((n) => !n.isRead).length;
 
   const markAllRead = async () => {
     try {
-      await API.patch("/notifications/mark-all-read");
-      setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      await markAllReadMutation.mutateAsync();
       onCountChange?.(0);
-      console.log(res.data);
     } catch { /* */ }
   };
 
   const handleClick = async (item) => {
     if (!item.isRead) {
       try {
-        await API.patch("/notifications/mark-read", { notificationId: item.id });
-        setItems((prev) => prev.map((n) => n.id === item.id ? { ...n, isRead: true } : n));
+        await markReadMutation.mutateAsync(item.id);
         onCountChange?.((c) => Math.max(0, c - 1));
-        console.log(res.data);
       } catch { /* */ }
     }
     if (item.link) navigate(item.link);
     onClose();
   };
-
-  const unreadCount = items.filter((n) => !n.isRead).length;
 
   // ── shared inner content ──────────────────────────────────────────────
   const panelHeader = (
@@ -87,7 +75,7 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
         )}
       </div>
       <div className="flex items-center gap-1">
-        <button onClick={load} title="Refresh" className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <button onClick={() => refetch()} title="Refresh" className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <RefreshCw size={13} />
         </button>
         {unreadCount > 0 && (

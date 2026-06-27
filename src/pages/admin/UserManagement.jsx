@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
-import { useAuthStore } from "../../components/store/AuthStore";
-import API from "../../ApiCall/Api.jsx";
+import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
 import {
   AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
@@ -64,35 +63,14 @@ function CustomDropdown({ value, onChange, options, placeholder, className = "" 
 
 // ── User detail modal ─────────────────────────────────────────────────
 function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
-  const { token } = useAuthStore();
   const [acting, setActing] = useState(false);
   const [error, setError] = useState("");
-  const [loadingDetail, setLoadingDetail] = useState(true);
-  const [detail, setDetail] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  useEffect(() => {
-    let active = true;
-    setLoadingDetail(true);
-    setError("");
-    API.get(`/users/get-by-id?id=${user.id}`)
-      .then((res) => {
-        if (active) {
-          setDetail(res.data);
-        }
-      })
-      .catch((err) => {
-        if (active) {
-          setError(err.message || "Failed to load user details");
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoadingDetail(false);
-        }
-      });
-    return () => { active = false; };
-  }, [user.id]);
+  const { data: detail, isLoading: loadingDetail } = useUserDetails(user.id);
+  const toggleStatusMutation = useToggleUserStatus();
+  const deleteUserMutation   = useDeleteUser();
+
 
   if (!user) return null;
 
@@ -101,13 +79,10 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const handleToggle = async () => {
     setActing(true); setError("");
     try {
-      if (isBlocked) {
-        await API.patch("/users/toggle-status", { id: user.id, status: "active" });
-        onUnblock(user.id);
-      } else {
-        await API.patch("/users/toggle-status", { id: user.id, status: "blocked" });
-        onBlock(user.id);
-      }
+      const newStatus = isBlocked ? "active" : "blocked";
+      await toggleStatusMutation.mutateAsync({ id: user.id, status: newStatus });
+      if (isBlocked) onUnblock?.(user.id);
+      else           onBlock?.(user.id);
       onClose();
     } catch (e) {
       setError(e.message || "Action failed");
@@ -118,8 +93,8 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     if (!confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) return;
     setActing(true); setError("");
     try {
-      await API.delete("/users/delete-user", { data: { id: user.id } });
-      onDelete(user.id);
+      await deleteUserMutation.mutateAsync(user.id);
+      onDelete?.(user.id);
       onClose();
     } catch (e) {
       setError(e.message || "Delete failed");
@@ -385,16 +360,11 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
 // USER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function UserManagement() {
-  const { token } = useAuthStore();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selected, setSelected] = useState(null);
 
   // debounce search input
@@ -403,32 +373,22 @@ export default function UserManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    const params = new URLSearchParams();
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    if (roleFilter) params.set("role", roleFilter);
-    if (status) params.set("status", status);
-    params.set("page", page); params.set("limit", 15);
-    try {
-      const response = await API.get(`/users/get-all?${params.toString()}`);
-      console.log(response.data);
-      setUsers(response.data.users || []);
-      setTotalPages(response.data.pagination?.totalPages || 1);
-    } catch (e) {
-      setError(e.message || "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 15 };
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (roleFilter)      p.role   = roleFilter;
+    if (status)          p.status = status;
+    return p;
   }, [debouncedSearch, roleFilter, status, page]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: userData, isLoading: loading, error: queryError } = useUserList(queryParams);
+  const users      = userData?.users || [];
+  const totalPages = userData?.pagination?.totalPages || 1;
+  const error      = queryError?.message || "";
 
-  const patchStatus = (id, newStatus) =>
-    setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: newStatus } : u));
+  const toggleStatusMutation = useToggleUserStatus();
+  const deleteUserMutation   = useDeleteUser();
+
 
   const COLS = [
     {

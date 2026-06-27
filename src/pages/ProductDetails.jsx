@@ -7,6 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
+import { useProductDetail, useProductList } from "../hooks/queries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
@@ -181,46 +182,32 @@ export default function ProductDetails() {
   const { token } = useAuthStore();
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
-  const [product, setProduct] = useState(null);
-  const [related, setRelated] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const { data: product, isLoading: productLoading, error: productError } = useProductDetail(slug);
+  const notFound = productError?.response?.status === 404;
+
+  const categorySlug = product?.categorySlug;
+  const { data: relatedData } = useProductList(
+    { category: categorySlug, limit: 4 },
+    { enabled: !!categorySlug }
+  );
+
+  const related = useMemo(() => {
+    return (relatedData?.products || []).filter((p) => p.slug !== slug);
+  }, [relatedData, slug]);
+
+  const loading = productLoading;
+
   const [activeVariant, setActiveVariant] = useState(null);
   const [qty, setQty] = useState(1);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (product) {
+      setActiveVariant(product.variants?.[0] || null);
+    }
+  }, [product]);
+
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
-
-  const fetchProduct = useCallback(() => {
-    setTimeout(() => {
-      setLoading(true);
-    }, 0);
-    const load = async () => {
-      try {
-        const response = await API.get(`/products/get-by-slug?slug=${slug}`);
-        console.log(response.data);
-        const prod = response.data.product;
-        setProduct(prod);
-        setActiveVariant(prod.variants?.[0] || null);
-
-        if (prod.categorySlug) {
-          try {
-            const relRes = await API.get(`/products/get-all?category=${prod.categorySlug}&limit=4`);
-            setRelated((relRes.data.products || []).filter((p) => p.slug !== slug));
-          } catch (relErr) {
-            console.error(relErr);
-          }
-        }
-      } catch (err) {
-        if (err.response?.status === 404) setNotFound(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [slug]);
-
-  useEffect(() => { fetchProduct(); }, [fetchProduct]);
 
   if (loading) return <DetailSkeleton />;
   if (notFound) return (

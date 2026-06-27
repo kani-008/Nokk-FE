@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MapPin, CreditCard, Truck, ArrowLeft, Loader2, Check } from "lucide-react";
 import { PAYMENT_METHODS } from "./Payment";
-import API from "../../ApiCall/Api.jsx";
+import { useSubmitUpiReference } from "../../hooks/queries/useOrders";
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -60,22 +60,21 @@ export default function Review({
   const payLabel = PAYMENT_METHODS.find((m) => m.key === payMethod)?.label ?? payMethod;
 
   const [upiRefId, setUpiRefId] = useState("");
-  const [submittingRef, setSubmittingRef] = useState(false);
   const [refSuccess, setRefSuccess] = useState(false);
   const [refError, setRefError] = useState("");
 
+  const submitUpiMutation = useSubmitUpiReference();
+  const submittingRef = submitUpiMutation.isPending;
+
   const handleSubmitRef = async () => {
     if (!upiRefId.trim()) { setRefError("Please enter the 12-digit transaction reference ID."); return; }
-    setSubmittingRef(true);
     setRefError("");
     setRefSuccess(false);
     try {
-      await API.post(`/orders/submit-upi-reference`, { id: placedOrderId, upiRefId: upiRefId.trim() });
+      await submitUpiMutation.mutateAsync({ id: placedOrderId, upiRefId: upiRefId.trim() });
       setRefSuccess(true);
     } catch (err) {
       setRefError(err.response?.data?.message || err.message || "Failed to submit UPI reference ID");
-    } finally {
-      setSubmittingRef(false);
     }
   };
 

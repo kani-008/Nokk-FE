@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import {
+  useAdminOrders,
+  useAdminReplacements,
+  useUpdateOrderStatus,
+  useUpdateReplacementStatus
+} from "../../hooks/queries/useOrders";
 
 
 import comboImg from "../../assets/products/combo.jpg";
@@ -30,21 +35,22 @@ const PAYMENT_STATUSES = ["pending", "paid"];
 // ── Order detail modal ────────────────────────────────────────────────
 function OrderModal({ order, onClose, onStatusChange }) {
   const [newStatus, setNewStatus] = useState(order?.status || "");
-  const [saving,    setSaving]    = useState(false);
   const [trackData, setTrackData] = useState({ courierName: order?.courierName || "", trackingNumber: order?.trackingNumber || "" });
+
+  const updateStatusMutation = useUpdateOrderStatus();
+  const saving = updateStatusMutation.isPending;
 
   if (!order) return null;
 
   const handleStatusSave = async () => {
     if (newStatus === order.status) return;
-    setSaving(true);
     try {
-      await API.put(`/orders/admin/update-status`, { id: order.id, status: newStatus, ...trackData });
+      await updateStatusMutation.mutateAsync({ id: order.id, status: newStatus, ...trackData });
       onStatusChange(order.id, newStatus);
       onClose();
     } catch (e) {
       alert(e.response?.data?.message || e.message || "Failed to update status");
-    } finally { setSaving(false); }
+    }
   };
 
   const addr = order.address || {};
@@ -211,47 +217,31 @@ function OrderModal({ order, onClose, onStatusChange }) {
 
 // ── Replacements panel ────────────────────────────────────────────────
 function ReplacementsPanel() {
-  const [items,   setItems]   = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState("requested");
-  const [busyId,  setBusyId]  = useState(null);
+  const [busyIdState, setBusyIdState] = useState(null);
 
-  const load = useCallback(async () => {
-    setTimeout(() => {
-      setLoading(true);
-    }, 0);
-    try {
-      const params = new URLSearchParams();
-      if (filter) params.set("status", filter);
-      const res = await API.get(`/orders/admin/get-replacements?${params.toString()}`);
-      setItems(res.data.replacements || []);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
+  const queryParams = useMemo(() => {
+    return filter ? { status: filter } : {};
   }, [filter]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      load();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [load]);
+  const { data: replacementsData, isLoading: loading } = useAdminReplacements(queryParams);
+  const items = replacementsData?.replacements || [];
+
+  const updateReplacementMutation = useUpdateReplacementStatus();
+  const busyId = updateReplacementMutation.isPending ? busyIdState : null;
 
   const act = async (requestId, status) => {
     if (status === "completed" && !confirm("This will create a NEW zero-cost order with the same items and mark the original as replacement_completed. Continue?")) return;
-    setBusyId(requestId);
+    setBusyIdState(requestId);
     try {
-      const res = await API.put("/orders/admin/update-replacement", { requestId, status });
-      if (status === "completed" && res.data?.newOrderId) {
-        alert(`Replacement order ${res.data.newOrderId} created successfully.`);
+      const res = await updateReplacementMutation.mutateAsync({ requestId, status });
+      if (status === "completed" && res.newOrderId) {
+        alert(`Replacement order ${res.newOrderId} created successfully.`);
       }
-      load();
     } catch (e) {
       alert(e.response?.data?.message || e.message || "Failed to update replacement request");
     } finally {
-      setBusyId(null);
+      setBusyIdState(null);
     }
   };
 
@@ -336,46 +326,25 @@ function ReplacementsPanel() {
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
   const [tab, setTab] = useState("orders");
-  const [orders,    setOrders]    = useState([]);
-  const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState("");
   const [status,    setStatus]    = useState("");
   const [payment,   setPayment]   = useState("");
   const [page,      setPage]      = useState(1);
-  const [totalPages,setTotalPages]= useState(1);
   const [selected,  setSelected]  = useState(null);
 
-  const load = useCallback(async () => {
-    setTimeout(() => {
-      setLoading(true);
-    }, 0);
-    const params = new URLSearchParams();
-    if (search)  params.set("search",        search);
-    if (status)  params.set("status",        status);
-    if (payment) params.set("paymentStatus", payment);
-    params.set("page", page);
-    params.set("limit", 15);
-    try {
-      const res = await API.get(`/orders/admin/get-all?${params.toString()}`);
-      setOrders(res.data.orders || []);
-      setTotalPages(res.data.pagination?.totalPages || 1);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
+  const queryParams = useMemo(() => {
+    const params = { page, limit: 15 };
+    if (search)  params.search        = search;
+    if (status)  params.status        = status;
+    if (payment) params.paymentStatus = payment;
+    return params;
   }, [search, status, payment, page]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      load();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [load]);
+  const { data: ordersData, isLoading: loading } = useAdminOrders(queryParams);
+  const orders = ordersData?.orders || [];
+  const totalPages = ordersData?.pagination?.totalPages || 1;
 
-  const handleStatusChange = (id, newStatus) => {
-    setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: newStatus } : o));
-  };
+  const handleStatusChange = () => {};
 
   const clearFilters = () => { setSearch(""); setStatus(""); setPayment(""); setPage(1); };
   const hasFilters = search || status || payment;

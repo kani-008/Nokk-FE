@@ -1,48 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   CreditCard, Smartphone, Banknote, ArrowLeft, ChevronRight,
   QrCode, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-const getLocalStorage = (key, initialData) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(initialData));
-    return initialData;
-  }
-  try {
-    return JSON.parse(data);
-  } catch {
-    return initialData;
-  }
-};
-
-const getPaymentSettings = () => getLocalStorage("nok-mock-payment-settings", {
-  upiId: "nammaoor@upi",
-  payeeName: "Namma Oor Karuvattu Kadai",
-  accountHolderName: "Namma Oor Store",
-  accountNumber: "123456789012",
-  ifscCode: "SBIN0001234",
-  bankName: "State Bank of India",
-  qrCodeUrl: ""
-});
-
-const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const paymentSettingsApi = {
-  getPublic: async () => {
-    await delay();
-    const settings = getPaymentSettings();
-    return {
-      success: true,
-      settings: {
-        upiId: settings.upiId,
-        payeeName: settings.payeeName,
-        qrCodeUrl: settings.qrCodeUrl,
-      }
-    };
-  }
-};
+import { usePaymentSettingsPublic } from "../../hooks/queries/usePaymentSettings";
 
 export const PAYMENT_METHODS = [
   {
@@ -139,15 +101,7 @@ export default function Payment({
 }) {
   const isMobile = useIsMobile();
 
-  const [receiverSettings, setReceiverSettings] = useState(null);
-  const [loadingSettings,  setLoadingSettings]  = useState(true);
-
-  useEffect(() => {
-    paymentSettingsApi.getPublic()
-      .then((r) => setReceiverSettings(r.settings || null))
-      .catch(() => setReceiverSettings(null))
-      .finally(() => setLoadingSettings(false));
-  }, []);
+  const { data: receiverSettings = null, isLoading: loadingSettings } = usePaymentSettingsPublic();
 
   const upiQueryString = useMemo(() => {
     if (!receiverSettings?.upiId) return "";

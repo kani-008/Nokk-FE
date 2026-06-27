@@ -4,7 +4,7 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check,
 } from "lucide-react";
-import API from "../ApiCall/Api";
+import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hooks/queries/useOrders";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
@@ -51,20 +51,19 @@ const REPLACEMENT_REASONS = [
 function ReplacementModal({ orderId, onClose, onSuccess }) {
   const [reason, setReason]   = useState("");
   const [details, setDetails] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError]     = useState("");
+
+  const requestReplacementMutation = useRequestReplacement();
+  const submitting = requestReplacementMutation.isPending;
 
   const handleSubmit = async () => {
     if (!reason) { setError("Please select a reason."); return; }
-    setSubmitting(true);
     setError("");
     try {
-      await API.post("/orders/request-replacement", { id: orderId, reason, details: details.trim() || undefined });
+      await requestReplacementMutation.mutateAsync({ id: orderId, reason, details: details.trim() || undefined });
       onSuccess();
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Could not submit replacement request");
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -124,7 +123,6 @@ function ReplacementModal({ orderId, onClose, onSuccess }) {
 function OrderCard({ order }) {
   const { token }   = useAuthStore();
   const [open,      setOpen]      = useState(false);
-  const [cancelling,setCancelling]= useState(false);
   const [cancelled, setCancelled] = useState(order.status === "cancelled");
   const [status,    setStatus]    = useState(order.status);
   const [showReplacementModal, setShowReplacementModal] = useState(false);
@@ -137,18 +135,17 @@ function OrderCard({ order }) {
   const canRequestReplacement = isDelivered && !replacementRequested;
   const addr = order.address || {};
 
+  const cancelOrderMutation = useCancelOrder();
+  const cancelling = cancelOrderMutation.isPending;
+
   const handleCancel = async () => {
     if (!confirm("Cancel this order?")) return;
-    setCancelling(true);
     try {
-      const response = await API.post(`/orders/cancel-my-order`, { id: order.id });
-      console.log(response.data);
+      await cancelOrderMutation.mutateAsync(order.id);
       setStatus("cancelled");
       setCancelled(true);
     } catch (e) {
       alert(e.response?.data?.message || e.message || "Could not cancel order");
-    } finally {
-      setCancelling(false);
     }
   };
 
@@ -334,41 +331,10 @@ function OrderSkeleton() {
 export default function MyOrders() {
   const { token }  = useAuthStore();
   const location   = useLocation();
-  const [orders,   setOrders]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const { data: orders = [], isLoading: loading } = useMyOrders();
   const [filter,   setFilter]   = useState("all");
 
   const newOrderId = location.state?.newOrderId;
-
-  useEffect(() => {
-    if (!token) return;
-    const fetchOrders = async () => {
-      try {
-        const response = await API.get(`/orders/get-my-orders`);
-        console.log(response.data);
-        const res = response.data;
-        const mappedOrders = (res.orders || []).map(o => ({
-          ...o,
-          items: (o.items || []).map(item => ({
-            ...item,
-            productName: item.name,
-            weightLabel: item.weight
-          })),
-          timeline: (o.timeline || []).map(t => ({
-            ...t,
-            note: t.notes,
-            createdAt: t.date
-          }))
-        }));
-        setOrders(mappedOrders);
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrders();
-  }, [token]);
 
   const FILTERS = [
     { key: "all",      label: "All" },

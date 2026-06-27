@@ -4,7 +4,7 @@ import {
   SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
   Star, ArrowUpDown,
 } from "lucide-react";
-import API from "../ApiCall/Api";
+import { useProductCategories, useWeightLabels, useProductList } from "../hooks/queries/useProducts";
 
 
 import ProductCard from "../components/Product/ProductCard";
@@ -292,10 +292,39 @@ export default function Products() {
     [weightParam]
   );
 
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [pagination, setPagination] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryParams = useMemo(() => {
+    const p = {};
+    if (search) p.search = search;
+    if (category) p.category = category;
+    if (sort) p.sort = sort;
+    if (inStock) p.inStock = "true";
+    if (isBest) p.isBestseller = "true";
+    if (isNew) p.isNew = "true";
+    if (minPrice) p.minPrice = minPrice;
+    if (maxPrice) p.maxPrice = maxPrice;
+    if (rating) p.rating = rating;
+    if (weights.length) p.weight = weights.join(",");
+    if (hasOffer) p.hasOffer = "true";
+    p.page = String(page);
+    p.limit = "12";
+    return p;
+  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
+
+  const { data: catData = [] } = useProductCategories();
+  const categories = catData;
+
+  const { data: weightData = [] } = useWeightLabels();
+  const allWeightLabels = weightData;
+
+  const { data: productsData, isLoading: productsLoading } = useProductList(queryParams);
+  const products = productsData?.products || [];
+  const pagination = productsData?.pagination || null;
+  const loading = productsLoading;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [queryParams]);
+
   const [filterOpen, setFilterOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
@@ -321,24 +350,7 @@ export default function Products() {
     return () => clearTimeout(timer);
   }, [minPrice, maxPrice]);
 
-  // ── build query string from URL state ────────────────────────────
-  const buildQuery = useCallback(() => {
-    const p = new URLSearchParams();
-    if (search) p.set("search", search);
-    if (category) p.set("category", category);
-    if (sort) p.set("sort", sort);
-    if (inStock) p.set("inStock", "true");
-    if (isBest) p.set("isBestseller", "true");
-    if (isNew) p.set("isNew", "true");
-    if (minPrice) p.set("minPrice", minPrice);
-    if (maxPrice) p.set("maxPrice", maxPrice);
-    if (rating) p.set("rating", rating);
-    if (weights.length) p.set("weight", weights.join(","));
-    if (hasOffer) p.set("hasOffer", "true");
-    p.set("page", String(page));
-    p.set("limit", "12");
-    return p.toString();
-  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
+
 
   // ── set a single URL param ────────────────────────────────────────
   const setParam = (key, value) => {
@@ -371,54 +383,7 @@ export default function Products() {
     setPriceDraft({ min: "", max: "" });
   };
 
-  // ── fetch categories once ─────────────────────────────────────────
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await API.get(`/categories/get-all`);
-        console.log(response.data);
-        setCategories(response.data.categories || []);
-      } catch (err) {
-        console.error("Failed to load categories:", err);
-      }
-    };
-    fetchCategories();
-  }, []);
 
-  // ── distinct pack sizes — fetched once from the dedicated endpoint ──────────────
-  const [allWeightLabels, setAllWeightLabels] = useState([]);
-  useEffect(() => {
-    const fetchWeightLabels = async () => {
-      try {
-        const response = await API.get("/products/weight-labels");
-        setAllWeightLabels(response.data.weightLabels || []);
-      } catch (err) {
-        console.error("Failed to load weight labels:", err);
-      }
-    };
-    fetchWeightLabels();
-  }, []);
-
-  // ── fetch products whenever filters change (full server-side) ───────────────────
-  useEffect(() => {
-    const timer = setTimeout(() => { setLoading(true); }, 0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    const fetchProducts = async () => {
-      try {
-        const response = await API.get(`/products/get-all?${buildQuery()}`);
-        setProducts(response.data.products || []);
-        setPagination(response.data.pagination || null);
-      } catch {
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-    return () => clearTimeout(timer);
-  }, [buildQuery]);
 
 
   // ── active filters for pill display ──────────────────────────────

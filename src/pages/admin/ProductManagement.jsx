@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
+import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
 import {
   AdminPage, AdminButton, SearchBar,
 } from "../../components/admin/AdminUI.jsx";
@@ -45,18 +45,13 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductManagement() {
-  const [products,        setProducts]        = useState([]);
-  const [categories,      setCategories]      = useState([]);
-  const [loading,         setLoading]         = useState(true);
   const [search,          setSearch]          = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [catFilter,       setCatFilter]       = useState("");
   const [page,            setPage]            = useState(1);
-  const [totalPages,      setTotalPages]      = useState(1);
   const [modal,           setModal]           = useState(null);
   const [pageError,       setPageError]       = useState("");
   const [deleteTarget,    setDeleteTarget]    = useState(null);
-  const [deleting,        setDeleting]        = useState(false);
 
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
@@ -64,70 +59,42 @@ export default function ProductManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await API.get("/categories/get-all");
-        console.log(response.data);
-        setCategories(response.data.categories || []);
-      } catch (err) {
-        console.error("Failed to load categories:", err);
-      }
-    };
-    fetchCategories();
-  }, []);
+  const { data: catData = [] } = useProductCategories();
+  const categories = catData;
 
-  const load = useCallback(async () => {
-    setTimeout(() => {
-      setLoading(true);
-    }, 0);
-    const p = new URLSearchParams();
-    if (debouncedSearch) p.set("search",   debouncedSearch);
-    if (catFilter)       p.set("category", catFilter);
-    p.set("page", page); p.set("limit", 15);
-    try {
-      const response = await API.get(`/products/get-all?${p.toString()}`);
-      console.log(response.data);
-      const res = response.data;
-      setProducts(res.products || []);
-      setTotalPages(res.pagination?.totalPages || 1);
-    } catch {
-      setPageError("Couldn't load products. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 15 };
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (catFilter)       p.category = catFilter;
+    return p;
   }, [debouncedSearch, catFilter, page]);
 
+  const { data: productsData, isLoading: loading, error: queryError } = useAdminProductList(queryParams);
+  const products = productsData?.products || [];
+  const totalPages = productsData?.pagination?.totalPages || 1;
+
   useEffect(() => {
-    const t = setTimeout(() => {
-      load();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [load]);
+    if (queryError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPageError("Couldn't load products. Please try again.");
+    }
+  }, [queryError]);
+
+  const deleteProductMutation = useDeleteProduct();
+  const deleting = deleteProductMutation.isPending;
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      const response = await API.delete("/products/delete-product", {
-        data: { id: deleteTarget.id }
-      });
-      console.log(response.data);
-      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      await deleteProductMutation.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
     } catch (e) {
       setPageError(e.response?.data?.message || e.message || "Failed to delete product.");
       setDeleteTarget(null);
-    } finally { setDeleting(false); }
+    }
   };
 
-  const handleSaved = (prod) => {
-    setProducts((prev) => {
-      const idx = prev.findIndex((p) => p.id === prod.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = prod; return n; }
-      return [prod, ...prev];
-    });
-  };
+  const handleSaved = () => {};
 
   const COLS = [
     {

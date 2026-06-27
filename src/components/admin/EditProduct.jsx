@@ -1,9 +1,19 @@
 import { useState, useRef } from "react";
 import { Plus, X, Loader2 } from "lucide-react";
-import API from "../../ApiCall/Api.jsx";
 import { AdminButton } from "./AdminUI.jsx";
 import Toggle from "./Toggle.jsx";
 import Dropdown from "./Dropdown.jsx";
+import {
+  useUpdateProduct,
+  useCreateProduct,
+  useAddProductVariant,
+  useUpdateProductVariant,
+  useDeleteProductVariant,
+  useAddProductImages,
+  useDeleteProductImage,
+  useUploadProductImage,
+  useDeleteUploadedFile
+} from "../../hooks/queries/useProducts";
 
 const EMPTY = {
   nameEn: "", nameTa: "", slug: "", description: "", howToUse: "", storageTips: "",
@@ -223,6 +233,16 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
   const uploadedUrlsRef = useRef([]); // tracks files uploaded to Supabase Storage (for new products)
   const uploadedDbImagesRef = useRef([]); // tracks database image records added during the edit save session
 
+  const deleteImageMutation = useDeleteProductImage();
+  const deleteVariantMutation = useDeleteProductVariant();
+  const addVariantMutation = useAddProductVariant();
+  const updateVariantMutation = useUpdateProductVariant();
+  const addProductImagesMutation = useAddProductImages();
+  const updateProductMutation = useUpdateProduct();
+  const uploadProductImageMutation = useUploadProductImage();
+  const createProductMutation = useCreateProduct();
+  const deleteUploadedFileMutation = useDeleteUploadedFile();
+
   const totalImageCount = savedImages.length + staged.length;
   console.log("EditProduct rendering: product =", product, "savedImages =", savedImages);
 
@@ -286,7 +306,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     setRemovingImg(img.id);
     setImgError("");
     try {
-      await API.delete("/products/delete-image", { data: { productId: product.id, imageId: img.id } });
+      await deleteImageMutation.mutateAsync({ productId: product.id, imageId: img.id, slug: product.slug });
       setSavedImages((arr) => arr.filter((i) => i.id !== img.id));
     } catch (err) {
       setImgError(err.response?.data?.message || err.message || "Failed to remove image");
@@ -310,10 +330,14 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
     setSaving(true); setError("");
     try {
-      const cleanVariants = variants.map(({ _uid, _priceTouched, _comparePriceTouched, ...rest }) => {
-        const computedInStock = rest.inStock !== undefined ? rest.inStock : true;
+      const cleanVariants = variants.map((v) => {
+        const next = { ...v };
+        delete next._uid;
+        delete next._priceTouched;
+        delete next._comparePriceTouched;
+        const computedInStock = next.inStock !== undefined ? next.inStock : true;
         return {
-          ...rest,
+          ...next,
           inStock: computedInStock
         };
       });
@@ -326,26 +350,27 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
         // deleted
         for (const orig of (product.variants || [])) {
           if (!currentIds.has(orig.id)) {
-            await API.delete("/products/delete-variant", { data: { productId: product.id, variantId: orig.id } });
+            await deleteVariantMutation.mutateAsync({ productId: product.id, variantId: orig.id, slug: product.slug });
           }
         }
         // new
         for (const v of cleanVariants) {
           if (!v.id) {
-            await API.post("/products/add-variant", {
+            await addVariantMutation.mutateAsync({
               productId: product.id,
               weightGrams: Number(v.weightGrams) || 0,
               weightLabel: v.weightLabel,
               price: v.price,
               comparePrice: v.comparePrice || null,
               inStock: v.inStock,
+              slug: product.slug
             });
           }
         }
         // updated
         for (const v of cleanVariants) {
           if (v.id && originalIds.has(v.id)) {
-            await API.put("/products/update-variant", {
+            await updateVariantMutation.mutateAsync({
               productId: product.id,
               variantId: v.id,
               weightGrams: Number(v.weightGrams) || 0,
@@ -353,6 +378,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               price: v.price,
               comparePrice: v.comparePrice || null,
               inStock: v.inStock,
+              slug: product.slug
             });
           }
         }
@@ -362,30 +388,28 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           const body = new FormData();
           body.append("productId", product.id);
           staged.forEach((s) => body.append("imageFiles", s.file));
-          const addImgsRes = await API.post("/products/add-images", body, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          if (addImgsRes.data.images) {
-            uploadedDbImagesRef.current = [...uploadedDbImagesRef.current, ...addImgsRes.data.images];
+          const addImgsRes = await addProductImagesMutation.mutateAsync({ productId: product.id, body, slug: product.slug });
+          if (addImgsRes.images) {
+            uploadedDbImagesRef.current = [...uploadedDbImagesRef.current, ...addImgsRes.images];
           }
         }
 
         // ── Core fields ───────────────────────────────────────────────
-        const { variants: _v, images: _i, ...coreForm } = form;
-        const response = await API.put("/products/update-product", { id: product.id, ...coreForm });
+        const coreForm = { ...form };
+        delete coreForm.variants;
+        delete coreForm.images;
+        const response = await updateProductMutation.mutateAsync({ id: product.id, ...coreForm, slug: product.slug });
         uploadedDbImagesRef.current = []; // save succeeded, clear tracked images
-        console.log(response.data);
-        onSaved(response.data.product || { ...form, id: product.id });
+        console.log(response);
+        onSaved(response.product || { ...form, id: product.id });
       } else {
         // New product: upload any staged files first in parallel
         const uploadPromises = staged.map(async (s) => {
           const body = new FormData();
           body.append("file", s.file);
           body.append("slug", form.slug.trim());
-          const up = await API.post("/upload/product", body, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          return up.data.url;
+          const up = await uploadProductImageMutation.mutateAsync(body);
+          return up.url;
         });
         const urls = await Promise.all(uploadPromises);
         uploadedUrlsRef.current = [...uploadedUrlsRef.current, ...urls];
@@ -395,10 +419,10 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
           isPrimary: idx === 0
         }));
         const payload = { ...form, variants: cleanVariants, images: uploadedImages };
-        const response = await API.post("/products/create-product", payload);
+        const response = await createProductMutation.mutateAsync(payload);
         uploadedUrlsRef.current = []; // save succeeded, clear tracked URLs
-        console.log(response.data);
-        onSaved(response.data.product || { ...payload });
+        console.log(response);
+        onSaved(response.product || { ...payload });
       }
 
       onClose();
@@ -419,7 +443,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
       if (uploadedUrlsRef.current.length > 0) {
         await Promise.all(
           uploadedUrlsRef.current.map((url) =>
-            API.delete("/upload/delete-file", { data: { url } }).catch((err) =>
+            deleteUploadedFileMutation.mutateAsync(url).catch((err) =>
               console.error("[Cleanup] Failed to delete file:", url, err)
             )
           )
@@ -430,7 +454,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
       if (uploadedDbImagesRef.current.length > 0) {
         await Promise.all(
           uploadedDbImagesRef.current.map((img) =>
-            API.delete("/products/delete-image", { data: { productId: product.id, imageId: img.id } }).catch((err) =>
+            deleteImageMutation.mutateAsync({ productId: product.id, imageId: img.id, slug: product.slug }).catch((err) =>
               console.error("[Cleanup] Failed to delete DB image record:", img.id, err)
             )
           )

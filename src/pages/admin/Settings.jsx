@@ -5,9 +5,14 @@ import {
   Camera, Share2, AtSign, MessageCircle, Clock, ShoppingBag,
   Globe, Crosshair,
 } from "lucide-react";
-import { useAuthStore } from "../../components/store/AuthStore";
+
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";
+import {
+  usePaymentSettingsAdmin,
+  useUpdatePaymentSettings,
+  useUploadQrCode
+} from "../../hooks/queries/usePaymentSettings";
 
 // ── localStorage helpers ───────────────────────────────────────────────
 const getLS  = (key, def) => { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } };
@@ -16,7 +21,6 @@ const delay  = (ms = 120) => new Promise((r) => setTimeout(r, ms));
 
 // ── mock API ───────────────────────────────────────────────────────────
 const SETTINGS_KEY = "nok-mock-settings";
-const PAYMENT_KEY  = "nok-mock-payment-settings";
 
 const DEFAULTS = {
   storeName: "Namma Oor Karuvattu Kadai",
@@ -61,26 +65,7 @@ const settingsApi = {
   update: async (data) => { await delay(); setLS(SETTINGS_KEY, data); return { settings: data }; },
 };
 
-const paymentApi = {
-  get:      async ()     => { await delay(); return { settings: getLS(PAYMENT_KEY, PAYMENT_DEFAULTS) }; },
-  update:   async (data) => {
-    await delay();
-    const merged = { ...getLS(PAYMENT_KEY, PAYMENT_DEFAULTS), ...data };
-    setLS(PAYMENT_KEY, merged);
-    return { settings: merged };
-  },
-  uploadQr: async (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const s = { ...getLS(PAYMENT_KEY, PAYMENT_DEFAULTS), qrCodeUrl: reader.result };
-        setLS(PAYMENT_KEY, s);
-        resolve({ settings: s });
-      };
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(file);
-    }),
-};
+
 
 // ── Colour helpers ─────────────────────────────────────────────────────
 const hexToRgb = (hex = "") => {
@@ -263,6 +248,7 @@ const THEME_PRESETS = [
 function ThemeSection({ themeColor, bgColor, onChange }) {
   const [hexInput, setHexInput] = useState(themeColor || "");
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setHexInput(themeColor || ""); }, [themeColor]);
 
   const chooseBrand = (hex) => {
@@ -409,7 +395,6 @@ function SocialField({ icon: Icon, label, name, value, onChange, placeholder, co
 
 // ══════════════════════════════════════════════════════════════════════
 export default function Settings() {
-  const { token }  = useAuthStore();
   const [form,    setForm]    = useState({ ...DEFAULTS });
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
@@ -417,12 +402,31 @@ export default function Settings() {
   const [error,   setError]   = useState("");
 
   const [payForm,     setPayForm]     = useState({ ...PAYMENT_DEFAULTS });
-  const [payLoading,  setPayLoading]  = useState(true);
-  const [paySaving,   setPaySaving]   = useState(false);
   const [paySaved,    setPaySaved]    = useState(false);
   const [payError,    setPayError]    = useState("");
-  const [qrUploading, setQrUploading] = useState(false);
   const fileRef = useRef(null);
+
+  const { data: paySettings, isLoading: payLoading, error: payQueryError } = usePaymentSettingsAdmin();
+
+  useEffect(() => {
+    if (paySettings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPayForm(paySettings);
+    }
+  }, [paySettings]);
+
+  useEffect(() => {
+    if (payQueryError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPayError("Failed to load payment details.");
+    }
+  }, [payQueryError]);
+
+  const updatePaymentMutation = useUpdatePaymentSettings();
+  const paySaving = updatePaymentMutation.isPending;
+
+  const uploadQrMutation = useUploadQrCode();
+  const qrUploading = uploadQrMutation.isPending;
 
   useEffect(() => {
     settingsApi.get()
@@ -436,14 +440,7 @@ export default function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    setPayLoading(true);
-    paymentApi.get()
-      .then((r) => setPayForm((f) => ({ ...f, ...(r.settings || {}) })))
-      .catch(() => {})
-      .finally(() => setPayLoading(false));
-  }, [token]);
+
 
   const set  = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setE = (e)    => set(e.target.name, e.target.type === "number" ? Number(e.target.value) : e.target.value);
@@ -462,13 +459,12 @@ export default function Settings() {
   };
 
   const handleSavePayment = async () => {
-    setPaySaving(true); setPaySaved(false); setPayError("");
+    setPaySaved(false); setPayError("");
     try {
-      await paymentApi.update(payForm);
+      await updatePaymentMutation.mutateAsync(payForm);
       setPaySaved(true);
       setTimeout(() => setPaySaved(false), 3000);
     } catch (e) { setPayError(e.message || "Failed to save"); }
-    finally { setPaySaving(false); }
   };
 
   const handleQrUpload = async (e) => {
@@ -476,12 +472,12 @@ export default function Settings() {
     if (!file) return;
     if (!["image/png", "image/jpeg"].includes(file.type)) { setPayError("PNG or JPG only"); return; }
     if (file.size > 2 * 1024 * 1024) { setPayError("Max 2 MB"); return; }
-    setQrUploading(true); setPayError("");
+    setPayError("");
     try {
-      const r = await paymentApi.uploadQr(file);
-      setPayForm((f) => ({ ...f, qrCodeUrl: r.settings?.qrCodeUrl || f.qrCodeUrl }));
+      const r = await uploadQrMutation.mutateAsync(file);
+      setPayForm((f) => ({ ...f, qrCodeUrl: r.qrCodeUrl || f.qrCodeUrl }));
     } catch (e) { setPayError(e.message); }
-    finally { setQrUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+    finally { if (fileRef.current) fileRef.current.value = ""; }
   };
 
   if (loading) {

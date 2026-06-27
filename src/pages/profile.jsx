@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { User, Lock, MapPin, Plus, Pencil, Trash2, Eye, EyeOff, Check, Loader2, Navigation, AlertCircle } from "lucide-react";
-import API from "../ApiCall/Api.jsx";
+import {
+  useAddresses,
+  useUpdateProfile,
+  useUpdatePassword,
+  useAddAddress,
+  useUpdateAddress,
+  useDeleteAddress
+} from "../hooks/queries/useProfile";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import { useToast }     from "../components/useToast.jsx";
 
@@ -35,21 +42,17 @@ function Field({ label, name, type = "text", value, onChange, placeholder, readO
 // ── Address card ───────────────────────────────────────────────────────
 function AddressCard({ addr, onEdit, onDelete, setError, setSuccess }) {
   const { token } = useAuthStore();
-  const [deleting, setDeleting] = useState(false);
+  const deleteAddressMutation = useDeleteAddress();
+  const deleting = deleteAddressMutation.isPending;
+
   const handleDelete = async () => {
     if (!confirm("Delete this address?")) return;
-    setDeleting(true);
     try {
-      const response = await API.delete("/users/me/delete-address", {
-        data: { addressId: addr.id }
-      });
-      console.log(response.data);
+      await deleteAddressMutation.mutateAsync(addr.id);
       setSuccess("Address deleted successfully!");
-      onDelete(addr.id);
+      onDelete?.(addr.id);
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed to delete address");
-    } finally {
-      setDeleting(false);
     }
   };
   return (
@@ -80,7 +83,6 @@ const STATES = ["Tamil Nadu","Karnataka","Kerala","Andhra Pradesh","Telangana","
 function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
   const { token } = useAuthStore();
   const [form,   setForm]   = useState(initial || ADDR_EMPTY);
-  const [saving, setSaving] = useState(false);
   const [detecting, setDetecting] = useState(false);
   
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -184,30 +186,27 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
     }
   };
 
+  const addAddressMutation = useAddAddress();
+  const updateAddressMutation = useUpdateAddress();
+  const saving = addAddressMutation.isPending || updateAddressMutation.isPending;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.addressLine1 || !form.city || !form.state || !form.pincode) {
       setError("Please fill all required fields"); return;
     }
-    setSaving(true);
     try {
       let res;
       if (form.id) {
-        const response = await API.put("/users/me/update-address", { addressId: form.id, ...form });
-        console.log(response.data);
-        res = response.data;
+        res = await updateAddressMutation.mutateAsync({ addressId: form.id, ...form });
         setSuccess("Address updated successfully!");
       } else {
-        const response = await API.post("/users/me/add-address", form);
-        console.log(response.data);
-        res = response.data;
+        res = await addAddressMutation.mutateAsync(form);
         setSuccess("Address added successfully!");
       }
       onSave(res.address || form);
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed to save address");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -272,52 +271,27 @@ export default function Profile() {
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
   const [tab,       setTab]       = useState("profile");
   const [profile,   setProfile]   = useState({ fullName: authUser?.fullName || authUser?.name || "", email: authUser?.email || "", phone: authUser?.phone || "" });
-  const [saving,    setSaving]    = useState(false);
-  const [addresses, setAddresses] = useState([]);
-  const [addrLoading, setAddrLoading] = useState(false);
+  const updateProfileMutation = useUpdateProfile();
+  const updatePasswordMutation = useUpdatePassword();
+
+  const { data: addressesList = [], isLoading: addrLoading } = useAddresses();
+  const addresses = tab === "addresses" ? addressesList : [];
+
+  const saving = updateProfileMutation.isPending;
+  const pwSaving = updatePasswordMutation.isPending;
+
   const [editAddr,  setEditAddr]  = useState(null); // null | "new" | addr object
   const [pwForm,    setPwForm]    = useState({ current: "", newPw: "", confirm: "" });
   const [showPw,    setShowPw]    = useState({ c: false, n: false, cf: false });
-  const [pwSaving,  setPwSaving]  = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    if (tab !== "addresses") return;
-    const timer = setTimeout(() => {
-      if (active) setAddrLoading(true);
-    }, 0);
-    const fetchAddresses = async () => {
-      try {
-        const response = await API.get("/users/me/addresses");
-        console.log(response.data);
-        if (!active) return;
-        setAddresses(response.data.addresses || []);
-      } catch (err) {
-        console.error("Failed to load addresses:", err);
-      } finally {
-        if (active) setAddrLoading(false);
-      }
-    };
-    fetchAddresses();
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [tab, token]);
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
-    setSaving(true);
     try {
-      const response = await API.put("/users/me/update", { fullName: profile.fullName, phone: profile.phone });
-      console.log(response.data);
-      const res = response.data;
+      const res = await updateProfileMutation.mutateAsync({ fullName: profile.fullName, phone: profile.phone });
       updateUser(res.user || { ...authUser, fullName: profile.fullName, phone: profile.phone });
       setSuccess("Profile information updated successfully!");
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed to save profile");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -325,25 +299,16 @@ export default function Profile() {
     e.preventDefault();
     if (pwForm.newPw !== pwForm.confirm) { setError("Passwords don't match"); return; }
     if (pwForm.newPw.length < 6)         { setError("Minimum 6 characters required");  return; }
-    setPwSaving(true);
     try {
-      const response = await API.put("/users/me/password", { currentPassword: pwForm.current, newPassword: pwForm.newPw });
-      console.log(response.data);
+      await updatePasswordMutation.mutateAsync({ currentPassword: pwForm.current, newPassword: pwForm.newPw });
       setSuccess("Password updated successfully!");
       setPwForm({ current: "", newPw: "", confirm: "" });
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed to update password");
-    } finally {
-      setPwSaving(false);
     }
   };
 
   const handleAddrSaved = (addr) => {
-    setAddresses((prev) => {
-      const idx = prev.findIndex((a) => a.id === addr.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = addr; return n; }
-      return [...prev, addr];
-    });
     setEditAddr(null);
   };
 
@@ -475,7 +440,7 @@ export default function Profile() {
                   {addresses.map((a) => (
                     <AddressCard key={a.id} addr={a}
                       onEdit={(a) => setEditAddr(a)}
-                      onDelete={(id) => setAddresses((prev) => prev.filter((x) => x.id !== id))}
+                      onDelete={(id) => {}}
                       setError={setError}
                       setSuccess={setSuccess}
                     />
