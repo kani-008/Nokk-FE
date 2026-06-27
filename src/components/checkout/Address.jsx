@@ -139,10 +139,10 @@ export default function Address({
             const house = addr.house_number || addr.building || "";
             const line1 = [house, street].filter(Boolean).join(", ");
             const city = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
-            
+
             let state = addr.state || "";
             state = state.replace(/State of\s+/i, "");
-            
+
             const pincode = addr.postcode || "";
 
             const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");

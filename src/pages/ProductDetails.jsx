@@ -296,10 +296,17 @@ export default function ProductDetails() {
   };
 
   const handleBuyNow = () => {
+    // ensure the item is in the cart first
     if (!inCart) {
       handleAddToCart();
     }
-    navigate("/cart");
+    // if not logged in, redirect to login and come back to checkout
+    if (!token) {
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
+    // skip the cart page — go straight to checkout
+    navigate("/checkout");
   };
 
   const copyToClipboard = (text) => {

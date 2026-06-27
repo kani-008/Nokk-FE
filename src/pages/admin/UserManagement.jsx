@@ -1,10 +1,38 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useOutletContext } from "react-router-dom";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
 import {
-  AdminPage, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
+
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .um-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+  }
+`;
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -367,7 +395,16 @@ export default function UserManagement() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
 
-  // debounce search input
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  // plug into top-bar search (same pattern as OrderManagement)
+  useEffect(() => {
+    registerSearch({ placeholder: "Search name, email, phone…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  // debounce search → query
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
     return () => clearTimeout(t);
@@ -417,43 +454,46 @@ export default function UserManagement() {
   ];
 
   return (
-    <AdminPage>
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
 
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3 w-full">
-        <div className="w-full sm:flex-1">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-full" />
-        </div>
+      {/* Filter cluster — matches OrderManagement pattern */}
+      <div className="um-cluster-fluid flex items-center justify-end gap-3 w-full">
+        {(search || roleFilter || status) && (
+          <button
+            onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }}
+            className="um-clear-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1"
+          >
+            <X size={14} /> Clear
+          </button>
+        )}
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex-1 sm:w-36 sm:flex-none">
           <CustomDropdown
             value={roleFilter}
             onChange={(val) => { setRoleFilter(val); setPage(1); }}
             options={[
-              { value: "", label: "All" },
+              { value: "", label: "All Roles" },
               { value: "customer", label: "Customer" },
               { value: "admin", label: "Admin" },
             ]}
-            placeholder="All"
-            className="flex-1 sm:w-34"
+            placeholder="All Roles"
+            className="um-filter-fluid w-full"
           />
+        </div>
 
+        <div className="flex-1 sm:w-36 sm:flex-none">
           <CustomDropdown
             value={status}
             onChange={(val) => { setStatus(val); setPage(1); }}
             options={[
-              { value: "", label: "All" },
+              { value: "", label: "All Statuses" },
               { value: "active", label: "Active" },
               { value: "blocked", label: "Blocked" },
             ]}
-            placeholder="All"
-            className="flex-1 sm:w-34"
+            placeholder="All Statuses"
+            className="um-filter-fluid w-full"
           />
-
-          {(search || roleFilter || status) && (
-            <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1">
-              <X size={14} /> Clear
-            </button>
-          )}
         </div>
       </div>
 
