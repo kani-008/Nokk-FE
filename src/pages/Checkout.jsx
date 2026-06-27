@@ -6,6 +6,7 @@ import { useCheckout } from "../hooks/queries/useOrders";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
+import { useBuyNowStore }        from "../components/store/BuyNowStore";
 import StepBar      from "../components/checkout/StepBar";
 import AddressStep  from "../components/checkout/Address";
 import PaymentStep  from "../components/checkout/Payment";
@@ -30,20 +31,24 @@ function validateAddress(addr) {
 export default function Checkout() {
   const navigate               = useNavigate();
   const { token, user }        = useAuthStore();
-  const { items, coupon, subtotal, discount, shipping, total, clearCart } = useCartStore();
+  const { items, coupon, subtotal, discount } = useCartStore();
+  const buyNowItem  = useBuyNowStore((s) => s.item);
+  const clearBuyNow = useBuyNowStore((s) => s.clearItem);
+
+  const checkoutItems = buyNowItem ? [buyNowItem] : items;
 
   // computed totals
-  const sub  = subtotal();
-  const disc = discount();
-  const ship = shipping();
-  const tot  = total();
+  const sub  = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
+  const disc = buyNowItem ? 0 : discount();
+  const ship = sub >= 499 ? 0 : 60;
+  const tot  = sub - disc + ship;
 
   // ── step ───────────────────────────────────────────────────────────
   const [step, setStep] = useState("address");
 
   // ── address state ──────────────────────────────────────────────────
   // ── address state ──────────────────────────────────────────────────
-  const { data: addressesList = [], isLoading: addressesLoading } = useAddresses();
+  const { data: addressesList = [] } = useAddresses();
   const savedAddresses = addressesList;
 
   const [selectedSaved,  setSelectedSaved]  = useState(null);
@@ -76,10 +81,13 @@ export default function Checkout() {
     }
   }, [addressesList]);
 
-  // ── redirect if cart emptied ───────────────────────────────────────
+  // ── redirect if cart emptied (skip when in buy-now mode) ──────────
   useEffect(() => {
-    if (items.length === 0) navigate("/cart");
-  }, [items, navigate]);
+    if (!buyNowItem && items.length === 0) navigate("/cart");
+  }, [buyNowItem, items, navigate]);
+
+  // ── clear buy-now item when leaving checkout ───────────────────────
+  useEffect(() => () => clearBuyNow(), []);
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
@@ -129,7 +137,7 @@ export default function Checkout() {
         }
       }
       const payload = {
-        items: items.map(i => ({
+        items: checkoutItems.map(i => ({
           productId: i.productId,
           variantId: i.variantId,
           weight: i.weight,
@@ -157,15 +165,18 @@ export default function Checkout() {
 
       const res = await checkoutMutation.mutateAsync(payload);
 
-      // Make API call inline to clear cart on server if logged in
-      if (token) {
-        try {
-          await API.delete("/cart/clear-cart");
-        } catch (clearErr) {
-          console.error("Failed to clear server cart:", clearErr);
+      // Only clear the real cart when not in buy-now mode
+      if (!buyNowItem) {
+        if (token) {
+          try {
+            await API.delete("/cart/clear-cart");
+          } catch (clearErr) {
+            console.error("Failed to clear server cart:", clearErr);
+          }
         }
+        useCartStore.getState().clearCartLocal();
       }
-      useCartStore.getState().clearCartLocal();
+      clearBuyNow();
 
       setPlacedOrderId(res.order?.id);
       if (payMethod !== "upi" || import.meta.env.DEV) {
@@ -230,7 +241,7 @@ export default function Checkout() {
               <ReviewStep
                 address={activeAddress}
                 payMethod={payMethod}
-                items={items}
+                items={checkoutItems}
                 total={tot}
                 placing={placing}
                 error={orderErr}
@@ -258,7 +269,7 @@ export default function Checkout() {
         {/* ── Sticky order summary sidebar ──────────────────────── */}
         <div className="lg:w-72 shrink-0">
           <OrderSummary
-            items={items}
+            items={checkoutItems}
             sub={sub}
             disc={disc}
             ship={ship}

@@ -88,85 +88,165 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
-      return;
-    }
+    console.log("[Profile Detect Location] Button clicked. Checking geolocation support...");
     setDetecting(true);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-            {
-              headers: {
-                "Accept-Language": "en"
-              }
-            }
-          );
-          if (!res.ok) throw new Error("Location lookup failed");
-          const data = await res.json();
-          if (data && data.address) {
-            const addr = data.address;
-            const house = addr.house_number || addr.building || addr.house_name || addr.amenity || "";
-            const street = addr.road || addr.street || addr.footway || addr.path || "";
-            let line1 = [house, street].filter(Boolean).join(", ");
-            if (!line1) {
-              line1 = addr.neighbourhood || addr.suburb || addr.residential || "";
-            }
+    const resolveAddressFromCoords = async (latitude, longitude) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn("[Profile Detect Location] Reverse geocoding fetch timed out after 10 seconds.");
+        controller.abort();
+      }, 10000);
+      try {
+        console.log("[Profile Detect Location] Fetching reverse geocoding data from APIs...");
+        // Fire BigDataCloud + Photon in parallel for best coverage
+        const [bdcResult, photonResult] = await Promise.allSettled([
+          fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+            { signal: controller.signal }
+          ).then((r) => r.json()),
+          fetch(
+            `https://photon.komoot.io/reverse?lat=${latitude}&lon=${longitude}&limit=1&lang=en`,
+            { signal: controller.signal }
+          ).then((r) => r.json()),
+        ]);
+        clearTimeout(timeoutId);
 
-            const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
-            let state = addr.state || "";
-            state = state.replace(/State of\s+/i, "");
+        let line1 = "", city = "", state = "", pincode = "";
 
-            const pincode = addr.postcode ? addr.postcode.replace(/\s+/g, "") : "";
-
-            if (line1 || city || pincode) {
-              const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
-              const matchedState = STATES.find((s) => normalize(s) === normalize(state));
-
-              const areaParts = [];
-              if (addr.neighbourhood && addr.neighbourhood !== street) areaParts.push(addr.neighbourhood);
-              if (addr.suburb && addr.suburb !== street && addr.suburb !== addr.neighbourhood) areaParts.push(addr.suburb);
-              const line2 = areaParts.filter(Boolean).join(", ");
-
-              setForm((prev) => ({
-                ...prev,
-                addressLine1: line1 || prev.addressLine1,
-                addressLine2: line2 || prev.addressLine2,
-                city: city || prev.city,
-                state: matchedState || (state ? "Others" : prev.state),
-                pincode: pincode || prev.pincode,
-              }));
-              setSuccess("Location detected successfully!");
-            } else {
-              setError("Location detected, but could not resolve a precise address. Please enter details manually.");
-            }
-          } else {
-            setError("Could not retrieve address details for this location");
+        if (bdcResult.status === "fulfilled") {
+          const bdc = bdcResult.value;
+          line1 = bdc.locality || "";
+          city  = bdc.city || "";
+          if (!city && bdc.localityInfo?.administrative) {
+            const admins = [...bdc.localityInfo.administrative]
+              .filter((a) => a.adminLevel >= 5 && a.adminLevel <= 7 && a.name !== line1)
+              .sort((a, b) => a.adminLevel - b.adminLevel);
+            city = admins[0]?.name || "";
           }
-        } catch {
-          setError("Failed to resolve address from coordinates");
-        } finally {
+          state   = bdc.principalSubdivision || "";
+          pincode = bdc.postcode ? String(bdc.postcode).replace(/\s+/g, "") : "";
+        }
+
+        if (photonResult.status === "fulfilled") {
+          const props = photonResult.value.features?.[0]?.properties || {};
+          if (!pincode && props.postcode) pincode = String(props.postcode).replace(/\s+/g, "");
+          if (!city   && props.city)    city   = props.city;
+          if (!city   && props.county)  city   = props.county;
+          if (!line1  && props.name)    line1  = props.name;
+          if (!state  && props.state)   state  = props.state;
+        }
+
+        console.log("[Profile Detect Location] Parsed address components:", { line1, city, state, pincode });
+
+        if (line1 || city || pincode) {
+          const normalize = (s) => String(s).toLowerCase().replace(/\s+/g, "");
+          const matchedState = STATES.find((s) => normalize(s) === normalize(state));
+          console.log("[Profile Detect Location] Matched State:", matchedState);
+
+          setForm((prev) => ({
+            ...prev,
+            city:         city  || prev.city,
+            state:        matchedState || (state ? "Others" : prev.state),
+            pincode:      pincode || prev.pincode,
+          }));
+          setSuccess("Location detected successfully!");
           setDetecting(false);
+          return true;
         }
-      },
-      (error) => {
-        let msg = "Failed to detect location";
-        if (error.code === error.PERMISSION_DENIED) {
-          msg = "Location access denied. Please enable location permissions.";
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          msg = "Location information is unavailable.";
-        } else if (error.code === error.TIMEOUT) {
-          msg = "Location request timed out.";
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.error("[Profile Detect Location] Geocoding lookup failed:", err);
+      }
+      return false;
+    };
+
+    const fallbackToIpLocation = async () => {
+      try {
+        console.log("[Profile Detect Location] Fetching location details from IP Geolocation API...");
+        const res = await fetch("https://freeipapi.com/api/json");
+        if (!res.ok) throw new Error("IP location lookup failed");
+        const ipData = await res.json();
+        
+        console.log("[Profile Detect Location] IP Geolocation raw response:", ipData);
+        
+        const city = ipData.cityName || "";
+        const state = ipData.regionName || "";
+        const pincode = ipData.zipCode ? String(ipData.zipCode).replace(/\s+/g, "") : "";
+        
+        let line1 = "";
+        if (ipData.latitude && ipData.longitude) {
+          try {
+            const bdcRes = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${ipData.latitude}&longitude=${ipData.longitude}&localityLanguage=en`
+            );
+            if (bdcRes.ok) {
+              const bdc = await bdcRes.json();
+              line1 = bdc.locality || "";
+            }
+          } catch (e) {
+            console.warn("[Profile Detect Location] Reverse geocode of IP coordinates failed, using default IP city/state/zip:", e);
+          }
         }
-        setError(msg);
+
+        if (line1 || city || pincode) {
+          const normalize = (s) => String(s).toLowerCase().replace(/\s+/g, "");
+          const matchedState = STATES.find((s) => normalize(s) === normalize(state));
+
+          setForm((prev) => ({
+            ...prev,
+            city: city || prev.city,
+            state: matchedState || (state ? "Others" : prev.state),
+            pincode: pincode || prev.pincode
+          }));
+          setSuccess("Location detected successfully via IP fallback!");
+        } else {
+          setError("Could not resolve address details. Please enter details manually.");
+        }
+      } catch (err) {
+        console.error("[Profile Detect Location] IP Geolocation failed:", err);
+        setError("Failed to detect location. Please enter details manually.");
+      } finally {
         setDetecting(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+      }
+    };
+
+    if (!navigator.geolocation) {
+      console.warn("[Profile Detect Location] Geolocation not supported. Falling back to IP-based location...");
+      fallbackToIpLocation();
+      return;
+    }
+
+    const getPosition = (highAccuracy) => {
+      console.log(`[Profile Detect Location] Requesting position (highAccuracy: ${highAccuracy})...`);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log("[Profile Detect Location] Coordinates successfully retrieved:", { latitude, longitude });
+          const success = await resolveAddressFromCoords(latitude, longitude);
+          if (!success) {
+            console.warn("[Profile Detect Location] Reverse geocoding failed on GPS coords. Falling back to IP-based location...");
+            await fallbackToIpLocation();
+          }
+        },
+        (err) => {
+          console.warn(`[Profile Detect Location] Geolocation call failed (highAccuracy: ${highAccuracy}):`, err.message);
+          if (highAccuracy && (err.code === err.POSITION_UNAVAILABLE || err.code === err.TIMEOUT)) {
+            console.log("[Profile Detect Location] Retrying with enableHighAccuracy: false...");
+            getPosition(false);
+          } else {
+            console.warn("[Profile Detect Location] Geolocation failed/denied. Falling back to IP-based location...");
+            if (err.code === err.PERMISSION_DENIED) {
+              setError("Location access blocked. Tap the lock icon in your browser's address bar → Permissions → Location → Allow, then reload.");
+            }
+            fallbackToIpLocation();
+          }
+        },
+        { enableHighAccuracy: highAccuracy, timeout: highAccuracy ? 5000 : 12000, maximumAge: highAccuracy ? 0 : 300000 }
+      );
+    };
+
+    getPosition(true);
   };
 
   const handlePincodeChange = async (val) => {

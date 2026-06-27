@@ -227,7 +227,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
           <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
             <button
               onClick={() => onQty(item.variantId, item.quantity - 1)}
-              disabled={syncing || item.quantity <= 1}
+              disabled={syncing}
               className="px-3 py-1.5 text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Decrease quantity"
             >
@@ -288,16 +288,42 @@ export default function Cart() {
   const setSyncing = (variantId, val) =>
     setSyncingItems((prev) => ({ ...prev, [variantId]: val }));
 
+  // ── remove: optimistic remove + background server sync ────────────
+  const handleRemoveItem = useCallback(async (variantId) => {
+    // Cancel any pending qty debounce for this item
+    clearTimeout(debounceRef.current[variantId]);
+    delete pendingQty.current[variantId];
+
+    // Save snapshot for potential revert
+    const snapshot = useCartStore.getState().items.find((i) => i.variantId === variantId);
+
+    // 1. Remove immediately from UI
+    removeItemLocal(variantId);
+
+    if (!isAuthenticated || !snapshot?.itemId) return;
+
+    try {
+      const res = await API.delete("/cart/remove-item", { data: { itemId: snapshot.itemId } });
+      setItems(mapServerItems(res.data.cart?.items));
+    } catch {
+      // Revert — put item back
+      addItemLocal(snapshot);
+    }
+  }, [isAuthenticated, removeItemLocal, addItemLocal, setItems]);
+
   const handleUpdateQty = useCallback((variantId, quantity) => {
-    const clampedQty = Math.max(1, quantity);
+    if (quantity < 1) {
+      handleRemoveItem(variantId);
+      return;
+    }
 
     // 1. Update UI immediately (zero perceived lag)
-    updateQtyLocal(variantId, clampedQty);
+    updateQtyLocal(variantId, quantity);
 
     if (!isAuthenticated) return;
 
     // 2. Track latest desired qty across rapid taps
-    pendingQty.current[variantId] = clampedQty;
+    pendingQty.current[variantId] = quantity;
 
     // 3. Debounce: only send API call 400ms after last tap
     clearTimeout(debounceRef.current[variantId]);
@@ -321,30 +347,7 @@ export default function Cart() {
       }
     }, 400);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, updateQtyLocal, setItems]);
-
-  // ── remove: optimistic remove + background server sync ────────────
-  const handleRemoveItem = useCallback(async (variantId) => {
-    // Cancel any pending qty debounce for this item
-    clearTimeout(debounceRef.current[variantId]);
-    delete pendingQty.current[variantId];
-
-    // Save snapshot for potential revert
-    const snapshot = useCartStore.getState().items.find((i) => i.variantId === variantId);
-
-    // 1. Remove immediately from UI
-    removeItemLocal(variantId);
-
-    if (!isAuthenticated || !snapshot?.itemId) return;
-
-    try {
-      const res = await API.delete("/cart/remove-item", { data: { itemId: snapshot.itemId } });
-      setItems(mapServerItems(res.data.cart?.items));
-    } catch {
-      // Revert — put item back
-      addItemLocal(snapshot);
-    }
-  }, [isAuthenticated, removeItemLocal, addItemLocal, setItems]);
+  }, [isAuthenticated, updateQtyLocal, setItems, handleRemoveItem]);
 
   // ── coupon ─────────────────────────────────────────────────────────
   const handleValidateCoupon = async (code) => {

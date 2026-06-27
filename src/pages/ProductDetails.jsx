@@ -12,6 +12,7 @@ import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
+import { useBuyNowStore } from "../components/store/BuyNowStore.js";
 import { useToast } from "../components/useToast";
 import ProductDescription from "../components/Product/ProductDescription.jsx";
 import ProductReviews from "../components/Product/ProductReviews.jsx";
@@ -295,17 +296,25 @@ export default function ProductDetails() {
     }
   };
 
-  const handleBuyNow = async () => {
-    // ensure the item is in the cart first
-    if (!inCart) {
-      await handleAddToCart();
-    }
-    // if not logged in, redirect to login and come back to checkout
+  const handleBuyNow = () => {
+    if (!activeVariant || !inStock) return;
     if (!token) {
       navigate("/login", { state: { from: "/checkout" } });
       return;
     }
-    // skip the cart page — go straight to checkout
+    useBuyNowStore.getState().setItem({
+      variantId:    activeVariant.id,
+      productId:    product.id,
+      productName:  product.nameEn,
+      nameTa:       product.nameTa,
+      image:        product.primaryImage,
+      price:        activeVariant.price,
+      comparePrice: activeVariant.comparePrice,
+      weight:       activeVariant.weightLabel,
+      quantity:     qty,
+      slug:         product.slug,
+      inStock:      activeVariant.inStock,
+    });
     navigate("/checkout");
   };
 
