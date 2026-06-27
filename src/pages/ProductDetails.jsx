@@ -295,10 +295,10 @@ export default function ProductDetails() {
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     // ensure the item is in the cart first
     if (!inCart) {
-      handleAddToCart();
+      await handleAddToCart();
     }
     // if not logged in, redirect to login and come back to checkout
     if (!token) {

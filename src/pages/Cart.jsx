@@ -227,7 +227,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
           <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
             <button
               onClick={() => onQty(item.variantId, item.quantity - 1)}
-              disabled={syncing}
+              disabled={syncing || item.quantity <= 1}
               className="px-3 py-1.5 text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Decrease quantity"
             >
@@ -288,20 +288,16 @@ export default function Cart() {
   const setSyncing = (variantId, val) =>
     setSyncingItems((prev) => ({ ...prev, [variantId]: val }));
 
-  // ── qty change: optimistic update + debounced server sync ──────────
   const handleUpdateQty = useCallback((variantId, quantity) => {
-    if (quantity < 1) {
-      handleRemoveItem(variantId);
-      return;
-    }
+    const clampedQty = Math.max(1, quantity);
 
     // 1. Update UI immediately (zero perceived lag)
-    updateQtyLocal(variantId, quantity);
+    updateQtyLocal(variantId, clampedQty);
 
     if (!isAuthenticated) return;
 
     // 2. Track latest desired qty across rapid taps
-    pendingQty.current[variantId] = quantity;
+    pendingQty.current[variantId] = clampedQty;
 
     // 3. Debounce: only send API call 400ms after last tap
     clearTimeout(debounceRef.current[variantId]);

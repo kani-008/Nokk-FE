@@ -1,7 +1,7 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
-import { useAddresses } from "../hooks/queries/useProfile";
+import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
 import { useCheckout } from "../hooks/queries/useOrders";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
@@ -101,12 +101,33 @@ export default function Checkout() {
   };
 
   const checkoutMutation = useCheckout();
-  const placing = checkoutMutation.isPending;
+  const addAddressMutation = useAddAddress();
+  const placing = checkoutMutation.isPending || addAddressMutation.isPending;
 
   const handlePlaceOrder = async () => {
     setOrderErr("");
     try {
       const address = showNewForm ? newAddress : selectedSaved;
+
+      // Save new address to backend if logged in
+      if (token && showNewForm) {
+        try {
+          await addAddressMutation.mutateAsync({
+            label: "Home",
+            fullName: newAddress.name,
+            phone: newAddress.phone,
+            addressLine1: newAddress.addressLine1,
+            addressLine2: newAddress.addressLine2 || "",
+            city: newAddress.city,
+            state: newAddress.state,
+            pincode: newAddress.pincode,
+            isDefault: false
+          });
+        } catch (saveAddrErr) {
+          console.error("Failed to auto-save new address to profile:", saveAddrErr);
+          throw new Error(saveAddrErr.response?.data?.message || saveAddrErr.message || "Failed to save address to profile");
+        }
+      }
       const payload = {
         items: items.map(i => ({
           productId: i.productId,

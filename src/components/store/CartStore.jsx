@@ -59,7 +59,49 @@ const logAction = (set, get, actionType, message, details) => {
 
   // Send the log to the backend console terminal (works for guest and authenticated user)
   const userId = useAuthStore.getState().user?.id || "GUEST";
-  API.post("/cart/log", { actionType, message, details, userId }).catch(() => {});
+  const isGuest = userId === "GUEST";
+  const isProduction = import.meta.env.PROD;
+
+  // Gate: do not run for guests in production
+  if (isGuest && isProduction) {
+    return;
+  }
+
+  // Confirm we don't transmit cart contents for unauthenticated sessions
+  const logDetails = isGuest ? undefined : details;
+
+  API.post("/cart/log", { actionType, message, details: logDetails, userId }).catch(() => {});
+};
+
+const checkCouponEligibility = (set, get) => {
+  const coupon = get().coupon;
+  if (!coupon) return;
+  const sub = get().subtotal();
+  const minOrderVal = coupon.minOrder !== undefined ? coupon.minOrder : (coupon.minOrderValue ?? 0);
+  if (sub < minOrderVal) {
+    set({ coupon: null });
+    logAction(set, get, "coupon", `Coupon ${coupon.code} removed because subtotal ₹${sub} is below min order ₹${minOrderVal}`, { subtotal: sub, minOrder: minOrderVal });
+  } else {
+    // Recompute discountAmount and update it in state
+    let discountAmount = 0;
+    const discountPercent = coupon.discountPercent !== undefined ? coupon.discountPercent : (coupon.discountType === "percentage" ? coupon.discountValue : 0);
+    const discountFlat = coupon.discountFlat !== undefined ? coupon.discountFlat : (coupon.discountType === "flat" ? coupon.discountValue : 0);
+
+    if (discountPercent > 0) {
+      discountAmount = (sub * discountPercent) / 100;
+    } else if (discountFlat > 0) {
+      discountAmount = discountFlat;
+    }
+    discountAmount = parseFloat(Math.min(discountAmount, sub).toFixed(2));
+    if (coupon.discountAmount !== discountAmount) {
+      set({
+        coupon: {
+          ...coupon,
+          discountAmount
+        }
+      });
+    }
+  }
 };
 
 export const useCartStore = create(
@@ -77,8 +119,23 @@ export const useCartStore = create(
       itemCount: () =>
         get().items.reduce((sum, i) => sum + i.quantity, 0),
 
-      discount: () =>
-        get().coupon?.discountAmount ?? 0,
+      discount: () => {
+        const coupon = get().coupon;
+        if (!coupon) return 0;
+        const sub = get().subtotal();
+        const minOrderVal = coupon.minOrder !== undefined ? coupon.minOrder : (coupon.minOrderValue ?? 0);
+        if (sub < minOrderVal) return 0;
+        let discountAmount = 0;
+        const discountPercent = coupon.discountPercent !== undefined ? coupon.discountPercent : (coupon.discountType === "percentage" ? coupon.discountValue : 0);
+        const discountFlat = coupon.discountFlat !== undefined ? coupon.discountFlat : (coupon.discountType === "flat" ? coupon.discountValue : 0);
+
+        if (discountPercent > 0) {
+          discountAmount = (sub * discountPercent) / 100;
+        } else if (discountFlat > 0) {
+          discountAmount = discountFlat;
+        }
+        return parseFloat(Math.min(discountAmount, sub).toFixed(2));
+      },
 
       total: () => {
         const { subtotal, discount } = get();
@@ -98,14 +155,40 @@ export const useCartStore = create(
           newCount: items.length,
           items: items.map(i => ({ name: i.productName, qty: i.quantity, price: i.price }))
         });
+        checkCouponEligibility(set, get);
       },
       setCoupon: (coupon) => {
-        set({ coupon });
-        logAction(set, get, "coupon", `Applied coupon: ${coupon.code}`, {
-          code: coupon.code,
-          discountType: coupon.discountType,
-          discountValue: coupon.discountValue,
-          discountAmount: coupon.discountAmount
+        if (!coupon) {
+          set({ coupon: null });
+          return;
+        }
+        // Normalize coupon object to support all layouts
+        const normalizedCoupon = {
+          ...coupon,
+          discountType: coupon.discountPercent > 0 || coupon.discountType === "percentage" ? "percentage" : "flat",
+          discountValue: coupon.discountPercent > 0 ? coupon.discountPercent : (coupon.discountFlat > 0 ? coupon.discountFlat : (coupon.discountValue ?? 0)),
+          minOrder: coupon.minOrder !== undefined ? coupon.minOrder : (coupon.minOrderValue ?? 0),
+          minOrderValue: coupon.minOrder !== undefined ? coupon.minOrder : (coupon.minOrderValue ?? 0),
+          discountPercent: coupon.discountPercent !== undefined ? coupon.discountPercent : (coupon.discountType === "percentage" ? coupon.discountValue : 0),
+          discountFlat: coupon.discountFlat !== undefined ? coupon.discountFlat : (coupon.discountType === "flat" ? coupon.discountValue : 0),
+        };
+        
+        // Compute initial discountAmount
+        const sub = get().subtotal();
+        let discountAmount = 0;
+        if (normalizedCoupon.discountPercent > 0) {
+          discountAmount = (sub * normalizedCoupon.discountPercent) / 100;
+        } else if (normalizedCoupon.discountFlat > 0) {
+          discountAmount = normalizedCoupon.discountFlat;
+        }
+        normalizedCoupon.discountAmount = parseFloat(Math.min(discountAmount, sub).toFixed(2));
+
+        set({ coupon: normalizedCoupon });
+        logAction(set, get, "coupon", `Applied coupon: ${normalizedCoupon.code}`, {
+          code: normalizedCoupon.code,
+          discountType: normalizedCoupon.discountType,
+          discountValue: normalizedCoupon.discountValue,
+          discountAmount: normalizedCoupon.discountAmount
         });
       },
       removeCoupon: () => {
@@ -151,6 +234,7 @@ export const useCartStore = create(
             price: item.price
           });
         }
+        checkCouponEligibility(set, get);
       },
 
       updateQtyLocal: (variantId, quantity) => {
@@ -158,23 +242,21 @@ export const useCartStore = create(
         if (!existing) return;
         const name = existing.productName || existing.name || "Unknown Product";
 
-        if (quantity < 1) {
-          get().removeItemLocal(variantId);
-          return;
-        }
+        const clamped = Math.max(1, quantity);
         set({
           items: get().items.map((i) =>
-            i.variantId === variantId ? { ...i, quantity } : i
+            i.variantId === variantId ? { ...i, quantity: clamped } : i
           ),
         });
-        logAction(set, get, "update", `Updated quantity of ${name} to ${quantity}`, {
+        logAction(set, get, "update", `Updated quantity of ${name} to ${clamped}`, {
           productId: existing.productId,
           variantId: variantId,
           productName: name,
           previousQty: existing.quantity,
-          newQty: quantity,
+          newQty: clamped,
           price: existing.price
         });
+        checkCouponEligibility(set, get);
       },
 
       removeItemLocal: (variantId) => {
@@ -190,6 +272,7 @@ export const useCartStore = create(
           quantityAtRemoval: existing.quantity,
           price: existing.price
         });
+        checkCouponEligibility(set, get);
       },
 
       clearCartLocal: () => {

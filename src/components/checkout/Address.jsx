@@ -135,23 +135,37 @@ export default function Address({
           const data = await res.json();
           if (data && data.address) {
             const addr = data.address;
-            const street = addr.road || addr.suburb || addr.neighbourhood || "";
-            const house = addr.house_number || addr.building || "";
-            const line1 = [house, street].filter(Boolean).join(", ");
-            const city = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+            const house = addr.house_number || addr.building || addr.house_name || addr.amenity || "";
+            const street = addr.road || addr.street || addr.footway || addr.path || "";
+            let line1 = [house, street].filter(Boolean).join(", ");
+            if (!line1) {
+              line1 = addr.neighbourhood || addr.suburb || addr.residential || "";
+            }
 
+            const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
             let state = addr.state || "";
             state = state.replace(/State of\s+/i, "");
 
-            const pincode = addr.postcode || "";
+            const pincode = addr.postcode ? addr.postcode.replace(/\s+/g, "") : "";
 
-            const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
-            const matchedState = INDIAN_STATES.find((s) => normalize(s) === normalize(state));
+            if (line1 || city || pincode) {
+              const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
+              const matchedState = INDIAN_STATES.find((s) => normalize(s) === normalize(state));
 
-            if (line1) onChangeNew("addressLine1", line1);
-            if (city) onChangeNew("city", city);
-            if (matchedState) onChangeNew("state", matchedState);
-            if (pincode) onChangeNew("pincode", pincode.replace(/\s+/g, ""));
+              if (line1) onChangeNew("addressLine1", line1);
+
+              const areaParts = [];
+              if (addr.neighbourhood && addr.neighbourhood !== street) areaParts.push(addr.neighbourhood);
+              if (addr.suburb && addr.suburb !== street && addr.suburb !== addr.neighbourhood) areaParts.push(addr.suburb);
+              const line2 = areaParts.filter(Boolean).join(", ");
+              if (line2) onChangeNew("addressLine2", line2);
+
+              if (city) onChangeNew("city", city);
+              if (matchedState) onChangeNew("state", matchedState);
+              if (pincode) onChangeNew("pincode", pincode);
+            } else {
+              setLocalErr("Location detected, but could not resolve a precise address. Please enter details manually.");
+            }
           } else {
             setLocalErr("Could not retrieve address details for this location");
           }
@@ -188,7 +202,7 @@ export default function Address({
         const data = await res.json();
         if (data && data[0]?.Status === "Success" && data[0]?.PostOffice?.length > 0) {
           const po = data[0].PostOffice[0];
-          const city = po.District || po.Block || po.Name || "";
+          const city = po.Name || po.Block || po.District || "";
           const state = po.State || "";
           
           const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, "");
