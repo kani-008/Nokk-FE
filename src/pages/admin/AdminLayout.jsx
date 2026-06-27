@@ -94,7 +94,7 @@ function Sidebar({ collapsed, onClose }) {
       <div
         className={`flex items-center border-b border-gray-100 shrink-0 ${collapsed ? "justify-center px-0 py-4" : "gap-2.5 px-4 py-4"}`}
       >
-        <div className="w-8 h-8 rounded-xl bg-brand-800 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-md bg-brand-800 flex items-center justify-center shrink-0">
           <Fish size={16} className="text-white" />
         </div>
         {!collapsed && (
