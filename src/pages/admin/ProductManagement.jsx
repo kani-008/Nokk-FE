@@ -41,7 +41,7 @@ const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currenc
 const MOBILE_FLUID_STYLES = `
   @media (max-width: 767.98px) {
     .pm-filter-wrap-fluid {
-      width: clamp(9rem, 40vw, 12.5rem) !important;
+      width: clamp(8.5rem, 30vw, 10.5rem) !important;
     }
     .pm-filter-fluid {
       padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
@@ -226,7 +226,7 @@ export default function ProductManagement() {
     {
       key: "rating", label: "Rating",
       render: (r) => r.avgRating > 0 ? (
-        <span className="flex items-center gap-1 font-num text-sm text-gray-700">
+        <span className="flex items-center gap-3 font-num text-sm text-gray-700">
           <Star size={12} className="fill-amber-400 text-amber-400" /> {Number(r.avgRating).toFixed(1)} ({r.reviewCount})
         </span>
       ) : <span className="font-body text-xs text-gray-400">—</span>,
@@ -243,10 +243,10 @@ export default function ProductManagement() {
   ];
 
   return (
-    <AdminPage>
+    <AdminPage className="space-y-3">
       {/* page-level error banner (replaces native alert) */}
       {pageError && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
+        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-md px-4 py-3">
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
           <p className="flex-1">{pageError}</p>
           <button onClick={() => setPageError("")} className="shrink-0 hover:text-red-900" aria-label="Dismiss"><X size={15} /></button>

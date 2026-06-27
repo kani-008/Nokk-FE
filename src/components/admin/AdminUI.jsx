@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import DataTable from "./TableFormat.jsx";
 
 // ── Rupee formatter ────────────────────────────────────────────────────
 const rupee = (n) =>
@@ -73,31 +74,24 @@ export function StatCard({ label, value, icon: Icon, color = "amber", sub, trend
 //   action   {ReactNode} — button/s top-right
 //   children
 // ══════════════════════════════════════════════════════════════════════
-export function AdminPage({ title, sub, action, children }) {
+export function AdminPage({ title, sub, action, className = "space-y-6", children, ...props }) {
+  const hasHeader = title || sub || action;
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="font-display text-xl font-bold text-gray-900 leading-snug">{title}</h2>
-          {sub && <p className="font-body text-sm text-gray-500 mt-0.5">{sub}</p>}
+    <div className={className} {...props}>
+      {hasHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            {title && <h2 className="font-display text-xl font-bold text-gray-900 leading-snug">{title}</h2>}
+            {sub && <p className="font-body text-sm text-gray-500 mt-0.5">{sub}</p>}
+          </div>
+          {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
         </div>
-        {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
-      </div>
+      )}
       {children}
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// DataTable — sortable data table with empty state
-//
-// Props:
-//   columns  {array}  — [{ key, label, render?, width? }]
-//   rows     {array}
-//   emptyText {string}
-//   loading  {boolean}
-// ══════════════════════════════════════════════════════════════════════
-import DataTable from "./TableFormat.jsx";
 export { DataTable };
 
 // ══════════════════════════════════════════════════════════════════════

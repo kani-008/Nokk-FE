@@ -1,9 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Package, ShoppingBag, Users,
-  Tag, Image, BarChart2, Settings, Warehouse,
-  LogOut, Menu, X, Fish, Bell, ExternalLink, Search,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  Users,
+  Tag,
+  Image,
+  BarChart2,
+  Settings,
+  Warehouse,
+  LogOut,
+  Menu,
+  X,
+  Fish,
+  Bell,
+  ExternalLink,
+  Search,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -12,12 +25,12 @@ import NotificationPanel from "./Notification.jsx";
 // ── Nav items — single flat list, no section grouping/labels ───────────
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/products",  label: "Products",  icon: Package },
+  { to: "/admin/products", label: "Products", icon: Package },
   { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
-  { to: "/admin/orders",  label: "Orders",  icon: ShoppingBag },
-  { to: "/admin/offers",  label: "Offers",  icon: Tag },
+  { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/admin/offers", label: "Offers", icon: Tag },
   { to: "/admin/banners", label: "Banners", icon: Image },
-  { to: "/admin/users",   label: "Users",   icon: Users },
+  { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -26,14 +39,15 @@ const TITLE_LOOKUP = NAV_ITEMS;
 
 function useIsActive() {
   const { pathname } = useLocation();
-  return (item) => (item.exact ? pathname === item.to : pathname.startsWith(item.to));
+  return (item) =>
+    item.exact ? pathname === item.to : pathname.startsWith(item.to);
 }
 
 // ── Single nav link ────────────────────────────────────────────────────
 function NavLink({ item, collapsed, onClick }) {
   const isActive = useIsActive();
-  const active   = isActive(item);
-  const Icon     = item.icon;
+  const active = isActive(item);
+  const Icon = item.icon;
   return (
     <Link
       to={item.to}
@@ -45,9 +59,18 @@ function NavLink({ item, collapsed, onClick }) {
         ${active ? "bg-brand-800 text-white shadow-sm" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"}
       `}
     >
-      <Icon size={18} className={`shrink-0 transition-colors ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`} />
-      {!collapsed && <span className="font-body text-[13px] font-medium leading-none">{item.label}</span>}
-      {collapsed && active && <span className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-amber-400" />}
+      <Icon
+        size={18}
+        className={`shrink-0 transition-colors ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`}
+      />
+      {!collapsed && (
+        <span className="font-body text-[13px] font-medium leading-none">
+          {item.label}
+        </span>
+      )}
+      {collapsed && active && (
+        <span className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
+      )}
     </Link>
   );
 }
@@ -64,17 +87,24 @@ function Sidebar({ collapsed, onClose }) {
   };
 
   return (
-    <div className={`flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}>
-
+    <div
+      className={`flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
+    >
       {/* Logo + mobile close */}
-      <div className={`flex items-center border-b border-gray-100 shrink-0 ${collapsed ? "justify-center px-0 py-4" : "gap-2.5 px-4 py-4"}`}>
+      <div
+        className={`flex items-center border-b border-gray-100 shrink-0 ${collapsed ? "justify-center px-0 py-4" : "gap-2.5 px-4 py-4"}`}
+      >
         <div className="w-8 h-8 rounded-xl bg-brand-800 flex items-center justify-center shrink-0">
           <Fish size={16} className="text-white" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="font-display text-[13px] font-bold text-gray-900 leading-none">NammaOor</p>
-            <p className="font-body text-[10px] text-amber-600 mt-0.5 leading-none">Admin Console</p>
+            <p className="font-display text-[13px] font-bold text-gray-900 leading-none">
+              NammaOor
+            </p>
+            <p className="font-body text-[10px] text-amber-600 mt-0.5 leading-none">
+              Admin Console
+            </p>
           </div>
         )}
         {onClose && (
@@ -91,12 +121,19 @@ function Sidebar({ collapsed, onClose }) {
       {/* Nav — single continuous list, no group labels or dividers */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.to} item={item} collapsed={collapsed} onClick={onClose} />
+          <NavLink
+            key={item.to}
+            item={item}
+            collapsed={collapsed}
+            onClick={onClose}
+          />
         ))}
       </nav>
 
       {/* User + logout */}
-      <div className={`border-t border-gray-100 py-3 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}>
+      <div
+        className={`border-t border-gray-100 py-3 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}
+      >
         <Link
           to="/"
           onClick={onClose}
@@ -104,7 +141,9 @@ function Sidebar({ collapsed, onClose }) {
           title={collapsed ? "View Store" : undefined}
         >
           <ExternalLink size={16} className="shrink-0" />
-          {!collapsed && <span className="font-body text-[13px]">View Store</span>}
+          {!collapsed && (
+            <span className="font-body text-[13px]">View Store</span>
+          )}
         </Link>
 
         {!collapsed && (
@@ -116,7 +155,9 @@ function Sidebar({ collapsed, onClose }) {
               <p className="font-body text-[12px] font-semibold text-gray-900 truncate leading-none">
                 {(user?.fullName ?? user?.name ?? "Admin").split(" ")[0]}
               </p>
-              <p className="font-body text-[10px] text-gray-400 truncate mt-0.5 leading-none">{user?.email ?? "admin"}</p>
+              <p className="font-body text-[10px] text-gray-400 truncate mt-0.5 leading-none">
+                {user?.email ?? "admin"}
+              </p>
             </div>
           </div>
         )}
@@ -127,7 +168,9 @@ function Sidebar({ collapsed, onClose }) {
           title={collapsed ? "Logout" : undefined}
         >
           <LogOut size={16} className="shrink-0" />
-          {!collapsed && <span className="font-body text-[13px] font-medium">Logout</span>}
+          {!collapsed && (
+            <span className="font-body text-[13px] font-medium">Logout</span>
+          )}
         </button>
       </div>
     </div>
@@ -143,16 +186,18 @@ function Sidebar({ collapsed, onClose }) {
 function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
   const { user } = useAuthStore();
   const [localSearchVal, setLocalSearchVal] = useState(""); // fallback when no page has registered
-  const [notifOpen,   setNotifOpen]   = useState(false);   // drives CSS transition
+  const [notifOpen, setNotifOpen] = useState(false); // drives CSS transition
   const [notifMounted, setNotifMounted] = useState(false); // drives DOM presence
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // mobile expand/collapse state
-  const notifRef    = useRef(null);
+  const notifRef = useRef(null);
   const closeTimerRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
   const title =
-    TITLE_LOOKUP.find((i) => (i.exact ? pathname === i.to : pathname.startsWith(i.to)))?.label ?? "Admin";
+    TITLE_LOOKUP.find((i) =>
+      i.exact ? pathname === i.to : pathname.startsWith(i.to),
+    )?.label ?? "Admin";
 
   const placeholder = searchConfig?.placeholder ?? "Quick search…";
   const searchValue = searchConfig?.value ?? localSearchVal;
@@ -165,7 +210,9 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
     clearTimeout(closeTimerRef.current);
     setNotifMounted(true);
     // two rAF to let the DOM paint before the transition fires
-    requestAnimationFrame(() => requestAnimationFrame(() => setNotifOpen(true)));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => setNotifOpen(true)),
+    );
   };
 
   const closeNotif = () => {
@@ -193,19 +240,24 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
         const res = await API.get("/notifications/unread-count");
         setUnreadCount(res.data?.unreadCount ?? 0);
         console.log(res.data);
-      } catch(err){
+      } catch (err) {
         console.log(err.response.data);
-      }    };
+      }
+    };
     computeUnread();
     const t = setInterval(computeUnread, 60_000);
-    return () => { clearInterval(t); clearTimeout(closeTimerRef.current); };
+    return () => {
+      clearInterval(t);
+      clearTimeout(closeTimerRef.current);
+    };
   }, []);
 
   // desktop outside-click: only relevant when panel is open
   useEffect(() => {
     if (!notifOpen) return;
     const handler = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) closeNotif();
+      if (notifRef.current && !notifRef.current.contains(e.target))
+        closeNotif();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -213,7 +265,6 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
   return (
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
-
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <button
         onClick={onMobileOpen}
@@ -233,7 +284,9 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
       </button>
 
       {/* Title — always visible on desktop; hidden on mobile while the search is expanded */}
-      <h1 className={`font-display text-base font-bold text-gray-900 md:inline ${mobileSearchOpen ? "hidden" : ""}`}>
+      <h1
+        className={`font-display text-base font-bold text-gray-900 md:inline ${mobileSearchOpen ? "hidden" : ""}`}
+      >
         {title}
       </h1>
 
@@ -244,7 +297,10 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
       {mobileSearchOpen && (
         <div className="md:hidden flex-1 flex items-center gap-2 min-w-0">
           <div className="relative flex-1 min-w-0">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               ref={mobileSearchInputRef}
               type="text"
@@ -269,7 +325,10 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
       {/* Desktop search box — always visible, page-aware via searchConfig */}
       <div className="relative hidden md:block">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search
+          size={14}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
         <input
           type="text"
           value={searchValue}
@@ -291,7 +350,10 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
       )}
 
       {/* Notification bell + avatar — always visible on desktop; hidden on mobile while search is expanded */}
-      <div className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`} ref={notifRef}>
+      <div
+        className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`}
+        ref={notifRef}
+      >
         <button
           onClick={toggleNotif}
           className={`relative p-2 rounded-xl transition-colors ${notifOpen ? "bg-gray-100 text-gray-700" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
@@ -304,10 +366,18 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
             </span>
           )}
         </button>
-        {notifMounted && <NotificationPanel open={notifOpen} onClose={closeNotif} onCountChange={setUnreadCount} />}
+        {notifMounted && (
+          <NotificationPanel
+            open={notifOpen}
+            onClose={closeNotif}
+            onCountChange={setUnreadCount}
+          />
+        )}
       </div>
 
-      <div className={`w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0 ${mobileSearchOpen ? "hidden md:flex" : ""}`}>
+      <div
+        className={`w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0 ${mobileSearchOpen ? "hidden md:flex" : ""}`}
+      >
         {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
       </div>
     </header>
@@ -319,7 +389,7 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function AdminLayout() {
   const { pathname } = useLocation();
-  const [collapsed,  setCollapsed]  = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // ── Page-aware topbar search ──
@@ -348,19 +418,22 @@ export default function AdminLayout() {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
     if (!mobileOpen) return;
-    const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
+    const onKey = (e) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
   return (
     <div className="flex h-screen bg-sandal-50 overflow-hidden">
-
       {/* Desktop sidebar */}
       <div className="hidden md:flex shrink-0">
         <Sidebar collapsed={collapsed} />
@@ -395,7 +468,7 @@ export default function AdminLayout() {
           searchConfig={searchConfig}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 max-w-[1400px] mx-auto">
+          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 max-w-[1400px] mx-auto">
             <Outlet context={{ registerSearch, unregisterSearch }} />
           </div>
         </main>
