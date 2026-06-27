@@ -182,7 +182,7 @@ export default function ProductDetails() {
   const { token } = useAuthStore();
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
-  const { data: product, isLoading: productLoading, error: productError } = useProductDetail(slug);
+  const { data: product, isLoading: productLoading, error: productError, refetch: refetchProduct } = useProductDetail(slug);
   const notFound = productError?.response?.status === 404;
 
   const categorySlug = product?.categorySlug;
@@ -570,7 +570,7 @@ export default function ProductDetails() {
           <ProductDescription product={product} />
 
           {/* Product Reviews with Flipkart-Style breakdown */}
-          <ProductReviews product={product} onSubmitReview={fetchProduct} />
+          <ProductReviews product={product} onSubmitReview={refetchProduct} />
 
         </div>
       </div>
