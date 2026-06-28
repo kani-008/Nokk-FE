@@ -86,7 +86,7 @@ export function StatCard({
 
   return (
     <div
-      className={`bg-white border ${p.border} rounded-2xl p-5 flex flex-col gap-3`}
+      className={`bg-white border ${p.border} rounded-2xl p-5 admin-padding-fluid flex flex-col gap-3`}
     >
       <div className="flex items-center justify-between">
         <div className={`p-2.5 rounded-xl ${p.bg}`}>
@@ -95,13 +95,13 @@ export function StatCard({
         {trendEl}
       </div>
       <div>
-        <p className="font-num text-2xl font-extrabold text-gray-900 leading-none">
+        <p className="font-num text-2xl font-extrabold text-gray-900 leading-none admin-h2-fluid">
           {displayValue}
         </p>
-        <p className="font-body text-sm text-gray-500 mt-1 leading-snug">
+        <p className="font-body text-sm text-gray-500 mt-1 leading-snug admin-text-fluid">
           {label}
         </p>
-        {sub && <p className="font-body text-xs text-gray-400 mt-0.5">{sub}</p>}
+        {sub && <p className="font-body text-xs text-gray-400 mt-0.5 admin-text-fluid">{sub}</p>}
       </div>
     </div>
   );
@@ -109,23 +109,17 @@ export function StatCard({
 
 // ══════════════════════════════════════════════════════════════════════
 // AdminPage — page-level wrapper with title row
-//
-// Props:
-//   title    {string}
-//   sub      {string}   — optional subtitle
-//   action   {ReactNode} — button/s top-right
-//   children
 // ══════════════════════════════════════════════════════════════════════
 export function AdminPage({ title, sub, action, children }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold text-gray-900 leading-snug">
+          <h2 className="font-display text-xl font-bold text-gray-900 leading-snug admin-h1-fluid">
             {title}
           </h2>
           {sub && (
-            <p className="font-body text-sm text-gray-500 mt-0.5">{sub}</p>
+            <p className="font-body text-sm text-gray-500 mt-0.5 admin-text-fluid">{sub}</p>
           )}
         </div>
         {action && (
@@ -145,7 +139,7 @@ export { DataTable };
 export function AdminCard({ children, className = "" }) {
   return (
     <div
-      className={`bg-white border border-gray-100 rounded-2xl p-5 ${className}`}
+      className={`bg-white border border-gray-100 rounded-2xl p-5 admin-padding-fluid ${className}`}
     >
       {children}
     </div>

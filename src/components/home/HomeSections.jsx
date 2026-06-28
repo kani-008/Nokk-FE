@@ -41,7 +41,7 @@ export function CategoryScroll({ categories }) {
   if (!categories.length) return null;
   return (
     <section className="page-wrap pt-12 pb-4">
-      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-center">
+      <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-center home-sec-title-fluid">
         Shop by Category
       </h2>
       <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
@@ -103,9 +103,9 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
     <section className="page-wrap py-12">
       <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
         <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">{title}</h2>
+          <h2 className="font-display text-2xl font-bold text-gray-800 home-sec-title-fluid">{title}</h2>
           {subtitle && (
-            <p className="font-body text-xs text-sandal-600 mt-1 font-semibold">{subtitle}</p>
+            <p className="font-body text-xs text-sandal-600 mt-1 font-semibold home-sec-subtitle-fluid">{subtitle}</p>
           )}
         </div>
         <Link
@@ -142,7 +142,7 @@ export function PromoBanner() {
           <p className="font-num text-sandal-400 text-xs font-bold uppercase tracking-widest mb-1.5">
             Limited Time Deal
           </p>
-          <h3 className="font-display text-white font-extrabold text-xl leading-tight">
+          <h3 className="font-display text-white font-extrabold text-xl leading-tight home-promo-title-fluid">
             Get 10% off on orders above ₹499
           </h3>
           <p className="font-body text-sandal-100/90 text-sm mt-1">
@@ -186,10 +186,10 @@ export function WhyUs() {
   return (
     <section className="bg-gray-900 py-16 px-4 border-t border-b border-gray-850 my-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="font-display text-3xl font-bold text-white mb-3">
+        <h2 className="font-display text-3xl font-bold text-white mb-3 home-sec-title-fluid">
           Why Namma Oor Karuvattu Kadai?
         </h2>
-        <p className="font-body text-sandal-300/80 text-sm mb-12 max-w-md mx-auto">
+        <p className="font-body text-sandal-300/80 text-sm mb-12 max-w-md mx-auto home-sec-subtitle-fluid">
           We don't just sell dry fish — we preserve a tradition of purity.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -235,10 +235,10 @@ export function Testimonials() {
     <section className="bg-sandal-50/50 py-16 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl font-bold text-gray-800 mb-2">
+          <h2 className="font-display text-3xl font-bold text-gray-800 mb-2 home-sec-title-fluid">
             What Our Customers Say
           </h2>
-          <p className="font-body text-sm font-semibold text-sandal-600">
+          <p className="font-body text-sm font-semibold text-sandal-600 home-sec-subtitle-fluid">
             Real reviews from real karuvadu lovers
           </p>
         </div>
@@ -298,10 +298,10 @@ export function NewsletterCTA() {
     <section className="page-wrap py-12">
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-12 sm:px-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
         <div className="flex-1 text-center sm:text-left">
-          <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-2">
+          <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-2 home-promo-title-fluid">
             Get fresh catch alerts & exclusive deals
           </h3>
-          <p className="font-body text-sandal-300 text-sm font-medium">
+          <p className="font-body text-sandal-300 text-sm font-medium home-sec-subtitle-fluid">
             Subscribe to know when seasonal specials and new arrivals drop.
           </p>
         </div>

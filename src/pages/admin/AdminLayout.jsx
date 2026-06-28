@@ -470,7 +470,7 @@ export default function AdminLayout() {
           searchConfig={searchConfig}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 max-w-[1400px] mx-auto">
+          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 admin-content-fluid mx-auto">
             <Outlet context={{ registerSearch, unregisterSearch }} />
           </div>
         </main>

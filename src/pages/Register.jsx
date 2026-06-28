@@ -285,9 +285,9 @@ export default function Register() {
             brandContent={brandContent}
             bottomLink={bottomLink}
             toast={{ message: displayedApiErr, type: "error", visible: toastVisible }}
-            pageClassName="h-[calc(100dvh-4rem)] md:min-h-screen px-3 py-1.5 md:py-10 overflow-hidden md:overflow-visible"
-            cardClassName="reg-card-fluid max-h-[96%] md:max-h-none"
-            formPanelClassName="reg-form-fluid flex-1 min-h-0 overflow-y-auto md:overflow-visible"
+            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
+            cardClassName="reg-card-fluid max-h-[96%] lg:max-h-none"
+            formPanelClassName="reg-form-fluid flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
         >
             {/* ── STEP 1 — Name + Phone + Email only ────────────────── */}
             {view === "register" && (
@@ -364,7 +364,7 @@ export default function Register() {
                         </button>
                     </form>
 
-                    <p className="md:hidden font-body text-xs text-center text-amber-700 mt-3">
+                    <p className="lg:hidden font-body text-xs text-center text-amber-700 mt-3">
                         Already have an account?{" "}
                         <Link to="/login" className="font-semibold text-brand-800 underline">
                             Sign In
