@@ -114,7 +114,7 @@ function CouponBox({ coupon, onApply, onRemove }) {
 // ══════════════════════════════════════════════════════════════════════
 // ORDER SUMMARY CARD
 // ══════════════════════════════════════════════════════════════════════
-function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, onRemove, onCheckout, loading }) {
+function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, onRemove, onCheckout, loading, freeShippingThreshold }) {
   return (
     <div className="card p-5 sticky top-24">
       <h2 className="font-display text-base font-bold text-brand-900 mb-4">Order Summary</h2>
@@ -138,7 +138,7 @@ function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, on
         </div>
         {shipping > 0 && (
           <p className="font-body text-[11px] text-amber-500">
-            Add {rupee(freeShippingThreshold - subtotal())} more for free delivery
+            Add {rupee(freeShippingThreshold - subtotal)} more for free delivery
           </p>
         )}
       </div>
@@ -417,7 +417,7 @@ export default function Cart() {
             <OrderSummary
               subtotal={sub} discount={disc} shipping={ship} total={tot}
               coupon={coupon} onApply={handleValidateCoupon} onRemove={removeCoupon}
-              onCheckout={handleCheckout} loading={false}
+              onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
             />
           </div>
         </div>
@@ -427,7 +427,7 @@ export default function Cart() {
           <OrderSummary
             subtotal={sub} discount={disc} shipping={ship} total={tot}
             coupon={coupon} onApply={handleValidateCoupon} onRemove={removeCoupon}
-            onCheckout={handleCheckout} loading={false}
+            onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
           />
         </div>
       </div>

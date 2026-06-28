@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useRef } from "react";
 import {
   Save, Loader2, Check, Store, Truck, IndianRupee, Bell,
@@ -13,14 +14,7 @@ import {
   useUpdatePaymentSettings,
   useUploadQrCode
 } from "../../hooks/queries/usePaymentSettings";
-
-// ── localStorage helpers ───────────────────────────────────────────────
-const getLS  = (key, def) => { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } };
-const setLS  = (key, val) => localStorage.setItem(key, JSON.stringify(val));
-const delay  = (ms = 120) => new Promise((r) => setTimeout(r, ms));
-
-// ── mock API ───────────────────────────────────────────────────────────
-const SETTINGS_KEY = "nok-mock-settings";
+import API from "../../ApiCall/Api.jsx";
 
 const DEFAULTS = {
   storeName: "Namma Oor Karuvattu Kadai",
@@ -61,8 +55,14 @@ const PAYMENT_DEFAULTS = {
 };
 
 const settingsApi = {
-  get:    async ()     => { await delay(); return { settings: getLS(SETTINGS_KEY, DEFAULTS) }; },
-  update: async (data) => { await delay(); setLS(SETTINGS_KEY, data); return { settings: data }; },
+  get: async () => {
+    const res = await API.get("/settings/get-all");
+    return { settings: res.data.settings || {} };
+  },
+  update: async (data) => {
+    const res = await API.put("/settings/update", data);
+    return { settings: res.data.settings || {} };
+  },
 };
 
 

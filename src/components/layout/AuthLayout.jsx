@@ -89,22 +89,18 @@ export const fieldClass = (hasError, extra = "") =>
  * - children: the actual per-step form content for the right panel
  */
 export default function AuthLayout({
-    mode = "login",
-    step = 1,
     title,
     subtitle,
     brandContent,
     bottomLink,
     toast,
-    extraStyles,
     cardClassName = "",
     formPanelClassName = "",
     pageClassName = "min-h-screen px-4 pt-8 pb-10 md:py-10",
     children,
 }) {
     return (
-        <div className={`flex flex-col items-center md:flex-row md:justify-center md:items-center bg-sandal-50 relative ${pageClassName}`}>
-            {extraStyles && <style>{extraStyles}</style>}
+        <div className={`flex flex-col items-center lg:flex-row lg:justify-center lg:items-center bg-sandal-50 relative ${pageClassName}`}>
 
             {/* ── Toast (Red for Error, Green for Success) ── */}
             <div
@@ -133,16 +129,16 @@ export default function AuthLayout({
             </div>
 
             {/* ambient background wash — mobile only */}
-            <div className="md:hidden absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="lg:hidden absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-brand-800/[0.06] blur-2xl" />
                 <div className="absolute top-1/3 -left-24 w-64 h-64 rounded-full bg-sandal-400/10 blur-3xl" />
             </div>
 
             <div
-                className={`relative z-10 w-full max-w-md md:max-w-4xl bg-white rounded-3xl md:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col md:flex-row shadow-xl shadow-brand-900/5 ${cardClassName}`}
+                className={`relative z-10 w-full max-w-md lg:max-w-4xl bg-white rounded-3xl lg:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col lg:flex-row shadow-xl shadow-brand-900/5 ${cardClassName}`}
             >
                 {/* LEFT — Brand panel (desktop only) */}
-                <div className="hidden md:flex relative md:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-6 overflow-hidden">
+                <div className="hidden lg:flex relative lg:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-6 overflow-hidden">
                     <div className="absolute -top-16 -left-16 w-56 h-56 bg-brand-800 rounded-full opacity-40" />
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-800 rounded-full opacity-30" />
 
@@ -173,10 +169,10 @@ export default function AuthLayout({
 
                 {/* RIGHT — form panel */}
                 <div
-                    className={`w-full md:w-7/12 flex flex-col justify-start md:justify-center px-6 py-6 md:px-12 md:py-12 bg-white ${formPanelClassName}`}
+                    className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-6 py-6 lg:px-12 lg:py-12 bg-white ${formPanelClassName}`}
                 >
                     {/* Mobile brand badge + wordmark — visible only on mobile */}
-                    <div className="flex flex-col items-center mb-5 md:hidden">
+                    <div className="flex flex-col items-center mb-5 lg:hidden">
                         <div className="relative mb-3">
                             <div className="absolute inset-0 rounded-full bg-brand-900/15 blur-md scale-110" />
                             <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
@@ -193,10 +189,10 @@ export default function AuthLayout({
                     </div>
 
                     {/* Heading and subtext */}
-                    <div className="flex flex-col items-center md:items-start text-center md:text-left mb-4 md:mb-6 w-full">
+                    <div className="flex flex-col items-center lg:items-start text-center lg:text-left mb-4 lg:mb-6 w-full">
                         {title}
                         {subtitle && (
-                            <p className="font-body text-sm text-amber-600 mt-1 text-center md:text-left">
+                            <p className="font-body text-sm text-amber-600 mt-1 text-center lg:text-left">
                                 {subtitle}
                             </p>
                         )}

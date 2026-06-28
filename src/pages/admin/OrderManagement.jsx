@@ -34,53 +34,6 @@ const ALL_STATUSES = [
 
 const PAYMENT_STATUSES = ["pending", "paid"];
 
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .ord-filter-fluid {
-      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
-      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
-    }
-    .ord-clear-fluid {
-      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
-      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
-      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
-      gap: clamp(0.1rem, 0.6vw, 0.25rem);
-    }
-    .ord-clear-fluid svg {
-      width: clamp(10px, 2.6vw, 14px);
-      height: clamp(10px, 2.6vw, 14px);
-    }
-    .ord-cluster-fluid {
-      gap: clamp(0.25rem, 1.2vw, 0.75rem);
-    }
-    .ord-tabs-fluid {
-      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
-      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
-      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
-      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
-      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
-    }
-    .ord-filter-fluid svg {
-      width: clamp(10px, 2.4vw, 14px) !important;
-      height: clamp(10px, 2.4vw, 14px) !important;
-    }
-    .ord-filter-fluid span {
-      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
-    }
-    .ord-filter-fluid + ul li {
-      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
-      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
-    }
-  }
-`;
 
 // ── Order detail modal ────────────────────────────────────────────────
 function OrderModal({ order, onClose, onStatusChange }) {
@@ -447,7 +400,6 @@ export default function OrderManagement() {
 
   return (
     <AdminPage className="space-y-3">
-      <style>{MOBILE_FLUID_STYLES}</style>
 
       {/* Row 1 (mobile) / left side (desktop): top-level tabs — Orders / Replacements */}
       {/* Row 2 (mobile) / right side (desktop): Status -> Payment -> Clear filters,

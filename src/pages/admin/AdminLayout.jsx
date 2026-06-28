@@ -177,24 +177,7 @@ function Sidebar({ collapsed, onClose }) {
   );
 }
 
-// ── Top header bar ─────────────────────────────────────────────────────
-const SEARCH_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .topbar-search-fluid {
-      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.35rem, 1.4vw, 0.5rem) !important;
-      padding-bottom: clamp(0.35rem, 1.4vw, 0.5rem) !important;
-      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
-    }
-    .topbar-search-fluid::placeholder {
-      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
-    }
-    .topbar-search-fluid-container svg {
-      width: clamp(12px, 2.8vw, 14px) !important;
-      height: clamp(12px, 2.8vw, 14px) !important;
-    }
-  }
-`;
+
 
 // `searchConfig` — { placeholder, value, onChange } registered by whichever
 // child admin page wants the topbar's search box to drive its own filtering.
@@ -283,7 +266,6 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
   return (
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
-      <style>{SEARCH_FLUID_STYLES}</style>
 
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <button
@@ -488,7 +470,7 @@ export default function AdminLayout() {
           searchConfig={searchConfig}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 max-w-[1400px] mx-auto">
+          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 admin-content-fluid mx-auto">
             <Outlet context={{ registerSearch, unregisterSearch }} />
           </div>
         </main>

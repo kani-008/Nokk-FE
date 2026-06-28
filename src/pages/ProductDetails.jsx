@@ -480,7 +480,7 @@ export default function ProductDetails() {
               <p className="font-body text-xs text-amber-500 uppercase tracking-wider font-medium mb-1">
                 {product.categoryName}
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 leading-snug">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 leading-snug pdetails-title-fluid">
                 {product.nameEn}
               </h1>
               {product.nameTa && (
@@ -497,7 +497,7 @@ export default function ProductDetails() {
 
             {/* price */}
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="font-num text-3xl font-extrabold text-brand-900">{rupee(price)}</span>
+              <span className="font-num text-3xl font-extrabold text-brand-900 pdetails-price-fluid">{rupee(price)}</span>
               {compare && (
                 <>
                   <span className="font-num text-lg text-amber-400 line-through">{rupee(compare)}</span>

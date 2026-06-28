@@ -31,70 +31,6 @@ const PH = comboImg;
  * Wrapped in `@media (max-width: 767.98px)` so it never applies at md+
  * widths; desktop keeps its exact original fixed Tailwind sizing untouched.
  */
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .inv-filter-wrap-fluid {
-      width: clamp(9.5rem, 30vw, 10.5rem) !important;
-    }
-    .inv-filter-fluid {
-      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
-    }
-    .inv-filter-fluid span.truncate {
-      overflow: visible !important;
-      text-overflow: unset !important;
-      white-space: nowrap !important;
-    }
-    .inv-refresh-fluid {
-      font-size: clamp(0.7rem, 2.6vw, 0.875rem) !important;
-      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
-    }
-    .inv-refresh-fluid svg {
-      width: clamp(12px, 2.8vw, 14px);
-      height: clamp(12px, 2.8vw, 14px);
-    }
-    .inv-cluster-fluid {
-      gap: clamp(0.3rem, 1.4vw, 0.75rem);
-    }
-    .inv-stats-fluid {
-      gap: clamp(0.4rem, 1.8vw, 1rem) !important;
-    }
-    .inv-filter-fluid + ul li {
-      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
-    }
-    .inv-filter-fluid svg {
-      width: clamp(10px, 2.4vw, 14px) !important;
-      height: clamp(10px, 2.4vw, 14px) !important;
-    }
-    .inv-filter-fluid span {
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      max-height: 0;
-      opacity: 1;
-    }
-    to {
-      max-height: 800px;
-      opacity: 1;
-    }
-  }
-  .animate-expand {
-    animation: slideDown 1000ms ease-out forwards;
-    overflow: hidden;
-  }
-`;
 
 // ── Inline stock toggle cell ───────────────────────────────────────────
 function StockEditCell({ item, queryParams, disabled }) {
@@ -235,7 +171,6 @@ export default function InventoryManagement() {
 
   return (
     <AdminPage className="space-y-3">
-      <style>{MOBILE_FLUID_STYLES}</style>
 
       {/* Refresh + Filter cluster */}
       <div className="inv-cluster-fluid flex items-center justify-end gap-3 w-full">

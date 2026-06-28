@@ -8,16 +8,16 @@ import { usePaymentSettingsPublic } from "../../hooks/queries/usePaymentSettings
 
 export const PAYMENT_METHODS = [
   {
-    key:   "upi",
-    label: "UPI",
-    sub:   "GPay, PhonePe, Paytm & more",
-    icon:  <Smartphone size={20} />,
+    key:   "razorpay",
+    label: "Pay Online (UPI / Card)",
+    sub:   "Instant verification via Razorpay",
+    icon:  <CreditCard size={20} />,
   },
   {
-    key:   "card",
-    label: "Credit / Debit Card",
-    sub:   "Visa, Mastercard, RuPay",
-    icon:  <CreditCard size={20} />,
+    key:   "upi",
+    label: "UPI (Manual QR)",
+    sub:   "Scan QR & submit Reference ID manually",
+    icon:  <Smartphone size={20} />,
   },
   {
     key:   "cod",
@@ -89,6 +89,7 @@ function useIsMobile() {
 //   amount       {number}  — order total, used to pre-fill UPI intent amount
 //   customerUpiId {string} — customer's own UPI ID (optional, reference only)
 //   onCustomerUpiIdChange {fn}
+//   infoMessage   {string} — cancellation message
 // ══════════════════════════════════════════════════════════════════════
 export default function Payment({
   selected,
@@ -98,6 +99,7 @@ export default function Payment({
   amount,
   customerUpiId = "",
   onCustomerUpiIdChange = () => {},
+  infoMessage = "",
 }) {
   const isMobile = useIsMobile();
 
@@ -124,6 +126,12 @@ export default function Payment({
         <CreditCard size={18} className="text-brand-700" />
         <h2 className="font-display text-lg font-bold text-brand-900">Payment Method</h2>
       </div>
+
+      {infoMessage && (
+        <div className="mb-5 bg-amber-50 border border-amber-200 text-amber-800 font-body text-sm rounded-xl px-4 py-3">
+          {infoMessage}
+        </div>
+      )}
 
       {/* method cards */}
       <div className="space-y-3 mb-6">

@@ -141,3 +141,25 @@ export function useUpdateReplacementStatus() {
     },
   });
 }
+
+export function useCreateRazorpayOrder() {
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.post("/orders/razorpay/create-order", payload);
+      return res.data;
+    },
+  });
+}
+
+export function useVerifyRazorpayPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.post("/orders/razorpay/verify-payment", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

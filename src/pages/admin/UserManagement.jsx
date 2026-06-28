@@ -7,36 +7,8 @@ import {
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .um-filter-fluid {
-      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
-      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
-      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
-    }
-    .um-filter-fluid svg {
-      width: clamp(10px, 2.4vw, 14px) !important;
-      height: clamp(10px, 2.4vw, 14px) !important;
-    }
-    .um-filter-fluid span {
-      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
-    }
-    .um-clear-fluid {
-      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
-      gap: clamp(0.1rem, 0.6vw, 0.25rem);
-    }
-    .um-clear-fluid svg {
-      width: clamp(10px, 2.6vw, 14px);
-      height: clamp(10px, 2.6vw, 14px);
-    }
-  }
-`;
 
-import comboImg from "../../assets/products/combo.jpg";
 
-const PH_AVATAR = comboImg;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 // ── Custom Dropdown for Admin filters ─────────────────────────────────
@@ -423,8 +395,7 @@ export default function UserManagement() {
   const totalPages = userData?.pagination?.totalPages || 1;
   const error      = queryError?.message || "";
 
-  const toggleStatusMutation = useToggleUserStatus();
-  const deleteUserMutation   = useDeleteUser();
+
 
 
   const COLS = [
@@ -455,7 +426,6 @@ export default function UserManagement() {
 
   return (
     <AdminPage className="space-y-3">
-      <style>{MOBILE_FLUID_STYLES}</style>
 
       {/* Filter cluster — matches OrderManagement pattern */}
       <div className="um-cluster-fluid flex items-center justify-end gap-3 w-full">
@@ -518,12 +488,9 @@ export default function UserManagement() {
         <UserModal
           user={selected}
           onClose={() => setSelected(null)}
-          onBlock={(id) => patchStatus(id, "blocked")}
-          onUnblock={(id) => patchStatus(id, "active")}
-          onDelete={(id) => {
-            setUsers((prev) => prev.filter((u) => u.id !== id));
-            setSelected(null);
-          }}
+          onBlock={() => {}}
+          onUnblock={() => {}}
+          onDelete={() => setSelected(null)}
         />
       )}
     </AdminPage>

@@ -5,7 +5,6 @@ import {
     ArrowRight, Loader2, CheckCircle2, Pencil, CheckCircle,
 } from "lucide-react";
 import API from "../ApiCall/Api.jsx";
-import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 import AuthLayout, { StepDots, OtpBoxes, fieldClass } from "../components/layout/AuthLayout";
 
@@ -38,43 +37,10 @@ const STEP_COPY = {
  * Tailwind's `md:` cutoff — so none of it can ever apply at md+ widths.
  * Desktop keeps its exact original fixed Tailwind sizing, untouched.
  */
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .reg-card-fluid {
-      max-width: min(94vw, 26rem);
-      padding-left: clamp(0.6rem, 3vw, 1rem);
-      padding-right: clamp(0.6rem, 3vw, 1rem);
-    }
-    .reg-form-fluid {
-      padding-left: clamp(0.6rem, 3.2vw, 1rem);
-      padding-right: clamp(0.6rem, 3.2vw, 1rem);
-      padding-top: clamp(1rem, 4vw, 1.5rem);
-      padding-bottom: clamp(1rem, 4vw, 1.5rem);
-    }
-    .reg-otp-row-fluid {
-      gap: clamp(0.25rem, 1.8vw, 0.625rem);
-    }
-    .reg-otp-box-fluid {
-      width: clamp(2rem, 9vw, 2.75rem);
-      height: clamp(2.25rem, 10vw, 3rem);
-      font-size: clamp(0.85rem, 4.2vw, 1.125rem);
-      border-radius: clamp(0.5rem, 2.5vw, 0.75rem);
-    }
-    .reg-title-fluid {
-      font-size: clamp(1rem, 4.6vw, 1.25rem);
-    }
-    .reg-subtitle-fluid {
-      font-size: clamp(0.78rem, 3.4vw, 0.875rem);
-    }
-    .reg-step1-gap-fluid {
-      gap: clamp(0.85rem, 3.6vw, 1.25rem);
-    }
-  }
-`;
+
 
 export default function Register() {
     const navigate = useNavigate();
-    const { login } = useAuthStore();
 
     // view state drives the step: "register" | "otp" | "password"
     const [view, setView] = useState("register");
@@ -319,10 +285,9 @@ export default function Register() {
             brandContent={brandContent}
             bottomLink={bottomLink}
             toast={{ message: displayedApiErr, type: "error", visible: toastVisible }}
-            extraStyles={MOBILE_FLUID_STYLES}
-            pageClassName="h-[calc(100dvh-4rem)] md:min-h-screen px-3 py-1.5 md:py-10 overflow-hidden md:overflow-visible"
-            cardClassName="reg-card-fluid max-h-[96%] md:max-h-none"
-            formPanelClassName="reg-form-fluid flex-1 min-h-0 overflow-y-auto md:overflow-visible"
+            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
+            cardClassName="reg-card-fluid max-h-[96%] lg:max-h-none"
+            formPanelClassName="reg-form-fluid flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
         >
             {/* ── STEP 1 — Name + Phone + Email only ────────────────── */}
             {view === "register" && (
@@ -399,7 +364,7 @@ export default function Register() {
                         </button>
                     </form>
 
-                    <p className="md:hidden font-body text-xs text-center text-amber-700 mt-3">
+                    <p className="lg:hidden font-body text-xs text-center text-amber-700 mt-3">
                         Already have an account?{" "}
                         <Link to="/login" className="font-semibold text-brand-800 underline">
                             Sign In

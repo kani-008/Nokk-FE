@@ -193,7 +193,7 @@ export default function ProductCard({ product }) {
               {product.categoryName}
             </p>
 
-            <h3 className="font-body text-[15px] font-bold text-gray-800 leading-snug line-clamp-2 mb-1 group-hover:text-sandal-700 transition-colors">
+            <h3 className="font-body text-[15px] font-bold text-gray-800 leading-snug line-clamp-2 mb-1 group-hover:text-sandal-700 transition-colors prod-card-title-fluid">
               {product.nameEn}
             </h3>
 
@@ -229,7 +229,7 @@ export default function ProductCard({ product }) {
         <div className="px-4.5 pb-4.5 pt-0 flex items-center justify-between gap-2 border-t border-gray-50 mt-1">
           <div className="flex flex-col">
             <div className="flex items-baseline gap-1.5">
-              <span className="font-num text-base font-extrabold text-gray-800">
+              <span className="font-num text-base font-extrabold text-gray-800 prod-card-price-fluid">
                 {rupee(price)}
               </span>
               {hasDisc && (

@@ -16,30 +16,6 @@ const EMPTY_OTP = Array(OTP_LENGTH).fill("");
 const isPhoneLike = (value) => /^\d{10}$/.test(value.replace(/\s+/g, ""));
 const isValidPhone = (v) => /^[6-9]\d{9}$/.test(v.trim());
 
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .login-card-fluid {
-      max-width: min(94vw, 26rem);
-      padding-left: clamp(0.6rem, 3vw, 1rem);
-      padding-right: clamp(0.6rem, 3vw, 1rem);
-    }
-    .login-form-fluid {
-      padding-left: clamp(0.6rem, 3.2vw, 1rem);
-      padding-right: clamp(0.6rem, 3.2vw, 1rem);
-      padding-top: clamp(1rem, 4vw, 1.5rem);
-      padding-bottom: clamp(1rem, 4vw, 1.5rem);
-    }
-    .reg-otp-row-fluid {
-      gap: clamp(0.25rem, 1.8vw, 0.625rem);
-    }
-    .reg-otp-box-fluid {
-      width: clamp(2rem, 9vw, 2.75rem);
-      height: clamp(2.25rem, 10vw, 3rem);
-      font-size: clamp(0.85rem, 4.2vw, 1.125rem);
-      border-radius: clamp(0.5rem, 2.5vw, 0.75rem);
-    }
-  }
-`;
 
 export default function Login() {
     const navigate = useNavigate();
@@ -346,10 +322,9 @@ export default function Login() {
             brandContent={brandContent}
             bottomLink={bottomLink}
             toast={{ message: displayedError, type: displayedType, visible: toastVisible }}
-            extraStyles={MOBILE_FLUID_STYLES}
-            pageClassName="h-[calc(100dvh-4rem)] md:min-h-screen px-3 py-1.5 md:py-10 overflow-hidden md:overflow-visible"
-            cardClassName="login-card-fluid max-h-[96%] md:max-h-none"
-            formPanelClassName="login-form-fluid flex-1 min-h-0 overflow-y-auto md:overflow-visible"
+            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
+            cardClassName="login-card-fluid max-h-[96%] lg:max-h-none"
+            formPanelClassName="login-form-fluid flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
         >
             {/* ── View: Login ── */}
             {view === "login" && (

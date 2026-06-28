@@ -38,66 +38,6 @@ const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currenc
  * exact original fixed Tailwind sizing (w-40/sm:w-44, AdminButton's default
  * px-4 py-2 text-sm), completely untouched.
  */
-const MOBILE_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .pm-filter-wrap-fluid {
-      width: clamp(8.5rem, 30vw, 10.5rem) !important;
-    }
-    .pm-filter-fluid {
-      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
-    }
-    .pm-filter-fluid span.truncate {
-      overflow: visible !important;
-      text-overflow: unset !important;
-      white-space: nowrap !important;
-    }
-    .pm-clear-fluid {
-      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
-      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
-      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
-      gap: clamp(0.1rem, 0.6vw, 0.25rem);
-    }
-    .pm-clear-fluid svg {
-      width: clamp(10px, 2.6vw, 14px);
-      height: clamp(10px, 2.6vw, 14px);
-    }
-    .pm-add-btn-fluid {
-      padding-left: clamp(0.6rem, 2.6vw, 1rem) !important;
-      padding-right: clamp(0.6rem, 2.6vw, 1rem) !important;
-      padding-top: clamp(0.4rem, 1.6vw, 0.5rem) !important;
-      padding-bottom: clamp(0.4rem, 1.6vw, 0.5rem) !important;
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
-    }
-    .pm-add-btn-fluid svg {
-      width: clamp(12px, 2.8vw, 15px);
-      height: clamp(12px, 2.8vw, 15px);
-    }
-    .pm-cluster-fluid {
-      gap: clamp(0.3rem, 1.4vw, 0.75rem);
-    }
-    .pm-filter-fluid + ul li {
-      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
-    }
-    .pm-filter-fluid svg {
-      width: clamp(10px, 2.4vw, 14px) !important;
-      height: clamp(10px, 2.4vw, 14px) !important;
-    }
-    .pm-filter-fluid span {
-      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
-    }
-  }
-`;
 
 // ── Confirm dialog (replaces native confirm()) ─────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -276,7 +216,6 @@ export default function ProductManagement() {
           sizing was verified against the longest realistic category label
           down to 320px viewport width. Desktop sizing (w-40/sm:w-44,
           AdminButton's default padding) is completely untouched. */}
-      <style>{MOBILE_FLUID_STYLES}</style>
       <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full">
         {(search || catFilter) && (
           <button
