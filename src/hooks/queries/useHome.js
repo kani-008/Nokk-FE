@@ -5,11 +5,11 @@ export function useDeliverySettings() {
   return useQuery({
     queryKey: ["delivery-settings"],
     queryFn: async () => {
-      const res = await API.get("/settings");
+      const res = await API.get("/settings/get-all");
       const s = res.data.settings || {};
       return {
         flatDeliveryCharge:    Number(s.flatDeliveryCharge)    || 50,
-        freeShippingThreshold: Number(s.freeShippingThreshold) || 500,
+        freeShippingThreshold: Number(s.freeShippingThreshold) || 499,
       };
     },
     staleTime: 5 * 60_000, // settings rarely change — cache 5 min

@@ -3,8 +3,10 @@ import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
 import {
   useAdminOfferList,
   useAdminCouponList,
-  useSaveOffer,
-  useSaveCoupon,
+  useCreateOffer,
+  useUpdateOffer,
+  useCreateCoupon,
+  useUpdateCoupon,
   useDeleteOffer,
   useDeleteCoupon
 } from "../../hooks/queries/useOffers";
@@ -94,15 +96,21 @@ function OfferModal({ offer, onClose, onSaved }) {
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const saveOfferMutation = useSaveOffer();
-  const saving = saveOfferMutation.isPending;
+  const createOfferMutation = useCreateOffer();
+  const updateOfferMutation = useUpdateOffer();
+  const saving = createOfferMutation.isPending || updateOfferMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
     setError("");
     try {
-      const res = await saveOfferMutation.mutateAsync({ id: offer?.id, form });
+      let res;
+      if (isEdit) {
+        res = await updateOfferMutation.mutateAsync({ id: offer.id, form });
+      } else {
+        res = await createOfferMutation.mutateAsync(form);
+      }
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
@@ -166,15 +174,28 @@ function CouponModal({ coupon, onClose, onSaved }) {
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const saveCouponMutation = useSaveCoupon();
-  const saving = saveCouponMutation.isPending;
+  const createCouponMutation = useCreateCoupon();
+  const updateCouponMutation = useUpdateCoupon();
+  const saving = createCouponMutation.isPending || updateCouponMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.code.trim() || !form.discountValue) { setError("Code and discount value required"); return; }
+    if (form.discountType !== "free_shipping" && (!form.code.trim() || !form.discountValue)) {
+      setError("Code and discount value required");
+      return;
+    }
+    if (form.discountType === "free_shipping" && !form.code.trim()) {
+      setError("Code is required");
+      return;
+    }
     setError("");
     try {
-      const res = await saveCouponMutation.mutateAsync({ id: coupon?.id, form });
+      let res;
+      if (isEdit) {
+        res = await updateCouponMutation.mutateAsync({ id: coupon.id, form });
+      } else {
+        res = await createCouponMutation.mutateAsync(form);
+      }
       onSaved(res.coupon || form);
       onClose();
     } catch (e) {
@@ -199,10 +220,16 @@ function CouponModal({ coupon, onClose, onSaved }) {
                 <label className="field-label">Type</label>
                 <Dropdown
                   value={form.discountType}
-                  onChange={(val) => set("discountType", val)}
+                  onChange={(val) => {
+                    set("discountType", val);
+                    if (val === "free_shipping") {
+                      set("discountValue", 0);
+                    }
+                  }}
                   options={[
                     { value: "percentage", label: "Percentage" },
-                    { value: "flat", label: "Flat" }
+                    { value: "flat", label: "Flat" },
+                    { value: "free_shipping", label: "Free Shipping Only" }
                   ]}
                 />
               </div>
@@ -280,8 +307,8 @@ export default function OfferManagement() {
 
   const COUPON_COLS = [
     { key: "code", label: "Code", render: (r) => <span className="font-num text-sm font-bold text-brand-900 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">{r.code}</span> },
-    { key: "discountType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.discountType}</span> },
-    { key: "discountValue", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.discountType === "percentage" ? `${r.discountValue}%` : `₹${r.discountValue}`}</span> },
+    { key: "discountType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.discountType === "free_shipping" ? "Free Shipping" : r.discountType}</span> },
+    { key: "discountValue", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.discountType === "percentage" ? `${r.discountValue}%` : r.discountType === "free_shipping" ? "Free Shipping" : `₹${r.discountValue}`}</span> },
     { key: "minOrderValue", label: "Min Order", render: (r) => <span className="font-num text-sm text-gray-600">{r.minOrderValue > 0 ? `₹${r.minOrderValue}` : "None"}</span> },
     { key: "usageCount", label: "Used", render: (r) => <span className="font-num text-sm text-gray-600">{r.usageCount ?? 0}{r.maxUsageCount ? `/${r.maxUsageCount}` : ""}</span> },
     { key: "expiresAt", label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.expiresAt)}</span> },
