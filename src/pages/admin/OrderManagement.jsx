@@ -1,14 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import {
-  Filter, ChevronDown, X, Eye, ExternalLink,
+  X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
 } from "lucide-react";
-import { orderApi }     from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore.jsx";
+import {
+  useAdminOrders,
+  useAdminReplacements,
+  useUpdateOrderStatus,
+  useUpdateReplacementStatus
+} from "../../hooks/queries/useOrders";
+
+
 import comboImg from "../../assets/products/combo.jpg";
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -19,42 +28,91 @@ const fmtDate = (d) =>
 const ALL_STATUSES = [
   "pending","confirmed","processing","shipped",
   "out_for_delivery","delivered","cancelled",
-  "return_requested","returned","refunded",
+  "replacement_requested","replacement_approved",
+  "replacement_rejected","replacement_completed",
 ];
 
-const PAYMENT_METHODS = ["cod", "upi", "card"];
+const PAYMENT_STATUSES = ["pending", "paid"];
 
-// ── Order detail drawer ────────────────────────────────────────────────
-function OrderDrawer({ order, onClose, onStatusChange }) {
-  const { token } = useAuthStore();
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .ord-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+    .ord-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .ord-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .ord-cluster-fluid {
+      gap: clamp(0.25rem, 1.2vw, 0.75rem);
+    }
+    .ord-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .ord-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .ord-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .ord-filter-fluid + ul li {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+  }
+`;
+
+// ── Order detail modal ────────────────────────────────────────────────
+function OrderModal({ order, onClose, onStatusChange }) {
   const [newStatus, setNewStatus] = useState(order?.status || "");
-  const [saving,    setSaving]    = useState(false);
   const [trackData, setTrackData] = useState({ courierName: order?.courierName || "", trackingNumber: order?.trackingNumber || "" });
+
+  const updateStatusMutation = useUpdateOrderStatus();
+  const saving = updateStatusMutation.isPending;
 
   if (!order) return null;
 
   const handleStatusSave = async () => {
     if (newStatus === order.status) return;
-    setSaving(true);
     try {
-      await orderApi.updateStatus(order.id, { status: newStatus, ...trackData }, token);
+      await updateStatusMutation.mutateAsync({ id: order.id, status: newStatus, ...trackData });
       onStatusChange(order.id, newStatus);
       onClose();
     } catch (e) {
-      alert(e.message || "Failed to update status");
-    } finally { setSaving(false); }
+      alert(e.response?.data?.message || e.message || "Failed to update status");
+    }
   };
 
   const addr = order.address || {};
   const PH = comboImg;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white shadow-2xl flex flex-col h-full overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
 
         {/* header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div>
             <p className="font-body text-xs text-gray-400 mb-0.5">Order Details</p>
             <h3 className="font-display text-base font-bold text-gray-900">
@@ -64,7 +122,7 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={18} /></button>
         </div>
 
-        <div className="p-5 space-y-5 flex-1">
+        <div className="p-5 space-y-5 overflow-y-auto flex-1">
 
           {/* status + update */}
           <AdminCard>
@@ -73,15 +131,15 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
               <StatusBadge status={order.status} />
               <span className="font-body text-xs text-gray-400 self-center">→</span>
             </div>
-            <select
+            <Dropdown
               value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="field-input mb-3"
-            >
-              {ALL_STATUSES.map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
-            </select>
+              onChange={setNewStatus}
+              options={ALL_STATUSES.map((s) => ({
+                value: s,
+                label: s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+              className="mb-3"
+            />
 
             {/* tracking fields (show when shipped/out_for_delivery) */}
             {["shipped", "out_for_delivery"].includes(newStatus) && (
@@ -207,40 +265,145 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
   );
 }
 
+// ── Replacements panel ────────────────────────────────────────────────
+function ReplacementsPanel() {
+  const [filter,  setFilter]  = useState("requested");
+  const [busyIdState, setBusyIdState] = useState(null);
+
+  const queryParams = useMemo(() => {
+    return filter ? { status: filter } : {};
+  }, [filter]);
+
+  const { data: replacementsData, isLoading: loading } = useAdminReplacements(queryParams);
+  const items = replacementsData?.replacements || [];
+
+  const updateReplacementMutation = useUpdateReplacementStatus();
+  const busyId = updateReplacementMutation.isPending ? busyIdState : null;
+
+  const act = async (requestId, status) => {
+    if (status === "completed" && !confirm("This will create a NEW zero-cost order with the same items and mark the original as replacement_completed. Continue?")) return;
+    setBusyIdState(requestId);
+    try {
+      const res = await updateReplacementMutation.mutateAsync({ requestId, status });
+      if (status === "completed" && res.newOrderId) {
+        alert(`Replacement order ${res.newOrderId} created successfully.`);
+      }
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update replacement request");
+    } finally {
+      setBusyIdState(null);
+    }
+  };
+
+  const FILTERS = [
+    { key: "requested", label: "Pending" },
+    { key: "approved",  label: "Approved" },
+    { key: "rejected",  label: "Rejected" },
+    { key: "completed", label: "Completed" },
+    { key: "",          label: "All" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-fit">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key || "all"}
+            onClick={() => setFilter(f.key)}
+            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${
+              filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="font-body text-sm text-gray-400 text-center py-10">Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="font-body text-sm text-gray-400 text-center py-10">No replacement requests found.</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((r) => (
+            <AdminCard key={r.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-body text-sm font-bold text-gray-900">Order #{String(r.order_id).slice(0, 8).toUpperCase()}</p>
+                  <p className="font-body text-xs text-gray-500 mt-0.5">{r.customer_name} · {r.customer_phone}</p>
+                  <p className="font-body text-xs text-gray-400 mt-0.5">{fmtDate(r.created_at)}</p>
+                </div>
+                <StatusBadge status={r.status} />
+              </div>
+
+              <div className="mt-3 font-body text-sm space-y-1.5">
+                <p className="text-gray-700"><span className="font-semibold text-gray-500">Reason:</span> {r.reason}</p>
+                {r.details && <p className="text-gray-500 text-xs">{r.details}</p>}
+                {r.new_order_id && (
+                  <p className="text-green-700 text-xs font-semibold">
+                    Replacement order created: #{String(r.new_order_id).slice(0, 8).toUpperCase()}
+                  </p>
+                )}
+              </div>
+
+              {r.status === "requested" && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <AdminButton size="sm" onClick={() => act(r.id, "approved")} disabled={busyId === r.id}>
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Approve
+                  </AdminButton>
+                  <AdminButton size="sm" variant="outline" onClick={() => act(r.id, "rejected")} disabled={busyId === r.id}>
+                    <Ban size={13} /> Reject
+                  </AdminButton>
+                </div>
+              )}
+              {r.status === "approved" && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <AdminButton size="sm" onClick={() => act(r.id, "completed")} disabled={busyId === r.id}>
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} Mark Item Received & Complete
+                  </AdminButton>
+                </div>
+              )}
+            </AdminCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
-  const { token } = useAuthStore();
-  const [orders,    setOrders]    = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [tab, setTab] = useState("orders");
   const [search,    setSearch]    = useState("");
   const [status,    setStatus]    = useState("");
   const [payment,   setPayment]   = useState("");
   const [page,      setPage]      = useState(1);
-  const [totalPages,setTotalPages]= useState(1);
   const [selected,  setSelected]  = useState(null);
 
-  const load = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (search)  params.set("search",        search);
-    if (status)  params.set("status",        status);
-    if (payment) params.set("paymentMethod", payment);
-    params.set("page", page);
-    params.set("limit", 15);
-    try {
-      const res = await orderApi.all(params.toString(), token);
-      setOrders(res.orders || []);
-      setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); }
-  };
+  const { registerSearch, unregisterSearch } = useOutletContext();
 
-  useEffect(() => { load(); }, [search, status, payment, page, token]);
+  useEffect(() => {
+    if (tab !== "orders") { unregisterSearch(); return; }
+    registerSearch({ placeholder: "Search order ID, customer…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, tab]);
 
-  const handleStatusChange = (id, newStatus) => {
-    setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: newStatus } : o));
-  };
+  const queryParams = useMemo(() => {
+    const params = { page, limit: 15 };
+    if (search)  params.search        = search;
+    if (status)  params.status        = status;
+    if (payment) params.paymentStatus = payment;
+    return params;
+  }, [search, status, payment, page]);
+
+  const { data: ordersData, isLoading: loading } = useAdminOrders(queryParams);
+  const orders = ordersData?.orders || [];
+  const totalPages = ordersData?.pagination?.totalPages || 1;
+
+  const handleStatusChange = () => {};
 
   const clearFilters = () => { setSearch(""); setStatus(""); setPayment(""); setPage(1); };
   const hasFilters = search || status || payment;
@@ -283,51 +446,102 @@ export default function OrderManagement() {
   ];
 
   return (
-    <AdminPage title="Orders" sub="Manage and track all customer orders">
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
 
-      {/* filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order ID, customer…" className="w-56" />
-
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="field-input w-44"
-        >
-          <option value="">All statuses</option>
-          {ALL_STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-        </select>
-
-        <select
-          value={payment}
-          onChange={(e) => { setPayment(e.target.value); setPage(1); }}
-          className="field-input w-36"
-        >
-          <option value="">All payment</option>
-          {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m.toUpperCase()}</option>)}
-        </select>
-
-        {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors">
-            <X size={14} /> Clear
+      {/* Row 1 (mobile) / left side (desktop): top-level tabs — Orders / Replacements */}
+      {/* Row 2 (mobile) / right side (desktop): Status -> Payment -> Clear filters,
+          rendered inline in the same flex row as the tabs on desktop (justify-between),
+          but stacked onto its own row below the tabs on mobile (flex-col -> sm:flex-row),
+          exactly matching the Clear/Filter/Add-Product cluster pattern used on
+          Products/Inventory. On mobile, dropdown width/padding/font-size shrink
+          smoothly via clamp() instead of jumping at a breakpoint.
+          `items-center` (not just `sm:items-center`) horizontally centers both
+          rows as blocks on mobile — without it they default to stretch/left,
+          since the tabs pill is `w-fit` and the cluster is `w-full justify-end`,
+          neither of which centers the row itself within the page. */}
+      <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:items-center sm:justify-between w-full">
+        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
+          <button
+            onClick={() => setTab("orders")}
+            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "orders" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            All Orders
           </button>
+          <button
+            onClick={() => setTab("replacements")}
+            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+              tab === "replacements" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <RotateCcw size={13} /> Replacements
+          </button>
+        </div>
+
+        {tab === "orders" && (
+          <div className="ord-cluster-fluid flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="ord-clear-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1"
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
+
+            <div className="flex-1 sm:w-40 sm:shrink-0">
+              <Dropdown
+                value={status}
+                onChange={(v) => { setStatus(v); setPage(1); }}
+                placeholder="All Statuses"
+                options={[
+                  { value: "", label: "All Statuses" },
+                  ...ALL_STATUSES.map((s) => ({ value: s, label: s.replace(/_/g, " ") })),
+                ]}
+                className="ord-filter-fluid"
+                optionClassName="ord-filter-fluid"
+              />
+            </div>
+
+            <div className="flex-1 sm:w-40 sm:shrink-0">
+              <Dropdown
+                value={payment}
+                onChange={(v) => { setPayment(v); setPage(1); }}
+                placeholder="All Payment Status"
+                options={[
+                  { value: "", label: "All Payment Status" },
+                  ...PAYMENT_STATUSES.map((m) => ({ value: m, label: m.toUpperCase() })),
+                ]}
+                className="ord-filter-fluid"
+                optionClassName="ord-filter-fluid"
+              />
+            </div>
+          </div>
         )}
       </div>
 
-      <DataTable columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
+      {tab === "replacements" ? (
+        <ReplacementsPanel />
+      ) : (
+        <>
+          <TableFormat columns={COLS} rows={orders} loading={loading} emptyText="No orders found." />
 
-      {/* pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
-          <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
-          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
-        </div>
-      )}
+          {/* pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
+              <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
+              <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
+            </div>
+          )}
 
-      {/* detail drawer */}
-      {selected && (
-        <OrderDrawer order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+          {/* detail modal */}
+          {selected && (
+            <OrderModal order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+          )}
+        </>
       )}
     </AdminPage>
   );

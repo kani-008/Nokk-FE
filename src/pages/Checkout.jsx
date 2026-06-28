@@ -1,9 +1,13 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
-import { orderApi, userApi }     from "../ApiCall/Api.jsx";
+import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
+import { useDeliverySettings } from "../hooks/queries/useHome";
+import { useCheckout } from "../hooks/queries/useOrders";
+import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
+import { useBuyNowStore }        from "../components/store/BuyNowStore";
 import StepBar      from "../components/checkout/StepBar";
 import AddressStep  from "../components/checkout/Address";
 import PaymentStep  from "../components/checkout/Payment";
@@ -28,19 +32,31 @@ function validateAddress(addr) {
 export default function Checkout() {
   const navigate               = useNavigate();
   const { token, user }        = useAuthStore();
-  const { items, coupon, subtotal, discount, shipping, total, clearCart } = useCartStore();
+  const { items, coupon, subtotal, discount } = useCartStore();
+  const buyNowItem  = useBuyNowStore((s) => s.item);
+  const clearBuyNow = useBuyNowStore((s) => s.clearItem);
+
+  const checkoutItems = buyNowItem ? [buyNowItem] : items;
+
+  // delivery config from backend settings (falls back to DB values while loading)
+  const { data: deliverySettings } = useDeliverySettings();
+  const freeShippingThreshold = deliverySettings?.freeShippingThreshold ?? 500;
+  const flatDeliveryCharge    = deliverySettings?.flatDeliveryCharge    ?? 50;
 
   // computed totals
-  const sub  = subtotal();
-  const disc = discount();
-  const ship = shipping();
-  const tot  = total();
+  const sub  = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
+  const disc = buyNowItem ? 0 : discount();
+  const ship = sub >= freeShippingThreshold ? 0 : flatDeliveryCharge;
+  const tot  = sub - disc + ship;
 
   // ── step ───────────────────────────────────────────────────────────
   const [step, setStep] = useState("address");
 
   // ── address state ──────────────────────────────────────────────────
-  const [savedAddresses, setSavedAddresses] = useState([]);
+  // ── address state ──────────────────────────────────────────────────
+  const { data: addressesList = [] } = useAddresses();
+  const savedAddresses = addressesList;
+
   const [selectedSaved,  setSelectedSaved]  = useState(null);
   const [showNewForm,    setShowNewForm]     = useState(false);
   const [newAddress,     setNewAddress]      = useState({
@@ -48,6 +64,7 @@ export default function Checkout() {
     phone:        user?.phone   || "",
     addressLine1: "",
     addressLine2: "",
+    taluk:        "",
     city:         "",
     state:        "",
     pincode:      "",
@@ -59,31 +76,31 @@ export default function Checkout() {
   const [customerUpiId, setCustomerUpiId] = useState("");
 
   // ── order submit ───────────────────────────────────────────────────
-  const [placing,  setPlacing]  = useState(false);
   const [orderErr, setOrderErr] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
-  // ── load saved addresses on mount ─────────────────────────────────
   useEffect(() => {
-    if (!token) return;
-    userApi.addresses(token)
-      .then((r) => {
-        const list = r.addresses || [];
-        setSavedAddresses(list);
-        if (list.length > 0) {
-          setSelectedSaved(list[0]);
-          setShowNewForm(false);
-        } else {
-          setShowNewForm(true);
-        }
-      })
-      .catch(() => setShowNewForm(true));
-  }, [token]);
+    if (addressesList.length > 0) {
+      setSelectedSaved(addressesList[0]);
+      setShowNewForm(false);
+    } else {
+      setShowNewForm(true);
+    }
+  }, [addressesList]);
 
-  // ── redirect if cart emptied ───────────────────────────────────────
+  // ── redirect if cart emptied (skip when in buy-now mode) ──────────
   useEffect(() => {
-    if (items.length === 0) navigate("/cart");
-  }, [items]);
+    if (!buyNowItem && items.length === 0) navigate("/cart");
+  }, [buyNowItem, items, navigate]);
+
+  // ── clear buy-now item when leaving checkout ───────────────────────
+  useEffect(() => {
+    return () => {
+      if (window.location.pathname !== "/checkout") {
+        clearBuyNow();
+      }
+    };
+  }, []);
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
@@ -104,48 +121,88 @@ export default function Checkout() {
     setShowNewForm(false);
   };
 
+  const handleSavedEdited = (updated) => {
+    setSelectedSaved(updated);
+  };
+
+  const checkoutMutation = useCheckout();
+  const addAddressMutation = useAddAddress();
+  const placing = checkoutMutation.isPending || addAddressMutation.isPending;
+
   const handlePlaceOrder = async () => {
-    setPlacing(true);
     setOrderErr("");
     try {
       const address = showNewForm ? newAddress : selectedSaved;
-      const res = await orderApi.place({
-        items: items.map((i) => ({
+
+      // Save new address to backend if logged in
+      if (token && showNewForm) {
+        try {
+          await addAddressMutation.mutateAsync({
+            label:        "Home",
+            fullName:     newAddress.name,
+            phone:        newAddress.phone,
+            addressLine1: newAddress.addressLine1,
+            addressLine2: newAddress.addressLine2 || "",
+            taluk:        newAddress.taluk || "",
+            city:         newAddress.city,
+            state:        newAddress.state,
+            pincode:      newAddress.pincode,
+            isDefault:    false,
+          });
+        } catch (saveAddrErr) {
+          console.error("Failed to auto-save new address to profile:", saveAddrErr);
+          throw new Error(saveAddrErr.response?.data?.message || saveAddrErr.message || "Failed to save address to profile");
+        }
+      }
+      const payload = {
+        items: checkoutItems.map(i => ({
+          productId: i.productId,
           variantId: i.variantId,
-          quantity:  i.quantity,
-          price:     i.price,
+          weight: i.weight,
+          price: i.price,
+          quantity: i.quantity,
+          nameEn: i.productName,
+          nameTa: i.nameTa
         })),
-        shippingAddress: {
-          name:         address.name,
+        address: {
+          fullName:     address.name,
           phone:        address.phone,
           addressLine1: address.addressLine1,
           addressLine2: address.addressLine2 || "",
+          taluk:        address.taluk || "",
           city:         address.city,
           state:        address.state,
           pincode:      address.pincode,
         },
-        paymentMethod:  payMethod,
-        couponCode:     coupon?.code || undefined,
-        customerUpiId:  customerUpiId || undefined,
-        subtotal:       sub,
+        paymentMethod: payMethod,
+        couponApplied: coupon?.code || null,
+        subtotal: sub,
         deliveryCharge: ship,
-        discount:       disc,
-        total:          tot,
-      }, token);
+        discount: disc,
+        total: tot
+      };
 
-      clearCart();
+      const res = await checkoutMutation.mutateAsync(payload);
 
-      if (payMethod === "upi") {
-        // Stay on Review step so the customer can submit their
-        // transaction reference ID before we send them off.
-        setPlacedOrderId(res.order?.id);
-      } else {
+      // Only clear the real cart when not in buy-now mode
+      if (!buyNowItem) {
+        if (token) {
+          try {
+            await API.delete("/cart/clear-cart");
+          } catch (clearErr) {
+            console.error("Failed to clear server cart:", clearErr);
+          }
+        }
+        useCartStore.getState().clearCartLocal();
+      }
+      clearBuyNow();
+
+      setPlacedOrderId(res.order?.id);
+      if (payMethod !== "upi" || import.meta.env.DEV) {
         navigate("/my-orders", { state: { newOrderId: res.order?.id } });
       }
     } catch (err) {
-      setOrderErr(err.message || "Failed to place order. Please try again.");
-    } finally {
-      setPlacing(false);
+      setOrderErr(err.response?.data?.message || err.message || "Failed to place order. Please try again.");
     }
   };
 
@@ -177,6 +234,7 @@ export default function Checkout() {
               savedAddresses={savedAddresses}
               selectedSaved={selectedSaved}
               onSelectSaved={handleSelectSaved}
+              onSavedEdited={handleSavedEdited}
               showNewForm={showNewForm}
               onToggleNewForm={() => setShowNewForm((s) => !s)}
               newAddress={newAddress}
@@ -203,7 +261,7 @@ export default function Checkout() {
               <ReviewStep
                 address={activeAddress}
                 payMethod={payMethod}
-                items={items}
+                items={checkoutItems}
                 total={tot}
                 placing={placing}
                 error={orderErr}
@@ -231,7 +289,7 @@ export default function Checkout() {
         {/* ── Sticky order summary sidebar ──────────────────────── */}
         <div className="lg:w-72 shrink-0">
           <OrderSummary
-            items={items}
+            items={checkoutItems}
             sub={sub}
             disc={disc}
             ship={ship}

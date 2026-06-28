@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   CreditCard, Smartphone, Banknote, ArrowLeft, ChevronRight,
-  QrCode, ExternalLink, Lock,
+  QrCode, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { paymentSettingsApi } from "../../ApiCall/Api.jsx";
+import { usePaymentSettingsPublic } from "../../hooks/queries/usePaymentSettings";
 
 export const PAYMENT_METHODS = [
   {
@@ -70,11 +70,11 @@ function buildGenericUpiLink({ upiId, payeeName, amount, note }) {
 // Simple UA-sniff — good enough to decide button vs QR emphasis.
 // Not used for anything security-sensitive.
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
+  const [isMobile] = useState(() => {
+    if (typeof navigator === "undefined") return false;
     const ua = navigator.userAgent || "";
-    setIsMobile(/Android|iPhone|iPad|iPod/i.test(ua));
-  }, []);
+    return /Android|iPhone|iPad|iPod/i.test(ua);
+  });
   return isMobile;
 }
 
@@ -101,15 +101,7 @@ export default function Payment({
 }) {
   const isMobile = useIsMobile();
 
-  const [receiverSettings, setReceiverSettings] = useState(null);
-  const [loadingSettings,  setLoadingSettings]  = useState(true);
-
-  useEffect(() => {
-    paymentSettingsApi.getPublic()
-      .then((r) => setReceiverSettings(r.settings || null))
-      .catch(() => setReceiverSettings(null))
-      .finally(() => setLoadingSettings(false));
-  }, []);
+  const { data: receiverSettings = null, isLoading: loadingSettings } = usePaymentSettingsPublic();
 
   const upiQueryString = useMemo(() => {
     if (!receiverSettings?.upiId) return "";

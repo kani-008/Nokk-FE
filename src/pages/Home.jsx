@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-import { productApi, categoryApi, bannerApi } from "../ApiCall/Api.jsx";
 import HeroBanner from "../components/home/HeroBanner.jsx";
 import {
   CategoryScroll,
@@ -9,6 +7,12 @@ import {
   Testimonials,
   NewsletterCTA,
 } from "../components/home/HomeSections.jsx";
+import {
+  useHomeBanners,
+  useHomeCategories,
+  useHomeBestsellers,
+  useHomeNewArrivals,
+} from "../hooks/queries/useHome";
 
 // ══════════════════════════════════════════════════════════════════════
 // HOME PAGE — fetch + compose
@@ -17,25 +21,12 @@ import {
 // page's data and arranging the sections in order.
 // ══════════════════════════════════════════════════════════════════════
 export default function Home() {
-  const [banners,     setBanners]     = useState([]);
-  const [categories,  setCategories]  = useState([]);
-  const [bestsellers, setBestsellers] = useState([]);
-  const [newest,      setNewest]      = useState([]);
-  const [loading,     setLoading]     = useState(true);
+  const { data: banners = [], isLoading: bannersLoading } = useHomeBanners();
+  const { data: categories = [], isLoading: categoriesLoading } = useHomeCategories();
+  const { data: bestsellers = [], isLoading: bestsellersLoading } = useHomeBestsellers();
+  const { data: newest = [], isLoading: newestLoading } = useHomeNewArrivals();
 
-  useEffect(() => {
-    Promise.allSettled([
-      bannerApi.active(),
-      categoryApi.list(),
-      productApi.list("isBestseller=true&limit=8"),
-      productApi.list("sort=newest&limit=8"),
-    ]).then(([banRes, catRes, bestRes, newRes]) => {
-      if (banRes.status  === "fulfilled") setBanners(banRes.value.banners         || []);
-      if (catRes.status  === "fulfilled") setCategories(catRes.value.categories   || []);
-      if (bestRes.status === "fulfilled") setBestsellers(bestRes.value.products   || []);
-      if (newRes.status  === "fulfilled") setNewest(newRes.value.products         || []);
-    }).finally(() => setLoading(false));
-  }, []);
+  const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 
   return (
     <div className="min-h-screen bg-sandal-50">

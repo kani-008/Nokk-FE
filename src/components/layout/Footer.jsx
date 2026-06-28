@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Phone, Mail, MapPin,
-  ShieldCheck, Truck, RefreshCcw, Headphones,
+  ShieldCheck, Truck, Headphones,
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { FaInstagram, FaFacebook, FaYoutube, FaTwitter } from "react-icons/fa";
@@ -111,7 +111,7 @@ export default function Footer() {
             <Logo showText={true} inverse={true} className="mb-4" />
 
             <p className="font-body text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
-              Authentic dry fish and coastal pickles sourced directly from Rameswaram fishermen.
+              Authentic dry fish and coastal pickles sourced directly from coastal fishermen.
               Traditionally sun-dried, naturally preserved — delivered straight to your doorstep.
             </p>
 
@@ -141,7 +141,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <MapPin size={13} className="shrink-0 text-sandal-400 mt-0.5" />
-                <span>Rameswaram, Ramanathapuram,<br />Tamil Nadu — 623 526</span>
+                <span>Ramanathapuram,<br />Tamil Nadu — 623 526</span>
               </li>
             </ul>
           </div>
@@ -231,7 +231,7 @@ export default function Footer() {
         <div className="sm:hidden mb-8">
           <Logo showText={true} inverse={true} className="mb-4" />
           <p className="font-body text-sm text-gray-400 leading-relaxed mb-6">
-            Authentic dry fish sourced directly from Rameswaram fishermen.
+            Authentic dry fish sourced directly from coastal fishermen.
           </p>
           <div className="flex gap-2.5 mb-6">
             {SOCIAL.map((s) => (
@@ -275,7 +275,7 @@ export default function Footer() {
                 <a href="mailto:hello@nammakadai.com" className="hover:text-white">hello@nammakadai.com</a>
               </li>
               <li className="flex items-start gap-2.5"><MapPin size={13} className="text-sandal-400 mt-0.5 shrink-0" />
-                <span>Rameswaram, Tamil Nadu — 623 526</span>
+                <span>Ramanathapuram, Tamil Nadu — 623 526</span>
               </li>
             </ul>
           </AccordionSection>

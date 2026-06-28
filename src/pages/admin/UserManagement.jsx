@@ -1,21 +1,104 @@
-import { useState, useEffect } from "react";
-import { UserX, UserCheck, Mail, Phone, X, AlertTriangle } from "lucide-react";
-import { userApi }      from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useOutletContext } from "react-router-dom";
+import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
+import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
 import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard,
+  AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
+
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .um-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+  }
+`;
 
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH_AVATAR = comboImg;
-const fmtDate   = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-// ── User detail drawer ─────────────────────────────────────────────────
-function UserDrawer({ user, onClose, onBlock, onUnblock }) {
-  const { token } = useAuthStore();
+// ── Custom Dropdown for Admin filters ─────────────────────────────────
+function CustomDropdown({ value, onChange, options, placeholder, className = "" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div ref={containerRef} className={`relative select-none ${className}`}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none transition-all duration-200 focus:border-sandal-400 focus:ring-2 focus:ring-sandal-400/15 cursor-pointer h-[34px] sm:h-[38px] sm:text-sm sm:px-4 sm:py-2"
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 shrink-0 ml-1.5 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer hover:bg-sandal-50 hover:text-sandal-800 ${opt.value === value ? "bg-sandal-50/70 text-sandal-700 font-semibold" : "text-gray-700"
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── User detail modal ─────────────────────────────────────────────────
+function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const [acting, setActing] = useState(false);
-  const [error,  setError]  = useState("");
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const { data: detail, isLoading: loadingDetail } = useUserDetails(user.id);
+  const toggleStatusMutation = useToggleUserStatus();
+  const deleteUserMutation   = useDeleteUser();
+
 
   if (!user) return null;
 
@@ -24,104 +107,276 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
   const handleToggle = async () => {
     setActing(true); setError("");
     try {
-      if (isBlocked) {
-        await userApi.unblock(user.id, token);
-        onUnblock(user.id);
-      } else {
-        await userApi.block(user.id, token);
-        onBlock(user.id);
-      }
+      const newStatus = isBlocked ? "active" : "blocked";
+      await toggleStatusMutation.mutateAsync({ id: user.id, status: newStatus });
+      if (isBlocked) onUnblock?.(user.id);
+      else           onBlock?.(user.id);
       onClose();
     } catch (e) {
       setError(e.message || "Action failed");
     } finally { setActing(false); }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-white shadow-2xl flex flex-col h-full">
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) return;
+    setActing(true); setError("");
+    try {
+      await deleteUserMutation.mutateAsync(user.id);
+      onDelete?.(user.id);
+      onClose();
+    } catch (e) {
+      setError(e.message || "Delete failed");
+    } finally { setActing(false); }
+  };
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+  if (loadingDetail) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 flex flex-col items-center justify-center min-h-[300px] animate-modal-slide-up">
+          <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-sm font-body text-gray-500">Loading user profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 flex flex-col min-h-[250px] animate-modal-slide-up">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
+            <h3 className="font-display text-base font-bold text-gray-900">Error</h3>
+            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
+            <AlertTriangle className="text-red-500 mb-2" size={32} />
+            <p className="text-sm font-body text-red-600">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentUser = detail?.user || user;
+  const addresses = detail?.addresses || [];
+  const stats = detail?.stats || { totalOrders: 0, totalSpent: 0, delivered: 0, cancelled: 0 };
+  const orders = detail?.orders || [];
+  const replacementRequests = detail?.replacementRequests || [];
+  const hasReplacements = replacementRequests.length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-display text-base font-bold text-gray-900">User Details</h3>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg" aria-label="Close"><X size={18} /></button>
         </div>
 
+        {/* Tab selection */}
+        <div className="flex border-b border-gray-100 px-5 bg-gray-50/50 shrink-0">
+          {[
+            { key: "overview", label: "Overview" },
+            { key: "orders", label: `Orders (${orders.length})` },
+            ...(hasReplacements ? [{ key: "replacements", label: `Replacements (${replacementRequests.length})` }] : [])
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-3 text-xs sm:text-sm font-medium font-body border-b-2 -mb-[2px] transition-all cursor-pointer ${activeTab === tab.key
+                  ? "border-amber-500 text-amber-950 font-bold"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
 
-          {/* avatar + name */}
-          <div className="flex items-center gap-4">
-            <img
-              src={user.avatarUrl || PH_AVATAR} alt={user.fullName}
-              className="w-14 h-14 rounded-full object-cover bg-amber-50 border-2 border-amber-100"
-              onError={(e) => { e.target.src = PH_AVATAR; }}
-            />
-            <div>
-              <p className="font-body text-base font-bold text-gray-900">{user.fullName || user.name}</p>
-              <StatusBadge status={user.role || "customer"} />
-              <span className="ml-1.5"><StatusBadge status={user.status || "active"} /></span>
-            </div>
-          </div>
+          {activeTab === "overview" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* avatar + name */}
+              <div className="flex items-center gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-body text-base font-bold text-gray-900 truncate">{currentUser.fullName || currentUser.name}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <StatusBadge status={currentUser.role || "customer"} />
+                    <StatusBadge status={currentUser.status || "active"} />
+                  </div>
+                </div>
+              </div>
 
-          {/* contact info */}
-          <AdminCard>
-            <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Contact</p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-body text-sm text-gray-700">
-                <Mail  size={14} className="text-gray-400 shrink-0" />
-                <span>{user.email || "—"}</span>
-                {user.emailVerified && <span className="badge-green ml-auto">Verified</span>}
-              </div>
-              <div className="flex items-center gap-2 font-body text-sm text-gray-700">
-                <Phone size={14} className="text-gray-400 shrink-0" />
-                <span>{user.phone || "—"}</span>
-                {user.phoneVerified && <span className="badge-green ml-auto">Verified</span>}
-              </div>
-            </div>
-          </AdminCard>
+              {/* contact info */}
+              <AdminCard>
+                <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Contact</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 font-body text-sm text-gray-700 min-w-0">
+                    <Mail size={14} className="text-gray-400 shrink-0" />
+                    <span className="truncate flex-1">{currentUser.email || "—"}</span>
+                    {currentUser.emailVerified && <span className="badge-green shrink-0">Verified</span>}
+                  </div>
+                  <div className="flex items-center gap-2 font-body text-sm text-gray-700 min-w-0">
+                    <Phone size={14} className="text-gray-400 shrink-0" />
+                    <span className="truncate flex-1">{currentUser.phone || "—"}</span>
+                    {currentUser.phoneVerified && <span className="badge-green shrink-0">Verified</span>}
+                  </div>
+                </div>
+              </AdminCard>
 
-          {/* account info */}
-          <AdminCard>
-            <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</p>
-            <div className="space-y-1.5 text-sm font-body">
-              <div className="flex justify-between text-gray-700">
-                <span className="text-gray-400">Joined</span>
-                <span>{fmtDate(user.createdAt)}</span>
-              </div>
-              <div className="flex justify-between text-gray-700">
-                <span className="text-gray-400">Total Orders</span>
-                <span className="font-num font-semibold">{user.orderCount ?? "—"}</span>
-              </div>
-              <div className="flex justify-between text-gray-700">
-                <span className="text-gray-400">Total Spent</span>
-                <span className="font-num font-semibold">
-                  {user.totalSpent
-                    ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(user.totalSpent)
-                    : "—"}
-                </span>
-              </div>
-            </div>
-          </AdminCard>
+              {/* account info stats */}
+              <AdminCard>
+                <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account Activity</p>
+                <div className="grid grid-cols-2 gap-4 mb-3 border-b border-gray-50 pb-3">
+                  <div className="text-center p-2 bg-gray-50 rounded-xl">
+                    <span className="block font-num text-lg font-bold text-gray-900">{stats.delivered}</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Delivered</span>
+                  </div>
+                  <div className="text-center p-2 bg-gray-50 rounded-xl">
+                    <span className="block font-num text-lg font-bold text-gray-900">{stats.cancelled}</span>
+                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Cancelled</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-sm font-body">
+                  <div className="flex justify-between text-gray-700">
+                    <span className="text-gray-400">Joined</span>
+                    <span>{fmtDate(currentUser.createdAt)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-700">
+                    <span className="text-gray-400">Total Orders</span>
+                    <span className="font-num font-semibold">{stats.totalOrders}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-700">
+                    <span className="text-gray-400">Total Spent</span>
+                    <span className="font-num font-semibold">
+                      {stats.totalSpent
+                        ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(stats.totalSpent)
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </AdminCard>
 
-          {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">
-              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-              <span>{error}</span>
+              {/* Saved Addresses */}
+              <AdminCard>
+                <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Saved Addresses</p>
+                {addresses.length > 0 ? (
+                  <div className="space-y-2">
+                    {addresses.map((addr) => (
+                      <div key={addr.id} className="text-xs border border-gray-100 p-2.5 rounded-xl bg-gray-50/40">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-semibold text-amber-950">{addr.label || "Address"}</span>
+                          {addr.is_default && <span className="inline-flex items-center text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-md border border-green-200">Default</span>}
+                        </div>
+                        <p className="text-gray-700 font-medium">{addr.full_name} · {addr.phone}</p>
+                        <p className="text-gray-500 mt-0.5 leading-relaxed">
+                          {addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ""}, {addr.city}, {addr.state} - {addr.pincode}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 text-center py-2">No saved addresses found.</p>
+                )}
+              </AdminCard>
             </div>
           )}
 
-          {/* action */}
-          {user.role !== "admin" && (
-            <AdminButton
-              variant={isBlocked ? "primary" : "danger"}
-              onClick={handleToggle}
-              disabled={acting}
-            >
-              {isBlocked
-                ? <><UserCheck size={14} /> {acting ? "Unblocking…" : "Unblock User"}</>
-                : <><UserX    size={14} /> {acting ? "Blocking…"   : "Block User"}</>
-              }
-            </AdminButton>
+          {activeTab === "orders" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <AdminCard className="p-0 overflow-hidden">
+                {orders.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                          <th className="px-4 py-2.5 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Order ID</th>
+                          <th className="px-4 py-2.5 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                          <th className="px-4 py-2.5 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
+                          <th className="px-4 py-2.5 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Payment</th>
+                          <th className="px-4 py-2.5 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map((o) => (
+                          <tr key={o.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                            <td className="px-4 py-3 font-semibold text-gray-900 font-body">#{o.id}</td>
+                            <td className="px-4 py-3 text-xs text-gray-500 font-body">{fmtDate(o.created_at)}</td>
+                            <td className="px-4 py-3 font-semibold text-gray-950 font-num">
+                              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(o.total)}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-600 font-body uppercase">{o.payment_method}</td>
+                            <td className="px-4 py-3 align-middle"><StatusBadge status={o.status} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-12 font-body">No orders found for this user.</p>
+                )}
+              </AdminCard>
+            </div>
+          )}
+
+          {activeTab === "replacements" && (
+            <div className="space-y-3 animate-in fade-in duration-200">
+              {replacementRequests.map((rep) => (
+                <AdminCard key={rep.id} className="border-pink-100 bg-pink-50/10">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-semibold text-gray-900 font-body text-sm">Order #{rep.order_id}</span>
+                      <p className="text-xs text-gray-400 mt-0.5">{fmtDate(rep.created_at)}</p>
+                    </div>
+                    <StatusBadge status={rep.status} />
+                  </div>
+                  <div className="mt-3 text-xs sm:text-sm font-body space-y-2">
+                    <p className="text-gray-700 leading-relaxed"><span className="font-bold text-gray-600">Reason:</span> {rep.reason}</p>
+                    {rep.details && <p className="text-gray-500 leading-relaxed"><span className="font-bold text-gray-600">Details:</span> {rep.details}</p>}
+                    {rep.admin_notes && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl mt-2 leading-relaxed">
+                        <span className="font-bold text-amber-800">Admin Notes:</span> {rep.admin_notes}
+                      </div>
+                    )}
+                    {rep.new_order_id && (
+                      <p className="text-green-700 leading-relaxed">
+                        <span className="font-bold">Replacement order created:</span> #{rep.new_order_id}
+                      </p>
+                    )}
+                  </div>
+                </AdminCard>
+              ))}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {currentUser.role !== "admin" && (
+            <div className="flex gap-3 pt-4 border-t border-gray-100 shrink-0">
+              <AdminButton
+                variant={isBlocked ? "primary" : "outline"}
+                onClick={handleToggle}
+                disabled={acting}
+                className="flex-1"
+              >
+                {isBlocked
+                  ? <><UserCheck size={14} /> {acting ? "Unblocking…" : "Unblock"}</>
+                  : <><UserX size={14} /> {acting ? "Blocking…" : "Block"}</>
+                }
+              </AdminButton>
+
+              <AdminButton
+                variant="danger"
+                onClick={handleDelete}
+                disabled={acting}
+                className="flex-1"
+              >
+                <Trash2 size={14} /> {acting ? "Deleting…" : "Delete"}
+              </AdminButton>
+            </div>
           )}
         </div>
       </div>
@@ -133,65 +388,60 @@ function UserDrawer({ user, onClose, onBlock, onUnblock }) {
 // USER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function UserManagement() {
-  const { token } = useAuthStore();
-  const [users,      setUsers]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState("");
+  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [status,     setStatus]     = useState("");
-  const [page,       setPage]       = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selected,   setSelected]   = useState(null);
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
 
-  // debounce search input
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  // plug into top-bar search (same pattern as OrderManagement)
+  useEffect(() => {
+    registerSearch({ placeholder: "Search name, email, phone…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  // debounce search → query
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    if (roleFilter)      params.set("role",   roleFilter);
-    if (status)          params.set("status", status);
-    params.set("page", page); params.set("limit", 15);
-    try {
-      const res = await userApi.all(params.toString(), token);
-      setUsers(res.users || []);
-      setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); }
-  };
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 15 };
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (roleFilter)      p.role   = roleFilter;
+    if (status)          p.status = status;
+    return p;
+  }, [debouncedSearch, roleFilter, status, page]);
 
-  useEffect(() => { load(); }, [debouncedSearch, roleFilter, status, page, token]);
+  const { data: userData, isLoading: loading, error: queryError } = useUserList(queryParams);
+  const users      = userData?.users || [];
+  const totalPages = userData?.pagination?.totalPages || 1;
+  const error      = queryError?.message || "";
 
-  const patchStatus = (id, newStatus) =>
-    setUsers((prev) => prev.map((u) => u.id === id ? { ...u, status: newStatus } : u));
+  const toggleStatusMutation = useToggleUserStatus();
+  const deleteUserMutation   = useDeleteUser();
+
 
   const COLS = [
     {
-      key: "name", label: "User",
+      key: "name", label: "Name",
       render: (r) => (
         <div className="flex items-center gap-3">
-          <img
-            src={r.avatarUrl || PH_AVATAR} alt={r.fullName}
-            className="w-9 h-9 rounded-full object-cover bg-amber-50 shrink-0 border border-amber-100"
-            onError={(e) => { e.target.src = PH_AVATAR; }}
-          />
-          <div>
-            <p className="font-body text-sm font-semibold text-gray-900">{r.fullName || r.name}</p>
-            <p className="font-body text-xs text-gray-400">{r.email}</p>
-          </div>
+          <span className="font-body text-sm font-semibold text-gray-900">{r.fullName || r.name || "—"}</span>
         </div>
       ),
     },
-    { key: "phone",     label: "Phone",   render: (r) => <span className="font-num text-sm text-gray-600">{r.phone || "—"}</span> },
-    { key: "role",      label: "Role",    render: (r) => <StatusBadge status={r.role || "customer"} /> },
-    { key: "status",    label: "Status",  render: (r) => <StatusBadge status={r.status || "active"} /> },
-    { key: "createdAt", label: "Joined",  render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.createdAt)}</span> },
+    { key: "email", label: "Email", className: "hidden md:table-cell", render: (r) => <span className="font-body text-sm text-gray-600">{r.email || "—"}</span> },
+    { key: "phone", label: "Phone", render: (r) => <span className="font-num text-sm text-gray-600">{r.phone || "—"}</span> },
+    { key: "role", label: "Role", render: (r) => <StatusBadge status={r.role || "customer"} /> },
+    { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status || "active"} /> },
     {
-      key: "action", label: "", width: "60px",
+      key: "action", label: "Action", width: "60px",
       render: (r) => (
         <button
           onClick={() => setSelected(r)}
@@ -204,31 +454,57 @@ export default function UserManagement() {
   ];
 
   return (
-    <AdminPage title="Users" sub="Manage customer accounts and permissions">
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
 
-      <div className="flex flex-wrap gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search name, email, phone…" className="w-56" />
-
-        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="field-input w-36">
-          <option value="">All roles</option>
-          <option value="customer">Customer</option>
-          <option value="admin">Admin</option>
-        </select>
-
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="field-input w-36">
-          <option value="">All status</option>
-          <option value="active">Active</option>
-          <option value="blocked">Blocked</option>
-        </select>
-
+      {/* Filter cluster — matches OrderManagement pattern */}
+      <div className="um-cluster-fluid flex items-center justify-end gap-3 w-full">
         {(search || roleFilter || status) && (
-          <button onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500">
+          <button
+            onClick={() => { setSearch(""); setRoleFilter(""); setStatus(""); setPage(1); }}
+            className="um-clear-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1"
+          >
             <X size={14} /> Clear
           </button>
         )}
+
+        <div className="flex-1 sm:w-36 sm:flex-none">
+          <CustomDropdown
+            value={roleFilter}
+            onChange={(val) => { setRoleFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Roles" },
+              { value: "customer", label: "Customer" },
+              { value: "admin", label: "Admin" },
+            ]}
+            placeholder="All Roles"
+            className="um-filter-fluid w-full"
+          />
+        </div>
+
+        <div className="flex-1 sm:w-36 sm:flex-none">
+          <CustomDropdown
+            value={status}
+            onChange={(val) => { setStatus(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Statuses" },
+              { value: "active", label: "Active" },
+              { value: "blocked", label: "Blocked" },
+            ]}
+            placeholder="All Statuses"
+            className="um-filter-fluid w-full"
+          />
+        </div>
       </div>
 
-      <DataTable columns={COLS} rows={users} loading={loading} emptyText="No users found." />
+      {error && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <TableFormat columns={COLS} rows={users} loading={loading} emptyText="No users found." />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
@@ -239,11 +515,15 @@ export default function UserManagement() {
       )}
 
       {selected && (
-        <UserDrawer
+        <UserModal
           user={selected}
           onClose={() => setSelected(null)}
           onBlock={(id) => patchStatus(id, "blocked")}
           onUnblock={(id) => patchStatus(id, "active")}
+          onDelete={(id) => {
+            setUsers((prev) => prev.filter((u) => u.id !== id));
+            setSelected(null);
+          }}
         />
       )}
     </AdminPage>

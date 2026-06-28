@@ -57,7 +57,12 @@ web_modules/
 
 # Env files
 .env
+.env.*
 .env.*.local
+.env.local
+.env.production
+src/.env
+src/.env.*
 
 # Cache
 .cache

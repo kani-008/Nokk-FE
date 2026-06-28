@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   IndianRupee, ShoppingBag, Package, Users,
   TrendingUp, Clock, CheckCircle2, XCircle,
   ArrowRight, RefreshCw,
 } from "lucide-react";
-import { dashboardApi, orderApi } from "../../ApiCall/Api.jsx";
-import { useAuthStore }           from "../../components/store/AuthStore";
 import {
   StatCard, AdminPage, DataTable, StatusBadge, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
+import {
+  useDashboardSummary,
+  useDashboardRevenueChart,
+  useRecentOrders,
+} from "../../hooks/queries/useAdminDashboard";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -69,28 +72,21 @@ function StatusBreakdown({ breakdown = {} }) {
 }
 
 export default function Dashboard() {
-  const { token } = useAuthStore();
-  const [kpis,         setKpis]         = useState(null);
-  const [charts,       setCharts]       = useState(null);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [refreshing,   setRefreshing]   = useState(false);
+  const { data: kpis,         isLoading: kpisLoading,    refetch: refetchKpis    } = useDashboardSummary();
+  const { data: chartData,    isLoading: chartsLoading,  refetch: refetchCharts  } = useDashboardRevenueChart();
+  const { data: recentOrders, isLoading: ordersLoading,  refetch: refetchOrders  } = useRecentOrders(8);
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
-    try {
-      const [kRes, cRes, oRes] = await Promise.allSettled([
-        dashboardApi.kpis(token),
-        dashboardApi.charts(token),
-        orderApi.all("limit=8&sort=newest", token),
-      ]);
-      if (kRes.status === "fulfilled") setKpis(kRes.value?.kpis   || kRes.value || {});
-      if (cRes.status === "fulfilled") setCharts(cRes.value?.charts || cRes.value || {});
-      if (oRes.status === "fulfilled") setRecentOrders(oRes.value?.orders || []);
-    } finally { setLoading(false); setRefreshing(false); }
+  const loading    = kpisLoading || chartsLoading || ordersLoading;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.allSettled([refetchKpis(), refetchCharts(), refetchOrders()]);
+    setRefreshing(false);
   };
 
-  useEffect(() => { load(); }, [token]);
+  const charts = chartData ? { revenueByDay: chartData } : null;
+
 
   const KPI_CARDS = [
     { label: "Total Revenue",   key: "totalRevenue",  icon: IndianRupee, color: "green",  currency: true },
@@ -100,10 +96,10 @@ export default function Dashboard() {
   ];
 
   const QUICK_STATS = [
-    { label: "Orders Today", value: kpis?.ordersToday ?? "—", icon: <Clock        size={15} className="text-amber-500"  /> },
-    { label: "Pending",      value: kpis?.pending      ?? "—", icon: <Clock        size={15} className="text-yellow-500" /> },
-    { label: "Delivered",    value: kpis?.delivered    ?? "—", icon: <CheckCircle2 size={15} className="text-green-500"  /> },
-    { label: "Cancelled",    value: kpis?.cancelled    ?? "—", icon: <XCircle      size={15} className="text-red-400"    /> },
+    { label:"Today's Order", value: kpis?.ordersToday ?? "—", icon: <Clock        size={15} className="text-amber-500"  /> },
+    { label: "Pending Order",      value: kpis?.pending      ?? "—", icon: <Clock        size={15} className="text-yellow-500" /> },
+    { label: "Order Delivered",    value: kpis?.delivered    ?? "—", icon: <CheckCircle2 size={15} className="text-green-500"  /> },
+    { label: "Cancelled Order",    value: kpis?.cancelled    ?? "—", icon: <XCircle      size={15} className="text-red-400"    /> },
   ];
 
   const ORDER_COLS = [
@@ -128,10 +124,8 @@ export default function Dashboard() {
 
   return (
     <AdminPage
-      title="Dashboard"
-      sub="Your store at a glance"
       action={
-        <button onClick={() => load(true)} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
+        <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
       }
@@ -172,7 +166,7 @@ export default function Dashboard() {
 
         <AdminCard>
           <p className="font-body text-sm font-bold text-gray-900 mb-4">Order Status</p>
-          <StatusBreakdown breakdown={charts?.ordersByStatus || {}} />
+          <StatusBreakdown breakdown={kpis?.breakdown || {}} />
         </AdminCard>
       </div>
 

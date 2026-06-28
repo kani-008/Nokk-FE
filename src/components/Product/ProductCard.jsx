@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Star } from "lucide-react";
-import { useCartStore }     from "../store/CartStore";
+import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
-import { useAuthStore }     from "../store/AuthStore";
+import { useAuthStore } from "../store/AuthStore";
 
 import comboImg from "../../assets/products/combo.jpg";
 
@@ -27,23 +27,25 @@ const rupee = (n) =>
     variants[]: [{ id, price, comparePrice, weightLabel, stockQty }]
   }
 */
+import API from "../../ApiCall/Api.jsx";
+
 export default function ProductCard({ product }) {
-  const { addItem, items } = useCartStore();
-  const { toggle, isWishlisted } = useWishlistStore();
-  const { token }                = useAuthStore();
+  const { items } = useCartStore();
+  const { isWishlisted } = useWishlistStore();
+  const { token, isAuthenticated } = useAuthStore();
 
   const [shakeKey, setShakeKey] = useState(0);
 
   const wishlisted = isWishlisted(product.id);
-  const firstV     = product.variants?.[0];
-  const price      = firstV?.price       ?? product.minPrice        ?? 0;
-  const compare    = firstV?.comparePrice ?? product.minComparePrice ?? 0;
-  const hasDisc    = compare > price;
-  const disc       = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
-  const image      = product.primaryImage || PH;
-  const inStock    = (firstV?.stockQty ?? 1) > 0;
-  const cartItem   = firstV ? items.find((i) => i.variantId === firstV.id) : null;
-  const inCart     = !!cartItem;
+  const firstV = product.variants?.[0];
+  const price = firstV?.price ?? product.minPrice ?? 0;
+  const compare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
+  const hasDisc = compare > price;
+  const disc = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
+  const image = product.primaryImage || PH;
+  const inStock = firstV?.inStock ?? true;
+  const cartItem = firstV ? items.find((i) => i.variantId === firstV.id) : null;
+  const inCart = !!cartItem;
 
   // Fires a quick side-to-side shake on the cart icon — every click replays
   // it, whether this is the first "add" or a repeat click on an already
@@ -51,7 +53,7 @@ export default function ProductCard({ product }) {
   // CSS animation restarts even on rapid repeat clicks.
   const shake = () => setShakeKey((k) => k + 1);
 
-  const handleCart = (e) => {
+  const handleCart = async (e) => {
     e.preventDefault();
     if (!firstV || !inStock) return;
 
@@ -62,22 +64,74 @@ export default function ProductCard({ product }) {
       return;
     }
 
-    addItem({
-      variantId:    firstV.id,
-      productId:    product.id,
-      productName:  product.nameEn,
-      nameTa:       product.nameTa,
+    const itemData = {
+      variantId: firstV.id,
+      productId: product.id,
+      productName: product.nameEn,
+      nameTa: product.nameTa,
       image,
-      price:        firstV.price,
+      price: firstV.price,
       comparePrice: firstV.comparePrice,
-      weight:       firstV.weightLabel,
-    });
+      weight: firstV.weightLabel,
+      quantity: 1,
+    };
+
+    if (isAuthenticated && token) {
+      try {
+        const response = await API.post("/cart/add-item", {
+          variantId: firstV.id,
+          quantity: 1,
+        });
+        console.log(response.data);
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+      } catch (err) {
+        console.error("addItem server sync failed:", err);
+      }
+    } else {
+      useCartStore.getState().addItemLocal(itemData);
+    }
     shake();
   };
 
-  const handleWishlist = (e) => {
+  const handleWishlist = async (e) => {
     e.preventDefault();
-    toggle(product.id, token);
+    const already = wishlisted;
+    // optimistic local update
+    if (already) {
+      useWishlistStore.getState().removeId(product.id);
+    } else {
+      useWishlistStore.getState().addId(product.id);
+    }
+
+    if (isAuthenticated && token) {
+      try {
+        if (already) {
+          await API.delete("/wishlist/remove-item", { data: { productId: product.id } });
+        } else {
+          await API.post("/wishlist/add-item", { productId: product.id });
+        }
+      } catch (err) {
+        console.error("wishlist sync failed, reverting:", err);
+        // revert local change
+        if (already) {
+          useWishlistStore.getState().addId(product.id);
+        } else {
+          useWishlistStore.getState().removeId(product.id);
+        }
+      }
+    }
   };
 
   return (
@@ -89,6 +143,7 @@ export default function ProductCard({ product }) {
             <img
               src={image}
               alt={product.nameEn}
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               onError={(e) => { e.target.src = PH; }}
             />
@@ -121,11 +176,10 @@ export default function ProductCard({ product }) {
             >
               <svg
                 viewBox="0 0 24 24"
-                className={`w-4 h-4 transition-colors ${
-                  wishlisted
-                    ? "fill-rose-500 stroke-rose-500"
-                    : "fill-none stroke-sandal-500 hover:stroke-rose-500"
-                }`}
+                className={`w-4 h-4 transition-colors ${wishlisted
+                  ? "fill-rose-500 stroke-rose-500"
+                  : "fill-none stroke-sandal-500 hover:stroke-rose-500"
+                  }`}
                 strokeWidth="2.5"
               >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -201,7 +255,7 @@ export default function ProductCard({ product }) {
             onClick={handleCart}
             disabled={!inStock}
             aria-label={inCart ? "Already in cart" : "Add to cart"}
-            className={`p-2.5 rounded-xl transition-colors duration-300 shrink-0 cursor-pointer overflow-hidden
+            className={`px-3 py-2 rounded-xl  transition-colors duration-300 shrink-0 cursor-pointer overflow-hidden
               ${!inStock
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : inCart

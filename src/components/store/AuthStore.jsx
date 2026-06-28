@@ -22,19 +22,23 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       // ── state ──────────────────────────────────────────────────────
-      user:            null,
-      token:           null,
+      user: null,
+      token: null,
+      refreshToken: null,
       isAuthenticated: false,
 
       // ── derived ────────────────────────────────────────────────────
       isAdmin: () => get().user?.role === "admin",
 
       // ── actions ────────────────────────────────────────────────────
-      login: (user, token) =>
-        set({ user, token, isAuthenticated: true }),
+      login: (user, accessToken, refreshToken) =>
+        set({ user, token: accessToken, refreshToken, isAuthenticated: true }),
 
       logout: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false }),
+
+      setAccessToken: (accessToken) =>
+        set({ token: accessToken }),
 
       updateUser: (updates) =>
         set({ user: { ...get().user, ...updates } }),
@@ -42,8 +46,9 @@ export const useAuthStore = create(
     {
       name: "nok-auth",
       partialize: (state) => ({
-        user:            state.user,
-        token:           state.token,
+        user: state.user,
+        token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

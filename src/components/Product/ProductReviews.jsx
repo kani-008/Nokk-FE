@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
-import { productApi } from "../../ApiCall/Api.jsx";
+import { useAddReview } from "../../hooks/queries/useProducts";
 import { useAuthStore } from "../store/AuthStore.jsx";
 import { Link } from "react-router-dom";
 
@@ -66,12 +66,14 @@ function StarBadge({ rating, size = 12 }) {
 }
 
 // ── Write review form ──
-function ReviewForm({ productId, onSubmit }) {
+function ReviewForm({ productId, productSlug, onSubmit }) {
   const { isAuthenticated, token } = useAuthStore();
   const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
-  const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+
+  const addReviewMutation = useAddReview();
+  const loading = addReviewMutation.isPending;
 
   if (!isAuthenticated) {
     return (
@@ -98,15 +100,13 @@ function ReviewForm({ productId, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.comment.trim()) { setError("Please write your review comment"); return; }
-    setLoading(true);
+    setError("");
     try {
-      await productApi.addReview(productId, form, token);
+      await addReviewMutation.mutateAsync({ productId, slug: productSlug, ...form });
       setDone(true);
       onSubmit?.();
     } catch (err) {
       setError(err.message || "Failed to submit review");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -264,7 +264,7 @@ export default function ProductReviews({ product, onSubmitReview }) {
 
       {/* Submit review */}
       <div className="border-t border-sandal-100/55 pt-4">
-        <ReviewForm productId={product.id} onSubmit={onSubmitReview} />
+        <ReviewForm productId={product.id} productSlug={product.slug} onSubmit={onSubmitReview} />
       </div>
     </div>
   );

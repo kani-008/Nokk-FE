@@ -1,24 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
-import { offerApi } from "../ApiCall/Api.jsx";
 import { Link }     from "react-router-dom";
-
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
+import { useActiveOffers } from "../hooks/queries/useOffers";
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(offer.code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    if (offer.code) {
+      navigator.clipboard?.writeText(offer.code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
   };
 
-  const isPercentage = offer.offerType === "percentage";
-  const badgeLabel   = isPercentage ? `${offer.value}% OFF` : `₹${offer.value} OFF`;
+  const isPercentage = offer.discountValue <= 100;
+  const badgeLabel   = isPercentage ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`;
 
   const endDate = offer.endDate
     ? new Date(offer.endDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
@@ -30,7 +28,7 @@ function OfferCard({ offer }) {
       <div className="relative h-36 bg-gradient-to-br from-brand-900 to-brand-700 overflow-hidden">
         {offer.imageUrl && (
           <img
-            src={offer.imageUrl} alt={offer.title}
+            src={offer.imageUrl} alt={offer.name}
             className="w-full h-full object-cover opacity-20"
             onError={(e) => { e.target.style.display = "none"; }}
           />
@@ -39,7 +37,7 @@ function OfferCard({ offer }) {
           <span className="font-num text-amber-300 text-xs font-bold uppercase tracking-widest mb-1">
             {badgeLabel}
           </span>
-          <h3 className="font-display text-white text-lg font-bold leading-snug">{offer.title}</h3>
+          <h3 className="font-display text-white text-lg font-bold leading-snug">{offer.name}</h3>
           {offer.description && (
             <p className="font-body text-amber-200 text-xs mt-1 line-clamp-2">{offer.description}</p>
           )}
@@ -108,15 +106,7 @@ function OfferSkeleton() {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function Offers() {
-  const [offers,  setOffers]  = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    offerApi.active()
-      .then((r) => setOffers(r.offers || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: offers = [], isLoading: loading } = useActiveOffers();
 
   return (
     <div className="page-wrap py-8">

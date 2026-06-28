@@ -1,50 +1,71 @@
-import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Tag } from "lucide-react";
-import { offerApi, couponApi } from "../../ApiCall/Api.jsx";
-import { useAuthStore }        from "../../components/store/AuthStore";
+import { useState } from "react";
+import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
 import {
-  AdminPage, DataTable, AdminButton, SearchBar, AdminCard,
+  useAdminOfferList,
+  useAdminCouponList,
+  useSaveOffer,
+  useSaveCoupon,
+  useDeleteOffer,
+  useDeleteCoupon
+} from "../../hooks/queries/useOffers";
+import {
+  AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
+import DataTable from "../../components/admin/TableFormat.jsx";
+import Toggle from "../../components/admin/Toggle.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 
-const OFFER_EMPTY  = { title:"", description:"", imageUrl:"", offerType:"percentage", value:"", code:"", minOrderValue:"", isActive:true, startDate:"", endDate:"" };
-const COUPON_EMPTY = { code:"", discountType:"percentage", discountValue:"", minOrderValue:"", maxUsageCount:"", isActive:true, expiresAt:"" };
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "" };
+const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", isActive: true, expiresAt: "" };
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-// ── Toggle ─────────────────────────────────────────────────────────────
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      aria-pressed={!!value}
-      className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${value ? "bg-brand-700" : "bg-gray-300"}`}
-    >
-      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
-    </button>
-  );
-}
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+`;
+
+
 
 // ── Offer modal ────────────────────────────────────────────────────────
 function OfferModal({ offer, onClose, onSaved }) {
-  const { token } = useAuthStore();
-  const isEdit    = !!offer?.id;
-  const [form,   setForm]   = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState("");
+  const isEdit = !!offer?.id;
+  const [form, setForm] = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
+  const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const saveOfferMutation = useSaveOffer();
+  const saving = saveOfferMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
-    setSaving(true); setError("");
+    setError("");
     try {
-      let res;
-      if (isEdit) res = await offerApi.update(offer.id, form, token);
-      else        res = await offerApi.create(form, token);
+      const res = await saveOfferMutation.mutateAsync({ id: offer?.id, form });
       onSaved(res.offer || form);
       onClose();
-    } catch (e) { setError(e.message || "Failed"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed");
+    }
   };
 
   return (
@@ -64,10 +85,14 @@ function OfferModal({ offer, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label">Offer Type</label>
-                <select value={form.offerType} onChange={(e) => set("offerType", e.target.value)} className="field-input">
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="flat">Flat (₹)</option>
-                </select>
+                <Dropdown
+                  value={form.offerType}
+                  onChange={(val) => set("offerType", val)}
+                  options={[
+                    { value: "percentage", label: "Percentage (%)" },
+                    { value: "flat", label: "Flat (₹)" }
+                  ]}
+                />
               </div>
               <div><label className="field-label">Value *</label><input type="number" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder={form.offerType === "percentage" ? "10" : "100"} className="field-input" /></div>
               <div><label className="field-label">Coupon Code</label><input value={form.code || ""} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="MONSOON10" className="field-input font-num" /></div>
@@ -76,7 +101,7 @@ function OfferModal({ offer, onClose, onSaved }) {
               <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle value={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
               <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
             </label>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
@@ -94,25 +119,25 @@ function OfferModal({ offer, onClose, onSaved }) {
 
 // ── Coupon modal ───────────────────────────────────────────────────────
 function CouponModal({ coupon, onClose, onSaved }) {
-  const { token } = useAuthStore();
-  const isEdit    = !!coupon?.id;
-  const [form,   setForm]   = useState(coupon ? { ...coupon } : { ...COUPON_EMPTY });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState("");
+  const isEdit = !!coupon?.id;
+  const [form, setForm] = useState(coupon ? { ...coupon } : { ...COUPON_EMPTY });
+  const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const saveCouponMutation = useSaveCoupon();
+  const saving = saveCouponMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.code.trim() || !form.discountValue) { setError("Code and discount value required"); return; }
-    setSaving(true); setError("");
+    setError("");
     try {
-      let res;
-      if (isEdit) res = await couponApi.update(coupon.id, form, token);
-      else        res = await couponApi.create(form, token);
+      const res = await saveCouponMutation.mutateAsync({ id: coupon?.id, form });
       onSaved(res.coupon || form);
       onClose();
-    } catch (e) { setError(e.message || "Failed"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed");
+    }
   };
 
   return (
@@ -130,10 +155,14 @@ function CouponModal({ coupon, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label">Type</label>
-                <select value={form.discountType} onChange={(e) => set("discountType", e.target.value)} className="field-input">
-                  <option value="percentage">Percentage</option>
-                  <option value="flat">Flat</option>
-                </select>
+                <Dropdown
+                  value={form.discountType}
+                  onChange={(val) => set("discountType", val)}
+                  options={[
+                    { value: "percentage", label: "Percentage" },
+                    { value: "flat", label: "Flat" }
+                  ]}
+                />
               </div>
               <div><label className="field-label">Value *</label><input type="number" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder="20" className="field-input" /></div>
               <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>
@@ -141,7 +170,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
               <div className="col-span-2"><label className="field-label">Expires At</label><input type="date" value={form.expiresAt || ""} onChange={(e) => set("expiresAt", e.target.value)} className="field-input" /></div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle value={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
               <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
             </label>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
@@ -159,94 +188,120 @@ function CouponModal({ coupon, onClose, onSaved }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function OfferManagement() {
-  const { token }  = useAuthStore();
-  const [tab,      setTab]      = useState("offers");
-  const [offers,   setOffers]   = useState([]);
-  const [coupons,  setCoupons]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [modal,    setModal]    = useState(null);
+  const [tab, setTab] = useState("offers");
+  const [modal, setModal] = useState(null);
 
-  const loadOffers  = () => offerApi.all(token).then((r) => setOffers(r.offers || [])).catch(() => {});
-  const loadCoupons = () => couponApi.all(token).then((r) => setCoupons(r.coupons || [])).catch(() => {});
+  const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
+  const { data: coupons = [], isLoading: couponsLoading } = useAdminCouponList();
+  const loading = offersLoading || couponsLoading;
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.allSettled([loadOffers(), loadCoupons()]).finally(() => setLoading(false));
-  }, [token]);
+  const deleteOfferMutation = useDeleteOffer();
+  const deleteCouponMutation = useDeleteCoupon();
 
   const handleDeleteOffer = async (id) => {
     if (!confirm("Delete this offer?")) return;
-    await offerApi.remove(id, token).catch(() => {});
-    setOffers((p) => p.filter((o) => o.id !== id));
+    try {
+      await deleteOfferMutation.mutateAsync(id);
+    } catch (err) {
+      console.error("Failed to delete offer:", err);
+    }
   };
 
   const handleDeleteCoupon = async (id) => {
     if (!confirm("Delete this coupon?")) return;
-    await couponApi.remove(id, token).catch(() => {});
-    setCoupons((p) => p.filter((c) => c.id !== id));
+    try {
+      await deleteCouponMutation.mutateAsync(id);
+    } catch (err) {
+      console.error("Failed to delete coupon:", err);
+    }
   };
 
-  const upsertOffer = (o) => setOffers((p) => { const i = p.findIndex((x) => x.id === o.id); if (i >= 0) { const n = [...p]; n[i] = o; return n; } return [o, ...p]; });
-  const upsertCoupon = (c) => setCoupons((p) => { const i = p.findIndex((x) => x.id === c.id); if (i >= 0) { const n = [...p]; n[i] = c; return n; } return [c, ...p]; });
+  const upsertOffer = () => {};
+  const upsertCoupon = () => {};
 
   const OFFER_COLS = [
-    { key: "title",     label: "Title",   render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },
-    { key: "offerType", label: "Type",    render: (r) => <span className="badge-amber capitalize">{r.offerType}</span> },
-    { key: "value",     label: "Value",   render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.offerType === "percentage" ? `${r.value}%` : `₹${r.value}`}</span> },
-    { key: "code",      label: "Code",    render: (r) => r.code ? <span className="font-num text-xs bg-gray-100 px-2 py-0.5 rounded-lg">{r.code}</span> : <span className="text-gray-400">—</span> },
-    { key: "endDate",   label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.endDate)}</span> },
-    { key: "isActive",  label: "Status",  render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
-    { key: "action", label: "", width: "80px", render: (r) => (
-      <div className="flex gap-1">
-        <button onClick={() => setModal({ type: "offer", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
-        <button onClick={() => handleDeleteOffer(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
-      </div>
-    )},
+    { key: "title", label: "Title", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },
+    { key: "offerType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.offerType}</span> },
+    { key: "value", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.offerType === "percentage" ? `${r.value}%` : `₹${r.value}`}</span> },
+    { key: "code", label: "Code", render: (r) => r.code ? <span className="font-num text-xs bg-gray-100 px-2 py-0.5 rounded-lg">{r.code}</span> : <span className="text-gray-400">—</span> },
+    { key: "endDate", label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.endDate)}</span> },
+    { key: "isActive", label: "Status", render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
+    {
+      key: "action", label: "", width: "80px", render: (r) => (
+        <div className="flex gap-1">
+          <button onClick={() => setModal({ type: "offer", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
+          <button onClick={() => handleDeleteOffer(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
+        </div>
+      )
+    },
   ];
 
   const COUPON_COLS = [
-    { key: "code",          label: "Code",     render: (r) => <span className="font-num text-sm font-bold text-brand-900 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">{r.code}</span> },
-    { key: "discountType",  label: "Type",     render: (r) => <span className="badge-amber capitalize">{r.discountType}</span> },
-    { key: "discountValue", label: "Value",    render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.discountType === "percentage" ? `${r.discountValue}%` : `₹${r.discountValue}`}</span> },
-    { key: "minOrderValue", label: "Min Order",render: (r) => <span className="font-num text-sm text-gray-600">{r.minOrderValue > 0 ? `₹${r.minOrderValue}` : "None"}</span> },
-    { key: "usageCount",    label: "Used",     render: (r) => <span className="font-num text-sm text-gray-600">{r.usageCount ?? 0}{r.maxUsageCount ? `/${r.maxUsageCount}` : ""}</span> },
-    { key: "expiresAt",     label: "Expires",  render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.expiresAt)}</span> },
-    { key: "isActive",      label: "Status",   render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
-    { key: "action", label: "", width: "80px", render: (r) => (
-      <div className="flex gap-1">
-        <button onClick={() => setModal({ type: "coupon", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
-        <button onClick={() => handleDeleteCoupon(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
-      </div>
-    )},
+    { key: "code", label: "Code", render: (r) => <span className="font-num text-sm font-bold text-brand-900 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">{r.code}</span> },
+    { key: "discountType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.discountType}</span> },
+    { key: "discountValue", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.discountType === "percentage" ? `${r.discountValue}%` : `₹${r.discountValue}`}</span> },
+    { key: "minOrderValue", label: "Min Order", render: (r) => <span className="font-num text-sm text-gray-600">{r.minOrderValue > 0 ? `₹${r.minOrderValue}` : "None"}</span> },
+    { key: "usageCount", label: "Used", render: (r) => <span className="font-num text-sm text-gray-600">{r.usageCount ?? 0}{r.maxUsageCount ? `/${r.maxUsageCount}` : ""}</span> },
+    { key: "expiresAt", label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.expiresAt)}</span> },
+    { key: "isActive", label: "Status", render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
+    {
+      key: "action", label: "", width: "80px", render: (r) => (
+        <div className="flex gap-1">
+          <button onClick={() => setModal({ type: "coupon", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
+          <button onClick={() => handleDeleteCoupon(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
+        </div>
+      )
+    },
   ];
 
   return (
-    <AdminPage title="Offers & Coupons" sub="Manage promotional offers and discount codes"
-      action={
-        <div className="flex gap-2">
-          <AdminButton size="sm" variant="outline" onClick={() => setModal({ type: "coupon", data: null })}>
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
+
+      {/* Row 1 (mobile) / Left & Right side (desktop) */}
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between w-full mb-4">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
+          <button
+            onClick={() => setTab("offers")}
+            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "offers" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Offers ({offers.length})
+          </button>
+          <button
+            onClick={() => setTab("coupons")}
+            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
+              tab === "coupons" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Coupons ({coupons.length})
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <AdminButton
+            variant="outline"
+            onClick={() => setModal({ type: "coupon", data: null })}
+            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+          >
             <Plus size={14} /> Coupon
           </AdminButton>
-          <AdminButton size="sm" onClick={() => setModal({ type: "offer", data: null })}>
+          <AdminButton
+            onClick={() => setModal({ type: "offer", data: null })}
+            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+          >
             <Plus size={14} /> Offer
           </AdminButton>
         </div>
-      }
-    >
-      {/* tab bar */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-        {[{ key:"offers", label:`Offers (${offers.length})`}, { key:"coupons", label:`Coupons (${coupons.length})`}].map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`font-body text-xs font-semibold px-4 py-2 rounded-lg transition-colors ${tab === t.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-            {t.label}
-          </button>
-        ))}
       </div>
 
-      {tab === "offers"  && <DataTable columns={OFFER_COLS}  rows={offers}  loading={loading} emptyText="No offers yet." />}
+      {tab === "offers" && <DataTable columns={OFFER_COLS} rows={offers} loading={loading} emptyText="No offers yet." />}
       {tab === "coupons" && <DataTable columns={COUPON_COLS} rows={coupons} loading={loading} emptyText="No coupons yet." />}
 
-      {modal?.type === "offer"  && <OfferModal  offer={modal.data}  onClose={() => setModal(null)} onSaved={upsertOffer}  />}
+      {modal?.type === "offer" && <OfferModal offer={modal.data} onClose={() => setModal(null)} onSaved={upsertOffer} />}
       {modal?.type === "coupon" && <CouponModal coupon={modal.data} onClose={() => setModal(null)} onSaved={upsertCoupon} />}
     </AdminPage>
   );

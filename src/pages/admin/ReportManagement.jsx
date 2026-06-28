@@ -1,16 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import { dashboardApi }  from "../../ApiCall/Api.jsx";
-import { useAuthStore }  from "../../components/store/AuthStore";
+import { useReportsData } from "../../hooks/queries/useReports";
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+
 
 const PERIODS = [
   { key: "7d",   label: "Last 7 days"  },
@@ -45,22 +44,11 @@ function HBarChart({ data = [], valueKey = "value", labelKey = "label", color = 
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ReportManagement() {
-  const { token }   = useAuthStore();
-  const [period,    setPeriod]    = useState("30d");
-  const [report,    setReport]    = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [refreshing,setRefreshing]= useState(false);
+  const [period, setPeriod] = useState("30d");
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
-    try {
-      const res = await dashboardApi.reports(`period=${period}`, token);
-      setReport(res.report || res || {});
-    } catch (_) {}
-    finally { setLoading(false); setRefreshing(false); }
-  };
-
-  useEffect(() => { load(); }, [period, token]);
+  const { data: rawReport, isLoading: loading, isFetching, refetch } = useReportsData(period);
+  const report = rawReport?.report || rawReport || null;
+  const refreshing = isFetching && !loading;
 
   const handleExport = () => {
     if (!report) return;
@@ -86,11 +74,9 @@ export default function ReportManagement() {
 
   return (
     <AdminPage
-      title="Reports"
-      sub="Sales analytics and performance insights"
       action={
         <div className="flex gap-2">
-          <AdminButton variant="outline" size="sm" onClick={() => load(true)} disabled={refreshing}>
+          <AdminButton variant="outline" size="sm" onClick={() => refetch()} disabled={refreshing}>
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
           </AdminButton>
           <AdminButton variant="outline" size="sm" onClick={handleExport} disabled={!report}>

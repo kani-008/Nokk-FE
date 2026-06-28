@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  X, User, Heart, Package, LogOut, Settings,
+  X, User, Heart, LogOut, Settings,
   ClipboardList, ChevronDown, Grid3x3, // eslint-disable-line no-unused-vars -- kept for the commented-out "Shop by Category" block below; re-enable that block to use these again
 } from "lucide-react";
 
@@ -21,9 +21,6 @@ export default function MobileDrawer({
   open,
   onClose,
   navLinks,
-  categories,
-  mobileCatOpen,
-  onToggleMobileCat,
   isAuthenticated,
   user,
   wishlistCount,
@@ -121,20 +118,20 @@ export default function MobileDrawer({
             )}
             */}
 
-            {navLinks.map((l) => (
+            {navLinks.filter((l) => l.label !== "Orders").map((l) => (
               <MobileNavLink key={l.label} to={l.to} onClick={onClose}>
                 {l.label}
               </MobileNavLink>
             ))}
 
             <div className="border-t border-sandal-100 mt-1 pt-1">
+              <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={onClose}>
+                Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
+              </MobileNavLink>
               {isAuthenticated ? (
                 <>
                   <MobileNavLink to="/profile"   icon={<User size={16} />}    onClick={onClose}>My Profile</MobileNavLink>
                   <MobileNavLink to="/my-orders" icon={<ClipboardList size={16} />} onClick={onClose}>My Orders</MobileNavLink>
-                  <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={onClose}>
-                    Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
-                  </MobileNavLink>
                   {user?.role === "admin" && (
                     <MobileNavLink to="/admin" icon={<Settings size={16} />} onClick={onClose} highlight>
                       Admin Panel

@@ -1,15 +1,103 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { productApi, categoryApi } from "../../ApiCall/Api.jsx";
-import { useAuthStore }            from "../../components/store/AuthStore";
+import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
 import {
-  AdminPage, DataTable, AdminButton, SearchBar,
+  AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
+import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH    = comboImg;
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
+
+/**
+ * ── Mobile-only fluid sizing for the Clear / Filter / Add Product cluster ──
+ * Tailwind's `w-40`, `text-sm`, `px-4` etc. are static — they only change
+ * value AT the md breakpoint (768px), so a 340px phone and a 420px phone
+ * render identically below that point. That's fine for most rows, but this
+ * cluster (filter dropdown + button text + Add Product button) is the
+ * widest fixed-content row on this page and can feel cramped on narrow
+ * phones even though it fits fine on a slightly wider one.
+ *
+ * clamp(min, vw-based-preferred, max) scales continuously with the actual
+ * viewport width instead of jumping once, so padding/font-size/width keep
+ * shrinking all the way down to small phones without needing extra
+ * breakpoints or ever overflowing.
+ *
+ * The minimum values below were verified with a headless-browser measurement
+ * pass (not guessed) against the longest realistic category label
+ * ("Prawns & Shrimp") at viewport widths from 320px to 375px: the whole
+ * cluster fits on a single row with zero truncation and zero overflow at
+ * every width in that range, so `flex-wrap` is intentionally NOT used here.
+ *
+ * Wrapped in `@media (max-width: 767.98px)` — one pixel below Tailwind's
+ * `md:` cutoff — so it can never apply at md+ widths. Desktop keeps its
+ * exact original fixed Tailwind sizing (w-40/sm:w-44, AdminButton's default
+ * px-4 py-2 text-sm), completely untouched.
+ */
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .pm-filter-wrap-fluid {
+      width: clamp(8.5rem, 30vw, 10.5rem) !important;
+    }
+    .pm-filter-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid span.truncate {
+      overflow: visible !important;
+      text-overflow: unset !important;
+      white-space: nowrap !important;
+    }
+    .pm-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .pm-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .pm-add-btn-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
+    }
+    .pm-add-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 15px);
+      height: clamp(12px, 2.8vw, 15px);
+    }
+    .pm-cluster-fluid {
+      gap: clamp(0.3rem, 1.4vw, 0.75rem);
+    }
+    .pm-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .pm-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
+  }
+`;
 
 // ── Confirm dialog (replaces native confirm()) ─────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -44,21 +132,27 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductManagement() {
-  const { token }   = useAuthStore();
-  const [products,        setProducts]        = useState([]);
-  const [categories,      setCategories]      = useState([]);
-  const [loading,         setLoading]         = useState(true);
   const [search,          setSearch]          = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [catFilter,       setCatFilter]       = useState("");
   const [page,            setPage]            = useState(1);
-  const [totalPages,      setTotalPages]      = useState(1);
   const [modal,           setModal]           = useState(null);
   const [pageError,       setPageError]       = useState("");
   const [deleteTarget,    setDeleteTarget]    = useState(null);
-  const [deleting,        setDeleting]        = useState(false);
 
-  useEffect(() => { categoryApi.list().then((r) => setCategories(r.categories || [])).catch(() => {}); }, []);
+  // ── Hand this page's search state to AdminLayout's shared topbar search.
+  // Typing in the topbar box now filters this table directly; no separate
+  // search input is rendered in the page body anymore. Re-registers whenever
+  // `search` changes (e.g. the page's own "Clear" button resetting it) so
+  // the topbar always displays the current value; React batches the
+  // cleanup + re-register within one commit, so there's no visible flicker.
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  useEffect(() => {
+    registerSearch({ placeholder: "Search products…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
@@ -66,55 +160,57 @@ export default function ProductManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const load = async () => {
-    setLoading(true);
-    const p = new URLSearchParams();
-    if (debouncedSearch) p.set("search",   debouncedSearch);
-    if (catFilter)       p.set("category", catFilter);
-    p.set("page", page); p.set("limit", 15);
-    try {
-      const res = await productApi.list(p.toString());
-      setProducts(res.products || []);
-      setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {
-      setPageError("Couldn't load products. Please try again.");
-    } finally { setLoading(false); }
-  };
+  const { data: catData = [] } = useProductCategories();
+  const categories = catData;
 
-  useEffect(() => { load(); }, [debouncedSearch, catFilter, page]);
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 15 };
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (catFilter)       p.category = catFilter;
+    return p;
+  }, [debouncedSearch, catFilter, page]);
+
+  const { data: productsData, isLoading: loading, error: queryError } = useAdminProductList(queryParams);
+  const products = productsData?.products || [];
+  const totalPages = productsData?.pagination?.totalPages || 1;
+
+  useEffect(() => {
+    if (queryError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPageError("Couldn't load products. Please try again.");
+    }
+  }, [queryError]);
+
+  const deleteProductMutation = useDeleteProduct();
+  const deleting = deleteProductMutation.isPending;
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      await productApi.remove(deleteTarget.id, token);
-      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      await deleteProductMutation.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
     } catch (e) {
-      setPageError(e.message || "Failed to delete product.");
+      setPageError(e.response?.data?.message || e.message || "Failed to delete product.");
       setDeleteTarget(null);
-    } finally { setDeleting(false); }
+    }
   };
 
-  const handleSaved = (prod) => {
-    setProducts((prev) => {
-      const idx = prev.findIndex((p) => p.id === prod.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = prod; return n; }
-      return [prod, ...prev];
-    });
-  };
+  const handleSaved = () => {};
 
   const COLS = [
     {
       key: "product", label: "Product",
       render: (r) => (
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => setModal(r)}
+          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity w-full min-w-0"
+        >
           <img src={r.primaryImage || PH} alt={r.nameEn} className="w-10 h-10 rounded-xl object-cover bg-amber-50 border border-amber-100 shrink-0" onError={(e) => { e.target.src = PH; }} />
-          <div>
-            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">{r.nameEn}</p>
+          <div className="min-w-0">
+            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1 hover:text-brand-700 transition-colors">{r.nameEn}</p>
             {r.nameTa && <p className="font-tamil text-[11px] text-gray-400">{r.nameTa}</p>}
           </div>
-        </div>
+        </button>
       ),
     },
     { key: "categoryName", label: "Category", render: (r) => <span className="font-body text-sm text-gray-600">{r.categoryName || "—"}</span> },
@@ -132,24 +228,26 @@ export default function ProductManagement() {
     },
     {
       key: "flags", label: "Flags",
-      render: (r) => (
-        <div className="flex gap-1 flex-wrap">
-          {r.isBestseller && <span className="badge-amber">Best Seller</span>}
-          {r.isNew        && <span className="badge-green">New</span>}
-          {!r.isActive    && <span className="badge-red">Inactive</span>}
-        </div>
-      ),
+      render: (r) => {
+        const badges = [];
+        if (r.isBestseller) badges.push(<span key="bs" className="badge-amber">Best Seller</span>);
+        if (r.isNew)        badges.push(<span key="new" className="badge-green">New</span>);
+        if (!r.isActive)    badges.push(<span key="inactive" className="badge-red">Inactive</span>);
+        return badges.length > 0
+          ? <div className="flex gap-1 flex-wrap">{badges}</div>
+          : <span className="font-body text-xs text-gray-400">—</span>;
+      },
     },
     {
       key: "rating", label: "Rating",
       render: (r) => r.avgRating > 0 ? (
-        <span className="flex items-center gap-1 font-num text-sm text-gray-700">
+        <span className="flex items-center gap-3 font-num text-sm text-gray-700">
           <Star size={12} className="fill-amber-400 text-amber-400" /> {Number(r.avgRating).toFixed(1)} ({r.reviewCount})
         </span>
       ) : <span className="font-body text-xs text-gray-400">—</span>,
     },
     {
-      key: "action", label: "", width: "80px",
+      key: "action", label: "Action", width: "80px",
       render: (r) => (
         <div className="flex gap-1">
           <button onClick={() => setModal(r)} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></button>
@@ -160,32 +258,50 @@ export default function ProductManagement() {
   ];
 
   return (
-    <AdminPage title="Products" sub="Manage your product catalogue"
-      action={<AdminButton onClick={() => setModal("new")}><Plus size={15} /> Add Product</AdminButton>}
-    >
+    <AdminPage className="space-y-3">
       {/* page-level error banner (replaces native alert) */}
       {pageError && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
+        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-md px-4 py-3">
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
           <p className="flex-1">{pageError}</p>
           <button onClick={() => setPageError("")} className="shrink-0 hover:text-red-900" aria-label="Dismiss"><X size={15} /></button>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search products…" className="w-56" />
-        <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1); }} className="field-input w-44">
-          <option value="">All categories</option>
-          {categories.map((c) => <option key={c.id} value={c.slug}>{c.nameEn}</option>)}
-        </select>
+      {/* Clear -> Filter -> Add Product — single cluster, right-aligned, both above
+          the table, always on one line. Search now lives in the topbar (see
+          AdminLayout). On mobile, the dropdown width, Clear button, and Add
+          Product button all shrink smoothly via clamp() (see
+          MOBILE_FLUID_STYLES) instead of jumping at a breakpoint or wrapping —
+          sizing was verified against the longest realistic category label
+          down to 320px viewport width. Desktop sizing (w-40/sm:w-44,
+          AdminButton's default padding) is completely untouched. */}
+      <style>{MOBILE_FLUID_STYLES}</style>
+      <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full">
         {(search || catFilter) && (
-          <button onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500">
-            <X size={14} /> Clear
+          <button
+            onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }}
+            className="pm-clear-fluid flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1"
+          >
+            <X size={14} /> <span>Clear</span>
           </button>
         )}
+
+        <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+          <Dropdown
+            value={catFilter}
+            onChange={(v) => { setCatFilter(v); setPage(1); }}
+            placeholder="All categories"
+            options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+            className="pm-filter-fluid"
+            optionClassName="pm-filter-fluid"
+          />
+        </div>
+
+        <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0"><Plus size={15} /> Add Product</AdminButton>
       </div>
 
-      <DataTable columns={COLS} rows={products} loading={loading} emptyText="No products found." />
+      <TableFormat columns={COLS} rows={products} loading={loading} emptyText="No products found." />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

@@ -1,87 +1,148 @@
-import { useState, useEffect } from "react";
-import {
-  AlertTriangle, PackageX, Save, X, RefreshCw,
-} from "lucide-react";
-import { inventoryApi } from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "../../components/store/AuthStore";
-import {
-  AdminPage, DataTable, StatusBadge, AdminButton, SearchBar, AdminCard, StatCard,
-} from "../../components/admin/AdminUI.jsx";
+import { Fragment, useState, useEffect, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
+import { PackageX, RefreshCw, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { useInventoryList, useUpdateStock, useBulkUpdateStock } from "../../hooks/queries/useInventory";
+import { AdminPage, AdminButton, AdminCard } from "../../components/admin/AdminUI.jsx";
+import Toggle from "../../components/admin/Toggle.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 
 const rupee = (n) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(n) || 0);
 
 import comboImg from "../../assets/products/combo.jpg";
-
 const PH = comboImg;
 
-function stockBadge(qty) {
-  if (qty === 0)  return <span className="badge-red">Out of stock</span>;
-  if (qty <= 5)   return <span className="badge-orange">Low · {qty}</span>;
-  if (qty <= 20)  return <span className="badge-amber">{qty} units</span>;
-  return <span className="badge-green">{qty} units</span>;
-}
+/**
+ * ── Mobile-only fluid sizing for the Refresh / Filter cluster ──
+ * Same approach and same verified minimum values as ProductManagement.jsx's
+ * Clear/Filter/Add Product cluster (see that file for the full rationale):
+ * Tailwind's static utilities only change value AT the md breakpoint, so
+ * clamp() is used instead to shrink padding/font-size/width continuously
+ * down to small phones without ever truncating the filter label or wrapping
+ * to a second line. Verified with a headless-browser measurement pass
+ * against "Out of Stock" (the longer of the two filter options) from 320px
+ * to 375px viewport width — this row has fewer items than Products' row, so
+ * the same minimums carry plenty of margin here.
+ *
+ * Wrapped in `@media (max-width: 767.98px)` so it never applies at md+
+ * widths; desktop keeps its exact original fixed Tailwind sizing untouched.
+ */
+const MOBILE_FLUID_STYLES = `
+  @media (max-width: 767.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(9.5rem, 30vw, 10.5rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .inv-filter-fluid span.truncate {
+      overflow: visible !important;
+      text-overflow: unset !important;
+      white-space: nowrap !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.7rem, 2.6vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(12px, 2.8vw, 14px);
+      height: clamp(12px, 2.8vw, 14px);
+    }
+    .inv-cluster-fluid {
+      gap: clamp(0.3rem, 1.4vw, 0.75rem);
+    }
+    .inv-stats-fluid {
+      gap: clamp(0.4rem, 1.8vw, 1rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
+  }
 
-// ── Inline stock edit cell ─────────────────────────────────────────────
-function StockEditCell({ item, onSave }) {
-  const [editing, setEditing] = useState(false);
-  const [val,     setVal]     = useState(item.stockQty);
-  const [saving,  setSaving]  = useState(false);
-  const { token } = useAuthStore();
+  @keyframes slideDown {
+    from {
+      max-height: 0;
+      opacity: 1;
+    }
+    to {
+      max-height: 800px;
+      opacity: 1;
+    }
+  }
+  .animate-expand {
+    animation: slideDown 1000ms ease-out forwards;
+    overflow: hidden;
+  }
+`;
 
-  const handleSave = async () => {
-    const num = Number(val);
-    if (isNaN(num) || num < 0) return;
-    setSaving(true);
+// ── Inline stock toggle cell ───────────────────────────────────────────
+function StockEditCell({ item, queryParams, disabled }) {
+  const updateStockMutation = useUpdateStock(queryParams);
+  const saving = updateStockMutation.isPending || disabled;
+
+  const handleToggle = async () => {
+    const nextInStock = !(item.stockQty > 0);
     try {
-      await inventoryApi.update(item.variantId, { stockQty: num }, token);
-      onSave(item.variantId, num);
-      setEditing(false);
-    } catch (e) { alert(e.message || "Failed"); }
-    finally { setSaving(false); }
+      await updateStockMutation.mutateAsync({ variantId: item.variantId, inStock: nextInStock });
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update stock");
+    }
   };
 
-  const handleCancel = () => { setVal(item.stockQty); setEditing(false); };
-
-  if (!editing) {
-    return (
-      <div className="flex items-center gap-2">
-        {stockBadge(item.stockQty)}
-        <button
-          onClick={() => setEditing(true)}
-          className="font-body text-xs text-brand-700 hover:underline ml-1"
-        >
-          Edit
-        </button>
-      </div>
-    );
-  }
+  const isInStock = item.stockQty > 0;
 
   return (
     <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        min={0}
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        className="w-20 border border-amber-200 rounded-lg px-2 py-1 text-sm font-num focus:outline-none focus:ring-2 focus:ring-amber-400/30"
-        autoFocus
-        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") handleCancel(); }}
-      />
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-      >
-        <Save size={13} />
-      </button>
-      <button
-        onClick={handleCancel}
-        className="p-1.5 bg-gray-50 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-      >
-        <X size={13} />
-      </button>
+      <Toggle checked={isInStock} onChange={handleToggle} disabled={saving} />
+      <span className={`font-body text-xs font-semibold select-none ${isInStock ? "text-green-600" : "text-red-500"}`}>
+        {isInStock ? "In Stock" : "OOS"}
+      </span>
     </div>
+  );
+}
+
+// ── Product-level stock status badge ──────────────────────────────────
+function StatusBadge({ variants }) {
+  const inCount = variants.filter((v) => v.stockQty > 0).length;
+  const total = variants.length;
+
+  if (inCount === 0)
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-red-50 text-red-600 whitespace-nowrap">
+        Out of Stock
+      </span>
+    );
+  if (inCount === total)
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-green-50 text-green-600 whitespace-nowrap">
+        In Stock
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-body bg-amber-50 text-amber-600 whitespace-nowrap">
+      Partial ({inCount}/{total})
+    </span>
   );
 }
 
@@ -89,89 +150,127 @@ function StockEditCell({ item, onSave }) {
 // INVENTORY MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function InventoryManagement() {
-  const { token } = useAuthStore();
-  const [items,     setItems]     = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [search,    setSearch]    = useState("");
-  const [filter,    setFilter]    = useState("all"); // all | low | out
-  const [page,      setPage]      = useState(1);
-  const [totalPages,setTotalPages]= useState(1);
-  const [refreshing,setRefreshing]= useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all"); // all | out | in
+  const [page, setPage] = useState(1);
+  const [expandedKey, setExpandedKey] = useState(null);
 
-  const load = async (showRefresh = false) => {
-    showRefresh ? setRefreshing(true) : setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (filter === "low") params.set("lowStock", "true");
-    if (filter === "out") params.set("outOfStock", "true");
-    params.set("page", page); params.set("limit", 20);
+  const { registerSearch, unregisterSearch } = useOutletContext();
+
+  useEffect(() => {
+    registerSearch({ placeholder: "Search product…", value: search, onChange: setSearch });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const queryParams = useMemo(() => {
+    const p = { page, limit: 20 };
+    if (search) p.search = search;
+    if (filter === "out") p.outOfStock = "true";
+    if (filter === "in") p.inStock = "true";
+    return p;
+  }, [search, filter, page]);
+
+  const bulkUpdateStockMutation = useBulkUpdateStock(queryParams);
+  const bulkSaving = bulkUpdateStockMutation.isPending;
+
+  const handleParentToggle = async (product) => {
+    const inCount = product.variants.filter((v) => v.stockQty > 0).length;
+    const total = product.variants.length;
+    const nextInStock = inCount < total; // toggles everything to in stock if partial or OOS
+
+    const updates = product.variants.map((v) => ({
+      variantId: v.variantId,
+      inStock: nextInStock,
+    }));
+
     try {
-      const res = await inventoryApi.list(params.toString(), token);
-      setItems(res.inventory || []);
-      setTotalPages(res.pagination?.totalPages || 1);
-    } catch (_) {} finally { setLoading(false); setRefreshing(false); }
+      await bulkUpdateStockMutation.mutateAsync({ updates });
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to update stock");
+    }
   };
 
-  useEffect(() => { load(); }, [search, filter, page, token]);
+  const { data, isLoading: loading, isFetching, refetch } = useInventoryList(queryParams);
+  const items = useMemo(() => data?.inventory || [], [data?.inventory]);
+  const totalPages = data?.pagination?.totalPages || 1;
+  const refreshing = isFetching && !loading;
 
-  const patchStock = (variantId, newQty) =>
-    setItems((prev) => prev.map((i) => i.variantId === variantId ? { ...i, stockQty: newQty } : i));
+  // Group flat variant rows by product
+  const products = useMemo(() => {
+    const map = new Map();
+    items.forEach((item) => {
+      const key = item.productId ?? item.nameEn;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          nameEn: item.nameEn,
+          categoryName: item.categoryName,
+          primaryImage: item.primaryImage,
+          variants: [],
+        });
+      }
+      map.get(key).variants.push(item);
+    });
+    const list = Array.from(map.values());
+    // Sort products alphabetically by nameEn to prevent shifting
+    list.sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+    
+    // Sort variants within each product by weightGrams
+    list.forEach((p) => {
+      p.variants.sort((a, b) => (a.weightGrams || 0) - (b.weightGrams || 0));
+    });
 
-  // summary stats
-  const outOfStock  = items.filter((i) => i.stockQty === 0).length;
-  const lowStock    = items.filter((i) => i.stockQty > 0 && i.stockQty <= 5).length;
-  const totalValue  = items.reduce((s, i) => s + i.price * i.stockQty, 0);
+    return list;
+  }, [items]);
 
-  const COLS = [
-    {
-      key: "product", label: "Product",
-      render: (r) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={r.primaryImage || PH} alt={r.productName}
-            className="w-10 h-10 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-            onError={(e) => { e.target.src = PH; }}
-          />
-          <div>
-            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">{r.productName}</p>
-            <p className="font-body text-xs text-gray-400">{r.categoryName}</p>
-          </div>
-        </div>
-      ),
-    },
-    { key: "weightLabel", label: "Variant",  render: (r) => <span className="font-num text-sm text-gray-700">{r.weightLabel}</span> },
-    {
-      key: "sku", label: "SKU",
-      render: (r) => <span className="font-num text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">{r.sku || "—"}</span>,
-    },
-    { key: "price",  label: "Price",  render: (r) => <span className="font-num text-sm font-semibold text-gray-900">{rupee(r.price)}</span> },
-    {
-      key: "stockQty", label: "Stock",
-      render: (r) => <StockEditCell item={r} onSave={patchStock} />,
-    },
-    {
-      key: "value", label: "Stock Value",
-      render: (r) => <span className="font-num text-sm text-gray-600">{rupee(r.price * r.stockQty)}</span>,
-    },
-  ];
+  const toggleExpand = (key) => {
+    setExpandedKey((prev) => (prev === key ? null : key));
+  };
+
+  // Summary stats (variant-level)
+  const outOfStock = items.filter((i) => i.stockQty === 0).length;
+  const inStock    = items.filter((i) => i.stockQty > 0).length;
+  const totalValue = items.reduce((s, i) => s + i.price * i.stockQty, 0);
 
   return (
-    <AdminPage
-      title="Inventory"
-      sub="Track stock levels and update quantities"
-      action={
+    <AdminPage className="space-y-3">
+      <style>{MOBILE_FLUID_STYLES}</style>
+
+      {/* Refresh + Filter cluster */}
+      <div className="inv-cluster-fluid flex items-center justify-end gap-3 w-full">
         <button
-          onClick={() => load(true)}
+          onClick={() => refetch()}
           disabled={refreshing}
-          className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="inv-refresh-fluid flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors shrink-0 disabled:opacity-60"
         >
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
         </button>
-      }
-    >
+        <div className="inv-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+          <Dropdown
+            value={filter}
+            onChange={(v) => { setFilter(v); setPage(1); }}
+            placeholder="All"
+            options={[
+              { value: "all",  label: "All" },
+              { value: "out", label: "Out of Stock" },
+              { value: "in",  label: "In Stock" },
+            ]}
+            className="inv-filter-fluid"
+            optionClassName="inv-filter-fluid"
+          />
+        </div>
+      </div>
 
-      {/* summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Summary cards */}
+      <div className="inv-stats-fluid grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <AdminCard className="flex items-center gap-3 py-3.5">
+          <div className="p-2 rounded-xl bg-green-50"><CheckCircle size={16} className="text-green-500" /></div>
+          <div>
+            <p className="font-num text-xl font-bold text-gray-900 leading-none">{inStock}</p>
+            <p className="font-body text-xs text-gray-500 mt-0.5">In Stock</p>
+          </div>
+        </AdminCard>
         <AdminCard className="flex items-center gap-3 py-3.5">
           <div className="p-2 rounded-xl bg-red-50"><PackageX size={16} className="text-red-500" /></div>
           <div>
@@ -179,17 +278,10 @@ export default function InventoryManagement() {
             <p className="font-body text-xs text-gray-500 mt-0.5">Out of Stock</p>
           </div>
         </AdminCard>
-        <AdminCard className="flex items-center gap-3 py-3.5">
-          <div className="p-2 rounded-xl bg-orange-50"><AlertTriangle size={16} className="text-orange-500" /></div>
-          <div>
-            <p className="font-num text-xl font-bold text-gray-900 leading-none">{lowStock}</p>
-            <p className="font-body text-xs text-gray-500 mt-0.5">Low Stock (≤5)</p>
-          </div>
-        </AdminCard>
-        <AdminCard className="flex items-center gap-3 py-3.5 sm:col-span-2">
+        <AdminCard className="flex items-center gap-3 py-3.5 col-span-2 sm:col-span-2">
           <div className="p-2 rounded-xl bg-green-50">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
           <div>
@@ -199,36 +291,182 @@ export default function InventoryManagement() {
         </AdminCard>
       </div>
 
-      {/* filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search product, SKU…" className="w-56" />
+      {/* Master-detail expandable table */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex gap-4 px-4 py-3.5 border-b border-gray-50 last:border-0">
+                  {[1, 2, 3, 4, 5].map((c) => (
+                    <div key={c} className="h-4 skeleton rounded flex-1" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              {/* Parent-level header */}
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="w-10 px-4 py-3" />
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    Variants
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    Total Value
+                  </th>
+                  <th className="px-4 py-3 text-left font-body text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="font-body text-center py-16 text-gray-400 text-sm">
+                      No inventory items found.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => {
+                    const isOpen = expandedKey === product.key;
+                    const totalProductValue = product.variants.reduce(
+                      (s, v) => s + v.price * v.stockQty,
+                      0
+                    );
+                    return (
+                      <Fragment key={product.key}>
+                        {/* ── Parent row ── */}
+                        <tr
+                          className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors duration-100 cursor-pointer select-none"
+                          onClick={() => toggleExpand(product.key)}
+                        >
+                          <td className="px-4 py-3 align-middle text-gray-400">
+                            {isOpen
+                              ? <ChevronDown size={15} className="text-gray-500" />
+                              : <ChevronRight size={15} />}
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={product.primaryImage || PH}
+                                alt={product.nameEn}
+                                className="w-10 h-10 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+                                onError={(e) => { e.target.src = PH; }}
+                              />
+                              <div className="min-w-0">
+                                <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1">
+                                  {product.nameEn}
+                                </p>
+                                <p className="font-body text-xs text-gray-400">{product.categoryName}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <span className="font-body text-sm text-gray-500">
+                              {product.variants.length}{" "}
+                              {product.variants.length === 1 ? "variant" : "variants"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <span className="font-num text-sm font-semibold text-gray-900">
+                              {rupee(totalProductValue)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-3.5" onClick={(e) => e.stopPropagation()}>
+                              <Toggle
+                                checked={product.variants.filter((v) => v.stockQty > 0).length === product.variants.length}
+                                onChange={() => handleParentToggle(product)}
+                                disabled={bulkSaving}
+                              />
+                              <StatusBadge variants={product.variants} />
+                            </div>
+                          </td>
+                        </tr>
 
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
-          {[
-            { key: "all", label: "All" },
-            { key: "low", label: "Low Stock" },
-            { key: "out", label: "Out of Stock" },
-          ].map((f) => (
-            <button
-              key={f.key}
-              onClick={() => { setFilter(f.key); setPage(1); }}
-              className={`font-body text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+                        {/* ── Expanded variant detail section ── */}
+                        {isOpen && (
+                          <tr className={products[products.length - 1].key !== product.key ? "border-b border-gray-100" : ""}>
+                            <td colSpan={5} className="p-0">
+                              <div className="bg-gray-50/60 animate-expand">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="border-b border-gray-100">
+                                      <th className="w-10" />
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Variant
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Price
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Stock
+                                      </th>
+                                      <th className="px-4 py-2.5 text-left font-body text-[10px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                        Stock Value
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {product.variants.map((variant) => (
+                                      <tr
+                                        key={variant.variantId}
+                                        className="border-b border-gray-100 last:border-0 hover:bg-white/60 transition-colors"
+                                      >
+                                        <td className="w-10 pl-4">
+                                          <div className="w-px h-8 bg-gray-200 mx-auto" />
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm text-gray-700">
+                                            {variant.weightLabel}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm font-semibold text-gray-900">
+                                            {rupee(variant.price)}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <StockEditCell item={variant} queryParams={queryParams} disabled={bulkSaving} />
+                                        </td>
+                                        <td className="px-4 py-3 align-middle">
+                                          <span className="font-num text-sm text-gray-600">
+                                            {rupee(variant.price * variant.stockQty)}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      <DataTable columns={COLS} rows={items} loading={loading} emptyText="No inventory items found." />
-
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
+          <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Prev
+          </AdminButton>
           <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
-          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</AdminButton>
+          <AdminButton variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </AdminButton>
         </div>
       )}
     </AdminPage>
