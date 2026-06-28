@@ -259,7 +259,7 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
         setUnreadCount(res.data?.unreadCount ?? 0);
         console.log(res.data);
       } catch (err) {
-        console.log(err.response.data);
+        console.error("Failed to fetch unread count:", err.response?.data || err.message);
       }
     };
     computeUnread();
