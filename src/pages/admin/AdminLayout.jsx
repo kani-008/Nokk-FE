@@ -177,54 +177,7 @@ function Sidebar({ collapsed, onClose }) {
   );
 }
 
-// ── Top header bar ─────────────────────────────────────────────────────
-const SEARCH_FLUID_STYLES = `
-  @media (max-width: 767.98px) {
-    .topbar-search-fluid {
-      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
-      padding-top: clamp(0.35rem, 1.4vw, 0.5rem) !important;
-      padding-bottom: clamp(0.35rem, 1.4vw, 0.5rem) !important;
-      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
-    }
-    .topbar-search-fluid::placeholder {
-      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
-    }
-    .topbar-search-fluid-container svg {
-      width: clamp(12px, 2.8vw, 14px) !important;
-      height: clamp(12px, 2.8vw, 14px) !important;
-    }
-  }
-  @media (min-width: 768px) and (max-width: 1023.98px) {
-    .topbar-search-fluid {
-      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
-      padding-top: clamp(0.5rem, 0.8vw, 0.625rem) !important;
-      padding-bottom: clamp(0.5rem, 0.8vw, 0.625rem) !important;
-      height: clamp(2.25rem, 3.5vw, 2.5rem) !important;
-    }
-    .topbar-search-fluid::placeholder {
-      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
-    }
-    .topbar-search-fluid-container svg {
-      width: clamp(14px, 1.8vw, 16px) !important;
-      height: clamp(14px, 1.8vw, 16px) !important;
-    }
-  }
-  @media (min-width: 1024px) and (max-width: 1439.98px) {
-    .topbar-search-fluid {
-      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
-      padding-top: clamp(0.625rem, 0.6vw, 0.75rem) !important;
-      padding-bottom: clamp(0.625rem, 0.6vw, 0.75rem) !important;
-      height: clamp(2.5rem, 3vw, 2.75rem) !important;
-    }
-    .topbar-search-fluid::placeholder {
-      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
-    }
-    .topbar-search-fluid-container svg {
-      width: clamp(16px, 1.4vw, 18px) !important;
-      height: clamp(16px, 1.4vw, 18px) !important;
-    }
-  }
-`;
+
 
 // `searchConfig` — { placeholder, value, onChange } registered by whichever
 // child admin page wants the topbar's search box to drive its own filtering.
@@ -313,7 +266,6 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
   return (
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
-      <style>{SEARCH_FLUID_STYLES}</style>
 
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <button

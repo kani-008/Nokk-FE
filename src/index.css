@@ -348,4 +348,832 @@ body {
   input.no-spinner[type=number] {
     -moz-appearance: textfield;
   }
+
+  /* ── Login and Register fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .login-card-fluid {
+      max-width: min(94vw, 26rem);
+      padding-left: clamp(0.6rem, 3vw, 1rem);
+      padding-right: clamp(0.6rem, 3vw, 1rem);
+    }
+    .login-form-fluid {
+      padding-left: clamp(0.6rem, 3.2vw, 1rem);
+      padding-right: clamp(0.6rem, 3.2vw, 1rem);
+      padding-top: clamp(1rem, 4vw, 1.5rem);
+      padding-bottom: clamp(1rem, 4vw, 1.5rem);
+    }
+    .reg-card-fluid {
+      max-width: min(94vw, 26rem);
+      padding-left: clamp(0.6rem, 3vw, 1rem);
+      padding-right: clamp(0.6rem, 3vw, 1rem);
+    }
+    .reg-form-fluid {
+      padding-left: clamp(0.6rem, 3.2vw, 1rem);
+      padding-right: clamp(0.6rem, 3.2vw, 1rem);
+      padding-top: clamp(1rem, 4vw, 1.5rem);
+      padding-bottom: clamp(1rem, 4vw, 1.5rem);
+    }
+    .reg-otp-row-fluid {
+      gap: clamp(0.25rem, 1.8vw, 0.625rem);
+    }
+    .reg-otp-box-fluid {
+      width: clamp(2rem, 9vw, 2.75rem);
+      height: clamp(2.25rem, 10vw, 3rem);
+      font-size: clamp(0.85rem, 4.2vw, 1.125rem);
+      border-radius: clamp(0.5rem, 2.5vw, 0.75rem);
+    }
+    .reg-title-fluid {
+      font-size: clamp(1rem, 4.6vw, 1.25rem);
+    }
+    .reg-subtitle-fluid {
+      font-size: clamp(0.78rem, 3.4vw, 0.875rem);
+    }
+    .reg-step1-gap-fluid {
+      gap: clamp(0.85rem, 3.6vw, 1.25rem);
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .login-card-fluid {
+      max-width: min(90vw, 28rem) !important;
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+    }
+    .login-form-fluid {
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-top: clamp(1.5rem, 3vw, 2rem) !important;
+      padding-bottom: clamp(1.5rem, 3vw, 2rem) !important;
+    }
+    .reg-card-fluid {
+      max-width: min(90vw, 28rem) !important;
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+    }
+    .reg-form-fluid {
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-top: clamp(1.5rem, 3vw, 2rem) !important;
+      padding-bottom: clamp(1.5rem, 3vw, 2rem) !important;
+    }
+    .reg-otp-row-fluid {
+      gap: clamp(0.5rem, 1.5vw, 0.75rem) !important;
+    }
+    .reg-otp-box-fluid {
+      width: clamp(2.5rem, 4.5vw, 2.75rem) !important;
+      height: clamp(2.75rem, 5vw, 3rem) !important;
+      font-size: clamp(1rem, 2vw, 1.25rem) !important;
+    }
+    .reg-title-fluid {
+      font-size: clamp(1.25rem, 3vw, 1.5rem) !important;
+    }
+    .reg-subtitle-fluid {
+      font-size: clamp(0.875rem, 2vw, 1rem) !important;
+    }
+    .reg-step1-gap-fluid {
+      gap: clamp(1.25rem, 2.5vw, 1.75rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .login-card-fluid {
+      max-width: min(85vw, 30rem) !important;
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+    }
+    .login-form-fluid {
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-top: clamp(2rem, 2.5vw, 2.5rem) !important;
+      padding-bottom: clamp(2rem, 2.5vw, 2.5rem) !important;
+    }
+    .reg-card-fluid {
+      max-width: min(85vw, 30rem) !important;
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+    }
+    .reg-form-fluid {
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-top: clamp(2rem, 2.5vw, 2.5rem) !important;
+      padding-bottom: clamp(2rem, 2.5vw, 2.5rem) !important;
+    }
+    .reg-otp-row-fluid {
+      gap: clamp(0.75rem, 1vw, 1rem) !important;
+    }
+    .reg-otp-box-fluid {
+      width: clamp(2.75rem, 3vw, 3.25rem) !important;
+      height: clamp(3rem, 3.5vw, 3.5rem) !important;
+      font-size: clamp(1.125rem, 1.5vw, 1.35rem) !important;
+    }
+    .reg-title-fluid {
+      font-size: clamp(1.5rem, 2vw, 1.75rem) !important;
+    }
+    .reg-subtitle-fluid {
+      font-size: clamp(1rem, 1.5vw, 1.125rem) !important;
+    }
+    .reg-step1-gap-fluid {
+      gap: clamp(1.75rem, 2vw, 2.25rem) !important;
+    }
+  }
+
+  /* ── AdminLayout search bar fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .topbar-search-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.35rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.35rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .topbar-search-fluid::placeholder {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+    }
+    .topbar-search-fluid-container svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .topbar-search-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-top: clamp(0.5rem, 0.8vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 0.8vw, 0.625rem) !important;
+      height: clamp(2.25rem, 3.5vw, 2.5rem) !important;
+    }
+    .topbar-search-fluid::placeholder {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .topbar-search-fluid-container svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .topbar-search-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-top: clamp(0.625rem, 0.6vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.6vw, 0.75rem) !important;
+      height: clamp(2.5rem, 3vw, 2.75rem) !important;
+    }
+    .topbar-search-fluid::placeholder {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .topbar-search-fluid-container svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
+
+  /* ── BannerManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .bm-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .bm-btn-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .bm-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .bm-tabs-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .bm-btn-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+      height: clamp(2.25rem, 3.5vw, 2.5rem) !important;
+    }
+    .bm-btn-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .bm-tabs-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .bm-btn-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      height: clamp(2.5rem, 3vw, 2.75rem) !important;
+    }
+    .bm-btn-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
+
+  /* ── InventoryManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(9.5rem, 30vw, 10.5rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .inv-filter-fluid span.truncate {
+      overflow: visible !important;
+      text-overflow: unset !important;
+      white-space: nowrap !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.7rem, 2.6vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(12px, 2.8vw, 14px);
+      height: clamp(12px, 2.8vw, 14px);
+    }
+    .inv-cluster-fluid {
+      gap: clamp(0.3rem, 1.4vw, 0.75rem);
+    }
+    .inv-stats-fluid {
+      gap: clamp(0.4rem, 1.8vw, 1rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(10.5rem, 20vw, 12rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.375rem, 1vw, 0.5rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .inv-cluster-fluid {
+      gap: clamp(0.75rem, 1.5vw, 1rem) !important;
+    }
+    .inv-stats-fluid {
+      gap: clamp(1rem, 2vw, 1.5rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(12rem, 15vw, 14rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.5rem, 0.8vw, 0.625rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .inv-cluster-fluid {
+      gap: clamp(1rem, 1.2vw, 1.25rem) !important;
+    }
+    .inv-stats-fluid {
+      gap: clamp(1.5rem, 1.5vw, 2rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      max-height: 0;
+      opacity: 1;
+    }
+    to {
+      max-height: 800px;
+      opacity: 1;
+    }
+  }
+  .animate-expand {
+    animation: slideDown 1000ms ease-out forwards;
+    overflow: hidden;
+  }
+
+  /* ── OfferManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      height: clamp(2.0rem, 8.0vw, 2.25rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 14px) !important;
+      height: clamp(12px, 2.8vw, 14px) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+      height: clamp(2.25rem, 3.5vw, 2.5rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      height: clamp(2.5rem, 3vw, 2.75rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
+
+  /* ── OrderManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .ord-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+    .ord-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .ord-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .ord-cluster-fluid {
+      gap: clamp(0.25rem, 1.2vw, 0.75rem);
+    }
+    .ord-tabs-fluid {
+      font-size: clamp(0.72rem, 2.6vw, 0.875rem) !important;
+      padding-left: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.4vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.5rem) !important;
+    }
+    .ord-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .ord-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .ord-filter-fluid + ul li {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 0.8vw, 0.5rem) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .ord-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .ord-clear-fluid {
+      font-size: clamp(0.75rem, 1vw, 0.85rem) !important;
+      padding-left: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+      padding-right: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+      gap: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+    }
+    .ord-clear-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .ord-cluster-fluid {
+      gap: clamp(0.75rem, 1.5vw, 1rem) !important;
+    }
+    .ord-tabs-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .ord-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .ord-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .ord-filter-fluid + ul li {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .ord-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .ord-clear-fluid {
+      font-size: clamp(0.85rem, 0.8vw, 0.95rem) !important;
+      padding-left: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+      padding-right: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+      gap: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+    }
+    .ord-clear-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .ord-cluster-fluid {
+      gap: clamp(1rem, 1.2vw, 1.25rem) !important;
+    }
+    .ord-tabs-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .ord-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .ord-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .ord-filter-fluid + ul li {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+  }
+
+  /* ── ProductManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .pm-filter-wrap-fluid {
+      width: clamp(8.5rem, 30vw, 10.5rem) !important;
+    }
+    .pm-filter-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid span.truncate {
+      overflow: visible !important;
+      text-overflow: unset !important;
+      white-space: nowrap !important;
+    }
+    .pm-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      padding-left: clamp(0.1rem, 0.6vw, 0.25rem);
+      padding-right: clamp(0.1rem, 0.6vw, 0.25rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .pm-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+    .pm-add-btn-fluid {
+      padding-left: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 1rem) !important;
+      padding-top: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      padding-bottom: clamp(0.4rem, 1.6vw, 0.5rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.2rem, 1vw, 0.375rem) !important;
+    }
+    .pm-add-btn-fluid svg {
+      width: clamp(12px, 2.8vw, 15px);
+      height: clamp(12px, 2.8vw, 15px);
+    }
+    .pm-cluster-fluid {
+      gap: clamp(0.3rem, 1.4vw, 0.75rem);
+    }
+    .pm-filter-fluid + ul li {
+      padding-left: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-right: clamp(0.6rem, 2.6vw, 0.875rem) !important;
+      padding-top: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      padding-bottom: clamp(0.45rem, 1.6vw, 0.625rem) !important;
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+      gap: clamp(0.3rem, 1vw, 0.5rem) !important;
+    }
+    .pm-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .pm-filter-fluid span {
+      font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .pm-filter-wrap-fluid {
+      width: clamp(10.5rem, 20vw, 12rem) !important;
+    }
+    .pm-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .pm-clear-fluid {
+      font-size: clamp(0.75rem, 1vw, 0.85rem) !important;
+      padding-left: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+      padding-right: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+      gap: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+    }
+    .pm-clear-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .pm-add-btn-fluid {
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.375rem, 1vw, 0.5rem) !important;
+    }
+    .pm-add-btn-fluid svg {
+      width: clamp(15px, 1.8vw, 18px) !important;
+      height: clamp(15px, 1.8vw, 18px) !important;
+    }
+    .pm-cluster-fluid {
+      gap: clamp(0.75rem, 1.5vw, 1rem) !important;
+    }
+    .pm-filter-fluid + ul li {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .pm-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .pm-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .pm-filter-wrap-fluid {
+      width: clamp(12rem, 15vw, 14rem) !important;
+    }
+    .pm-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .pm-clear-fluid {
+      font-size: clamp(0.85rem, 0.8vw, 0.95rem) !important;
+      padding-left: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+      padding-right: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+      gap: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+    }
+    .pm-clear-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .pm-add-btn-fluid {
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.5rem, 0.8vw, 0.625rem) !important;
+    }
+    .pm-add-btn-fluid svg {
+      width: clamp(18px, 1.4vw, 20px) !important;
+      height: clamp(18px, 1.4vw, 20px) !important;
+    }
+    .pm-cluster-fluid {
+      gap: clamp(1rem, 1.2vw, 1.25rem) !important;
+    }
+    .pm-filter-fluid + ul li {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .pm-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .pm-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+  }
+
+  /* ── UserManagement fluid sizing ── */
+  @media (max-width: 767.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-right: clamp(0.5rem, 2vw, 0.875rem) !important;
+      padding-top: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      padding-bottom: clamp(0.4rem, 1.4vw, 0.625rem) !important;
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(10px, 2.4vw, 14px) !important;
+      height: clamp(10px, 2.4vw, 14px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.656rem, 2.4vw, 0.875rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.65rem, 2.4vw, 0.75rem);
+      gap: clamp(0.1rem, 0.6vw, 0.25rem);
+    }
+    .um-clear-fluid svg {
+      width: clamp(10px, 2.6vw, 14px);
+      height: clamp(10px, 2.6vw, 14px);
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.75rem, 1vw, 0.85rem) !important;
+      gap: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+    }
+    .um-clear-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.85rem, 0.8vw, 0.95rem) !important;
+      gap: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+    }
+    .um-clear-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
 }

@@ -89,14 +89,11 @@ export const fieldClass = (hasError, extra = "") =>
  * - children: the actual per-step form content for the right panel
  */
 export default function AuthLayout({
-    mode = "login",
-    step = 1,
     title,
     subtitle,
     brandContent,
     bottomLink,
     toast,
-    extraStyles,
     cardClassName = "",
     formPanelClassName = "",
     pageClassName = "min-h-screen px-4 pt-8 pb-10 md:py-10",
@@ -104,7 +101,6 @@ export default function AuthLayout({
 }) {
     return (
         <div className={`flex flex-col items-center md:flex-row md:justify-center md:items-center bg-sandal-50 relative ${pageClassName}`}>
-            {extraStyles && <style>{extraStyles}</style>}
 
             {/* ── Toast (Red for Error, Green for Success) ── */}
             <div
