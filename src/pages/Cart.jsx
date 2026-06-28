@@ -1,8 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, X, Loader2 } from "lucide-react";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
+import { useBuyNowStore } from "../components/store/BuyNowStore";
+import { useDeliverySettings } from "../hooks/queries/useHome";
 import API from "../ApiCall/Api";
 
 import comboImg from "../assets/products/combo.jpg";
@@ -136,7 +138,7 @@ function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, on
         </div>
         {shipping > 0 && (
           <p className="font-body text-[11px] text-amber-500">
-            Add {rupee(499 - subtotal)} more for free delivery
+            Add {rupee(freeShippingThreshold - subtotal())} more for free delivery
           </p>
         )}
       </div>
@@ -274,9 +276,24 @@ export default function Cart() {
     removeItemLocal,
     addItemLocal,
     setCoupon,
+    setDeliveryConfig,
+    freeShippingThreshold,
   } = useCartStore();
 
   const { isAuthenticated } = useAuthStore();
+
+  // Sync delivery config from backend into the cart store
+  const { data: deliverySettings } = useDeliverySettings();
+  useEffect(() => {
+    if (deliverySettings) {
+      setDeliveryConfig(deliverySettings.freeShippingThreshold, deliverySettings.flatDeliveryCharge);
+    }
+  }, [deliverySettings]);
+
+  // Clear any buy-now item when entering the cart page
+  useEffect(() => {
+    useBuyNowStore.getState().clearItem();
+  }, []);
 
   // per-item syncing flag — shows spinner, disables buttons while API call is in-flight
   const [syncingItems, setSyncingItems] = useState({});
@@ -357,6 +374,7 @@ export default function Cart() {
 
   // ── checkout ───────────────────────────────────────────────────────
   const handleCheckout = () => {
+    useBuyNowStore.getState().clearItem();
     if (!isAuthenticated) {
       navigate("/login", { state: { from: "/checkout" } });
       return;

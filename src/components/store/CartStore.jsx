@@ -137,14 +137,22 @@ export const useCartStore = create(
         return parseFloat(Math.min(discountAmount, sub).toFixed(2));
       },
 
+      // delivery config — set once on mount from /api/settings
+      freeShippingThreshold: 500,
+      flatDeliveryCharge:    50,
+      setDeliveryConfig: (threshold, charge) =>
+        set({ freeShippingThreshold: threshold, flatDeliveryCharge: charge }),
+
       total: () => {
-        const { subtotal, discount } = get();
-        const shipping = subtotal() >= 499 ? 0 : 60;
+        const { subtotal, discount, freeShippingThreshold, flatDeliveryCharge } = get();
+        const shipping = subtotal() >= freeShippingThreshold ? 0 : flatDeliveryCharge;
         return subtotal() - discount() + shipping;
       },
 
-      shipping: () =>
-        get().subtotal() >= 499 ? 0 : 60,
+      shipping: () => {
+        const { subtotal, freeShippingThreshold, flatDeliveryCharge } = get();
+        return subtotal() >= freeShippingThreshold ? 0 : flatDeliveryCharge;
+      },
 
       // ── mutations ──────────────────────────────────────────────────
       setItems: (items) => {

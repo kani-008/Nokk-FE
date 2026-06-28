@@ -13,6 +13,7 @@ import {
 } from "../../components/admin/AdminUI.jsx";
 import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
 
 const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "" };
 const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", isActive: true, expiresAt: "" };
@@ -84,10 +85,14 @@ function OfferModal({ offer, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label">Offer Type</label>
-                <select value={form.offerType} onChange={(e) => set("offerType", e.target.value)} className="field-input">
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="flat">Flat (₹)</option>
-                </select>
+                <Dropdown
+                  value={form.offerType}
+                  onChange={(val) => set("offerType", val)}
+                  options={[
+                    { value: "percentage", label: "Percentage (%)" },
+                    { value: "flat", label: "Flat (₹)" }
+                  ]}
+                />
               </div>
               <div><label className="field-label">Value *</label><input type="number" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder={form.offerType === "percentage" ? "10" : "100"} className="field-input" /></div>
               <div><label className="field-label">Coupon Code</label><input value={form.code || ""} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="MONSOON10" className="field-input font-num" /></div>
@@ -150,10 +155,14 @@ function CouponModal({ coupon, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label">Type</label>
-                <select value={form.discountType} onChange={(e) => set("discountType", e.target.value)} className="field-input">
-                  <option value="percentage">Percentage</option>
-                  <option value="flat">Flat</option>
-                </select>
+                <Dropdown
+                  value={form.discountType}
+                  onChange={(val) => set("discountType", val)}
+                  options={[
+                    { value: "percentage", label: "Percentage" },
+                    { value: "flat", label: "Flat" }
+                  ]}
+                />
               </div>
               <div><label className="field-label">Value *</label><input type="number" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder="20" className="field-input" /></div>
               <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>

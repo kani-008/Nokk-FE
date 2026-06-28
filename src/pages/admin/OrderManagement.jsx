@@ -131,15 +131,15 @@ function OrderModal({ order, onClose, onStatusChange }) {
               <StatusBadge status={order.status} />
               <span className="font-body text-xs text-gray-400 self-center">→</span>
             </div>
-            <select
+            <Dropdown
               value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="field-input mb-3"
-            >
-              {ALL_STATUSES.map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
-            </select>
+              onChange={setNewStatus}
+              options={ALL_STATUSES.map((s) => ({
+                value: s,
+                label: s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+              className="mb-3"
+            />
 
             {/* tracking fields (show when shipped/out_for_delivery) */}
             {["shipped", "out_for_delivery"].includes(newStatus) && (

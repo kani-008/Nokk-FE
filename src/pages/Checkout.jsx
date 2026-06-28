@@ -2,6 +2,7 @@ import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
 import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
+import { useDeliverySettings } from "../hooks/queries/useHome";
 import { useCheckout } from "../hooks/queries/useOrders";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
@@ -37,10 +38,15 @@ export default function Checkout() {
 
   const checkoutItems = buyNowItem ? [buyNowItem] : items;
 
+  // delivery config from backend settings (falls back to DB values while loading)
+  const { data: deliverySettings } = useDeliverySettings();
+  const freeShippingThreshold = deliverySettings?.freeShippingThreshold ?? 500;
+  const flatDeliveryCharge    = deliverySettings?.flatDeliveryCharge    ?? 50;
+
   // computed totals
   const sub  = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
   const disc = buyNowItem ? 0 : discount();
-  const ship = sub >= 499 ? 0 : 60;
+  const ship = sub >= freeShippingThreshold ? 0 : flatDeliveryCharge;
   const tot  = sub - disc + ship;
 
   // ── step ───────────────────────────────────────────────────────────
@@ -58,6 +64,7 @@ export default function Checkout() {
     phone:        user?.phone   || "",
     addressLine1: "",
     addressLine2: "",
+    taluk:        "",
     city:         "",
     state:        "",
     pincode:      "",
@@ -87,7 +94,13 @@ export default function Checkout() {
   }, [buyNowItem, items, navigate]);
 
   // ── clear buy-now item when leaving checkout ───────────────────────
-  useEffect(() => () => clearBuyNow(), []);
+  useEffect(() => {
+    return () => {
+      if (window.location.pathname !== "/checkout") {
+        clearBuyNow();
+      }
+    };
+  }, []);
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
@@ -108,6 +121,10 @@ export default function Checkout() {
     setShowNewForm(false);
   };
 
+  const handleSavedEdited = (updated) => {
+    setSelectedSaved(updated);
+  };
+
   const checkoutMutation = useCheckout();
   const addAddressMutation = useAddAddress();
   const placing = checkoutMutation.isPending || addAddressMutation.isPending;
@@ -121,15 +138,16 @@ export default function Checkout() {
       if (token && showNewForm) {
         try {
           await addAddressMutation.mutateAsync({
-            label: "Home",
-            fullName: newAddress.name,
-            phone: newAddress.phone,
+            label:        "Home",
+            fullName:     newAddress.name,
+            phone:        newAddress.phone,
             addressLine1: newAddress.addressLine1,
             addressLine2: newAddress.addressLine2 || "",
-            city: newAddress.city,
-            state: newAddress.state,
-            pincode: newAddress.pincode,
-            isDefault: false
+            taluk:        newAddress.taluk || "",
+            city:         newAddress.city,
+            state:        newAddress.state,
+            pincode:      newAddress.pincode,
+            isDefault:    false,
           });
         } catch (saveAddrErr) {
           console.error("Failed to auto-save new address to profile:", saveAddrErr);
@@ -147,13 +165,14 @@ export default function Checkout() {
           nameTa: i.nameTa
         })),
         address: {
-          fullName: address.name,
-          phone: address.phone,
+          fullName:     address.name,
+          phone:        address.phone,
           addressLine1: address.addressLine1,
           addressLine2: address.addressLine2 || "",
-          city: address.city,
-          state: address.state,
-          pincode: address.pincode
+          taluk:        address.taluk || "",
+          city:         address.city,
+          state:        address.state,
+          pincode:      address.pincode,
         },
         paymentMethod: payMethod,
         couponApplied: coupon?.code || null,
@@ -215,6 +234,7 @@ export default function Checkout() {
               savedAddresses={savedAddresses}
               selectedSaved={selectedSaved}
               onSelectSaved={handleSelectSaved}
+              onSavedEdited={handleSavedEdited}
               showNewForm={showNewForm}
               onToggleNewForm={() => setShowNewForm((s) => !s)}
               newAddress={newAddress}

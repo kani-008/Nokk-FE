@@ -1,6 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import API from "../../ApiCall/Api.jsx";
 
+export function useDeliverySettings() {
+  return useQuery({
+    queryKey: ["delivery-settings"],
+    queryFn: async () => {
+      const res = await API.get("/settings");
+      const s = res.data.settings || {};
+      return {
+        flatDeliveryCharge:    Number(s.flatDeliveryCharge)    || 50,
+        freeShippingThreshold: Number(s.freeShippingThreshold) || 500,
+      };
+    },
+    staleTime: 5 * 60_000, // settings rarely change — cache 5 min
+  });
+}
+
 export function useHomeBanners() {
   return useQuery({
     queryKey: ["banners"],

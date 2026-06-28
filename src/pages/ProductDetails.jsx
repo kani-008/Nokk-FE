@@ -298,10 +298,6 @@ export default function ProductDetails() {
 
   const handleBuyNow = () => {
     if (!activeVariant || !inStock) return;
-    if (!token) {
-      navigate("/login", { state: { from: "/checkout" } });
-      return;
-    }
     useBuyNowStore.getState().setItem({
       variantId:    activeVariant.id,
       productId:    product.id,
@@ -315,6 +311,10 @@ export default function ProductDetails() {
       slug:         product.slug,
       inStock:      activeVariant.inStock,
     });
+    if (!token) {
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     navigate("/checkout");
   };
 
