@@ -3,7 +3,8 @@ import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft }             from "lucide-react";
 import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
 import { useDeliverySettings } from "../hooks/queries/useHome";
-import { useCheckout } from "../hooks/queries/useOrders";
+import { useCheckout, useCreateRazorpayOrder, useVerifyRazorpayPayment } from "../hooks/queries/useOrders";
+import { useRazorpayScript } from "../hooks/useRazorpayScript";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
@@ -72,20 +73,34 @@ export default function Checkout() {
   const [addrErrors, setAddrErrors] = useState({});
 
   // ── payment state ──────────────────────────────────────────────────
-  const [payMethod, setPayMethod] = useState("upi");
+  const [payMethod, setPayMethod] = useState("razorpay");
   const [customerUpiId, setCustomerUpiId] = useState("");
+  const [paymentMsg, setPaymentMsg] = useState("");
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
 
   // ── order submit ───────────────────────────────────────────────────
   const [orderErr, setOrderErr] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
+  const rzpReady = useRazorpayScript();
+  const createRpOrderMutation = useCreateRazorpayOrder();
+  const verifyRpPaymentMutation = useVerifyRazorpayPayment();
+
+  const handleSelectPaymentMethod = (m) => {
+    setPayMethod(m);
+    setPaymentMsg("");
+  };
+
   useEffect(() => {
-    if (addressesList.length > 0) {
-      setSelectedSaved(addressesList[0]);
-      setShowNewForm(false);
-    } else {
-      setShowNewForm(true);
-    }
+    const t = setTimeout(() => {
+      if (addressesList.length > 0) {
+        setSelectedSaved(addressesList[0]);
+        setShowNewForm(false);
+      } else {
+        setShowNewForm(true);
+      }
+    }, 0);
+    return () => clearTimeout(t);
   }, [addressesList]);
 
   // ── redirect if cart emptied (skip when in buy-now mode) ──────────
@@ -100,7 +115,7 @@ export default function Checkout() {
         clearBuyNow();
       }
     };
-  }, []);
+  }, [clearBuyNow]);
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
@@ -127,7 +142,13 @@ export default function Checkout() {
 
   const checkoutMutation = useCheckout();
   const addAddressMutation = useAddAddress();
-  const placing = checkoutMutation.isPending || addAddressMutation.isPending;
+  const placing =
+    checkoutMutation.isPending ||
+    addAddressMutation.isPending ||
+    createRpOrderMutation.isPending ||
+    verifyRpPaymentMutation.isPending ||
+    verifyingPayment ||
+    (payMethod === "razorpay" && !rzpReady);
 
   const handlePlaceOrder = async () => {
     setOrderErr("");
@@ -151,7 +172,7 @@ export default function Checkout() {
           });
         } catch (saveAddrErr) {
           console.error("Failed to auto-save new address to profile:", saveAddrErr);
-          throw new Error(saveAddrErr.response?.data?.message || saveAddrErr.message || "Failed to save address to profile");
+          throw new Error(saveAddrErr.response?.data?.message || saveAddrErr.message || "Failed to save address to profile", { cause: saveAddrErr });
         }
       }
       const payload = {
@@ -181,6 +202,92 @@ export default function Checkout() {
         discount: disc,
         total: tot
       };
+
+      if (payMethod === "razorpay") {
+        console.log("[Razorpay Frontend] Initiating Razorpay order creation on backend. Payload:", {
+          itemsCount: payload.items?.length,
+          address: payload.address,
+          couponApplied: payload.couponApplied,
+        });
+        const resCreate = await createRpOrderMutation.mutateAsync({
+          items: payload.items,
+          address: payload.address,
+          couponApplied: payload.couponApplied,
+        });
+
+        console.log("[Razorpay Frontend] Backend order creation successful. Razorpay Order Details:", resCreate);
+
+        const options = {
+          key: resCreate.keyId,
+          amount: Math.round(resCreate.amount * 100),
+          currency: resCreate.currency || "INR",
+          name: "Namma Oor Karuvattu Kadai",
+          description: "Order Checkout",
+          order_id: resCreate.razorpayOrderId,
+          handler: async function (response) {
+            console.log("[Razorpay Frontend] Payment succeeded inside Razorpay modal. Response received:", response);
+            setVerifyingPayment(true);
+            try {
+              const verifyPayload = {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                items: payload.items,
+                address: payload.address,
+                couponApplied: payload.couponApplied,
+              };
+              console.log("[Razorpay Frontend] Sending payment verification payload to backend:", verifyPayload);
+              const resVerify = await verifyRpPaymentMutation.mutateAsync(verifyPayload);
+
+              console.log("[Razorpay Frontend] Payment verified successfully by backend. Order details:", resVerify);
+
+              if (!buyNowItem) {
+                if (token) {
+                  try {
+                    console.log("[Razorpay Frontend] Clearing server cart...");
+                    await API.delete("/cart/clear-cart");
+                  } catch (clearErr) {
+                    console.error("[Razorpay Frontend] Failed to clear server cart:", clearErr);
+                  }
+                }
+                useCartStore.getState().clearCartLocal();
+              }
+              clearBuyNow();
+
+              setPlacedOrderId(resVerify.order?.id);
+            } catch (verifyErr) {
+              console.error("[Razorpay Frontend] Payment verification failed:", verifyErr);
+              setOrderErr(
+                `Payment verified with signature mismatch or database processing error. If money was deducted, please contact support with Payment ID: ${response.razorpay_payment_id}. Error: ${
+                  verifyErr.response?.data?.message || verifyErr.message
+                }`
+              );
+            } finally {
+              setVerifyingPayment(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              console.log("[Razorpay Frontend] Razorpay checkout modal was dismissed by the user.");
+              setPaymentMsg("Payment cancelled. You can select a payment method and try again.");
+              setStep("payment");
+            }
+          },
+          prefill: {
+            name: payload.address.fullName,
+            contact: payload.address.phone,
+            email: user?.email || "",
+          },
+          theme: {
+            color: "#78350f",
+          }
+        };
+
+        console.log("[Razorpay Frontend] Initializing Razorpay widget with options:", options);
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        return;
+      }
 
       const res = await checkoutMutation.mutateAsync(payload);
 
@@ -247,12 +354,13 @@ export default function Checkout() {
           {step === "payment" && (
             <PaymentStep
               selected={payMethod}
-              onSelect={setPayMethod}
+              onSelect={handleSelectPaymentMethod}
               onBack={() => setStep("address")}
               onNext={() => setStep("review")}
               amount={tot}
               customerUpiId={customerUpiId}
               onCustomerUpiIdChange={setCustomerUpiId}
+              infoMessage={paymentMsg}
             />
           )}
 
