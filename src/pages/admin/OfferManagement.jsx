@@ -41,6 +41,48 @@ const MOBILE_FLUID_STYLES = `
       height: clamp(12px, 2.8vw, 14px) !important;
     }
   }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      padding-left: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 2vw, 1.25rem) !important;
+      padding-top: clamp(0.5rem, 1vw, 0.625rem) !important;
+      padding-bottom: clamp(0.5rem, 1vw, 0.625rem) !important;
+      height: clamp(2.25rem, 3.5vw, 2.5rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .om-tabs-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .om-btn-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      padding-left: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-right: clamp(1.25rem, 1.5vw, 1.5rem) !important;
+      padding-top: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+      height: clamp(2.5rem, 3vw, 2.75rem) !important;
+    }
+    .om-btn-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
 `;
 
 

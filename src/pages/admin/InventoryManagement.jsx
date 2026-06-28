@@ -79,6 +79,90 @@ const MOBILE_FLUID_STYLES = `
       font-size: clamp(0.75rem, 2.8vw, 0.875rem) !important;
     }
   }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(10.5rem, 20vw, 12rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.375rem, 1vw, 0.5rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .inv-cluster-fluid {
+      gap: clamp(0.75rem, 1.5vw, 1rem) !important;
+    }
+    .inv-stats-fluid {
+      gap: clamp(1rem, 2vw, 1.5rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+      gap: clamp(0.5rem, 1vw, 0.625rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .inv-filter-wrap-fluid {
+      width: clamp(12rem, 15vw, 14rem) !important;
+    }
+    .inv-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .inv-refresh-fluid {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.5rem, 0.8vw, 0.625rem) !important;
+    }
+    .inv-refresh-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .inv-cluster-fluid {
+      gap: clamp(1rem, 1.2vw, 1.25rem) !important;
+    }
+    .inv-stats-fluid {
+      gap: clamp(1.5rem, 1.5vw, 2rem) !important;
+    }
+    .inv-filter-fluid + ul li {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+      gap: clamp(0.625rem, 0.8vw, 0.75rem) !important;
+    }
+    .inv-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .inv-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+  }
 
   @keyframes slideDown {
     from {

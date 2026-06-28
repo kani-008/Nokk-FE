@@ -32,6 +32,54 @@ const MOBILE_FLUID_STYLES = `
       height: clamp(10px, 2.6vw, 14px);
     }
   }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-right: clamp(0.875rem, 2vw, 1rem) !important;
+      padding-top: clamp(0.625rem, 1vw, 0.75rem) !important;
+      padding-bottom: clamp(0.625rem, 1vw, 0.75rem) !important;
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.875rem, 1.2vw, 0.95rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.75rem, 1vw, 0.85rem) !important;
+      gap: clamp(0.25rem, 0.8vw, 0.375rem) !important;
+    }
+    .um-clear-fluid svg {
+      width: clamp(14px, 1.8vw, 16px) !important;
+      height: clamp(14px, 1.8vw, 16px) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .um-filter-fluid {
+      padding-left: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-right: clamp(1rem, 1.5vw, 1.25rem) !important;
+      padding-top: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      padding-bottom: clamp(0.75rem, 0.8vw, 0.875rem) !important;
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .um-filter-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+    .um-filter-fluid span {
+      font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
+    }
+    .um-clear-fluid {
+      font-size: clamp(0.85rem, 0.8vw, 0.95rem) !important;
+      gap: clamp(0.375rem, 0.6vw, 0.5rem) !important;
+    }
+    .um-clear-fluid svg {
+      width: clamp(16px, 1.4vw, 18px) !important;
+      height: clamp(16px, 1.4vw, 18px) !important;
+    }
+  }
 `;
 
 import comboImg from "../../assets/products/combo.jpg";

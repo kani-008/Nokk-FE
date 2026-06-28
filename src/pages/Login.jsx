@@ -39,6 +39,48 @@ const MOBILE_FLUID_STYLES = `
       border-radius: clamp(0.5rem, 2.5vw, 0.75rem);
     }
   }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
+    .login-card-fluid {
+      max-width: min(90vw, 28rem) !important;
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+    }
+    .login-form-fluid {
+      padding-left: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-right: clamp(1rem, 2.5vw, 1.5rem) !important;
+      padding-top: clamp(1.5rem, 3vw, 2rem) !important;
+      padding-bottom: clamp(1.5rem, 3vw, 2rem) !important;
+    }
+    .reg-otp-row-fluid {
+      gap: clamp(0.5rem, 1.5vw, 0.75rem) !important;
+    }
+    .reg-otp-box-fluid {
+      width: clamp(2.5rem, 4.5vw, 2.75rem) !important;
+      height: clamp(2.75rem, 5vw, 3rem) !important;
+      font-size: clamp(1rem, 2vw, 1.25rem) !important;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1439.98px) {
+    .login-card-fluid {
+      max-width: min(85vw, 30rem) !important;
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+    }
+    .login-form-fluid {
+      padding-left: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-right: clamp(1.5rem, 2vw, 2rem) !important;
+      padding-top: clamp(2rem, 2.5vw, 2.5rem) !important;
+      padding-bottom: clamp(2rem, 2.5vw, 2.5rem) !important;
+    }
+    .reg-otp-row-fluid {
+      gap: clamp(0.75rem, 1vw, 1rem) !important;
+    }
+    .reg-otp-box-fluid {
+      width: clamp(2.75rem, 3vw, 3.25rem) !important;
+      height: clamp(3rem, 3.5vw, 3.5rem) !important;
+      font-size: clamp(1.125rem, 1.5vw, 1.35rem) !important;
+    }
+  }
 `;
 
 export default function Login() {
