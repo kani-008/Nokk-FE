@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useAuthStore } from "../components/store/AuthStore";
 
-export const API_URL = import.meta.env.VITE_LHOST_API_URL;
+export const API_URL = import.meta.env.VITE_LHOST_API_URL || "/api";
 
 // Create the main Axios instance
 const API = axios.create({
