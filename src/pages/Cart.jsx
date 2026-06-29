@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, X, Loader2 } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
@@ -49,72 +49,12 @@ function EmptyCart() {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// COUPON INPUT
-// ══════════════════════════════════════════════════════════════════════
-function CouponBox({ coupon, onApply, onRemove }) {
-  const [code,    setCode]    = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-
-  const handleApply = async () => {
-    if (!code.trim()) return;
-    setError("");
-    setLoading(true);
-    try {
-      await onApply(code.trim().toUpperCase());
-      setCode("");
-    } catch (err) {
-      setError(err.message || "Invalid coupon code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (coupon) {
-    return (
-      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Tag size={15} className="text-green-600" />
-          <div>
-            <p className="font-num text-sm font-bold text-green-800 tracking-wider">{coupon.code}</p>
-            <p className="font-body text-xs text-green-600">
-              {coupon.discountType === "percentage"
-                ? `${coupon.discountValue}% off applied`
-                : `₹${coupon.discountValue} off applied`}
-            </p>
-          </div>
-        </div>
-        <button onClick={onRemove} className="text-green-600 hover:text-red-500 transition-colors p-1" aria-label="Remove coupon">
-          <X size={16} />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
-          onKeyDown={(e) => e.key === "Enter" && handleApply()}
-          placeholder="Enter coupon code"
-          className="field-input flex-1 uppercase tracking-wider"
-        />
-        <button onClick={handleApply} disabled={loading || !code.trim()} className="btn-md btn-outline shrink-0">
-          {loading ? <Loader2 size={15} className="animate-spin" /> : "Apply"}
-        </button>
-      </div>
-      {error && <p className="font-body text-xs text-red-500 mt-1.5">{error}</p>}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════
 // ORDER SUMMARY CARD
+// Coupon entry has moved to the Payment step of checkout.
+// This widget shows the coupon effect (discount line) if one is applied,
+// but does not provide an input to enter new coupon codes.
 // ══════════════════════════════════════════════════════════════════════
-function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, onRemove, onCheckout, loading, freeShippingThreshold }) {
+function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout, loading, freeShippingThreshold }) {
   return (
     <div className="card p-5 sticky top-24">
       <h2 className="font-display text-base font-bold text-brand-900 mb-4">Order Summary</h2>
@@ -146,11 +86,6 @@ function OrderSummary({ subtotal, discount, shipping, total, coupon, onApply, on
       <div className="border-t border-amber-100 pt-3 flex justify-between items-center mb-5">
         <span className="font-body text-base font-bold text-brand-900">Total</span>
         <span className="font-num text-lg font-extrabold text-brand-900">{rupee(total)}</span>
-      </div>
-
-      <div className="mb-5">
-        <p className="field-label mb-2">Coupon Code</p>
-        <CouponBox coupon={coupon} onApply={onApply} onRemove={onRemove} />
       </div>
 
       <button onClick={onCheckout} disabled={loading} className="btn-lg btn-primary w-full">
@@ -266,7 +201,6 @@ export default function Cart() {
   const {
     items,
     coupon,
-    removeCoupon,
     subtotal,
     discount,
     shipping,
@@ -275,7 +209,6 @@ export default function Cart() {
     updateQtyLocal,
     removeItemLocal,
     addItemLocal,
-    setCoupon,
     setDeliveryConfig,
     freeShippingThreshold,
   } = useCartStore();
@@ -357,7 +290,7 @@ export default function Cart() {
       try {
         const res = await API.put("/cart/update-item", { itemId: item.itemId, quantity: target });
         setItems(mapServerItems(res.data.cart?.items));
-      } catch (err) {
+      } catch {
         // Server rejected (e.g. stock exceeded) — revert to real server state
         try {
           const res = await API.get("/cart/get-cart");
@@ -369,12 +302,6 @@ export default function Cart() {
     }, 400);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, updateQtyLocal, setItems, handleRemoveItem]);
-
-  // ── coupon ─────────────────────────────────────────────────────────
-  const handleValidateCoupon = async (code) => {
-    const res = await API.post("/coupons/validate", { code, subtotal: subtotal() });
-    setCoupon(res.data.coupon);
-  };
 
   // ── checkout ───────────────────────────────────────────────────────
   const handleCheckout = () => {
@@ -420,7 +347,7 @@ export default function Cart() {
           <div className="lg:hidden">
             <OrderSummary
               subtotal={sub} discount={disc} shipping={ship} total={tot}
-              coupon={coupon} onApply={handleValidateCoupon} onRemove={removeCoupon}
+              coupon={coupon}
               onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
             />
           </div>
@@ -430,7 +357,7 @@ export default function Cart() {
         <div className="hidden lg:block w-80 shrink-0">
           <OrderSummary
             subtotal={sub} discount={disc} shipping={ship} total={tot}
-            coupon={coupon} onApply={handleValidateCoupon} onRemove={removeCoupon}
+            coupon={coupon}
             onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
           />
         </div>

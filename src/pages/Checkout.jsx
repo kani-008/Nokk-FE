@@ -16,6 +16,22 @@ import ReviewStep         from "../components/checkout/Review";
 import OrderSummaryStep   from "../components/checkout/OrderSummary";
 import AddressPickerSheet from "../components/checkout/AddressPickerSheet";
 
+const mapServerItems = (raw = []) =>
+  raw.map((i) => ({
+    itemId:       i.itemId,
+    variantId:    i.variantId,
+    productId:    i.productId,
+    productName:  i.nameEn ?? i.name,
+    nameTa:       i.nameTa,
+    image:        i.primaryImage,
+    price:        i.price,
+    comparePrice: i.comparePrice,
+    weight:       i.weightLabel,
+    quantity:     i.quantity,
+    slug:         i.slug,
+    inStock:      i.inStock,
+  }));
+
 // ── Address validation ─────────────────────────────────────────────────
 function validateAddress(addr) {
   const e = {};
@@ -151,6 +167,29 @@ export default function Checkout() {
 
   const handleSavedEdited = (updated) => {
     setSelectedSaved(updated);
+  };
+
+  const handleUpdateQty = async (variantId, newQty) => {
+    const targetQty = Math.min(3, Math.max(1, newQty));
+    if (buyNowItem && buyNowItem.variantId === variantId) {
+      useBuyNowStore.getState().setItem({ ...buyNowItem, quantity: targetQty });
+    } else {
+      useCartStore.getState().updateQtyLocal(variantId, targetQty);
+      if (token) {
+        const item = useCartStore.getState().items.find((i) => i.variantId === variantId);
+        if (item?.itemId) {
+          try {
+            const res = await API.put("/cart/update-item", { itemId: item.itemId, quantity: targetQty });
+            useCartStore.getState().setItems(mapServerItems(res.data.cart?.items));
+          } catch {
+            try {
+              const res = await API.get("/cart/get-cart");
+              useCartStore.getState().setItems(mapServerItems(res.data.cart?.items));
+            } catch { /* silent */ }
+          }
+        }
+      }
+    }
   };
 
   const checkoutMutation = useCheckout();
@@ -341,20 +380,17 @@ export default function Checkout() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-      {/* back to cart */}
+      {/* back link — exits checkout flow */}
       <Link
         to="/cart"
-        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-5 transition-colors"
+        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
       >
-        <ArrowLeft size={15} /> Back to Cart
+        <ArrowLeft size={15} /> {step === "summary" ? "Back to Cart" : "Order Summary"}
       </Link>
 
-      <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
-        {step === "address"  ? "Delivery Address" :
-         step === "summary"  ? "Order Summary"    :
-         step === "payment"  ? "Payment"          :
-                               "Order Review"}
-      </h1>
+      {/* <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
+        Order Summary
+      </h1> */}
 
       {/* step bar */}
       <StepBar current={step} />
@@ -387,6 +423,7 @@ export default function Checkout() {
           onBack={() => setStep("address")}
           onContinue={() => setStep("payment")}
           onChangeAddress={() => setPickerOpen(true)}
+          onUpdateQty={handleUpdateQty}
         />
       )}
 

@@ -47,10 +47,9 @@ export default function ProductCard({ product }) {
   const cartItem = firstV ? items.find((i) => i.variantId === firstV.id) : null;
   const inCart = !!cartItem;
 
-  // Fires a quick side-to-side shake on the cart icon — every click replays
-  // it, whether this is the first "add" or a repeat click on an already
-  // in-cart item. Bumping a counter (used as a key below) guarantees the
-  // CSS animation restarts even on rapid repeat clicks.
+  // Fires a quick side-to-side shake on the cart icon — only for items
+  // already in cart. Bumping a counter (used as a key below) guarantees
+  // the CSS animation restarts even on rapid repeat clicks.
   const shake = () => setShakeKey((k) => k + 1);
 
   const handleCart = async (e) => {
@@ -102,7 +101,6 @@ export default function ProductCard({ product }) {
     } else {
       useCartStore.getState().addItemLocal(itemData);
     }
-    shake();
   };
 
   const handleWishlist = async (e) => {

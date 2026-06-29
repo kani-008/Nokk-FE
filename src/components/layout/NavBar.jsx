@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ShoppingCart,
   Heart,
@@ -21,23 +21,25 @@ import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 import API from "../../ApiCall/Api.jsx";
 
-const NAV_LINKS = [
-  { label: "Products", to: "/products" },
-  { label: "Offers", to: "/offers" },
-  { label: "Bestsellers", to: "/products?isBestseller=true" },
-  { label: "Today's Deals", to: "/offers" },
-];
 
 export default function NavBar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [, setSearchParams] = useSearchParams();
+
+  const isProductsPage = location.pathname === "/products";
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  // On /products the search bar is always open — no toggle needed
   const [searchOpen, setSearchOpen] = useState(false);
+  const navbarSearchDebounceRef = useRef(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false); // collapsible category list inside the drawer (currently unused — category section is commented out in MobileDrawer)
-  const [query, setQuery] = useState("");
+  // On /products, seed query from the current search URL param so the input stays in sync
+  const [query, setQuery] = useState(() =>
+    location.pathname === "/products" ? (new URLSearchParams(location.search).get("search") || "") : ""
+  );
   const [categories, setCategories] = useState([]);
 
   const profileRef = useRef(null);
@@ -107,11 +109,35 @@ export default function NavBar() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    navigate(`/products?search=${encodeURIComponent(query.trim())}`);
-    setQuery("");
-    setSearchOpen(false);
-    setMobileOpen(false);
+    if (isProductsPage) {
+      // Already on /products — update URL param in-place (live filter, no navigation)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (query.trim()) next.set("search", query.trim()); else next.delete("search");
+        next.delete("page");
+        return next;
+      }, { replace: true });
+    } else {
+      if (!query.trim()) return;
+      navigate(`/products?search=${encodeURIComponent(query.trim())}`);
+      setQuery("");
+      setSearchOpen(false);
+      setMobileOpen(false);
+    }
+  };
+
+  // Debounced live filter — only active on /products, drives URL params
+  const handleProductsQueryChange = (val) => {
+    setQuery(val);
+    clearTimeout(navbarSearchDebounceRef.current);
+    navbarSearchDebounceRef.current = setTimeout(() => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (val.trim()) next.set("search", val.trim()); else next.delete("search");
+        next.delete("page");
+        return next;
+      }, { replace: true });
+    }, 250);
   };
 
   const handleLogout = () => {
@@ -154,10 +180,11 @@ export default function NavBar() {
 
           <div className="flex items-center h-16 gap-3">
             {/* Logo — pinned to the true far-left edge */}
-            <Logo className={`shrink-0 mr-2 ${searchOpen ? "hidden md:block" : ""}`} inverse />
+            {/* Hide logo on mobile when search is open (either toggle-opened or always-open on /products) */}
+            <Logo className={`shrink-0 mr-2 ${(searchOpen || isProductsPage) ? "hidden md:block" : ""}`} inverse />
 
-            {/* Mobile inline search — expands to fill the space on mobile when searchOpen is true */}
-            {searchOpen && (
+            {/* Mobile inline search — always visible on /products, toggle-triggered elsewhere */}
+            {(isProductsPage || searchOpen) && (
               <form
                 onSubmit={handleSearch}
                 className="flex md:hidden flex-1 items-center gap-2 min-w-0"
@@ -172,46 +199,47 @@ export default function NavBar() {
                     ref={mobileSearchInputRef}
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search dry fish, pickles…"
+                    onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
+                    placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles…"}
                     className="w-full rounded-full py-2 pl-10 pr-4 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
-                    autoFocus
+                    autoFocus={!isProductsPage}
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(false)}
-                  className="p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors shrink-0"
-                  aria-label="Close search"
-                >
-                  <X size={20} />
-                </button>
+                {/* Only show close button on non-products pages (products search is permanently open) */}
+                {!isProductsPage && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(false)}
+                    className="p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors shrink-0"
+                    aria-label="Close search"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
               </form>
             )}
 
-            {/* Desktop search — grows to fill center space */}
-            {location.pathname !== "/products" && (
-              <form
-                onSubmit={handleSearch}
-                className="hidden md:flex flex-1 max-w-md mx-4"
-              >
-                <div className="relative w-full">
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search dry fish, pickles, nethili…"
-                    className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
-                  >
-                    <Search size={16} />
-                  </button>
-                </div>
-              </form>
-            )}
+            {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
+            <form
+              onSubmit={handleSearch}
+              className="hidden md:flex flex-1 max-w-md mx-4"
+            >
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
+                  placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles, nethili…"}
+                  className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </form>
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
@@ -284,9 +312,10 @@ export default function NavBar() {
             </nav>
 
             {/* Right icon group */}
-            <div className={`flex items-center gap-1.5 ml-auto ${searchOpen ? "hidden md:flex" : ""}`}>
-              {/* Mobile search toggle */}
-              {location.pathname !== "/products" && (
+            {/* On /products, icons always visible even though search is open (it's permanently open, not a toggle) */}
+            <div className={`flex items-center gap-1.5 ml-auto ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
+              {/* Mobile search toggle — hidden on /products since search is always-open there */}
+              {!isProductsPage && (
                 <button
                   className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
                   onClick={() => setSearchOpen((s) => !s)}

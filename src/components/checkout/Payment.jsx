@@ -6,6 +6,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { usePaymentSettingsPublic } from "../../hookqueries/usePaymentSettings";
 
+
 export const PAYMENT_METHODS = [
   {
     key:   "razorpay",
@@ -317,6 +318,8 @@ export default function Payment({
           ))}
         </div>
       </div>
+
+
 
       {/* nav buttons */}
       <div className="flex gap-3">
