@@ -19,6 +19,8 @@ import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
+import TabToggle from "../../components/admin/TabToggle.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
@@ -26,10 +28,8 @@ const PH = comboImg;
 const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", videoUrl: "", isActive: true };
 
 
-// responsive icon size: bigger on mobile, compact on desktop
+// responsive icon size: bigger on mobile, compact on desktop — used inside IconButton size="lg"
 const ICON_CLS = "w-5 h-5 sm:w-[15px] sm:h-[15px]";
-// responsive touch target for the action buttons
-const ACTION_BTN = "p-2.5 sm:p-1.5 rounded-lg transition-colors";
 
 // ── File upload + URL field ────────────────────────────────────────────
 // Kept outside BannerModal so React never remounts it mid-render.
@@ -142,7 +142,7 @@ function BannerModal({ banner, onClose, onSaved }) {
           <h3 className="font-display text-base font-bold text-gray-900">
             {banner ? "Edit Banner" : "Add Banner"}
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
@@ -303,29 +303,32 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
       {/* actions — stopPropagation so these don't trigger the card's edit */}
       <div className="px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 shrink-0">
-          <button
+          <IconButton
             onClick={(e) => { e.stopPropagation(); handleToggle(); }}
             disabled={toggling}
-            className={`${ACTION_BTN} text-gray-400 hover:text-amber-600 hover:bg-amber-50`}
+            variant="amber"
+            size="lg"
             title={banner.isActive ? "Deactivate" : "Activate"}
           >
             {toggling ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : banner.isActive ? <EyeOff className={ICON_CLS} /> : <Eye className={ICON_CLS} />}
-          </button>
-          <button
+          </IconButton>
+          <IconButton
             onClick={(e) => { e.stopPropagation(); onEdit(banner); }}
-            className={`${ACTION_BTN} text-gray-400 hover:text-brand-700 hover:bg-brand-50`}
+            variant="brand"
+            size="lg"
             title="Edit"
           >
             <Pencil className={ICON_CLS} />
-          </button>
-          <button
+          </IconButton>
+          <IconButton
             onClick={(e) => { e.stopPropagation(); handleDelete(); }}
             disabled={deleting}
-            className={`${ACTION_BTN} text-gray-400 hover:text-red-500 hover:bg-red-50`}
+            variant="danger"
+            size="lg"
             title="Delete"
           >
             {deleting ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : <Trash2 className={ICON_CLS} />}
-          </button>
+          </IconButton>
         </div>
       </div>
     </div>
@@ -372,7 +375,7 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
           <h3 className="font-display text-base font-bold text-gray-900">
             {overlay ? "Edit Text Overlay" : "Add Text Overlay"}
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
@@ -482,29 +485,32 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
 
       {/* actions — stopPropagation so these don't trigger the card's edit */}
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-1.5">
-        <button
+        <IconButton
           onClick={(e) => { e.stopPropagation(); handleToggle(); }}
           disabled={toggling}
-          className={`${ACTION_BTN} text-gray-400 hover:text-amber-600 hover:bg-amber-50`}
+          variant="amber"
+          size="lg"
           title={overlay.isActive ? "Deactivate" : "Activate"}
         >
           {toggling ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : overlay.isActive ? <EyeOff className={ICON_CLS} /> : <Eye className={ICON_CLS} />}
-        </button>
-        <button
+        </IconButton>
+        <IconButton
           onClick={(e) => { e.stopPropagation(); onEdit(overlay); }}
-          className={`${ACTION_BTN} text-gray-400 hover:text-brand-700 hover:bg-brand-50`}
+          variant="brand"
+          size="lg"
           title="Edit"
         >
           <Pencil className={ICON_CLS} />
-        </button>
-        <button
+        </IconButton>
+        <IconButton
           onClick={(e) => { e.stopPropagation(); handleDelete(); }}
           disabled={deleting}
-          className={`${ACTION_BTN} text-gray-400 hover:text-red-500 hover:bg-red-50`}
+          variant="danger"
+          size="lg"
           title="Delete"
         >
           {deleting ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : <Trash2 className={ICON_CLS} />}
-        </button>
+        </IconButton>
       </div>
     </div>
   );
@@ -554,29 +560,20 @@ export default function BannerManagement() {
       {/* Unified Header Row — Tabs on the left, Actions on the right on desktop; stacked on mobile */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 mb-6">
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
-          <button
-            onClick={() => setActiveTab("videos")}
-            className={`bm-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "videos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            Background Video
-          </button>
-          <button
-            onClick={() => setActiveTab("overlays")}
-            className={`bm-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-              activeTab === "overlays" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            Slide Text Overlay
-          </button>
-        </div>
+        <TabToggle
+          tabs={[
+            { key: "videos",   label: "Background Video" },
+            { key: "overlays", label: "Slide Text Overlay" },
+          ]}
+          active={activeTab}
+          onChange={setActiveTab}
+          tabClassName="bm-tabs-fluid"
+        />
 
         {/* Actions (tab-dependent) */}
         {activeTab === "videos" ? (
           <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
-            <AdminButton onClick={() => setModal("new")} className="bm-btn-fluid w-full sm:w-auto text-sm font-semibold h-[38px]">
+            <AdminButton onClick={() => setModal("new")} className="bm-btn-fluid w-full sm:w-auto">
               <Plus size={14} /> Add Video
             </AdminButton>
           </div>
@@ -597,7 +594,7 @@ export default function BannerManagement() {
             <AdminButton
               onClick={() => setOverlayModal("new")}
               disabled={!selectedBannerId}
-              className="bm-btn-fluid w-full sm:w-auto shrink-0 text-sm font-semibold h-[38px]"
+              className="bm-btn-fluid w-full sm:w-auto shrink-0"
             >
               <Plus size={14} /> Add Overlay
             </AdminButton>

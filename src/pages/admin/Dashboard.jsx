@@ -6,7 +6,7 @@ import {
   ArrowRight, RefreshCw,
 } from "lucide-react";
 import {
-  StatCard, AdminPage, DataTable, StatusBadge, AdminCard,
+  StatCard, AdminPage, DataTable, StatusBadge, AdminCard, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import {
   useDashboardSummary,
@@ -157,9 +157,9 @@ export default function Dashboard() {
   return (
     <AdminPage
       action={
-        <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
+        <AdminButton variant="ghost" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
-        </button>
+        </AdminButton>
       }
     >
       {/* KPI cards */}

@@ -9,6 +9,7 @@ import {
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH    = comboImg;
@@ -192,8 +193,8 @@ export default function ProductManagement() {
       key: "action", label: "Action", width: "80px",
       render: (r) => (
         <div className="flex gap-1">
-          <button onClick={() => setModal(r)} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></button>
-          <button onClick={() => setDeleteTarget(r)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" aria-label={`Delete ${r.nameEn}`}><Trash2 size={15} /></button>
+          <IconButton onClick={() => setModal(r)} variant="brand" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteTarget(r)} variant="danger" aria-label={`Delete ${r.nameEn}`}><Trash2 size={15} /></IconButton>
         </div>
       ),
     },
@@ -206,7 +207,7 @@ export default function ProductManagement() {
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-md px-4 py-3">
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
           <p className="flex-1">{pageError}</p>
-          <button onClick={() => setPageError("")} className="shrink-0 hover:text-red-900" aria-label="Dismiss"><X size={15} /></button>
+          <IconButton onClick={() => setPageError("")} variant="danger" className="shrink-0" aria-label="Dismiss"><X size={15} /></IconButton>
         </div>
       )}
 

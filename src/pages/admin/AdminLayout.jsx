@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
 import NotificationPanel from "./Notification.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
 
 // ── Nav items — single flat list, no section grouping/labels ───────────
 const NAV_ITEMS = [
@@ -108,13 +109,13 @@ function Sidebar({ collapsed, onClose }) {
           </div>
         )}
         {onClose && (
-          <button
+          <IconButton
             onClick={onClose}
-            className="md:hidden ml-auto p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-800 transition-colors"
+            className="md:hidden ml-auto"
             aria-label="Close menu"
           >
             <X size={18} />
-          </button>
+          </IconButton>
         )}
       </div>
 
@@ -268,22 +269,14 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
     <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
 
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
-      <button
-        onClick={onMobileOpen}
-        className="md:hidden p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
-        aria-label="Open menu"
-      >
+      <IconButton onClick={onMobileOpen} className="md:hidden shrink-0" aria-label="Open menu">
         <Menu size={20} />
-      </button>
+      </IconButton>
 
       {/* Desktop: collapse sidebar */}
-      <button
-        onClick={onToggle}
-        className="hidden md:inline-flex p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        aria-label="Collapse sidebar"
-      >
+      <IconButton onClick={onToggle} className="hidden md:inline-flex" aria-label="Collapse sidebar">
         <Menu size={19} />
-      </button>
+      </IconButton>
 
       {/* Title — always visible on desktop; hidden on mobile while the search is expanded */}
       <h1
@@ -312,13 +305,9 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
               className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400 topbar-search-fluid"
             />
           </div>
-          <button
-            onClick={closeMobileSearch}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
-            aria-label="Close search"
-          >
+          <IconButton onClick={closeMobileSearch} className="shrink-0" aria-label="Close search">
             <X size={18} />
-          </button>
+          </IconButton>
         </div>
       )}
 
@@ -342,13 +331,9 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 
       {/* Mobile search icon — hidden once expanded (input above takes its place) */}
       {!mobileSearchOpen && (
-        <button
-          onClick={openMobileSearch}
-          className="md:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-          aria-label="Open search"
-        >
+        <IconButton onClick={openMobileSearch} size="xl" className="md:hidden" aria-label="Open search">
           <Search size={18} />
-        </button>
+        </IconButton>
       )}
 
       {/* Notification bell + avatar — always visible on desktop; hidden on mobile while search is expanded */}

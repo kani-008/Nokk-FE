@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import IconButton from "../../components/admin/IconButton.jsx";
 import {
   Bell, RefreshCw, CheckCheck, X,
   ShoppingCart, ShoppingBag, AlertCircle, RotateCcw,
@@ -75,17 +76,11 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
         )}
       </div>
       <div className="flex items-center gap-1">
-        <button onClick={() => refetch()} title="Refresh" className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <RefreshCw size={13} />
-        </button>
+        <IconButton onClick={() => refetch()} title="Refresh"><RefreshCw size={13} /></IconButton>
         {unreadCount > 0 && (
-          <button onClick={markAllRead} title="Mark all read" className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <CheckCheck size={13} />
-          </button>
+          <IconButton onClick={markAllRead} title="Mark all read"><CheckCheck size={13} /></IconButton>
         )}
-        <button onClick={onClose} className="md:hidden p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-1" aria-label="Close">
-          <X size={15} />
-        </button>
+        <IconButton onClick={onClose} className="md:hidden ml-1" aria-label="Close"><X size={15} /></IconButton>
       </div>
     </div>
   );
