@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { logoutListeners } from "./AuthStore.jsx";
 
 export const useWishlistStore = create(
   persist(
@@ -44,3 +45,9 @@ export const useWishlistStore = create(
     }
   )
 );
+
+if (logoutListeners) {
+  logoutListeners.push(() => {
+    useWishlistStore.getState().clear();
+  });
+}

@@ -1,45 +1,51 @@
-import { useState, useEffect }   from "react";
-import { useNavigate, Link }     from "react-router-dom";
-import { ArrowLeft, Loader2 }    from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAddresses, useAddAddress } from "../hookqueries/useProfile";
 import { useDeliverySettings } from "../hookqueries/useHome";
-import { useCheckout, useCreateRazorpayOrder, useVerifyRazorpayPayment } from "../hookqueries/useOrders";
+import {
+  useCheckout,
+  useCreateRazorpayOrder,
+  useVerifyRazorpayPayment,
+} from "../hookqueries/useOrders";
 import { useRazorpayScript } from "../hookqueries/useRazorpayScript";
 import API from "../ApiCall/Api.jsx";
-import { useCartStore }          from "../components/store/CartStore";
-import { useAuthStore }          from "../components/store/AuthStore";
-import { useBuyNowStore }        from "../components/store/BuyNowStore";
-import StepBar            from "../components/checkout/StepBar";
-import AddressStep        from "../components/checkout/Address";
-import PaymentStep        from "../components/checkout/Payment";
-import OrderSummaryStep   from "../components/checkout/OrderSummary";
+import { useCartStore } from "../components/store/CartStore";
+import { useAuthStore } from "../components/store/AuthStore";
+import { useBuyNowStore } from "../components/store/BuyNowStore";
+import StepBar from "../components/checkout/StepBar";
+import AddressStep from "../components/checkout/Address";
+import PaymentStep from "../components/checkout/Payment";
+import OrderSummaryStep from "../components/checkout/OrderSummary";
 import AddressPickerSheet from "../components/checkout/AddressPickerSheet";
 
 const mapServerItems = (raw = []) =>
   raw.map((i) => ({
-    itemId:       i.itemId,
-    variantId:    i.variantId,
-    productId:    i.productId,
-    productName:  i.nameEn ?? i.name,
-    nameTa:       i.nameTa,
-    image:        i.primaryImage,
-    price:        i.price,
+    itemId: i.itemId,
+    variantId: i.variantId,
+    productId: i.productId,
+    productName: i.nameEn ?? i.name,
+    nameTa: i.nameTa,
+    image: i.primaryImage,
+    price: i.price,
     comparePrice: i.comparePrice,
-    weight:       i.weightLabel,
-    quantity:     i.quantity,
-    slug:         i.slug,
-    inStock:      i.inStock,
+    weight: i.weightLabel,
+    quantity: i.quantity,
+    slug: i.slug,
+    inStock: i.inStock,
   }));
 
 // ── Address validation ─────────────────────────────────────────────────
 function validateAddress(addr) {
   const e = {};
-  if (!addr.name?.trim())                              e.name         = "Required";
-  if (!/^[6-9]\d{9}$/.test(addr.phone?.trim()))       e.phone        = "Enter valid 10-digit number";
-  if (!addr.addressLine1?.trim())                      e.addressLine1 = "Required";
-  if (!addr.city?.trim())                              e.city         = "Required";
-  if (!addr.state?.trim())                             e.state        = "Required";
-  if (!/^\d{6}$/.test(addr.pincode?.trim()))           e.pincode      = "Enter valid 6-digit pincode";
+  if (!addr.name?.trim()) e.name = "Required";
+  if (!/^[6-9]\d{9}$/.test(addr.phone?.trim()))
+    e.phone = "Enter valid 10-digit number";
+  if (!addr.addressLine1?.trim()) e.addressLine1 = "Required";
+  if (!addr.city?.trim()) e.city = "Required";
+  if (!addr.state?.trim()) e.state = "Required";
+  if (!/^\d{6}$/.test(addr.pincode?.trim()))
+    e.pincode = "Enter valid 6-digit pincode";
   return e;
 }
 
@@ -47,10 +53,10 @@ function validateAddress(addr) {
 // CHECKOUT PAGE — state owner only, no JSX layout logic
 // ══════════════════════════════════════════════════════════════════════
 export default function Checkout() {
-  const navigate               = useNavigate();
-  const { token, user }        = useAuthStore();
+  const navigate = useNavigate();
+  const { token, user } = useAuthStore();
   const { items, coupon, subtotal, discount } = useCartStore();
-  const buyNowItem  = useBuyNowStore((s) => s.item);
+  const buyNowItem = useBuyNowStore((s) => s.item);
   const clearBuyNow = useBuyNowStore((s) => s.clearItem);
 
   const checkoutItems = buyNowItem ? [buyNowItem] : items;
@@ -58,17 +64,17 @@ export default function Checkout() {
   // delivery config from backend settings (falls back to DB values while loading)
   const { data: deliverySettings } = useDeliverySettings();
   const freeShippingThreshold = deliverySettings?.freeShippingThreshold ?? 500;
-  const flatDeliveryCharge    = deliverySettings?.flatDeliveryCharge    ?? 50;
+  const flatDeliveryCharge = deliverySettings?.flatDeliveryCharge ?? 50;
 
   // computed totals
-  const sub  = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
+  const sub = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
   const disc = buyNowItem ? 0 : discount();
   const ship = sub >= freeShippingThreshold ? 0 : flatDeliveryCharge;
-  const tot  = sub - disc + ship;
+  const tot = sub - disc + ship;
 
   // ── step ───────────────────────────────────────────────────────────
   // null = determining initial step (while addresses load)
-  const [step,            setStep]            = useState(null);
+  const [step, setStep] = useState(null);
   const [stepInitialized, setStepInitialized] = useState(false);
 
   // ── address picker sheet ───────────────────────────────────────────
@@ -78,17 +84,17 @@ export default function Checkout() {
   const { data: addressesList = [], isLoading: addrLoading } = useAddresses();
   const savedAddresses = addressesList;
 
-  const [selectedSaved,  setSelectedSaved]  = useState(null);
-  const [showNewForm,    setShowNewForm]     = useState(false);
-  const [newAddress,     setNewAddress]      = useState({
-    name:         user?.fullName || user?.name || "",
-    phone:        user?.phone   || "",
+  const [selectedSaved, setSelectedSaved] = useState(null);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    name: user?.fullName || user?.name || "",
+    phone: user?.phone || "",
     addressLine1: "",
     addressLine2: "",
-    taluk:        "",
-    city:         "",
-    state:        "",
-    pincode:      "",
+    taluk: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
   const [addrErrors, setAddrErrors] = useState({});
 
@@ -146,9 +152,15 @@ export default function Checkout() {
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
-    if (!showNewForm && selectedSaved) { setStep("summary"); return; }
+    if (!showNewForm && selectedSaved) {
+      setStep("summary");
+      return;
+    }
     const errs = validateAddress(newAddress);
-    if (Object.keys(errs).length) { setAddrErrors(errs); return; }
+    if (Object.keys(errs).length) {
+      setAddrErrors(errs);
+      return;
+    }
     setAddrErrors({});
     setStep("summary");
   };
@@ -174,16 +186,27 @@ export default function Checkout() {
     } else {
       useCartStore.getState().updateQtyLocal(variantId, targetQty);
       if (token) {
-        const item = useCartStore.getState().items.find((i) => i.variantId === variantId);
+        const item = useCartStore
+          .getState()
+          .items.find((i) => i.variantId === variantId);
         if (item?.itemId) {
           try {
-            const res = await API.put("/cart/update-item", { itemId: item.itemId, quantity: targetQty });
-            useCartStore.getState().setItems(mapServerItems(res.data.cart?.items));
+            const res = await API.put("/cart/update-item", {
+              itemId: item.itemId,
+              quantity: targetQty,
+            });
+            useCartStore
+              .getState()
+              .setItems(mapServerItems(res.data.cart?.items));
           } catch {
             try {
               const res = await API.get("/cart/get-cart");
-              useCartStore.getState().setItems(mapServerItems(res.data.cart?.items));
-            } catch { /* silent */ }
+              useCartStore
+                .getState()
+                .setItems(mapServerItems(res.data.cart?.items));
+            } catch {
+              /* silent */
+            }
           }
         }
       }
@@ -209,63 +232,80 @@ export default function Checkout() {
       if (token && showNewForm) {
         try {
           await addAddressMutation.mutateAsync({
-            label:        "Home",
-            fullName:     newAddress.name,
-            phone:        newAddress.phone,
+            label: "Home",
+            fullName: newAddress.name,
+            phone: newAddress.phone,
             addressLine1: newAddress.addressLine1,
             addressLine2: newAddress.addressLine2 || "",
-            taluk:        newAddress.taluk || "",
-            city:         newAddress.city,
-            state:        newAddress.state,
-            pincode:      newAddress.pincode,
-            isDefault:    false,
+            taluk: newAddress.taluk || "",
+            city: newAddress.city,
+            state: newAddress.state,
+            pincode: newAddress.pincode,
+            isDefault: false,
           });
         } catch (saveAddrErr) {
-          console.error("Failed to auto-save new address to profile:", saveAddrErr);
-          throw new Error(saveAddrErr.response?.data?.message || saveAddrErr.message || "Failed to save address to profile", { cause: saveAddrErr });
+          console.error(
+            "Failed to auto-save new address to profile:",
+            saveAddrErr,
+          );
+          throw new Error(
+            saveAddrErr.response?.data?.message ||
+              saveAddrErr.message ||
+              "Failed to save address to profile",
+            { cause: saveAddrErr },
+          );
         }
       }
       const payload = {
-        items: checkoutItems.map(i => ({
+        items: checkoutItems.map((i) => ({
           productId: i.productId,
           variantId: i.variantId,
           weight: i.weight,
           price: i.price,
           quantity: i.quantity,
           nameEn: i.productName,
-          nameTa: i.nameTa
+          nameTa: i.nameTa,
         })),
         address: {
-          fullName:     address.name,
-          phone:        address.phone,
+          fullName: address.name,
+          phone: address.phone,
           addressLine1: address.addressLine1,
           addressLine2: address.addressLine2 || "",
-          taluk:        address.taluk || "",
-          city:         address.city,
-          state:        address.state,
-          pincode:      address.pincode,
+          taluk: address.taluk || "",
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode,
         },
-        paymentMethod: (payMethod === "razorpay_upi" || payMethod === "razorpay") ? "razorpay" : payMethod,
+        paymentMethod:
+          payMethod === "razorpay_upi" || payMethod === "razorpay"
+            ? "razorpay"
+            : payMethod,
         couponApplied: coupon?.code || null,
         subtotal: sub,
         deliveryCharge: ship,
         discount: disc,
-        total: tot
+        total: tot,
       };
 
       if (payMethod === "razorpay" || payMethod === "razorpay_upi") {
-        console.log("[Razorpay Frontend] Initiating Razorpay order creation on backend. Payload:", {
-          itemsCount: payload.items?.length,
-          address: payload.address,
-          couponApplied: payload.couponApplied,
-        });
+        console.log(
+          "[Razorpay Frontend] Initiating Razorpay order creation on backend. Payload:",
+          {
+            itemsCount: payload.items?.length,
+            address: payload.address,
+            couponApplied: payload.couponApplied,
+          },
+        );
         const resCreate = await createRpOrderMutation.mutateAsync({
           items: payload.items,
           address: payload.address,
           couponApplied: payload.couponApplied,
         });
 
-        console.log("[Razorpay Frontend] Backend order creation successful. Razorpay Order Details:", resCreate);
+        console.log(
+          "[Razorpay Frontend] Backend order creation successful. Razorpay Order Details:",
+          resCreate,
+        );
 
         const options = {
           key: resCreate.keyId,
@@ -275,7 +315,10 @@ export default function Checkout() {
           description: "Order Checkout",
           order_id: resCreate.razorpayOrderId,
           handler: async function (response) {
-            console.log("[Razorpay Frontend] Payment succeeded inside Razorpay modal. Response received:", response);
+            console.log(
+              "[Razorpay Frontend] Payment succeeded inside Razorpay modal. Response received:",
+              response,
+            );
             setVerifyingPayment(true);
             try {
               const verifyPayload = {
@@ -286,10 +329,17 @@ export default function Checkout() {
                 address: payload.address,
                 couponApplied: payload.couponApplied,
               };
-              console.log("[Razorpay Frontend] Sending payment verification payload to backend:", verifyPayload);
-              const resVerify = await verifyRpPaymentMutation.mutateAsync(verifyPayload);
+              console.log(
+                "[Razorpay Frontend] Sending payment verification payload to backend:",
+                verifyPayload,
+              );
+              const resVerify =
+                await verifyRpPaymentMutation.mutateAsync(verifyPayload);
 
-              console.log("[Razorpay Frontend] Payment verified successfully by backend. Order details:", resVerify);
+              console.log(
+                "[Razorpay Frontend] Payment verified successfully by backend. Order details:",
+                resVerify,
+              );
 
               if (!buyNowItem) {
                 if (token) {
@@ -297,7 +347,10 @@ export default function Checkout() {
                     console.log("[Razorpay Frontend] Clearing server cart...");
                     await API.delete("/cart/clear-cart");
                   } catch (clearErr) {
-                    console.error("[Razorpay Frontend] Failed to clear server cart:", clearErr);
+                    console.error(
+                      "[Razorpay Frontend] Failed to clear server cart:",
+                      clearErr,
+                    );
                   }
                 }
                 useCartStore.getState().clearCartLocal();
@@ -306,11 +359,14 @@ export default function Checkout() {
 
               setPlacedOrderId(resVerify.order?.id);
             } catch (verifyErr) {
-              console.error("[Razorpay Frontend] Payment verification failed:", verifyErr);
+              console.error(
+                "[Razorpay Frontend] Payment verification failed:",
+                verifyErr,
+              );
               setOrderErr(
                 `Payment verified with signature mismatch or database processing error. If money was deducted, please contact support with Payment ID: ${response.razorpay_payment_id}. Error: ${
                   verifyErr.response?.data?.message || verifyErr.message
-                }`
+                }`,
               );
             } finally {
               setVerifyingPayment(false);
@@ -318,42 +374,59 @@ export default function Checkout() {
           },
           modal: {
             ondismiss: function () {
-              console.log("[Razorpay Frontend] Razorpay checkout modal was dismissed by the user.");
-              setPaymentMsg("Payment cancelled. You can select a payment method and try again.");
+              console.log(
+                "[Razorpay Frontend] Razorpay checkout modal was dismissed by the user.",
+              );
+              setPaymentMsg(
+                "Payment cancelled. You can select a payment method and try again.",
+              );
               setStep("payment");
-            }
+            },
           },
           prefill: {
-            name: payload.address.fullName,
-            contact: `+91${payload.address.phone.replace(/^\+?91/, "")}`,
+            name: user?.name || payload.address.fullName,
             email: user?.email || "",
+            contact: user?.phone
+              ? `+91${String(user.phone)
+                  .replace(/^\+?91/, "")
+                  .replace(/\D/g, "")}`
+              : `+91${String(payload.address.phone)
+                  .replace(/^\+?91/, "")
+                  .replace(/\D/g, "")}`,
           },
           readonly: {
-            contact: true,
             name: true,
-            ...(user?.email ? { email: true } : {}),
+            email: true,
+            contact: true,
           },
           theme: {
             color: "#78350f",
-          }
+          },
         };
 
-        if (payMethod === "razorpay_upi") {
+        if (payMethod === "razorpay") {
           options.config = {
             display: {
               blocks: {
-                upi: {
-                  name: "Pay using UPI",
-                  instruments: [{ method: "upi" }],
+                card: {
+                  name: "Pay using Card / Net Banking",
+                  instruments: [
+                    { method: "card" },
+                    { method: "netbanking" },
+                    { method: "wallet" },
+                  ],
                 },
               },
-              sequence: ["block.upi"],
+              sequence: ["block.card"],
               preferences: { show_default_blocks: false },
             },
           };
         }
 
-        console.log("[Razorpay Frontend] Initializing Razorpay widget with options:", options);
+        console.log(
+          "[Razorpay Frontend] Initializing Razorpay widget with options:",
+          options,
+        );
         const rzp = new window.Razorpay(options);
         rzp.open();
         return;
@@ -379,10 +452,13 @@ export default function Checkout() {
         navigate("/my-orders", { state: { newOrderId: res.order?.id } });
       }
     } catch (err) {
-      setOrderErr(err.response?.data?.message || err.message || "Failed to place order. Please try again.");
+      setOrderErr(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to place order. Please try again.",
+      );
     }
   };
-
 
   // ── Loading state while determining initial step ───────────────────
   if (!stepInitialized) {
@@ -396,7 +472,6 @@ export default function Checkout() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-
       {step === "payment" ? (
         <button
           onClick={() => setStep("summary")}
@@ -441,7 +516,9 @@ export default function Checkout() {
           tot={tot}
           coupon={coupon}
           onBack={() => setStep("address")}
-          onContinue={() => { if (selectedSaved) setStep("payment"); }}
+          onContinue={() => {
+            if (selectedSaved) setStep("payment");
+          }}
           onChangeAddress={() => setPickerOpen(true)}
           onUpdateQty={handleUpdateQty}
         />
@@ -451,7 +528,6 @@ export default function Checkout() {
         <PaymentStep
           selected={payMethod}
           onSelect={handleSelectPaymentMethod}
-          onBack={() => setStep("summary")}
           onPlaceOrder={handlePlaceOrder}
           amount={tot}
           infoMessage={paymentMsg}
@@ -477,7 +553,6 @@ export default function Checkout() {
           onSavedEdited={handleSavedEdited}
         />
       )}
-
     </div>
   );
 }

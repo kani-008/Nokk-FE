@@ -18,6 +18,8 @@ import { persist } from "zustand/middleware";
   Again called from the header / logout handler.
 */
 
+export const logoutListeners = [];
+
 export const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -34,8 +36,16 @@ export const useAuthStore = create(
       login: (user, accessToken, refreshToken) =>
         set({ user, token: accessToken, refreshToken, isAuthenticated: true }),
 
-      logout: () =>
-        set({ user: null, token: null, refreshToken: null, isAuthenticated: false }),
+      logout: () => {
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        logoutListeners.forEach((fn) => {
+          try {
+            fn();
+          } catch (e) {
+            console.error("Error in logout listener:", e);
+          }
+        });
+      },
 
       setAccessToken: (accessToken) =>
         set({ token: accessToken }),

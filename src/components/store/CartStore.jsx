@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import API from "../../ApiCall/Api.jsx";
-import { useAuthStore } from "./AuthStore.jsx";
+import { useAuthStore, logoutListeners } from "./AuthStore.jsx";
 
 /*
   Cart item shape (local & mapped from server):
@@ -301,3 +301,9 @@ export const useCartStore = create(
     }
   )
 );
+
+if (logoutListeners) {
+  logoutListeners.push(() => {
+    useCartStore.getState().clearCartLocal();
+  });
+}

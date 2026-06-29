@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
 import { useDeliverySettings } from "../hookqueries/useHome";
+import { useToast } from "../components/useToast";
 import API from "../ApiCall/Api";
 
 import comboImg from "../assets/products/combo.jpg";
@@ -111,7 +112,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
     : 0;
 
   return (
-    <div className={`card p-4 flex gap-3 sm:gap-4 transition-opacity ${syncing ? "opacity-60" : ""}`}>
+    <div className="card p-4 flex gap-3 sm:gap-4">
       <Link to={`/products/${item.slug || ""}`} className="shrink-0">
         <img
           src={item.image || PH}
@@ -141,8 +142,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
           </div>
           <button
             onClick={() => onRemove(item.variantId)}
-            disabled={syncing}
-            className="shrink-0 p-1.5 text-amber-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="shrink-0 p-1.5 text-amber-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             aria-label="Remove item"
           >
             <Trash2 size={15} />
@@ -164,22 +164,20 @@ function CartItem({ item, onQty, onRemove, syncing }) {
           <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
             <button
               onClick={() => onQty(item.variantId, item.quantity - 1)}
-              disabled={syncing}
-              className="px-3 py-1.5 text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
               aria-label="Decrease quantity"
             >
-              <Minus size={14} />
+              <Minus size="clamp(12px,1.5vw,16px)" />
             </button>
-            <span className="px-3 font-num text-sm font-semibold text-brand-900 min-w-[2rem] text-center">
-              {syncing ? <Loader2 size={12} className="animate-spin inline" /> : item.quantity}
+            <span className="px-[clamp(0.5rem,2vw,0.75rem)] font-num text-[clamp(0.75rem,1.5vw,0.875rem)] font-semibold text-brand-900 min-w-[clamp(1.5rem,3vw,2rem)] text-center">
+              {item.quantity}
             </span>
             <button
               onClick={() => onQty(item.variantId, item.quantity + 1)}
-              disabled={syncing}
-              className="px-3 py-1.5 text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
               aria-label="Increase quantity"
             >
-              <Plus size={14} />
+              <Plus size="clamp(12px,1.5vw,16px)" />
             </button>
           </div>
         </div>
@@ -214,6 +212,7 @@ export default function Cart() {
   } = useCartStore();
 
   const { isAuthenticated } = useAuthStore();
+  const { setError, displayedError, displayedType, toastVisible } = useToast();
 
   // Sync delivery config from backend into the cart store
   const { data: deliverySettings } = useDeliverySettings();
@@ -290,8 +289,10 @@ export default function Cart() {
       try {
         const res = await API.put("/cart/update-item", { itemId: item.itemId, quantity: target });
         setItems(mapServerItems(res.data.cart?.items));
-      } catch {
-        // Server rejected (e.g. stock exceeded) — revert to real server state
+      } catch (err) {
+        // Server rejected (e.g. stock exceeded) — show message and revert
+        const msg = err?.response?.data?.message || "Could not update quantity";
+        setError(msg);
         try {
           const res = await API.get("/cart/get-cart");
           setItems(mapServerItems(res.data.cart?.items));
@@ -330,6 +331,15 @@ export default function Cart() {
           ({items.reduce((n, i) => n + i.quantity, 0)} items)
         </span>
       </h1>
+
+      {/* Toast notification */}
+      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${toastVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}>
+        {displayedError && (
+          <div className={`px-4 py-2.5 rounded-xl shadow-lg text-sm font-body font-medium ${displayedType === "success" ? "bg-green-600 text-white" : "bg-red-500 text-white"}`}>
+            {displayedError}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── Cart items list ───────────────────────────────────── */}

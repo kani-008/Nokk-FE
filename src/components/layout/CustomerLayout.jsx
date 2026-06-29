@@ -31,9 +31,10 @@ export default function CustomerLayout() {
       const syncAndLoad = async () => {
         // 1. Sync local cart items to server — all in parallel, ignore individual failures
         const localItems = useCartStore.getState().items;
-        if (localItems.length > 0) {
+        const guestItems = localItems.filter((item) => !item.itemId);
+        if (guestItems.length > 0) {
           await Promise.all(
-            localItems.map((item) =>
+            guestItems.map((item) =>
               API.post("/cart/add-item", { variantId: item.variantId, quantity: item.quantity }).catch(() => {})
             )
           );

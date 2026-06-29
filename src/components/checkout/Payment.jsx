@@ -1,34 +1,37 @@
 import {
-  CreditCard, Smartphone, Banknote, ArrowLeft, ChevronRight,
-  Loader2, CheckCircle2,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  ChevronRight,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const PAYMENT_METHODS = [
   {
-    key:   "razorpay_upi",
+    key: "razorpay_upi",
     label: "UPI Payment",
-    sub:   "Pay via GPay, PhonePe, Paytm, or any UPI app",
-    icon:  <Smartphone size={20} />,
+    sub: "Pay via GPay, PhonePe, Paytm, or any UPI app",
+    icon: <Smartphone size={20} />,
   },
   {
-    key:   "razorpay",
+    key: "razorpay",
     label: "Card Payment",
-    sub:   "Pay via Credit/Debit cards, Net Banking, or Wallets",
-    icon:  <CreditCard size={20} />,
+    sub: "Pay via Credit/Debit cards, Net Banking, or Wallets",
+    icon: <CreditCard size={20} />,
   },
   {
-    key:   "cod",
+    key: "cod",
     label: "Cash on Delivery",
-    sub:   "Pay when you receive",
-    icon:  <Banknote size={20} />,
+    sub: "Pay when you receive",
+    icon: <Banknote size={20} />,
   },
 ];
 
 export default function Payment({
   selected,
   onSelect,
-  onBack,
   onPlaceOrder,
   amount,
   infoMessage = "",
@@ -50,12 +53,15 @@ export default function Payment({
             Order Placed Successfully!
           </h2>
           <p className="font-body text-sm text-amber-600 max-w-md">
-            Thank you for your purchase. Your order has been registered and is being processed.
+            Thank you for your purchase. Your order has been registered and is
+            being processed.
           </p>
         </div>
-        
+
         <button
-          onClick={() => navigate("/my-orders", { state: { newOrderId: placedOrderId } })}
+          onClick={() =>
+            navigate("/my-orders", { state: { newOrderId: placedOrderId } })
+          }
           className="btn-lg btn-primary w-full max-w-sm mt-2"
         >
           View My Orders
@@ -69,7 +75,9 @@ export default function Payment({
       {/* header */}
       <div className="flex items-center gap-2 mb-5">
         <CreditCard size={18} className="text-brand-700" />
-        <h2 className="font-display text-lg font-bold text-brand-900">Payment Method</h2>
+        <h2 className="font-display text-lg font-bold text-brand-900">
+          Payment Method
+        </h2>
       </div>
 
       {infoMessage && (
@@ -91,23 +99,31 @@ export default function Payment({
               }`}
             >
               {/* radio dot */}
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                selected === m.key
-                  ? "border-brand-700 bg-brand-700"
-                  : "border-amber-300"
-              }`}>
+              <div
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  selected === m.key
+                    ? "border-brand-700 bg-brand-700"
+                    : "border-amber-300"
+                }`}
+              >
                 {selected === m.key && (
                   <div className="w-2 h-2 rounded-full bg-white" />
                 )}
               </div>
 
               {/* icon */}
-              <span className={selected === m.key ? "text-brand-700" : "text-amber-400"}>
+              <span
+                className={
+                  selected === m.key ? "text-brand-700" : "text-amber-400"
+                }
+              >
                 {m.icon}
               </span>
 
               <div className="flex-1">
-                <p className="font-body text-sm font-semibold text-brand-900">{m.label}</p>
+                <p className="font-body text-sm font-semibold text-brand-900">
+                  {m.label}
+                </p>
                 <p className="font-body text-xs text-amber-500">{m.sub}</p>
               </div>
 

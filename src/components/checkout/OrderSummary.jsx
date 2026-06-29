@@ -33,27 +33,25 @@ function SummaryItem({ item, onUpdateQty }) {
           <span className="font-body text-xs text-amber-500">{item.weight}</span>
           
           {onUpdateQty && (
-            <div className="flex items-center border border-amber-200 rounded-lg overflow-hidden bg-white shrink-0">
+            <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden bg-white shrink-0">
               <button
                 type="button"
                 onClick={() => onUpdateQty(item.variantId, item.quantity - 1)}
-                disabled={item.quantity <= 1}
-                className="px-2 py-0.5 text-brand-700 hover:bg-amber-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
                 aria-label="Decrease quantity"
               >
-                <Minus size={11} />
+                <Minus size="clamp(12px,1.5vw,16px)" />
               </button>
-              <span className="px-1.5 font-num text-xs font-semibold text-brand-900 min-w-[1.25rem] text-center">
+              <span className="px-[clamp(0.5rem,2vw,0.75rem)] font-num text-[clamp(0.75rem,1.5vw,0.875rem)] font-semibold text-brand-900 min-w-[clamp(1.5rem,3vw,2rem)] text-center">
                 {item.quantity}
               </span>
               <button
                 type="button"
                 onClick={() => onUpdateQty(item.variantId, item.quantity + 1)}
-                disabled={item.quantity >= 3}
-                className="px-2 py-0.5 text-brand-700 hover:bg-amber-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
                 aria-label="Increase quantity"
               >
-                <Plus size={11} />
+                <Plus size="clamp(12px,1.5vw,16px)" />
               </button>
             </div>
           )}
