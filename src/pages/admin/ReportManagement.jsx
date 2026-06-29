@@ -3,7 +3,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import { useReportsData } from "../../hooks/queries/useReports";
+import { useReportsData } from "../../hookqueries/useReports";
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";

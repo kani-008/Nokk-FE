@@ -13,7 +13,7 @@ import {
   usePaymentSettingsAdmin,
   useUpdatePaymentSettings,
   useUploadQrCode
-} from "../../hooks/queries/usePaymentSettings";
+} from "../../hookqueries/usePaymentSettings";
 import API from "../../ApiCall/Api.jsx";
 
 const DEFAULTS = {

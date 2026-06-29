@@ -4,7 +4,7 @@ import {
   QrCode, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { usePaymentSettingsPublic } from "../../hooks/queries/usePaymentSettings";
+import { usePaymentSettingsPublic } from "../../hookqueries/usePaymentSettings";
 
 export const PAYMENT_METHODS = [
   {

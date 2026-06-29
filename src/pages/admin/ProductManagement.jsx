@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import useViewportPageSize from "../../hooks/useViewportPageSize";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
+import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";

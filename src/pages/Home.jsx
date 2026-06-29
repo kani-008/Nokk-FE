@@ -12,7 +12,7 @@ import {
   useHomeCategories,
   useHomeBestsellers,
   useHomeNewArrivals,
-} from "../hooks/queries/useHome";
+} from "../hookqueries/useHome";
 
 // ══════════════════════════════════════════════════════════════════════
 // HOME PAGE — fetch + compose

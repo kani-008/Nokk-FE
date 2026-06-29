@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import useViewportPageSize from "../../hooks/useViewportPageSize";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
@@ -10,7 +10,7 @@ import {
   useAdminReplacements,
   useUpdateOrderStatus,
   useUpdateReplacementStatus
-} from "../../hooks/queries/useOrders";
+} from "../../hookqueries/useOrders";
 
 
 import comboImg from "../../assets/products/combo.jpg";

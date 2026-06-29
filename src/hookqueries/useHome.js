@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import API from "../../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 
 export function useDeliverySettings() {
   return useQuery({

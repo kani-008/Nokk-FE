@@ -14,7 +14,7 @@ import {
   useCreateBannerText,
   useUpdateBannerText,
   useDeleteBannerText
-} from "../../hooks/queries/useBanners";
+} from "../../hookqueries/useBanners";
 import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";

@@ -4,7 +4,7 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check,
 } from "lucide-react";
-import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hooks/queries/useOrders";
+import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hookqueries/useOrders";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 

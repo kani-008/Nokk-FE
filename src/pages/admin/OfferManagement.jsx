@@ -9,8 +9,8 @@ import {
   useUpdateCoupon,
   useDeleteOffer,
   useDeleteCoupon
-} from "../../hooks/queries/useOffers";
-import { useProductCategories, useAdminProductList } from "../../hooks/queries/useProducts";
+} from "../../hookqueries/useOffers";
+import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";

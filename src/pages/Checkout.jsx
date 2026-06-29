@@ -1,10 +1,10 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
 import { ArrowLeft, Loader2 }    from "lucide-react";
-import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
-import { useDeliverySettings } from "../hooks/queries/useHome";
-import { useCheckout, useCreateRazorpayOrder, useVerifyRazorpayPayment } from "../hooks/queries/useOrders";
-import { useRazorpayScript } from "../hooks/useRazorpayScript";
+import { useAddresses, useAddAddress } from "../hookqueries/useProfile";
+import { useDeliverySettings } from "../hookqueries/useHome";
+import { useCheckout, useCreateRazorpayOrder, useVerifyRazorpayPayment } from "../hookqueries/useOrders";
+import { useRazorpayScript } from "../hookqueries/useRazorpayScript";
 import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";

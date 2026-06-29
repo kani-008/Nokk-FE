@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import API from "../../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 
 // ── Helpers for Coupon Mapping ────────────────────────────────────────
 

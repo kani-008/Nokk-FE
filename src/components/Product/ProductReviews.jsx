@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
-import { useAddReview } from "../../hooks/queries/useProducts";
+import { useAddReview } from "../../hookqueries/useProducts";
 import { useAuthStore } from "../store/AuthStore.jsx";
 import { Link } from "react-router-dom";
 

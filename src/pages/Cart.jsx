@@ -4,7 +4,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, X, Loader2 } from "l
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
-import { useDeliverySettings } from "../hooks/queries/useHome";
+import { useDeliverySettings } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
 
 import comboImg from "../assets/products/combo.jpg";

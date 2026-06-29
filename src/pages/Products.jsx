@@ -4,7 +4,7 @@ import {
   SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
   Star, ArrowUpDown,
 } from "lucide-react";
-import { useProductCategories, useWeightLabels, useProductList } from "../hooks/queries/useProducts";
+import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
 
 
 import ProductCard from "../components/Product/ProductCard";

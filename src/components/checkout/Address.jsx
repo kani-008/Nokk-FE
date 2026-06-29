@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight, Pencil, X, Check, Loader2 } from "lucide-react";
-import { useUpdateAddress, lookupPincode } from "../../hooks/queries/useProfile";
+import { useUpdateAddress, lookupPincode } from "../../hookqueries/useProfile";
 import Dropdown from "../admin/Dropdown.jsx";
 import { INDIAN_STATES } from "./statesList.js";
 

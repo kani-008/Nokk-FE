@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import API from "../../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 
 const calculateDateRange = (period) => {
   const toDate = new Date();

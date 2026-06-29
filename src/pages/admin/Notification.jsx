@@ -9,7 +9,7 @@ import {
   useNotificationsList,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-} from "../../hooks/queries/useNotifications";
+} from "../../hookqueries/useNotifications";
 
 // ── Notification helpers ───────────────────────────────────────────────
 export const NOTIF_ICONS = {

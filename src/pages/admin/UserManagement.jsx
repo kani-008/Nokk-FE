@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
-import useViewportPageSize from "../../hooks/useViewportPageSize";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2 } from "lucide-react";
-import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
+import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hookqueries/useUsers";
 import {
   AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";

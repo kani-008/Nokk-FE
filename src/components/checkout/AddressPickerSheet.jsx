@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Plus, Home, MapPin, MoreVertical, Pencil, Trash2, Check, Loader2 } from "lucide-react";
-import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode } from "../../hooks/queries/useProfile";
+import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode } from "../../hookqueries/useProfile";
 import { Field, SavedAddressEditForm } from "./Address";
 import { INDIAN_STATES } from "./statesList.js";
 import { useAuthStore } from "../store/AuthStore";

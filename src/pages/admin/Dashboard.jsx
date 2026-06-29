@@ -12,7 +12,7 @@ import {
   useDashboardSummary,
   useDashboardRevenueChart,
   useRecentOrders,
-} from "../../hooks/queries/useAdminDashboard";
+} from "../../hookqueries/useAdminDashboard";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);

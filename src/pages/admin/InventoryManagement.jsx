@@ -1,8 +1,8 @@
 import { Fragment, useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import useViewportPageSize from "../../hooks/useViewportPageSize";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { PackageX, RefreshCw, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { useInventoryList, useUpdateStock, useBulkUpdateStock } from "../../hooks/queries/useInventory";
+import { useInventoryList, useUpdateStock, useBulkUpdateStock } from "../../hookqueries/useInventory";
 import { AdminPage, AdminButton, AdminCard } from "../../components/admin/AdminUI.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
