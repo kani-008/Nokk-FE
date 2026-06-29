@@ -43,6 +43,7 @@ export default function NavBar() {
   const profileRef = useRef(null);
   const searchRef = useRef(null);
   const catDropdownRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
   const cartCount = useCartStore((s) =>
@@ -88,6 +89,13 @@ export default function NavBar() {
     }, 0);
     return () => clearTimeout(timer);
   }, [location.pathname]);
+
+  // focus mobile search input when opened
+  useEffect(() => {
+    if (searchOpen) {
+      requestAnimationFrame(() => mobileSearchInputRef.current?.focus());
+    }
+  }, [searchOpen]);
 
   // lock page scroll while the mobile drawer is open
   useEffect(() => {
@@ -146,7 +154,40 @@ export default function NavBar() {
 
           <div className="flex items-center h-16 gap-3">
             {/* Logo — pinned to the true far-left edge */}
-            <Logo className="shrink-0 mr-2" inverse />
+            <Logo className={`shrink-0 mr-2 ${searchOpen ? "hidden md:block" : ""}`} inverse />
+
+            {/* Mobile inline search — expands to fill the space on mobile when searchOpen is true */}
+            {searchOpen && (
+              <form
+                onSubmit={handleSearch}
+                className="flex md:hidden flex-1 items-center gap-2 min-w-0"
+                ref={searchRef}
+              >
+                <div className="relative flex-1 min-w-0">
+                  <Search
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    ref={mobileSearchInputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search dry fish, pickles…"
+                    className="w-full rounded-full py-2 pl-10 pr-4 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors shrink-0"
+                  aria-label="Close search"
+                >
+                  <X size={20} />
+                </button>
+              </form>
+            )}
 
             {/* Desktop search — grows to fill center space */}
             {location.pathname !== "/products" && (
@@ -243,7 +284,7 @@ export default function NavBar() {
             </nav>
 
             {/* Right icon group */}
-            <div className="flex items-center gap-1.5 ml-auto">
+            <div className={`flex items-center gap-1.5 ml-auto ${searchOpen ? "hidden md:flex" : ""}`}>
               {/* Mobile search toggle */}
               {location.pathname !== "/products" && (
                 <button
@@ -397,32 +438,7 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Mobile search bar (slides down)*/}
-      {searchOpen && (
-        <div
-          className="md:hidden border-b border-sandal-100 bg-white px-4 py-3"
-          ref={searchRef}
-        >
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search dry fish, pickles…"
-                className="field-input rounded-full pl-4 pr-10 py-2 text-sm"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              >
-                <Search size={16} />
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Mobile search bar (handled inline in the main header above) */}
 
       {/* Mobile drawer — extracted to components/layout/MobileDrawer.jsx */}
       <MobileDrawer

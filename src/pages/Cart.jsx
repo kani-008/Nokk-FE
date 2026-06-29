@@ -323,8 +323,12 @@ export default function Cart() {
       const res = await API.delete("/cart/remove-item", { data: { itemId: snapshot.itemId } });
       setItems(mapServerItems(res.data.cart?.items));
     } catch {
-      // Revert — put item back
-      addItemLocal(snapshot);
+      try {
+        const res = await API.get("/cart/get-cart");
+        setItems(mapServerItems(res.data.cart?.items));
+      } catch {
+        addItemLocal(snapshot);
+      }
     }
   }, [isAuthenticated, removeItemLocal, addItemLocal, setItems]);
 

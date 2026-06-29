@@ -197,13 +197,16 @@ export function AdminButton({
 }) {
   const sizes = {
     sm: "text-xs px-3 py-1.5 gap-1",
-    md: "text-sm px-4 py-2 gap-1.5",
+    // md omits vertical padding — height is driven by --admin-control-h so it
+    // stays pixel-equal to Dropdown's trigger in any toolbar row.
+    md: "text-sm px-4 h-[var(--admin-control-h)] gap-1.5",
     lg: "text-sm px-5 py-2.5 gap-2",
   };
   const variants = {
     primary: "bg-brand-800 hover:bg-brand-900 text-white",
+    // border-[1.5px] matches Dropdown's border weight (was border/1px).
     outline:
-      "border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700",
+      "border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700",
     danger: "bg-red-600 hover:bg-red-700 text-white",
     ghost: "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
   };

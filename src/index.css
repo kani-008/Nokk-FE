@@ -57,6 +57,15 @@
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-tamil: 'Noto Sans Tamil', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-num: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* ── Shared toolbar-row height ─────────────────────────────────────────
+     Single source of truth for the height that AdminButton (md size) and
+     Dropdown trigger must share when they sit in the same toolbar row.
+     Value = text-sm line-height (1.25rem) + py-2.5×2 (1.25rem) + border-[1.5px]×2 (0.1875rem)
+             = 2.6875rem = 43px at 16px root font size.
+     Consuming: AdminButton md → h-[var(--admin-control-h)]
+                Dropdown trigger → h-[var(--admin-control-h)]              */
+  --admin-control-h: 2.6875rem;
 }
 
 /* Custom scrollbar — hidden on mobile, elegant sandal theme on desktop */
