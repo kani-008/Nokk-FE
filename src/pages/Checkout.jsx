@@ -1,6 +1,6 @@
 import { useState, useEffect }   from "react";
 import { useNavigate, Link }     from "react-router-dom";
-import { ArrowLeft }             from "lucide-react";
+import { ArrowLeft, Loader2 }    from "lucide-react";
 import { useAddresses, useAddAddress } from "../hooks/queries/useProfile";
 import { useDeliverySettings } from "../hooks/queries/useHome";
 import { useCheckout, useCreateRazorpayOrder, useVerifyRazorpayPayment } from "../hooks/queries/useOrders";
@@ -9,11 +9,12 @@ import API from "../ApiCall/Api.jsx";
 import { useCartStore }          from "../components/store/CartStore";
 import { useAuthStore }          from "../components/store/AuthStore";
 import { useBuyNowStore }        from "../components/store/BuyNowStore";
-import StepBar      from "../components/checkout/StepBar";
-import AddressStep  from "../components/checkout/Address";
-import PaymentStep  from "../components/checkout/Payment";
-import ReviewStep   from "../components/checkout/Review";
-import OrderSummary from "../components/checkout/OrderSummary";
+import StepBar            from "../components/checkout/StepBar";
+import AddressStep        from "../components/checkout/Address";
+import PaymentStep        from "../components/checkout/Payment";
+import ReviewStep         from "../components/checkout/Review";
+import OrderSummaryStep   from "../components/checkout/OrderSummary";
+import AddressPickerSheet from "../components/checkout/AddressPickerSheet";
 
 // ── Address validation ─────────────────────────────────────────────────
 function validateAddress(addr) {
@@ -51,11 +52,15 @@ export default function Checkout() {
   const tot  = sub - disc + ship;
 
   // ── step ───────────────────────────────────────────────────────────
-  const [step, setStep] = useState("address");
+  // null = determining initial step (while addresses load)
+  const [step,            setStep]            = useState(null);
+  const [stepInitialized, setStepInitialized] = useState(false);
+
+  // ── address picker sheet ───────────────────────────────────────────
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // ── address state ──────────────────────────────────────────────────
-  // ── address state ──────────────────────────────────────────────────
-  const { data: addressesList = [] } = useAddresses();
+  const { data: addressesList = [], isLoading: addrLoading } = useAddresses();
   const savedAddresses = addressesList;
 
   const [selectedSaved,  setSelectedSaved]  = useState(null);
@@ -91,17 +96,25 @@ export default function Checkout() {
     setPaymentMsg("");
   };
 
+  // ── Smart entry: once addresses finish loading, set initial step ───
   useEffect(() => {
+    if (addrLoading || stepInitialized) return;
     const t = setTimeout(() => {
       if (addressesList.length > 0) {
+        // Has saved addresses → pre-select the first (default/most-recent)
+        // and skip straight to the Order Summary step.
         setSelectedSaved(addressesList[0]);
         setShowNewForm(false);
+        setStep("summary");
       } else {
+        // No saved addresses → show address entry first
         setShowNewForm(true);
+        setStep("address");
       }
+      setStepInitialized(true);
     }, 0);
     return () => clearTimeout(t);
-  }, [addressesList]);
+  }, [addressesList, addrLoading, stepInitialized]);
 
   // ── redirect if cart emptied (skip when in buy-now mode) ──────────
   useEffect(() => {
@@ -119,11 +132,11 @@ export default function Checkout() {
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
-    if (!showNewForm && selectedSaved) { setStep("payment"); return; }
+    if (!showNewForm && selectedSaved) { setStep("summary"); return; }
     const errs = validateAddress(newAddress);
     if (Object.keys(errs).length) { setAddrErrors(errs); return; }
     setAddrErrors({});
-    setStep("payment");
+    setStep("summary");
   };
 
   const handleChangeNew = (key, value) => {
@@ -315,98 +328,124 @@ export default function Checkout() {
 
   const activeAddress = showNewForm ? newAddress : selectedSaved;
 
+  // ── Loading state while determining initial step ───────────────────
+  if (!stepInitialized) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 flex items-center justify-center gap-3 text-amber-500">
+        <Loader2 size={20} className="animate-spin" />
+        <span className="font-body text-sm">Loading checkout…</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
       {/* back to cart */}
       <Link
         to="/cart"
-        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-6 transition-colors"
+        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-5 transition-colors"
       >
         <ArrowLeft size={15} /> Back to Cart
       </Link>
 
-      <h1 className="font-display text-2xl font-bold text-brand-900 mb-6">Checkout</h1>
+      <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
+        {step === "address"  ? "Delivery Address" :
+         step === "summary"  ? "Order Summary"    :
+         step === "payment"  ? "Payment"          :
+                               "Order Review"}
+      </h1>
 
       {/* step bar */}
       <StepBar current={step} />
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      {/* ── Step panels ─────────────────────────────────────────── */}
+      {step === "address" && (
+        <AddressStep
+          savedAddresses={savedAddresses}
+          selectedSaved={selectedSaved}
+          onSelectSaved={handleSelectSaved}
+          onSavedEdited={handleSavedEdited}
+          showNewForm={showNewForm}
+          onToggleNewForm={() => setShowNewForm((s) => !s)}
+          newAddress={newAddress}
+          onChangeNew={handleChangeNew}
+          errors={addrErrors}
+          onNext={handleAddressNext}
+        />
+      )}
 
-        {/* ── Step panels ───────────────────────────────────────── */}
-        <div className="flex-1 min-w-0">
+      {step === "summary" && (
+        <OrderSummaryStep
+          address={selectedSaved}
+          items={checkoutItems}
+          sub={sub}
+          disc={disc}
+          ship={ship}
+          tot={tot}
+          coupon={coupon}
+          onBack={() => setStep("address")}
+          onContinue={() => setStep("payment")}
+          onChangeAddress={() => setPickerOpen(true)}
+        />
+      )}
 
-          {step === "address" && (
-            <AddressStep
-              savedAddresses={savedAddresses}
-              selectedSaved={selectedSaved}
-              onSelectSaved={handleSelectSaved}
-              onSavedEdited={handleSavedEdited}
-              showNewForm={showNewForm}
-              onToggleNewForm={() => setShowNewForm((s) => !s)}
-              newAddress={newAddress}
-              onChangeNew={handleChangeNew}
-              errors={addrErrors}
-              onNext={handleAddressNext}
-            />
-          )}
+      {step === "payment" && (
+        <PaymentStep
+          selected={payMethod}
+          onSelect={handleSelectPaymentMethod}
+          onBack={() => setStep("summary")}
+          onNext={() => setStep("review")}
+          amount={tot}
+          customerUpiId={customerUpiId}
+          onCustomerUpiIdChange={setCustomerUpiId}
+          infoMessage={paymentMsg}
+        />
+      )}
 
-          {step === "payment" && (
-            <PaymentStep
-              selected={payMethod}
-              onSelect={handleSelectPaymentMethod}
-              onBack={() => setStep("address")}
-              onNext={() => setStep("review")}
-              amount={tot}
-              customerUpiId={customerUpiId}
-              onCustomerUpiIdChange={setCustomerUpiId}
-              infoMessage={paymentMsg}
-            />
-          )}
-
-          {step === "review" && (
-            <>
-              <ReviewStep
-                address={activeAddress}
-                payMethod={payMethod}
-                items={checkoutItems}
-                total={tot}
-                placing={placing}
-                error={orderErr}
-                placedOrderId={placedOrderId}
-                token={token}
-                onBack={() => setStep("payment")}
-                onChangeAddress={() => setStep("address")}
-                onChangePayment={() => setStep("payment")}
-                onPlaceOrder={handlePlaceOrder}
-              />
-
-              {placedOrderId && (
-                <button
-                  onClick={() => navigate("/my-orders", { state: { newOrderId: placedOrderId } })}
-                  className="btn-lg btn-primary w-full mt-4"
-                >
-                  View My Orders
-                </button>
-              )}
-            </>
-          )}
-
-        </div>
-
-        {/* ── Sticky order summary sidebar ──────────────────────── */}
-        <div className="lg:w-72 shrink-0">
-          <OrderSummary
+      {step === "review" && (
+        <>
+          <ReviewStep
+            address={activeAddress}
+            payMethod={payMethod}
             items={checkoutItems}
-            sub={sub}
-            disc={disc}
-            ship={ship}
-            tot={tot}
-            coupon={coupon}
+            total={tot}
+            placing={placing}
+            error={orderErr}
+            placedOrderId={placedOrderId}
+            token={token}
+            onBack={() => setStep("payment")}
+            onChangeAddress={() => setStep("address")}
+            onChangePayment={() => setStep("payment")}
+            onPlaceOrder={handlePlaceOrder}
           />
-        </div>
 
-      </div>
+          {placedOrderId && (
+            <button
+              onClick={() => navigate("/my-orders", { state: { newOrderId: placedOrderId } })}
+              className="btn-lg btn-primary w-full mt-4"
+            >
+              View My Orders
+            </button>
+          )}
+        </>
+      )}
+
+      {/* ── Address picker sheet (opened by "Change" in Order Summary) ── */}
+      {pickerOpen && (
+        <AddressPickerSheet
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          selectedId={selectedSaved?.id}
+          onSelect={(addr) => {
+            setSelectedSaved(addr);
+            setShowNewForm(false);
+            setPickerOpen(false);
+          }}
+          onSavedEdited={handleSavedEdited}
+        />
+      )}
+
     </div>
   );
 }

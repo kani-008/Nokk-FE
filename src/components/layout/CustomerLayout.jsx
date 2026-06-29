@@ -16,7 +16,8 @@ function ScrollToTop() {
 
 export default function CustomerLayout() {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+  const isAuthPage     = location.pathname === "/login" || location.pathname === "/register";
+  const isCheckoutPage = location.pathname === "/checkout";
 
   const { token, isAuthenticated } = useAuthStore();
 
@@ -80,8 +81,8 @@ export default function CustomerLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
-      <NavBar />
-      <main className="flex-1 pt-16 sm:pt-[88px]">
+      {!isCheckoutPage && <NavBar />}
+      <main className={`flex-1 ${!isCheckoutPage ? "pt-16 sm:pt-[88px]" : ""}`}>
         <Outlet />
       </main>
       {/* Hide footer on mobile view alone for the login and register pages */}

@@ -1,15 +1,17 @@
 import { Check } from "lucide-react";
 
 const STEPS = [
-  { key: "address", label: "Address" },
-  { key: "payment", label: "Payment" },
-  { key: "review",  label: "Review"  },
+  { key: "address", label: "Address"       },
+  { key: "summary", label: "Order Summary" },
+  { key: "payment", label: "Payment"       },
 ];
 
 // Props:
-//   current {string} — "address" | "payment" | "review"
+//   current {string} — "address" | "summary" | "payment" | "review"
 export default function StepBar({ current }) {
-  const currentIdx = STEPS.findIndex((s) => s.key === current);
+  // "review" is an internal state that lives after payment; show Payment active
+  const mapped = current === "review" ? "payment" : current;
+  const currentIdx = STEPS.findIndex((s) => s.key === mapped);
 
   return (
     <div className="flex items-center gap-0 mb-8">
