@@ -108,7 +108,7 @@ export default function OrderSummaryStep({
       <div className="space-y-4 lg:space-y-5 pb-28 lg:pb-0">
 
         {/* ── Deliver to ──────────────────────────────────────── */}
-        {address && (
+        {address ? (
           <div className="card p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
@@ -141,6 +141,16 @@ export default function OrderSummaryStep({
                 Change
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="card p-4 sm:p-5 border-red-205 bg-red-50/20 text-center">
+            <p className="font-body text-sm text-red-600 font-semibold mb-2">No delivery address selected</p>
+            <button
+              onClick={onChangeAddress}
+              className="btn-sm btn-primary inline-flex items-center gap-1 cursor-pointer mx-auto"
+            >
+              <Plus size={14} /> Add or Select Address
+            </button>
           </div>
         )}
 
@@ -277,7 +287,8 @@ export default function OrderSummaryStep({
           </button>
           <button
             onClick={onContinue}
-            className="btn-lg btn-primary flex items-center gap-2"
+            disabled={!address}
+            className="btn-lg btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Continue to Payment <ChevronRight size={16} />
           </button>
@@ -299,7 +310,8 @@ export default function OrderSummaryStep({
         </div>
         <button
           onClick={onContinue}
-          className="btn-lg btn-primary flex-1 sm:flex-none flex items-center justify-center gap-2"
+          disabled={!address}
+          className="btn-lg btn-primary flex-1 sm:flex-none flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Continue <ChevronRight size={16} />
         </button>

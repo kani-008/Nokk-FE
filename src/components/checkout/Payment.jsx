@@ -9,16 +9,22 @@ import { usePaymentSettingsPublic } from "../../hookqueries/usePaymentSettings";
 
 export const PAYMENT_METHODS = [
   {
+    key:   "razorpay_upi",
+    label: "Google Pay / UPI Apps",
+    sub:   "GPay, PhonePe, Paytm, etc. (via Razorpay)",
+    icon:  <Smartphone size={20} />,
+  },
+  {
     key:   "razorpay",
-    label: "Pay Online (UPI / Card)",
-    sub:   "Instant verification via Razorpay",
+    label: "Cards / Netbanking / Wallets",
+    sub:   "Credit/Debit cards, Net Banking, or Wallets",
     icon:  <CreditCard size={20} />,
   },
   {
     key:   "upi",
     label: "UPI (Manual QR)",
     sub:   "Scan QR & submit Reference ID manually",
-    icon:  <Smartphone size={20} />,
+    icon:  <QrCode size={20} />,
   },
   {
     key:   "cod",

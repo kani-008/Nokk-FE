@@ -94,7 +94,7 @@ export default function Checkout() {
   const [addrErrors, setAddrErrors] = useState({});
 
   // ── payment state ──────────────────────────────────────────────────
-  const [payMethod, setPayMethod] = useState("razorpay");
+  const [payMethod, setPayMethod] = useState("razorpay_upi");
   const [customerUpiId, setCustomerUpiId] = useState("");
   const [paymentMsg, setPaymentMsg] = useState("");
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -200,7 +200,7 @@ export default function Checkout() {
     createRpOrderMutation.isPending ||
     verifyRpPaymentMutation.isPending ||
     verifyingPayment ||
-    (payMethod === "razorpay" && !rzpReady);
+    ((payMethod === "razorpay" || payMethod === "razorpay_upi") && !rzpReady);
 
   const handlePlaceOrder = async () => {
     setOrderErr("");
@@ -247,7 +247,7 @@ export default function Checkout() {
           state:        address.state,
           pincode:      address.pincode,
         },
-        paymentMethod: payMethod,
+        paymentMethod: (payMethod === "razorpay_upi" || payMethod === "razorpay") ? "razorpay" : payMethod,
         couponApplied: coupon?.code || null,
         subtotal: sub,
         deliveryCharge: ship,
@@ -255,7 +255,7 @@ export default function Checkout() {
         total: tot
       };
 
-      if (payMethod === "razorpay") {
+      if (payMethod === "razorpay" || payMethod === "razorpay_upi") {
         console.log("[Razorpay Frontend] Initiating Razorpay order creation on backend. Payload:", {
           itemsCount: payload.items?.length,
           address: payload.address,
@@ -335,6 +335,21 @@ export default function Checkout() {
           }
         };
 
+        if (payMethod === "razorpay_upi") {
+          options.config = {
+            display: {
+              blocks: {
+                upi: {
+                  name: "Pay using UPI",
+                  instruments: [{ method: "upi" }],
+                },
+              },
+              sequence: ["block.upi"],
+              preferences: { show_default_blocks: false },
+            },
+          };
+        }
+
         console.log("[Razorpay Frontend] Initializing Razorpay widget with options:", options);
         const rzp = new window.Razorpay(options);
         rzp.open();
@@ -381,16 +396,18 @@ export default function Checkout() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
       {/* back link — exits checkout flow */}
-      <Link
-        to="/cart"
-        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
-      >
-        <ArrowLeft size={15} /> {step === "summary" ? "Back to Cart" : "Order Summary"}
-      </Link>
-
-      {/* <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
-        Order Summary
-      </h1> */}
+      {step !== "summary" ? (
+        <Link
+          to="/cart"
+          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
+        >
+          <ArrowLeft size={15} /> Back to Cart
+        </Link>
+      ) : (
+        <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
+          Order Summary
+        </h1>
+      )}
 
       {/* step bar */}
       <StepBar current={step} />
@@ -421,7 +438,7 @@ export default function Checkout() {
           tot={tot}
           coupon={coupon}
           onBack={() => setStep("address")}
-          onContinue={() => setStep("payment")}
+          onContinue={() => { if (selectedSaved) setStep("payment"); }}
           onChangeAddress={() => setPickerOpen(true)}
           onUpdateQty={handleUpdateQty}
         />
@@ -476,8 +493,10 @@ export default function Checkout() {
           selectedId={selectedSaved?.id}
           onSelect={(addr) => {
             setSelectedSaved(addr);
-            setShowNewForm(false);
-            setPickerOpen(false);
+            if (addr) {
+              setShowNewForm(false);
+              setPickerOpen(false);
+            }
           }}
           onSavedEdited={handleSavedEdited}
         />

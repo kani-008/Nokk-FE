@@ -240,10 +240,18 @@ export default function AddressPickerSheet({ open, onClose, selectedId, onSelect
 
   const handleDelete = async (address) => {
     await deleteMutation.mutateAsync(address.id);
-    // If we deleted the currently selected address, select the first remaining one
+    const remaining = addresses.filter((a) => a.id !== address.id);
+    // If we deleted the currently selected address, select the first remaining one (or null if none)
     if (address.id === selectedId) {
-      const remaining = addresses.filter((a) => a.id !== address.id);
-      if (remaining.length > 0) onSelect(remaining[0]);
+      if (remaining.length > 0) {
+        onSelect(remaining[0]);
+      } else {
+        onSelect(null);
+      }
+    }
+    // If no saved addresses remain, show the inline Add New form immediately
+    if (remaining.length === 0) {
+      setShowAddForm(true);
     }
     setEditingId(null);
   };
