@@ -7,11 +7,9 @@ const STEPS = [
 ];
 
 // Props:
-//   current {string} — "address" | "summary" | "payment" | "review"
+//   current {string} — "address" | "summary" | "payment"
 export default function StepBar({ current }) {
-  // "review" is an internal state that lives after payment; show Payment active
-  const mapped = current === "review" ? "payment" : current;
-  const currentIdx = STEPS.findIndex((s) => s.key === mapped);
+  const currentIdx = STEPS.findIndex((s) => s.key === current);
 
   return (
     <div className="flex items-center gap-0 mb-8">

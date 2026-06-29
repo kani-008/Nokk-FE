@@ -12,7 +12,6 @@ import { useBuyNowStore }        from "../components/store/BuyNowStore";
 import StepBar            from "../components/checkout/StepBar";
 import AddressStep        from "../components/checkout/Address";
 import PaymentStep        from "../components/checkout/Payment";
-import ReviewStep         from "../components/checkout/Review";
 import OrderSummaryStep   from "../components/checkout/OrderSummary";
 import AddressPickerSheet from "../components/checkout/AddressPickerSheet";
 
@@ -95,7 +94,6 @@ export default function Checkout() {
 
   // ── payment state ──────────────────────────────────────────────────
   const [payMethod, setPayMethod] = useState("razorpay_upi");
-  const [customerUpiId, setCustomerUpiId] = useState("");
   const [paymentMsg, setPaymentMsg] = useState("");
   const [verifyingPayment, setVerifyingPayment] = useState(false);
 
@@ -327,8 +325,13 @@ export default function Checkout() {
           },
           prefill: {
             name: payload.address.fullName,
-            contact: payload.address.phone,
+            contact: `+91${payload.address.phone.replace(/^\+?91/, "")}`,
             email: user?.email || "",
+          },
+          readonly: {
+            contact: true,
+            name: true,
+            ...(user?.email ? { email: true } : {}),
           },
           theme: {
             color: "#78350f",
@@ -380,7 +383,6 @@ export default function Checkout() {
     }
   };
 
-  const activeAddress = showNewForm ? newAddress : selectedSaved;
 
   // ── Loading state while determining initial step ───────────────────
   if (!stepInitialized) {
@@ -395,12 +397,21 @@ export default function Checkout() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-      <Link
-        to="/cart"
-        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
-      >
-        <ArrowLeft size={15} /> {step === "summary" ? "Back to Cart" : "Order Summary"}
-      </Link>
+      {step === "payment" ? (
+        <button
+          onClick={() => setStep("summary")}
+          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={15} /> Back to Summary
+        </button>
+      ) : (
+        <Link
+          to="/cart"
+          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
+        >
+          <ArrowLeft size={15} /> Back to Cart
+        </Link>
+      )}
       {/* step bar */}
       <StepBar current={step} />
 
@@ -441,40 +452,13 @@ export default function Checkout() {
           selected={payMethod}
           onSelect={handleSelectPaymentMethod}
           onBack={() => setStep("summary")}
-          onNext={() => setStep("review")}
+          onPlaceOrder={handlePlaceOrder}
           amount={tot}
-          customerUpiId={customerUpiId}
-          onCustomerUpiIdChange={setCustomerUpiId}
           infoMessage={paymentMsg}
+          placing={placing}
+          error={orderErr}
+          placedOrderId={placedOrderId}
         />
-      )}
-
-      {step === "review" && (
-        <>
-          <ReviewStep
-            address={activeAddress}
-            payMethod={payMethod}
-            items={checkoutItems}
-            total={tot}
-            placing={placing}
-            error={orderErr}
-            placedOrderId={placedOrderId}
-            token={token}
-            onBack={() => setStep("payment")}
-            onChangeAddress={() => setStep("address")}
-            onChangePayment={() => setStep("payment")}
-            onPlaceOrder={handlePlaceOrder}
-          />
-
-          {placedOrderId && (
-            <button
-              onClick={() => navigate("/my-orders", { state: { newOrderId: placedOrderId } })}
-              className="btn-lg btn-primary w-full mt-4"
-            >
-              View My Orders
-            </button>
-          )}
-        </>
       )}
 
       {/* ── Address picker sheet (opened by "Change" in Order Summary) ── */}
