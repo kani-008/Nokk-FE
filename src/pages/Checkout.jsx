@@ -395,20 +395,12 @@ export default function Checkout() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-      {/* back link — exits checkout flow */}
-      {step !== "summary" ? (
-        <Link
-          to="/cart"
-          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
-        >
-          <ArrowLeft size={15} /> Back to Cart
-        </Link>
-      ) : (
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900 mb-5">
-          Order Summary
-        </h1>
-      )}
-
+      <Link
+        to="/cart"
+        className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
+      >
+        <ArrowLeft size={15} /> {step === "summary" ? "Back to Cart" : "Order Summary"}
+      </Link>
       {/* step bar */}
       <StepBar current={step} />
 

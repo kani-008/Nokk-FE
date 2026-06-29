@@ -50,6 +50,8 @@ export default function CouponBox() {
     );
   }
 
+  const hasCode = !!code.trim();
+
   return (
     <div>
       <div className="flex gap-2">
@@ -59,17 +61,25 @@ export default function CouponBox() {
           onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
           onKeyDown={(e) => e.key === "Enter" && handleApply()}
           placeholder="Enter coupon code"
-          className="field-input flex-1 uppercase tracking-wider"
+          className="field-input flex-1 tracking-wider py-2 px-3.5 text-xs"
         />
-        <button onClick={handleApply} disabled={loading || !code.trim()} className="btn-md btn-outline shrink-0">
-          {loading ? <Loader2 size={15} className="animate-spin" /> : "Apply"}
+        <button
+          onClick={handleApply}
+          disabled={loading || !hasCode}
+          className={`btn-sm font-semibold border-[1.5px] rounded-2xl shrink-0 transition-all duration-200 ${
+            hasCode
+              ? "bg-transparent text-gray-800 border-gray-800 hover:bg-gray-100 cursor-pointer"
+              : "bg-transparent text-gray-300 border-gray-200 cursor-not-allowed"
+          }`}
+        >
+          {loading ? <Loader2 size={13} className="animate-spin" /> : "Apply"}
         </button>
       </div>
       {error && <p className="font-body text-xs text-red-500 mt-1.5">{error}</p>}
 
       {couponOffers.length > 0 && (
         <div className="mt-2.5">
-          <p className="font-body text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-1">
+          <p className="font-body text-[10px] text-amber-500 font-bold tracking-wider mb-1">
             Available Coupon Codes
           </p>
           <div className="flex gap-1.5 flex-wrap">

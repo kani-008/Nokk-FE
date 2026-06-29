@@ -202,7 +202,7 @@ export default function OrderSummaryStep({
                     </button>
                     {!couponOpen && !coupon && (
                       <span className="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-amber-50 text-amber-650 border border-amber-200">
-                        <Tag size={9} /> Got code?
+                        <Tag size={9} /> Apply Coupon
                       </span>
                     )}
                   </span>
