@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hooks/useViewportPageSize";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
 import {
@@ -360,6 +361,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
 // USER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function UserManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -383,12 +385,12 @@ export default function UserManagement() {
   }, [search]);
 
   const queryParams = useMemo(() => {
-    const p = { page, limit: 15 };
+    const p = { page, limit };
     if (debouncedSearch) p.search = debouncedSearch;
     if (roleFilter)      p.role   = roleFilter;
     if (status)          p.status = status;
     return p;
-  }, [debouncedSearch, roleFilter, status, page]);
+  }, [debouncedSearch, roleFilter, status, page, limit]);
 
   const { data: userData, isLoading: loading, error: queryError } = useUserList(queryParams);
   const users      = userData?.users || [];

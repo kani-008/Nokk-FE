@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hooks/useViewportPageSize";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
 import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
 import {
@@ -72,6 +73,7 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [search,          setSearch]          = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [catFilter,       setCatFilter]       = useState("");
@@ -104,11 +106,11 @@ export default function ProductManagement() {
   const categories = catData;
 
   const queryParams = useMemo(() => {
-    const p = { page, limit: 15 };
+    const p = { page, limit };
     if (debouncedSearch) p.search = debouncedSearch;
     if (catFilter)       p.category = catFilter;
     return p;
-  }, [debouncedSearch, catFilter, page]);
+  }, [debouncedSearch, catFilter, page, limit]);
 
   const { data: productsData, isLoading: loading, error: queryError } = useAdminProductList(queryParams);
   const products = productsData?.products || [];

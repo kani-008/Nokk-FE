@@ -1,5 +1,6 @@
 import { Fragment, useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hooks/useViewportPageSize";
 import { PackageX, RefreshCw, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { useInventoryList, useUpdateStock, useBulkUpdateStock } from "../../hooks/queries/useInventory";
 import { AdminPage, AdminButton, AdminCard } from "../../components/admin/AdminUI.jsx";
@@ -86,6 +87,7 @@ function StatusBadge({ variants }) {
 // INVENTORY MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function InventoryManagement() {
+  const limit = useViewportPageSize(20, 30);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all | out | in
   const [page, setPage] = useState(1);
@@ -100,12 +102,12 @@ export default function InventoryManagement() {
   }, [search]);
 
   const queryParams = useMemo(() => {
-    const p = { page, limit: 20 };
+    const p = { page, limit };
     if (search) p.search = search;
     if (filter === "out") p.outOfStock = "true";
     if (filter === "in") p.inStock = "true";
     return p;
-  }, [search, filter, page]);
+  }, [search, filter, page, limit]);
 
   const bulkUpdateStockMutation = useBulkUpdateStock(queryParams);
   const bulkSaving = bulkUpdateStockMutation.isPending;

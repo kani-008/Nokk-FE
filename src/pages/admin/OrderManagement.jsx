@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hooks/useViewportPageSize";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
@@ -328,6 +329,7 @@ function ReplacementsPanel() {
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [tab, setTab] = useState("orders");
   const [search,    setSearch]    = useState("");
   const [status,    setStatus]    = useState("");
@@ -345,12 +347,12 @@ export default function OrderManagement() {
   }, [search, tab]);
 
   const queryParams = useMemo(() => {
-    const params = { page, limit: 15 };
+    const params = { page, limit };
     if (search)  params.search        = search;
     if (status)  params.status        = status;
     if (payment) params.paymentStatus = payment;
     return params;
-  }, [search, status, payment, page]);
+  }, [search, status, payment, page, limit]);
 
   const { data: ordersData, isLoading: loading } = useAdminOrders(queryParams);
   const orders = ordersData?.orders || [];
