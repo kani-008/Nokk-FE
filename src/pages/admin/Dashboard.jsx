@@ -41,6 +41,36 @@ function MiniBarChart({ data = [] }) {
   );
 }
 
+function YearlyRevenueList({ data = [] }) {
+  if (!data.length) return (
+    <div className="flex items-center justify-center h-24 text-sm text-gray-400 font-body">No chart data yet</div>
+  );
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="space-y-1.5">
+      {data.map((d, i) => (
+        <div key={i} className="flex items-center gap-2 group">
+          <span className="font-body text-[10px] text-gray-500 w-7 shrink-0 text-right">{d.label}</span>
+          <div className="flex-1 h-4 bg-gray-100 rounded-sm overflow-hidden">
+            <div
+              className="h-full bg-brand-700 group-hover:bg-brand-900 rounded-sm transition-all duration-300"
+              style={{ width: `${Math.max((d.value / max) * 100, d.value > 0 ? 2 : 0)}%` }}
+              title={`${d.label}: ${rupee(d.value)}`}
+            />
+          </div>
+          <span className="font-num text-[10px] text-gray-500 w-16 shrink-0 text-right">{rupee(d.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const PERIOD_OPTIONS = [
+  { value: "weekly",  label: "Week"  },
+  { value: "monthly", label: "Month" },
+  { value: "yearly",  label: "Year"  },
+];
+
 function StatusBreakdown({ breakdown = {} }) {
   const items = [
     { label: "Delivered",  key: "delivered",  color: "bg-green-500"  },
@@ -72,8 +102,10 @@ function StatusBreakdown({ breakdown = {} }) {
 }
 
 export default function Dashboard() {
+  const [chartPeriod, setChartPeriod] = useState("weekly");
+
   const { data: kpis,         isLoading: kpisLoading,    refetch: refetchKpis    } = useDashboardSummary();
-  const { data: chartData,    isLoading: chartsLoading,  refetch: refetchCharts  } = useDashboardRevenueChart();
+  const { data: chartData,    isLoading: chartsLoading,  refetch: refetchCharts  } = useDashboardRevenueChart(chartPeriod);
   const { data: recentOrders, isLoading: ordersLoading,  refetch: refetchOrders  } = useRecentOrders(8);
 
   const loading    = kpisLoading || chartsLoading || ordersLoading;
@@ -157,11 +189,33 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="font-body text-sm font-bold text-gray-900">Revenue Trend</p>
-              <p className="font-body text-xs text-gray-400 mt-0.5">Last 7 days</p>
+              <p className="font-body text-xs text-gray-400 mt-0.5">
+                {chartPeriod === "weekly" ? "This week" : chartPeriod === "monthly" ? "This month" : "This year"}
+              </p>
             </div>
-            <TrendingUp size={16} className="text-green-500" />
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                {PERIOD_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setChartPeriod(opt.value)}
+                    className={`px-2.5 py-1 font-body text-xs transition-colors ${
+                      chartPeriod === opt.value
+                        ? "bg-brand-800 text-white"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <TrendingUp size={16} className="text-green-500" />
+            </div>
           </div>
-          <MiniBarChart data={charts?.revenueByDay || []} />
+          {chartPeriod === "yearly"
+            ? <YearlyRevenueList data={charts?.revenueByDay || []} />
+            : <MiniBarChart data={charts?.revenueByDay || []} />
+          }
         </AdminCard>
 
         <AdminCard>

@@ -332,6 +332,7 @@ export default function Products() {
   const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
 
   const sortRef = useRef(null);
+  const searchDebounceRef = useRef(null);
 
   // close the mobile sort dropdown on outside click
   useEffect(() => {
@@ -378,6 +379,7 @@ export default function Products() {
   };
 
   const removeAllFilters = () => {
+    clearTimeout(searchDebounceRef.current);
     setSearchParams({});
     setSearchInput("");
     setPriceDraft({ min: "", max: "" });
@@ -444,22 +446,31 @@ export default function Products() {
       {/* ── Top toolbar: search + sort + filter button ─────────── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center justify-between bg-white p-3 rounded-2xl border border-sandal-100 shadow-sm">
 
-        {/* inline search */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); setParam("search", searchInput); }}
-          className="flex-1 min-w-[200px]"
-        >
+        {/* inline search — live debounced: input updates instantly, URL update debounced 250ms */}
+        <div className="flex-1 min-w-[200px]">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-sandal-500" />
             <input
               type="text"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearchInput(val);
+                clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = setTimeout(() => {
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (val) next.set("search", val); else next.delete("search");
+                    next.delete("page");
+                    return next;
+                  }, { replace: true });
+                }, 250);
+              }}
               placeholder="Search products…"
               className="field-input pl-9 pr-4 py-2 text-sm w-full bg-sandal-50/10 focus:bg-white"
             />
           </div>
-        </form>
+        </div>
 
         {/* controls group */}
         <div className="flex items-center gap-2.5">

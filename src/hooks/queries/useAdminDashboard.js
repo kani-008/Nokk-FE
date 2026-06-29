@@ -22,15 +22,35 @@ export function useDashboardSummary() {
   });
 }
 
-export function useDashboardRevenueChart(period = "daily") {
+export function useDashboardRevenueChart(period = "weekly") {
   return useQuery({
     queryKey: ["dashboard", "revenue-chart", period],
     queryFn: async () => {
       const res = await API.get("/dashboard/revenue-chart", { params: { period } });
       const raw = res.data?.chart ?? [];
-      return raw.slice(-7).map((r) => ({
-        label: new Date(r.period).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+
+      if (period === "weekly") {
+        return raw.map((r) => ({
+          label: new Date(r.period).toLocaleDateString("en-IN", { weekday: "short" }),
+          value: r.revenue,
+          orders: r.orders,
+          discount: r.discount,
+        }));
+      }
+      if (period === "monthly") {
+        return raw.map((r, i) => ({
+          label: `Wk ${i + 1}`,
+          value: r.revenue,
+          orders: r.orders,
+          discount: r.discount,
+        }));
+      }
+      // yearly
+      return raw.map((r) => ({
+        label: new Date(r.period).toLocaleDateString("en-IN", { month: "short" }),
         value: r.revenue,
+        orders: r.orders,
+        discount: r.discount,
       }));
     },
   });
