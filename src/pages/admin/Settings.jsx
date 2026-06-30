@@ -1,19 +1,13 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Save, Loader2, Check, Store, Truck, IndianRupee, Bell,
-  QrCode, Upload, Landmark, Palette, RotateCcw, ShoppingCart,
-  Camera, Share2, AtSign, MessageCircle, Clock, ShoppingBag,
-  Globe, Crosshair,
+  Palette, RotateCcw, ShoppingCart,
+  Camera, Share2, AtSign, MessageCircle, ShoppingBag,
+  Globe, Crosshair, ShieldAlert, Megaphone,
 } from "lucide-react";
 
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";
-import {
-  usePaymentSettingsAdmin,
-  useUpdatePaymentSettings,
-  useUploadQrCode
-} from "../../hookqueries/usePaymentSettings";
 import API from "../../ApiCall/Api.jsx";
 
 const DEFAULTS = {
@@ -23,7 +17,6 @@ const DEFAULTS = {
   storeAddress: "",
   freeShippingThreshold: 499,
   shippingCharge: 60,
-  gstPercentage: 0,
   codEnabled: true,
   upiEnabled: true,
   cardEnabled: true,
@@ -37,21 +30,12 @@ const DEFAULTS = {
   twitterUrl: "",
   whatsappNumber: "",
   websiteUrl: "",
-  storeOpenTime: "09:00",
-  storeCloseTime: "21:00",
-  storeDays: "Mon – Sat",
   minOrderValue: 0,
   maxCartItems: 20,
-};
-
-const PAYMENT_DEFAULTS = {
-  upiId: "",
-  payeeName: "NammaOorKaruvattuKadai",
-  accountHolderName: "",
-  accountNumber: "",
-  ifscCode: "",
-  bankName: "",
-  qrCodeUrl: "",
+  maintenanceMode: false,
+  registrationsEnabled: true,
+  announcementEnabled: false,
+  announcementText: "",
 };
 
 const settingsApi = {
@@ -400,30 +384,6 @@ export default function Settings() {
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState("");
-  const [payForm,     setPayForm]     = useState({ ...PAYMENT_DEFAULTS });
-  const [paySaved,    setPaySaved]    = useState(false);
-  const [payError,    setPayError]    = useState("");
-  const fileRef = useRef(null);
-
-  const { data: paySettings, isLoading: payLoading, error: payQueryError } = usePaymentSettingsAdmin();
-
-  useEffect(() => {
-    if (paySettings) {
-      setPayForm(paySettings);
-    }
-  }, [paySettings]);
-
-  useEffect(() => {
-    if (payQueryError) {
-      setPayError("Failed to load payment details.");
-    }
-  }, [payQueryError]);
-
-  const updatePaymentMutation = useUpdatePaymentSettings();
-  const paySaving = updatePaymentMutation.isPending;
-
-  const uploadQrMutation = useUploadQrCode();
-  const qrUploading = uploadQrMutation.isPending;
 
   useEffect(() => {
     settingsApi.get()
@@ -437,13 +397,8 @@ export default function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
-
-
   const set  = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setE = (e)    => set(e.target.name, e.target.type === "number" ? Number(e.target.value) : e.target.value);
-
-  const setPay  = (k, v) => setPayForm((f) => ({ ...f, [k]: v }));
-  const setPayE = (e)    => setPay(e.target.name, e.target.value);
 
   const handleSave = async () => {
     setSaving(true); setSaved(false); setError("");
@@ -453,28 +408,6 @@ export default function Settings() {
       setTimeout(() => setSaved(false), 3000);
     } catch (e) { setError(e.message || "Failed to save"); }
     finally { setSaving(false); }
-  };
-
-  const handleSavePayment = async () => {
-    setPaySaved(false); setPayError("");
-    try {
-      await updatePaymentMutation.mutateAsync(payForm);
-      setPaySaved(true);
-      setTimeout(() => setPaySaved(false), 3000);
-    } catch (e) { setPayError(e.message || "Failed to save"); }
-  };
-
-  const handleQrUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!["image/png", "image/jpeg"].includes(file.type)) { setPayError("PNG or JPG only"); return; }
-    if (file.size > 2 * 1024 * 1024) { setPayError("Max 2 MB"); return; }
-    setPayError("");
-    try {
-      const r = await uploadQrMutation.mutateAsync(file);
-      setPayForm((f) => ({ ...f, qrCodeUrl: r.qrCodeUrl || f.qrCodeUrl }));
-    } catch (e) { setPayError(e.message); }
-    finally { if (fileRef.current) fileRef.current.value = ""; }
   };
 
   if (loading) {
@@ -518,39 +451,23 @@ export default function Settings() {
           </div>
         </SectionCard>
 
-        {/* ── Store Hours ── */}
-        <SectionCard icon={Clock} title="Store Hours" sub="Shown to customers on your store">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Opens at"  name="storeOpenTime"  type="time" value={form.storeOpenTime}  onChange={setE} />
-              <Field label="Closes at" name="storeCloseTime" type="time" value={form.storeCloseTime} onChange={setE} />
-            </div>
-            <Field label="Working Days" name="storeDays" value={form.storeDays} onChange={setE} placeholder="Mon – Sat" />
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
-              <Clock size={13} className="text-amber-600 mt-0.5 shrink-0" />
-              <p className="font-body text-xs text-amber-700">
-                Hours are displayed on the storefront and help customers know when to expect responses.
-              </p>
-            </div>
-          </div>
-        </SectionCard>
-
         {/* ── Shipping & Tax ── */}
-        <SectionCard icon={Truck} title="Shipping & Tax" sub="Delivery fees and tax configuration">
+        <SectionCard icon={Truck} title="Shipping & Tax" sub="Delivery fees — enforced at checkout">
           <div className="space-y-4">
             <Field label="Free Shipping Above"   name="freeShippingThreshold" type="number" value={form.freeShippingThreshold} onChange={setE} unit="₹" placeholder="499" />
             <Field label="Standard Delivery Fee" name="shippingCharge"        type="number" value={form.shippingCharge}        onChange={setE} unit="₹" placeholder="60" />
-            <Field label="GST Percentage"        name="gstPercentage"         type="number" value={form.gstPercentage}         onChange={setE} unit="%" placeholder="0" />
           </div>
         </SectionCard>
 
         {/* ── Cart & Order Rules ── */}
-        <SectionCard icon={ShoppingBag} title="Cart & Order Rules" sub="Limits applied at checkout">
+        <SectionCard icon={ShoppingBag} title="Cart & Order Rules" sub="Limits enforced at checkout and cart add">
           <div className="space-y-4">
             <Field label="Minimum Order Value" name="minOrderValue" type="number" value={form.minOrderValue} onChange={setE} unit="₹" placeholder="0" />
             <Field label="Max Items per Cart"  name="maxCartItems"  type="number" value={form.maxCartItems}  onChange={setE} placeholder="20" />
             <div className="pt-1 border-t border-gray-100">
-              <p className="font-body text-xs text-gray-400">Set to 0 for no minimum order value. Max items limit prevents bulk abuse.</p>
+              <p className="font-body text-xs text-gray-400">
+                Set to 0 to disable the minimum order value. Max items is enforced server-side when adding to cart.
+              </p>
             </div>
           </div>
         </SectionCard>
@@ -564,57 +481,55 @@ export default function Settings() {
           </div>
         </SectionCard>
 
-        {/* ── UPI & Bank Details ── */}
-        <SectionCard icon={Landmark} title="Payment & UPI Receiving Details" sub="Your receiving account details">
-          {payLoading ? <div className="h-48 skeleton rounded-xl" /> : (
-            <div className="space-y-4">
-              <Field label="Your UPI ID"                name="upiId"              value={payForm.upiId}              onChange={setPayE} placeholder="yourstore@upi" />
-              <Field label="Payee Name (shown to customer)" name="payeeName"      value={payForm.payeeName}          onChange={setPayE} placeholder="NammaOorKaruvattuKadai" />
-
-              <div className="pt-2 border-t border-gray-100">
-                <p className="font-body text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 mt-1">
-                  Bank Details <span className="normal-case font-normal text-gray-400">(admin only)</span>
-                </p>
-                <div className="space-y-4">
-                  <Field label="Account Holder Name" name="accountHolderName" value={payForm.accountHolderName} onChange={setPayE} placeholder="Full name on account" />
-                  <Field label="Account Number"      name="accountNumber"     value={payForm.accountNumber}     onChange={setPayE} placeholder="XXXXXXXXXXXX" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="IFSC Code"  name="ifscCode"  value={payForm.ifscCode}  onChange={setPayE} placeholder="ABCD0123456" />
-                    <Field label="Bank Name"  name="bankName"  value={payForm.bankName}  onChange={setPayE} placeholder="SBI" />
-                  </div>
-                </div>
-              </div>
-
-              {/* QR upload */}
-              <div className="pt-2 border-t border-gray-100">
-                <label className="field-label flex items-center gap-1.5"><QrCode size={12} /> Payment QR Code</label>
-                <div className="flex items-center gap-4 mt-1.5">
-                  {payForm.qrCodeUrl ? (
-                    <img src={payForm.qrCodeUrl} alt="UPI QR" className="w-20 h-20 rounded-xl border border-gray-200 object-contain bg-white p-1" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
-                      <QrCode size={24} />
-                    </div>
-                  )}
-                  <div>
-                    <input ref={fileRef} type="file" accept="image/png,image/jpeg" onChange={handleQrUpload} className="hidden" id="qr-upload" />
-                    <label htmlFor="qr-upload" className="btn-md btn-outline cursor-pointer inline-flex">
-                      {qrUploading ? <><Loader2 size={14} className="animate-spin" /> Uploading…</> : <><Upload size={14} /> {payForm.qrCodeUrl ? "Replace QR" : "Upload QR"}</>}
-                    </label>
-                    <p className="font-body text-xs text-gray-400 mt-1.5">PNG or JPG, max 2 MB</p>
-                  </div>
-                </div>
-              </div>
-
-              {payError && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">{payError}</div>}
-
-              <AdminButton onClick={handleSavePayment} disabled={paySaving} className="w-full">
-                {paySaving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> :
-                 paySaved  ? <><Check size={14} /> Saved!</>                              :
-                             <><Save size={14} /> Save Payment Details</>}
-              </AdminButton>
+        {/* ── Store Controls ── */}
+        <SectionCard icon={ShieldAlert} title="Store Controls" sub="Live switches that immediately affect the storefront">
+          <div>
+            <ToggleRow
+              label="Maintenance Mode"
+              sub="Customer-facing site shows a maintenance page. Admin panel unaffected."
+              checked={form.maintenanceMode}
+              onChange={() => set("maintenanceMode", !form.maintenanceMode)}
+            />
+            <ToggleRow
+              label="Allow New Registrations"
+              sub="When disabled, the register page shows a pause message and the backend rejects sign-up API calls."
+              checked={form.registrationsEnabled}
+              onChange={() => set("registrationsEnabled", !form.registrationsEnabled)}
+            />
+          </div>
+          {form.maintenanceMode && (
+            <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
+              <ShieldAlert size={13} className="text-red-500 mt-0.5 shrink-0" />
+              <p className="font-body text-xs text-red-700 font-semibold">
+                Maintenance mode is ON — customers currently see a "We'll be back soon" page.
+              </p>
             </div>
           )}
+        </SectionCard>
+
+        {/* ── Announcement Banner ── */}
+        <SectionCard icon={Megaphone} title="Announcement Banner" sub="Shown in the top strip of the NavBar (desktop only)">
+          <div className="space-y-4">
+            <ToggleRow
+              label="Show Announcement"
+              sub="Replaces the default free-shipping strip with your custom text below."
+              checked={form.announcementEnabled}
+              onChange={() => set("announcementEnabled", !form.announcementEnabled)}
+            />
+            <Field
+              label="Announcement Text"
+              name="announcementText"
+              value={form.announcementText}
+              onChange={setE}
+              placeholder="e.g. 🎉 Monsoon Sale — 20% off all products this weekend!"
+              disabled={!form.announcementEnabled}
+            />
+            {form.announcementEnabled && form.announcementText && (
+              <div className="bg-gray-800 rounded-xl px-4 py-2 text-center">
+                <p className="font-body text-[11px] text-sandal-200/80 font-medium">{form.announcementText}</p>
+              </div>
+            )}
+          </div>
         </SectionCard>
 
         {/* ── Social & Contact Links ── */}
@@ -629,14 +544,14 @@ export default function Settings() {
         </SectionCard>
 
         {/* ── Notifications ── */}
-        <SectionCard icon={Bell} title="Order Notifications" sub="Customer notification triggers">
+        <SectionCard icon={Bell} title="Admin Event Notifications" sub="Controls which events create entries in the admin notification log">
           <div>
-            <ToggleRow label="Order Confirmed"  sub="Notify customer when order is placed"    checked={form.notifyOrderConfirmed} onChange={() => set("notifyOrderConfirmed", !form.notifyOrderConfirmed)} />
-            <ToggleRow label="Order Shipped"    sub="Notify customer when order is shipped"   checked={form.notifyOrderShipped}   onChange={() => set("notifyOrderShipped",   !form.notifyOrderShipped)}   />
-            <ToggleRow label="Return Request"   sub="Alert admin when customer requests return" checked={form.notifyReturnRequest} onChange={() => set("notifyReturnRequest",  !form.notifyReturnRequest)}  />
+            <ToggleRow label="New Order Placed"   sub="Create a notification when a customer places an order"         checked={form.notifyOrderConfirmed} onChange={() => set("notifyOrderConfirmed", !form.notifyOrderConfirmed)} />
+            <ToggleRow label="Order Shipped"      sub="Create a notification when an order status is set to Shipped"  checked={form.notifyOrderShipped}   onChange={() => set("notifyOrderShipped",   !form.notifyOrderShipped)}   />
+            <ToggleRow label="Replacement Request" sub="Create a notification when a customer requests a replacement" checked={form.notifyReturnRequest}  onChange={() => set("notifyReturnRequest",  !form.notifyReturnRequest)}  />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100">
-            <p className="font-body text-xs text-gray-400">SMS and WhatsApp notifications coming soon.</p>
+            <p className="font-body text-xs text-gray-400">These toggle entries in the admin bell — not customer-facing SMS/email (coming soon).</p>
           </div>
         </SectionCard>
 

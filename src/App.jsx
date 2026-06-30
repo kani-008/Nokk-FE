@@ -5,6 +5,42 @@ import { Loader2 } from "lucide-react";
 /* Layouts & Guards */
 import CustomerLayout from "./components/layout/CustomerLayout";
 import ProtectedRoute from "./components/route/ProtectedRoute";
+import { usePublicSettings } from "./hookqueries/useSettings";
+
+/* Shown to customers when admin enables Maintenance Mode */
+function MaintenancePage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-sandal-50 px-6 text-center">
+      <span className="text-5xl mb-6">🐟</span>
+      <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-3">
+        We'll be back soon!
+      </h1>
+      <p className="font-body text-sm text-amber-700 max-w-sm">
+        Namma Oor Karuvattu Kadai is undergoing scheduled maintenance.
+        Thank you for your patience — we'll be up shortly.
+      </p>
+    </div>
+  );
+}
+
+/* Wraps all customer-facing routes; redirects to maintenance page when enabled */
+function CustomerRoutes() {
+  const { data: settings = {}, isLoading } = usePublicSettings();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-sandal-50">
+        <Loader2 className="animate-spin text-amber-500" size={28} />
+      </div>
+    );
+  }
+
+  if (settings.maintenanceMode === true) {
+    return <MaintenancePage />;
+  }
+
+  return <CustomerLayout />;
+}
 
 /* Core / Home Page */
 import Home from "./pages/Home";
@@ -42,8 +78,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Public Customer Routes */}
-        <Route element={<CustomerLayout />}>
+        {/* Public Customer Routes — CustomerRoutes enforces maintenance mode */}
+        <Route element={<CustomerRoutes />}>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
