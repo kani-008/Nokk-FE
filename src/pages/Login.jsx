@@ -90,7 +90,7 @@ export default function Login() {
         ];
         const dev = devAccounts.find((a) => trimmedId === a.id && form.password === a.pw);
         if (dev) {
-            login({ id: `dev-${dev.role}`, phone: dev.id, role: dev.role, name: dev.name }, "dev-token", null);
+            login({ id: `dev-${dev.role}`, phone: dev.id, role: dev.role, name: dev.name }, `dev-token-${dev.role}`, null);
             navigate(dev.to, { replace: true });
             return;
         }

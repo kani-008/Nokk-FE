@@ -158,6 +158,11 @@ body {
     @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full bg-transparent text-gray-800 border-[1.5px] border-gray-500 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
+  .checkout-page .btn-primary,
+  .checkout-page .btn-outline {
+    border-radius: 0.5rem !important;
+  }
+
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
   }

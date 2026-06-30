@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight, Pencil, X, Check, Loader2 } from "lucide-react";
-import { useUpdateAddress, lookupPincode } from "../../hookqueries/useProfile";
+import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight, Pencil, X, Check, Loader2, Navigation } from "lucide-react";
+import { useUpdateAddress, lookupPincode, detectAddressFromCoords } from "../../hookqueries/useProfile";
 import Dropdown from "../admin/Dropdown.jsx";
 import { INDIAN_STATES } from "./statesList.js";
 
@@ -44,10 +44,42 @@ export function Field({ label, name, type = "text", placeholder, required, half,
 export function SavedAddressEditForm({ address, onSaved, onCancel }) {
   const [form, setForm]           = useState({ ...address });
   const [pinLoading, setPinLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const updateMutation            = useUpdateAddress();
   const saving                    = updateMutation.isPending;
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const details = await detectAddressFromCoords(latitude, longitude);
+          
+          if (details.pincode) set("pincode", details.pincode);
+          if (details.city) set("city", details.city);
+          if (details.taluk) set("taluk", details.taluk);
+          const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
+          if (matchedState) set("state", matchedState);
+        } catch (err) {
+          alert("Failed to detect location: " + err.message);
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (error) => {
+        alert("Geolocation error: " + error.message);
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handlePincodeChange = async (_, val) => {
     const cleaned = val.replace(/\D/g, "").slice(0, 6);
@@ -100,6 +132,19 @@ export function SavedAddressEditForm({ address, onSaved, onCancel }) {
   return (
     <div className="mt-3 border border-amber-200 rounded-xl p-3 bg-amber-50/40">
       <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          disabled={geoLoading}
+          onClick={handleDetectLocation}
+          className="col-span-2 flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-900 border border-brand-200 hover:border-brand-300 rounded-lg px-3 py-1.5 bg-brand-50/50 w-fit transition-all duration-200 disabled:opacity-50 cursor-pointer"
+        >
+          {geoLoading ? (
+            <><Loader2 size={12} className="animate-spin mr-1" /> Detecting…</>
+          ) : (
+            <><Navigation size={12} className="shrink-0" /> Detect my location</>
+          )}
+        </button>
+
         <Field label="Name" name="name" placeholder="Recipient" required half
           value={form.name} onChange={(_, v) => set("name", v)} />
         <Field label="Phone" name="phone" type="tel" placeholder="10-digit" required half
@@ -211,6 +256,38 @@ export default function Address({
   onNext,
 }) {
   const [pinLoading, setPinLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const details = await detectAddressFromCoords(latitude, longitude);
+          
+          if (details.pincode) onChangeNew("pincode", details.pincode);
+          if (details.city) onChangeNew("city", details.city);
+          if (details.taluk) onChangeNew("taluk", details.taluk);
+          const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
+          if (matchedState) onChangeNew("state", matchedState);
+        } catch (err) {
+          alert("Failed to detect location: " + err.message);
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (error) => {
+        alert("Geolocation error: " + error.message);
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handlePincodeChange = async (name, val) => {
     const cleaned = val.replace(/\D/g, "").slice(0, 6);
@@ -269,6 +346,19 @@ export default function Address({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              disabled={geoLoading}
+              onClick={handleDetectLocation}
+              className="col-span-2 flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-900 border border-brand-200 hover:border-brand-300 rounded-lg px-3 py-1.5 bg-brand-50/50 w-fit transition-all duration-200 disabled:opacity-50 cursor-pointer"
+            >
+              {geoLoading ? (
+                <><Loader2 size={12} className="animate-spin mr-1" /> Detecting…</>
+              ) : (
+                <><Navigation size={12} className="shrink-0" /> Detect my location</>
+              )}
+            </button>
+
             <Field label="Full Name" name="name" placeholder="Recipient name" required
               value={newAddress.name} onChange={onChangeNew} error={errors.name} />
             <Field label="Phone" name="phone" type="tel" placeholder="10-digit number" required

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import {
   ShoppingCart,
   Heart,
+  ArrowLeft,
   User,
   Menu,
   X,
@@ -158,9 +159,8 @@ export default function NavBar() {
   const navLinks = [
     { label: "Products", to: "/products" },
     { label: "Offers", to: "/offers" },
-    { label: "Bestsellers", to: "/products?isBestseller=true" },
-    { label: "Today's Deals", to: "/offers" },
-    ...(isAuthenticated ? [{ label: "Orders", to: "/my-orders" }] : []),
+    { label: "Bestsellers", to: "/products?isBestseller=true" },  
+    
   ];
 
   return (
@@ -179,9 +179,20 @@ export default function NavBar() {
           </div>
 
           <div className="flex items-center h-16 gap-3">
-            {/* Logo — pinned to the true far-left edge */}
-            {/* Hide logo on mobile when search is open (either toggle-opened or always-open on /products) */}
-            <Logo className={`shrink-0 mr-2 ${(searchOpen || isProductsPage) ? "hidden md:block" : ""}`} inverse />
+            {/* Back arrow — mobile /products only: lets user navigate back without the hamburger menu */}
+            {isProductsPage && (
+              <button
+                onClick={() => navigate(-1)}
+                className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors shrink-0 -ml-1"
+                aria-label="Go back"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
+
+            {/* Logo — always on desktop; hidden on mobile when search is open OR on /products
+                (on /products it moves to the sub-row below — see below) */}
+            <Logo className={`shrink-0 mr-2 ${(searchOpen || isProductsPage) ? "hidden md:flex" : ""}`} inverse />
 
             {/* Mobile inline search — always visible on /products, toggle-triggered elsewhere */}
             {(isProductsPage || searchOpen) && (
@@ -325,10 +336,10 @@ export default function NavBar() {
                 </button>
               )}
 
-              {/* Wishlist */}
+              {/* Wishlist — hidden on mobile /products (only back+search+cart shown there) */}
               <Link
                 to="/wishlist"
-                className="relative p-2 text-sandal-100 hover:text-rose-300 rounded-xl hover:bg-white/10 transition-colors"
+                className={`relative p-2 text-sandal-100 hover:text-rose-300 rounded-xl hover:bg-white/10 transition-colors ${isProductsPage ? "hidden md:flex" : ""}`}
                 aria-label="Wishlist"
               >
                 <Heart size={20} />
@@ -441,12 +452,10 @@ export default function NavBar() {
                     Login
                   </Link>
 
-                  {/* Mobile login icon — sits in the top icon row alongside
-                      search/wishlist/cart, replaces the old in-drawer
-                      Login/Register buttons for logged-out mobile users */}
+                  {/* Mobile login icon — hidden on /products (search-focused topbar) */}
                   <Link
                     to="/login"
-                    className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+                    className={`p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors ${isProductsPage ? "hidden" : "md:hidden"}`}
                     aria-label="Login"
                   >
                     <User size={20} />
@@ -454,9 +463,9 @@ export default function NavBar() {
                 </>
               )}
 
-              {/* Mobile hamburger */}
+              {/* Mobile hamburger — hidden on /products (search-focused topbar needs no nav drawer) */}
               <button
-                className="md:hidden p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors ml-1"
+                className={`p-2 text-sandal-100 hover:text-white rounded-xl hover:bg-white/10 transition-colors ml-1 ${isProductsPage ? "hidden" : "md:hidden"}`}
                 onClick={() => setMobileOpen((s) => !s)}
                 aria-label="Menu"
               >
@@ -467,7 +476,13 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Mobile search bar (handled inline in the main header above) */}
+      {/* Products page mobile logo row — appears below the topbar (back+search+cart) so the
+          logo stays visible without competing with the expanded search input */}
+      {isProductsPage && (
+        <div className="md:hidden bg-gray-800 border-t border-white/5 px-4 py-1.5">
+          <Logo inverse />
+        </div>
+      )}
 
       {/* Mobile drawer — extracted to components/layout/MobileDrawer.jsx */}
       <MobileDrawer

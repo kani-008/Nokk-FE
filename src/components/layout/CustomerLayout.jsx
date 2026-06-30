@@ -19,6 +19,7 @@ export default function CustomerLayout() {
   const isAuthPage     = location.pathname === "/login" || location.pathname === "/register";
   // footer hidden on mobile for auth + shopping-flow pages where bottom UX is self-contained
   const isNoFooterMobile = isAuthPage
+    || location.pathname === "/checkout"
     || location.pathname === "/cart"
     || location.pathname === "/wishlist";
 

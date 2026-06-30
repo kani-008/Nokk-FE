@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   SlidersHorizontal, X, ChevronDown, ChevronUp,
-  Star, ArrowUpDown,
+  Star,
 } from "lucide-react";
 import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
 
@@ -97,8 +97,9 @@ function RatingRow({ value, checked, onChange }) {
 function Sidebar({
   hasFilters,
   removeAllFilters,
-  category,
+  sort,
   setParam,
+  category,
   categories,
   priceDraft,
   setPriceDraft,
@@ -127,6 +128,24 @@ function Sidebar({
             </button>
           )}
         </div>
+
+        {/* Sort By — replaces the removed top-bar sort dropdown */}
+        <FilterSection title="Sort By">
+          <div className="space-y-1.5">
+            {SORT_OPTIONS.map((o) => (
+              <label key={o.value} className="filter-row group cursor-pointer">
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sort === o.value}
+                  onChange={() => setParam("sort", o.value === "popular" ? "" : o.value)}
+                  className="filter-checkbox"
+                />
+                <span className="filter-row-label">{o.label}</span>
+              </label>
+            ))}
+          </div>
+        </FilterSection>
 
         {/* Categories */}
         <FilterSection title="Category">
@@ -326,20 +345,8 @@ export default function Products() {
   }, [queryParams]);
 
   const [filterOpen, setFilterOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [sortOpen, setSortOpen] = useState(false);
+  const [desktopSidebarOpen] = useState(true);
   const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
-
-  const sortRef = useRef(null);
-
-  // close the mobile sort dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   // keep the price draft inputs synced if filters are cleared elsewhere (e.g. "Clear all")
   useEffect(() => {
@@ -399,13 +406,12 @@ export default function Products() {
 
   const hasFilters = activeFilters.length > 0 || sort !== "popular";
 
-  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || "Popularity";
-
   const sidebarProps = {
     hasFilters,
     removeAllFilters,
-    category,
+    sort,
     setParam,
+    category,
     categories,
     priceDraft,
     setPriceDraft,
@@ -421,7 +427,7 @@ export default function Products() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[76px] pb-6 md:py-6">
 
       {/* ── Page header ──────────────────────────────────────────── */}
       {/* <div className="mb-5">
@@ -439,47 +445,15 @@ export default function Products() {
         )}
       </div> */}
 
-      {/* ── Sort + Filter controls (no card wrapper — search lives in NavBar on this route) ── */}
-      <div className="flex items-center justify-end gap-2.5 mb-4">
-        {/* sort dropdown */}
-        <div className="relative" ref={sortRef}>
-          <button
-            type="button"
-            onClick={() => setSortOpen((s) => !s)}
-            className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
-          >
-            <ArrowUpDown size={14} className="text-sandal-500" />
-            <span>Sort: {currentSortLabel}</span>
-            <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
-          </button>
-          {sortOpen && (
-            <div className="absolute right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-35 min-w-[170px]">
-              {SORT_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
-                  className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* filter button */}
+      {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
+      <div className="flex items-center justify-end mb-4 md:hidden">
         <button
           type="button"
-          onClick={() => {
-            setFilterOpen((s) => !s);
-            setDesktopSidebarOpen((s) => !s);
-          }}
+          onClick={() => setFilterOpen((s) => !s)}
           className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
         >
           <SlidersHorizontal size={14} className="text-sandal-500" />
-          <span>Filter</span>
+          <span>Sort &amp; Filter</span>
           {activeFilters.length > 0 && (
             <span className="bg-sandal-400 text-gray-900 font-num text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
               {activeFilters.length}

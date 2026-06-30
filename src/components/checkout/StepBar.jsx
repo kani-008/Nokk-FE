@@ -12,7 +12,7 @@ export default function StepBar({ current }) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 
   return (
-    <div className="flex items-center gap-0 mb-8">
+    <div className="flex items-center gap-0">
       {STEPS.map((step, i) => {
         const done   = i < currentIdx;
         const active = i === currentIdx;

@@ -72,6 +72,11 @@ export default function Checkout() {
   const ship = sub >= freeShippingThreshold ? 0 : flatDeliveryCharge;
   const tot = sub - disc + ship;
 
+  const totalMrp = checkoutItems.reduce((sum, item) => {
+    const mrp = item.comparePrice ? Number(item.comparePrice) : Number(item.price);
+    return sum + mrp * item.quantity;
+  }, 0);
+
   // ── step ───────────────────────────────────────────────────────────
   // null = determining initial step (while addresses load)
   const [step, setStep] = useState(null);
@@ -463,7 +468,7 @@ export default function Checkout() {
   // ── Loading state while determining initial step ───────────────────
   if (!stepInitialized) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 flex items-center justify-center gap-3 text-amber-500">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 flex items-center justify-center gap-3 text-amber-500">
         <Loader2 size={20} className="animate-spin" />
         <span className="font-body text-sm">Loading checkout…</span>
       </div>
@@ -471,24 +476,30 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className="checkout-page max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6 sm:pt-3 sm:pb-8">
+      {/* 
       {step === "payment" ? (
         <button
           onClick={() => setStep("summary")}
-          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors cursor-pointer"
+          className="hidden md:inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors cursor-pointer"
         >
           <ArrowLeft size={15} /> Back to Summary
         </button>
       ) : (
         <Link
           to="/cart"
-          className="inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
+          className="hidden md:inline-flex items-center gap-1.5 font-body text-sm text-amber-500 hover:text-brand-700 mb-4 transition-colors"
         >
           <ArrowLeft size={15} /> Back to Cart
         </Link>
       )}
+      */}
       {/* step bar */}
-      <StepBar current={step} />
+      {step !== "summary" && (
+        <div className={`card p-4 sm:p-5 mb-6 max-w-xl mx-auto w-full ${step === "payment" ? "hidden md:block" : ""}`}>
+          <StepBar current={step} />
+        </div>
+      )}
 
       {/* ── Step panels ─────────────────────────────────────────── */}
       {step === "address" && (
@@ -530,10 +541,14 @@ export default function Checkout() {
           onSelect={handleSelectPaymentMethod}
           onPlaceOrder={handlePlaceOrder}
           amount={tot}
+          totalMrp={totalMrp}
+          discount={(totalMrp - sub) + disc}
+          shipping={ship}
           infoMessage={paymentMsg}
           placing={placing}
           error={orderErr}
           placedOrderId={placedOrderId}
+          onBack={() => setStep("summary")}
         />
       )}
 

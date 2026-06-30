@@ -38,8 +38,8 @@ export async function lookupPincode(pincode) {
   return res.data.data; // { pincode, district, state, taluk, offices }
   */
 
-  const apiKey = "579b464db66ec23bdd000001f5f5495c8f4f4d27412f3be4880d9b57";
-  const resourceId = "6176ee09-3d56-4a3b-8115-21841576b2f6";
+  const apiKey = import.meta.env.VITE_GOV_API_KEY;
+  const resourceId = import.meta.env.VITE_GOV_PINCODE_RESOURCE_ID;
   const url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[pincode]=${pincode}`;
 
   const response = await fetch(url);
@@ -147,4 +147,45 @@ export function useDeleteAddress() {
       if (ctx?.previous) queryClient.setQueryData(["addresses"], ctx.previous);
     },
   });
+}
+
+// ── Geolocation Reverse Geocoding ──
+export async function reverseGeocode(lat, lng) {
+  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${apiKey}`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to detect location details");
+  }
+  const data = await response.json();
+  if (!data.features || data.features.length === 0) {
+    throw new Error("Location details not found");
+  }
+
+  const properties = data.features[0].properties || {};
+  return {
+    pincode: properties.postcode || "",
+    city: properties.city || properties.county || "",
+    taluk: properties.suburb || properties.district || "",
+    state: properties.state || ""
+  };
+}
+
+export async function detectAddressFromCoords(lat, lng) {
+  const geo = await reverseGeocode(lat, lng);
+  if (geo.pincode && /^\d{6}$/.test(geo.pincode)) {
+    try {
+      const gov = await lookupPincode(geo.pincode);
+      return {
+        pincode: geo.pincode,
+        city: gov.district || geo.city,
+        taluk: gov.taluk && gov.taluk !== "NA" ? gov.taluk : geo.taluk,
+        state: gov.state || geo.state
+      };
+    } catch {
+      // fallback to raw OSM values
+    }
+  }
+  return geo;
 }
