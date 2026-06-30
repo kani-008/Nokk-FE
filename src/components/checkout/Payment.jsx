@@ -7,27 +7,35 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePublicSettings } from "../../hookqueries/useSettings";
 
-export const PAYMENT_METHODS = [
+// Full catalogue — each method is gated by its admin setting key.
+const ALL_PAYMENT_METHODS = [
   {
     key: "razorpay_upi",
+    settingKey: "upiEnabled",
     label: "UPI Payment",
     sub: "Pay via GPay, PhonePe, Paytm, or any UPI app",
     icon: <Smartphone size={20} />,
   },
   {
     key: "razorpay",
+    settingKey: "cardEnabled",
     label: "Card Payment",
     sub: "Pay via Credit/Debit cards, Net Banking, or Wallets",
     icon: <CreditCard size={20} />,
   },
   {
     key: "cod",
+    settingKey: "codEnabled",
     label: "Cash on Delivery",
     sub: "Pay when you receive",
     icon: <Banknote size={20} />,
   },
 ];
+
+// Exported for backward-compat; reflects all methods (not filtered).
+export const PAYMENT_METHODS = ALL_PAYMENT_METHODS;
 
 export default function Payment({
   selected,
@@ -40,6 +48,14 @@ export default function Payment({
   placedOrderId = null,
 }) {
   const navigate = useNavigate();
+  const { data: settings = {} } = usePublicSettings();
+
+  // Filter to only methods enabled in admin Settings.
+  // Default true when setting is absent (safe-open: don't hide methods
+  // just because settings haven't loaded yet).
+  const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter(
+    (m) => settings[m.settingKey] !== false,
+  );
 
   // ── Render success screen if order has been successfully placed ────
   if (placedOrderId) {

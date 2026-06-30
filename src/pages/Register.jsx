@@ -7,6 +7,7 @@ import {
 import API from "../ApiCall/Api.jsx";
 import { useToast } from "../components/useToast";
 import AuthLayout, { StepDots, OtpBoxes, fieldClass } from "../components/layout/AuthLayout";
+import { usePublicSettings } from "../hookqueries/useSettings";
 
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
@@ -41,6 +42,7 @@ const STEP_COPY = {
 
 export default function Register() {
     const navigate = useNavigate();
+    const { data: settings = {}, isLoading: settingsLoading } = usePublicSettings();
 
     // view state drives the step: "register" | "otp" | "password"
     const [view, setView] = useState("register");
@@ -275,6 +277,35 @@ export default function Register() {
             ) : copy.subtitle}
         </span>
     ) : null;
+
+    // Registration disabled by admin — show message instead of the form.
+    if (!settingsLoading && settings.registrationsEnabled === false) {
+        return (
+            <AuthLayout
+                mode="register"
+                step={1}
+                title={<h2 className="font-display text-2xl font-bold text-brand-900 mb-1">Sign-ups paused</h2>}
+                subtitle={null}
+                brandContent={<StepDots step={1} />}
+                bottomLink={
+                    <p className="relative z-10 font-body text-amber-500 text-xs text-center mt-auto">
+                        Already have an account?{" "}
+                        <Link to="/login" className="text-amber-300 font-semibold hover:underline">Sign In</Link>
+                    </p>
+                }
+                pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10"
+            >
+                <div className="flex flex-col items-center justify-center gap-5 py-6 text-center">
+                    <p className="font-body text-sm text-amber-700 max-w-xs">
+                        New sign-ups are temporarily paused. Please check back later or contact us for assistance.
+                    </p>
+                    <Link to="/login" className="btn-md btn-primary">
+                        Sign In Instead <ArrowRight size={15} />
+                    </Link>
+                </div>
+            </AuthLayout>
+        );
+    }
 
     return (
         <AuthLayout

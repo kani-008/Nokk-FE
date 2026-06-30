@@ -20,12 +20,14 @@ import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 import API from "../../ApiCall/Api.jsx";
+import { usePublicSettings } from "../../hookqueries/useSettings";
 
 
 export default function NavBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [, setSearchParams] = useSearchParams();
+  const { data: settings = {} } = usePublicSettings();
 
   const isProductsPage = location.pathname === "/products";
 
@@ -166,16 +168,14 @@ export default function NavBar() {
       {/* ── Main bar — single unified gray bar (Amazon-style) ──────── */}
       <div className="bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* thin shipping note — folded into the top of the gray bar, not a separate row */}
+          {/* thin strip — shows custom admin announcement when enabled, otherwise default shipping note */}
           <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
-            🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal
-            fishermen &nbsp;·&nbsp;
-            <Link
-              to="/offers"
-              className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1"
-            >
-              Today's Deals
-            </Link>
+            {settings.announcementEnabled && settings.announcementText
+              ? settings.announcementText
+              : <>🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
+                  <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
+                </>
+            }
           </div>
 
           <div className="flex items-center h-16 gap-3">
