@@ -100,7 +100,7 @@ export default function Dropdown({
         onClick={() => !disabled && setOpen((o) => !o)}
         onKeyDown={handleTriggerKeyDown}
         className={`
-          w-full flex items-center justify-between gap-2 rounded-md border-[1.5px] bg-white px-4 py-2.5 text-sm
+          w-full flex items-center justify-between gap-2 rounded-md border-[1.5px] bg-white px-4 h-[var(--admin-control-h)] text-sm
           text-left outline-none transition-all duration-200
           ${error
             ? "border-red-300 focus:border-red-400 focus:ring-3 focus:ring-red-400/15"

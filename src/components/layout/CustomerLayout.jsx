@@ -16,7 +16,13 @@ function ScrollToTop() {
 
 export default function CustomerLayout() {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+  const isAuthPage     = location.pathname === "/login" || location.pathname === "/register";
+  const isCheckoutPage = location.pathname === "/checkout";
+  // footer hidden on mobile for auth + shopping-flow pages where bottom UX is self-contained
+  const isNoFooterMobile = isAuthPage
+    || isCheckoutPage
+    || location.pathname === "/cart"
+    || location.pathname === "/wishlist";
 
   const { token, isAuthenticated } = useAuthStore();
 
@@ -25,9 +31,10 @@ export default function CustomerLayout() {
       const syncAndLoad = async () => {
         // 1. Sync local cart items to server — all in parallel, ignore individual failures
         const localItems = useCartStore.getState().items;
-        if (localItems.length > 0) {
+        const guestItems = localItems.filter((item) => !item.itemId);
+        if (guestItems.length > 0) {
           await Promise.all(
-            localItems.map((item) =>
+            guestItems.map((item) =>
               API.post("/cart/add-item", { variantId: item.variantId, quantity: item.quantity }).catch(() => {})
             )
           );
@@ -80,12 +87,22 @@ export default function CustomerLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
-      <NavBar />
-      <main className="flex-1 pt-16 sm:pt-[88px]">
+      {/* On /checkout, hide NavBar below md breakpoint (no topbar on mobile checkout) */}
+      {isCheckoutPage
+        ? <div className="hidden md:block"><NavBar /></div>
+        : <NavBar />
+      }
+      {/*
+        Padding offsets the fixed NavBar height:
+          - Non-checkout: NavBar always visible → pt-16 (mobile) / pt-[88px] (sm+)
+          - Checkout mobile (<md): NavBar hidden → no padding
+          - Checkout md+: NavBar visible with shipping note → md:pt-[88px]
+      */}
+      <main className={`flex-1 ${isCheckoutPage ? "md:pt-[88px]" : "pt-16 sm:pt-[88px]"}`}>
         <Outlet />
       </main>
-      {/* Hide footer on mobile view alone for the login and register pages */}
-      <div className={isAuthPage ? "hidden md:block" : "block"}>
+      {/* Hide footer on mobile for auth + focused shopping-flow pages */}
+      <div className={isNoFooterMobile ? "hidden md:block" : "block"}>
         <Footer />
       </div>
     </div>

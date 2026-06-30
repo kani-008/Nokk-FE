@@ -9,23 +9,26 @@ import {
   useUpdateCoupon,
   useDeleteOffer,
   useDeleteCoupon
-} from "../../hooks/queries/useOffers";
+} from "../../hookqueries/useOffers";
+import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
+import TabToggle from "../../components/admin/TabToggle.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "" };
-const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", isActive: true, expiresAt: "" };
+const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
+const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", maxUsesPerUser: "", isActive: true, expiresAt: "" };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 
 
 
 // ── Offer modal ────────────────────────────────────────────────────────
-function OfferModal({ offer, onClose, onSaved }) {
+function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const isEdit = !!offer?.id;
   const [form, setForm] = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
   const [error, setError] = useState("");
@@ -38,6 +41,8 @@ function OfferModal({ offer, onClose, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
+    if (form.appliesTo === "product" && !form.productId) { setError("Please select a product"); return; }
+    if (form.appliesTo === "category" && !form.categoryId) { setError("Please select a category"); return; }
     setError("");
     try {
       let res;
@@ -59,7 +64,7 @@ function OfferModal({ offer, onClose, onSaved }) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Offer" : "Add Offer"}</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
         </div>
         <div className="overflow-y-auto p-6 space-y-4 flex-1">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
@@ -67,7 +72,55 @@ function OfferModal({ offer, onClose, onSaved }) {
             <div><label className="field-label">Title *</label><input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Monsoon Sale" className="field-input" /></div>
             <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short offer description" /></div>
             <div><label className="field-label">Image URL</label><input value={form.imageUrl || ""} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://…" className="field-input" /></div>
+            
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="field-label">Applies To</label>
+                <Dropdown
+                  value={form.appliesTo || "all"}
+                  onChange={(val) => {
+                    set("appliesTo", val);
+                    if (val === "all") {
+                      set("productId", "");
+                      set("categoryId", "");
+                    } else if (val === "product") {
+                      set("categoryId", "");
+                    } else if (val === "category") {
+                      set("productId", "");
+                    }
+                  }}
+                  options={[
+                    { value: "all", label: "Store-wide (all)" },
+                    { value: "product", label: "Specific Product" },
+                    { value: "category", label: "Specific Category" }
+                  ]}
+                />
+              </div>
+
+              {form.appliesTo === "product" && (
+                <div className="col-span-2">
+                  <label className="field-label">Product *</label>
+                  <Dropdown
+                    value={form.productId || ""}
+                    onChange={(val) => set("productId", val)}
+                    placeholder="Select product"
+                    options={products.map((p) => ({ value: p.id, label: p.nameEn }))}
+                  />
+                </div>
+              )}
+
+              {form.appliesTo === "category" && (
+                <div className="col-span-2">
+                  <label className="field-label">Category *</label>
+                  <Dropdown
+                    value={form.categoryId || ""}
+                    onChange={(val) => set("categoryId", val)}
+                    placeholder="Select category"
+                    options={categories.map((c) => ({ value: c.id, label: c.nameEn }))}
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="field-label">Offer Type</label>
                 <Dropdown
@@ -144,7 +197,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Coupon" : "Add Coupon"}</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
         </div>
         <div className="p-6 space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
@@ -171,6 +224,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
               <div><label className="field-label">Value *</label><input type="number" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder="20" className="field-input" /></div>
               <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>
               <div><label className="field-label">Max Uses</label><input type="number" value={form.maxUsageCount || ""} onChange={(e) => set("maxUsageCount", e.target.value)} placeholder="Unlimited" className="field-input" /></div>
+              <div><label className="field-label">Max Uses Per User</label><input type="number" value={form.maxUsesPerUser || ""} onChange={(e) => set("maxUsesPerUser", e.target.value)} placeholder="Unlimited" className="field-input" /></div>
               <div className="col-span-2"><label className="field-label">Expires At</label><input type="date" value={form.expiresAt || ""} onChange={(e) => set("expiresAt", e.target.value)} className="field-input" /></div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -190,13 +244,17 @@ function CouponModal({ coupon, onClose, onSaved }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
+// ──════════════════════════════════════════════════════════════════════
 export default function OfferManagement() {
   const [tab, setTab] = useState("offers");
   const [modal, setModal] = useState(null);
 
   const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
   const { data: coupons = [], isLoading: couponsLoading } = useAdminCouponList();
+  const { data: catData = [] } = useProductCategories();
+  const categories = catData;
+  const { data: productsData } = useAdminProductList({ limit: 100 });
+  const products = productsData?.products || [];
   const loading = offersLoading || couponsLoading;
 
   const deleteOfferMutation = useDeleteOffer();
@@ -233,8 +291,8 @@ export default function OfferManagement() {
     {
       key: "action", label: "", width: "80px", render: (r) => (
         <div className="flex gap-1">
-          <button onClick={() => setModal({ type: "offer", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
-          <button onClick={() => handleDeleteOffer(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
+          <IconButton onClick={() => setModal({ type: "offer", data: r })} variant="brand" aria-label="Edit offer"><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => handleDeleteOffer(r.id)} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
         </div>
       )
     },
@@ -245,14 +303,14 @@ export default function OfferManagement() {
     { key: "discountType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.discountType === "free_shipping" ? "Free Shipping" : r.discountType}</span> },
     { key: "discountValue", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.discountType === "percentage" ? `${r.discountValue}%` : r.discountType === "free_shipping" ? "Free Shipping" : `₹${r.discountValue}`}</span> },
     { key: "minOrderValue", label: "Min Order", render: (r) => <span className="font-num text-sm text-gray-600">{r.minOrderValue > 0 ? `₹${r.minOrderValue}` : "None"}</span> },
-    { key: "usageCount", label: "Used", render: (r) => <span className="font-num text-sm text-gray-600">{r.usageCount ?? 0}{r.maxUsageCount ? `/${r.maxUsageCount}` : ""}</span> },
+    { key: "usageCount", label: "Used", render: (r) => <span className="font-num text-sm text-gray-600">{r.usageCount ?? 0}{r.maxUsageCount ? `/${r.maxUsageCount}` : ""}{r.maxUsesPerUser ? ` (Max ${r.maxUsesPerUser}/user)` : ""}</span> },
     { key: "expiresAt", label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.expiresAt)}</span> },
     { key: "isActive", label: "Status", render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
     {
       key: "action", label: "", width: "80px", render: (r) => (
         <div className="flex gap-1">
-          <button onClick={() => setModal({ type: "coupon", data: r })} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg"><Pencil size={15} /></button>
-          <button onClick={() => handleDeleteCoupon(r.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
+          <IconButton onClick={() => setModal({ type: "coupon", data: r })} variant="brand" aria-label="Edit coupon"><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => handleDeleteCoupon(r.id)} variant="danger" aria-label="Delete coupon"><Trash2 size={15} /></IconButton>
         </div>
       )
     },
@@ -264,37 +322,28 @@ export default function OfferManagement() {
       {/* Row 1 (mobile) / Left & Right side (desktop) */}
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between w-full mb-4">
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
-          <button
-            onClick={() => setTab("offers")}
-            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-              tab === "offers" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            Offers ({offers.length})
-          </button>
-          <button
-            onClick={() => setTab("coupons")}
-            className={`om-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-              tab === "coupons" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            Coupons ({coupons.length})
-          </button>
-        </div>
+        <TabToggle
+          tabs={[
+            { key: "offers",  label: `Offers (${offers.length})` },
+            { key: "coupons", label: `Coupons (${coupons.length})` },
+          ]}
+          active={tab}
+          onChange={setTab}
+          tabClassName="om-tabs-fluid"
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-2 w-full sm:w-auto">
           <AdminButton
             variant="outline"
             onClick={() => setModal({ type: "coupon", data: null })}
-            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+            className="om-btn-fluid flex-1 sm:flex-none"
           >
             <Plus size={14} /> Coupon
           </AdminButton>
           <AdminButton
             onClick={() => setModal({ type: "offer", data: null })}
-            className="om-btn-fluid flex-1 sm:flex-none text-sm font-semibold h-[38px]"
+            className="om-btn-fluid flex-1 sm:flex-none"
           >
             <Plus size={14} /> Offer
           </AdminButton>
@@ -304,7 +353,15 @@ export default function OfferManagement() {
       {tab === "offers" && <DataTable columns={OFFER_COLS} rows={offers} loading={loading} emptyText="No offers yet." />}
       {tab === "coupons" && <DataTable columns={COUPON_COLS} rows={coupons} loading={loading} emptyText="No coupons yet." />}
 
-      {modal?.type === "offer" && <OfferModal offer={modal.data} onClose={() => setModal(null)} onSaved={upsertOffer} />}
+      {modal?.type === "offer" && (
+        <OfferModal
+          offer={modal.data}
+          categories={categories}
+          products={products}
+          onClose={() => setModal(null)}
+          onSaved={upsertOffer}
+        />
+      )}
       {modal?.type === "coupon" && <CouponModal coupon={modal.data} onClose={() => setModal(null)} onSaved={upsertCoupon} />}
     </AdminPage>
   );

@@ -4,7 +4,7 @@ import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check,
 } from "lucide-react";
-import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hooks/queries/useOrders";
+import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hookqueries/useOrders";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
@@ -245,22 +245,41 @@ function OrderCard({ order }) {
             </div>
           )}
 
-          {/* timeline */}
+          {/* timeline — vertical connected line */}
           {order.timeline?.length > 0 && (
             <div>
-              <p className="font-body text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2">Timeline</p>
-              <div className="space-y-2">
-                {order.timeline.map((t, i) => (
-                  <div key={i} className="flex gap-2 items-start">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-600 mt-1.5 shrink-0" />
-                    <div>
-                      <p className="font-body text-xs font-semibold text-brand-900 capitalize">{String(t.status).replace(/_/g, " ")}</p>
-                      {t.note && <p className="font-body text-xs text-amber-500">{t.note}</p>}
-                      <p className="font-body text-[10px] text-amber-400">{fmtDate(t.createdAt)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="font-body text-xs font-semibold text-amber-700 uppercase tracking-wider mb-3">Timeline</p>
+              <ol className="relative">
+                {order.timeline.map((t, i) => {
+                  const isLatest = i === order.timeline.length - 1;
+                  const isLast   = i === order.timeline.length - 1;
+                  return (
+                    <li key={i} className="flex gap-3 pb-4 last:pb-0 relative">
+                      {/* vertical connector line — runs through all but the last item */}
+                      {!isLast && (
+                        <div className="absolute left-[9px] top-[18px] bottom-0 w-0.5 bg-brand-200" aria-hidden="true" />
+                      )}
+                      {/* node */}
+                      <div className={`relative z-10 mt-0.5 shrink-0 flex items-center justify-center rounded-full transition-all
+                        ${isLatest
+                          ? "w-[18px] h-[18px] bg-brand-700 ring-2 ring-brand-300 ring-offset-1"
+                          : "w-[18px] h-[18px] bg-brand-600"
+                        }`}
+                      >
+                        <Check size={10} className="text-white" strokeWidth={3} />
+                      </div>
+                      {/* content */}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-body text-xs font-semibold text-brand-900 capitalize leading-snug">
+                          {String(t.status).replace(/_/g, " ")}
+                        </p>
+                        {t.note && <p className="font-body text-xs text-amber-500 mt-0.5">{t.note}</p>}
+                        <p className="font-body text-[10px] text-amber-400 mt-0.5">{fmtDate(t.createdAt)}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           )}
 

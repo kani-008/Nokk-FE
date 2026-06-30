@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hooks/queries/useProducts";
+import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH    = comboImg;
@@ -72,6 +74,7 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 
 // ══════════════════════════════════════════════════════════════════════
 export default function ProductManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [search,          setSearch]          = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [catFilter,       setCatFilter]       = useState("");
@@ -104,11 +107,11 @@ export default function ProductManagement() {
   const categories = catData;
 
   const queryParams = useMemo(() => {
-    const p = { page, limit: 15 };
+    const p = { page, limit };
     if (debouncedSearch) p.search = debouncedSearch;
     if (catFilter)       p.category = catFilter;
     return p;
-  }, [debouncedSearch, catFilter, page]);
+  }, [debouncedSearch, catFilter, page, limit]);
 
   const { data: productsData, isLoading: loading, error: queryError } = useAdminProductList(queryParams);
   const products = productsData?.products || [];
@@ -190,8 +193,8 @@ export default function ProductManagement() {
       key: "action", label: "Action", width: "80px",
       render: (r) => (
         <div className="flex gap-1">
-          <button onClick={() => setModal(r)} className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></button>
-          <button onClick={() => setDeleteTarget(r)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" aria-label={`Delete ${r.nameEn}`}><Trash2 size={15} /></button>
+          <IconButton onClick={() => setModal(r)} variant="brand" aria-label={`Edit ${r.nameEn}`}><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteTarget(r)} variant="danger" aria-label={`Delete ${r.nameEn}`}><Trash2 size={15} /></IconButton>
         </div>
       ),
     },
@@ -204,7 +207,7 @@ export default function ProductManagement() {
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-md px-4 py-3">
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
           <p className="flex-1">{pageError}</p>
-          <button onClick={() => setPageError("")} className="shrink-0 hover:text-red-900" aria-label="Dismiss"><X size={15} /></button>
+          <IconButton onClick={() => setPageError("")} variant="danger" className="shrink-0" aria-label="Dismiss"><X size={15} /></IconButton>
         </div>
       )}
 

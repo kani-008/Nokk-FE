@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
   Package, MapPin, CreditCard, Clock,
@@ -9,7 +10,7 @@ import {
   useAdminReplacements,
   useUpdateOrderStatus,
   useUpdateReplacementStatus
-} from "../../hooks/queries/useOrders";
+} from "../../hookqueries/useOrders";
 
 
 import comboImg from "../../assets/products/combo.jpg";
@@ -18,6 +19,8 @@ import {
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
+import TabToggle from "../../components/admin/TabToggle.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -72,7 +75,7 @@ function OrderModal({ order, onClose, onStatusChange }) {
               #{String(order.id).slice(0, 8).toUpperCase()}
             </h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={18} /></button>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
         </div>
 
         <div className="p-5 space-y-5 overflow-y-auto flex-1">
@@ -328,6 +331,7 @@ function ReplacementsPanel() {
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [tab, setTab] = useState("orders");
   const [search,    setSearch]    = useState("");
   const [status,    setStatus]    = useState("");
@@ -345,12 +349,12 @@ export default function OrderManagement() {
   }, [search, tab]);
 
   const queryParams = useMemo(() => {
-    const params = { page, limit: 15 };
+    const params = { page, limit };
     if (search)  params.search        = search;
     if (status)  params.status        = status;
     if (payment) params.paymentStatus = payment;
     return params;
-  }, [search, status, payment, page]);
+  }, [search, status, payment, page, limit]);
 
   const { data: ordersData, isLoading: loading } = useAdminOrders(queryParams);
   const orders = ordersData?.orders || [];
@@ -388,12 +392,9 @@ export default function OrderManagement() {
     {
       key: "action", label: "", width: "60px",
       render: (r) => (
-        <button
-          onClick={() => setSelected(r)}
-          className="p-1.5 text-gray-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors"
-        >
+        <IconButton onClick={() => setSelected(r)} variant="brand" aria-label="View order">
           <Eye size={15} />
-        </button>
+        </IconButton>
       ),
     },
   ];
@@ -413,24 +414,15 @@ export default function OrderManagement() {
           since the tabs pill is `w-fit` and the cluster is `w-full justify-end`,
           neither of which centers the row itself within the page. */}
       <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:items-center sm:justify-between w-full">
-        <div className="flex gap-1 bg-gray-50 p-1 rounded-xl w-full sm:w-fit shrink-0">
-          <button
-            onClick={() => setTab("orders")}
-            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-              tab === "orders" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            All Orders
-          </button>
-          <button
-            onClick={() => setTab("replacements")}
-            className={`ord-tabs-fluid flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-              tab === "replacements" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            <RotateCcw size={13} /> Replacements
-          </button>
-        </div>
+        <TabToggle
+          tabs={[
+            { key: "orders",       label: "All Orders" },
+            { key: "replacements", label: "Replacements", icon: RotateCcw },
+          ]}
+          active={tab}
+          onChange={setTab}
+          tabClassName="ord-tabs-fluid"
+        />
 
         {tab === "orders" && (
           <div className="ord-cluster-fluid flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
@@ -443,7 +435,7 @@ export default function OrderManagement() {
               </button>
             )}
 
-            <div className="flex-1 sm:w-40 sm:shrink-0">
+            <div className="w-40 sm:w-44 shrink-0">
               <Dropdown
                 value={status}
                 onChange={(v) => { setStatus(v); setPage(1); }}
@@ -457,7 +449,7 @@ export default function OrderManagement() {
               />
             </div>
 
-            <div className="flex-1 sm:w-40 sm:shrink-0">
+            <div className="w-40 sm:w-44 shrink-0">
               <Dropdown
                 value={payment}
                 onChange={(v) => { setPayment(v); setPage(1); }}

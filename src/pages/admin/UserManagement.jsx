@@ -1,65 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
-import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
-import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hooks/queries/useUsers";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
+import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2 } from "lucide-react";
+import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hookqueries/useUsers";
 import {
   AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
+import Dropdown from "../../components/admin/Dropdown.jsx";
+import IconButton from "../../components/admin/IconButton.jsx";
 
 
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-
-// ── Custom Dropdown for Admin filters ─────────────────────────────────
-function CustomDropdown({ value, onChange, options, placeholder, className = "" }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <div ref={containerRef} className={`relative select-none ${className}`}>
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none transition-all duration-200 focus:border-sandal-400 focus:ring-2 focus:ring-sandal-400/15 cursor-pointer h-[34px] sm:h-[38px] sm:text-sm sm:px-4 sm:py-2"
-      >
-        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
-        <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 shrink-0 ml-1.5 ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                onChange(opt.value);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer hover:bg-sandal-50 hover:text-sandal-800 ${opt.value === value ? "bg-sandal-50/70 text-sandal-700 font-semibold" : "text-gray-700"
-                }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── User detail modal ─────────────────────────────────────────────────
 function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
@@ -120,7 +73,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 flex flex-col min-h-[250px] animate-modal-slide-up">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
             <h3 className="font-display text-base font-bold text-gray-900">Error</h3>
-            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+            <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
             <AlertTriangle className="text-red-500 mb-2" size={32} />
@@ -360,6 +313,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
 // USER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function UserManagement() {
+  const limit = useViewportPageSize(15, 25);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -383,12 +337,12 @@ export default function UserManagement() {
   }, [search]);
 
   const queryParams = useMemo(() => {
-    const p = { page, limit: 15 };
+    const p = { page, limit };
     if (debouncedSearch) p.search = debouncedSearch;
     if (roleFilter)      p.role   = roleFilter;
     if (status)          p.status = status;
     return p;
-  }, [debouncedSearch, roleFilter, status, page]);
+  }, [debouncedSearch, roleFilter, status, page, limit]);
 
   const { data: userData, isLoading: loading, error: queryError } = useUserList(queryParams);
   const users      = userData?.users || [];
@@ -438,8 +392,8 @@ export default function UserManagement() {
           </button>
         )}
 
-        <div className="flex-1 sm:w-36 sm:flex-none">
-          <CustomDropdown
+        <div className="w-40 sm:w-44 shrink-0">
+          <Dropdown
             value={roleFilter}
             onChange={(val) => { setRoleFilter(val); setPage(1); }}
             options={[
@@ -448,12 +402,13 @@ export default function UserManagement() {
               { value: "admin", label: "Admin" },
             ]}
             placeholder="All Roles"
-            className="um-filter-fluid w-full"
+            className="um-filter-fluid"
+            optionClassName="um-filter-fluid"
           />
         </div>
 
-        <div className="flex-1 sm:w-36 sm:flex-none">
-          <CustomDropdown
+        <div className="w-40 sm:w-44 shrink-0">
+          <Dropdown
             value={status}
             onChange={(val) => { setStatus(val); setPage(1); }}
             options={[
@@ -462,7 +417,8 @@ export default function UserManagement() {
               { value: "blocked", label: "Blocked" },
             ]}
             placeholder="All Statuses"
-            className="um-filter-fluid w-full"
+            className="um-filter-fluid"
+            optionClassName="um-filter-fluid"
           />
         </div>
       </div>

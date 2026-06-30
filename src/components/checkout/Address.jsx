@@ -1,22 +1,13 @@
 import { useState } from "react";
 import { MapPin, Plus, ChevronDown, ChevronUp, ChevronRight, Pencil, X, Check, Loader2 } from "lucide-react";
-import { useUpdateAddress, lookupPincode } from "../../hooks/queries/useProfile";
+import { useUpdateAddress, lookupPincode } from "../../hookqueries/useProfile";
 import Dropdown from "../admin/Dropdown.jsx";
-
-const INDIAN_STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
-  "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka",
-  "Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram",
-  "Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana",
-  "Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
-  "Andaman & Nicobar Islands","Chandigarh","Dadra & Nagar Haveli","Daman & Diu",
-  "Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry",
-];
+import { INDIAN_STATES } from "./statesList.js";
 
 const norm = (s) => String(s).toLowerCase().replace(/[\s&]+/g, "");
 
 // ── Reusable grid field ────────────────────────────────────────────
-function Field({ label, name, type = "text", placeholder, required, half, select, value, onChange, error, loading }) {
+export function Field({ label, name, type = "text", placeholder, required, half, select, value, onChange, error, loading }) {
   return (
     <div className={half ? "col-span-1" : "col-span-2"}>
       <label className="field-label flex items-center gap-1">
@@ -50,7 +41,7 @@ function Field({ label, name, type = "text", placeholder, required, half, select
 }
 
 // ── Inline edit form for a saved address ──────────────────────────
-function SavedAddressEditForm({ address, onSaved, onCancel }) {
+export function SavedAddressEditForm({ address, onSaved, onCancel }) {
   const [form, setForm]           = useState({ ...address });
   const [pinLoading, setPinLoading] = useState(false);
   const updateMutation            = useUpdateAddress();
@@ -306,7 +297,7 @@ export default function Address({
         disabled={!showNewForm && !selectedSaved}
         className="btn-lg btn-primary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Continue to Payment <ChevronRight size={16} />
+        Continue to Order Summary <ChevronRight size={16} />
       </button>
     </div>
   );

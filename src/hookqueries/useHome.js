@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import API from "../../ApiCall/Api.jsx";
+import API from "../ApiCall/Api.jsx";
 
 export function useDeliverySettings() {
   return useQuery({
@@ -21,7 +21,22 @@ export function useHomeBanners() {
     queryKey: ["banners"],
     queryFn: async () => {
       const res = await API.get("/banners/get-banners");
-      return res.data.banners || [];
+      const banners = res.data.banners || [];
+      try {
+        localStorage.setItem("nokk_home_banners", JSON.stringify(banners));
+      } catch (err) {
+        console.error("Failed to save banners to localStorage:", err);
+      }
+      return banners;
+    },
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem("nokk_home_banners");
+        return cached ? JSON.parse(cached) : undefined;
+      } catch (err) {
+        console.error("Failed to parse cached banners:", err);
+        return undefined;
+      }
     },
   });
 }

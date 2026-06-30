@@ -100,7 +100,7 @@ export default function AuthLayout({
     children,
 }) {
     return (
-        <div className={`flex flex-col items-center lg:flex-row lg:justify-center lg:items-center bg-sandal-50 relative ${pageClassName}`}>
+        <div className={`flex flex-col items-center justify-center lg:flex-row lg:justify-center lg:items-center bg-sandal-50 relative ${pageClassName}`}>
 
             {/* ── Toast (Red for Error, Green for Success) ── */}
             <div

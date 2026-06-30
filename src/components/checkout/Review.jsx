@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MapPin, CreditCard, Truck, ArrowLeft, Loader2, Check } from "lucide-react";
 import { PAYMENT_METHODS } from "./Payment";
-import { useSubmitUpiReference } from "../../hooks/queries/useOrders";
+import { useSubmitUpiReference } from "../../hookqueries/useOrders";
 
 import comboImg from "../../assets/products/combo.jpg";
 

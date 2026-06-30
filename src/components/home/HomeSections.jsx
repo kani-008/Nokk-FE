@@ -40,18 +40,18 @@ export function TrustStrip() {
 export function CategoryScroll({ categories }) {
   if (!categories.length) return null;
   return (
-    <section className="page-wrap pt-12 pb-4">
+    <section className="page-wrap pt-12 pb-4 home-section-pad-fluid">
       <h2 className="font-display text-2xl font-bold text-gray-800 mb-6 text-center sm:text-center home-sec-title-fluid">
         Shop by Category
       </h2>
-      <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
+      <div className="flex gap-4 sm:gap-6 home-cat-gap-fluid overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center">
         {categories.map((cat) => (
           <Link
             key={cat.id}
             to={`/products?category=${cat.slug}`}
             className="shrink-0 flex flex-col items-center gap-2 group"
           >
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 home-cat-circle-fluid rounded-full overflow-hidden border-2 border-sandal-200 group-hover:border-gray-800 transition-all duration-300 bg-sandal-50 shadow-sm">
               <img
                 src={cat.imageUrl || PH_CAT}
                 alt={cat.nameEn}
@@ -60,11 +60,11 @@ export function CategoryScroll({ categories }) {
                 onError={(e) => { e.target.src = PH_CAT; }}
               />
             </div>
-            <span className="font-body text-xs font-bold text-gray-700 text-center w-20 sm:w-24 leading-tight group-hover:text-sandal-700 transition-colors">
+            <span className="font-body text-xs font-bold text-gray-700 text-center w-20 sm:w-24 home-cat-label-fluid leading-tight group-hover:text-sandal-700 transition-colors">
               {cat.nameEn}
             </span>
             {cat.nameTa && (
-              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-20 sm:w-24 leading-tight -mt-0.5">
+              <span className="font-tamil text-[10px] font-semibold text-sandal-500 text-center w-20 sm:w-24 home-cat-label-fluid leading-tight -mt-0.5">
                 {cat.nameTa}
               </span>
             )}
@@ -100,7 +100,7 @@ function ProductSkeleton() {
 // ══════════════════════════════════════════════════════════════════════
 export function ProductSection({ title, subtitle, viewAllTo, loading, products, emptyText }) {
   return (
-    <section className="page-wrap py-12">
+    <section className="page-wrap py-12 home-section-pad-fluid">
       <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
         <div>
           <h2 className="font-display text-2xl font-bold text-gray-800 home-sec-title-fluid">{title}</h2>
@@ -137,7 +137,7 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
 export function PromoBanner() {
   return (
     <div className="page-wrap py-6">
-      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
+      <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 home-promo-pad-fluid flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
         <div>
           <p className="font-num text-sandal-400 text-xs font-bold uppercase tracking-widest mb-1.5">
             Limited Time Deal
@@ -184,7 +184,7 @@ export function WhyUs() {
     },
   ];
   return (
-    <section className="bg-gray-900 py-16 px-4 border-t border-b border-gray-850 my-8">
+    <section className="bg-gray-900 py-16 px-4 home-section-pad-fluid border-t border-b border-gray-850 my-8">
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="font-display text-3xl font-bold text-white mb-3 home-sec-title-fluid">
           Why Namma Oor Karuvattu Kadai?
@@ -194,7 +194,7 @@ export function WhyUs() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {reasons.map((r) => (
-            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 text-left">
+            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 home-card-pad-fluid text-left">
               <span className="text-3xl block mb-4">{r.emoji}</span>
               <h3 className="font-display text-white font-bold text-lg mb-2">{r.title}</h3>
               <p className="font-body text-gray-400 text-sm leading-relaxed">{r.desc}</p>
@@ -232,7 +232,7 @@ export function Testimonials() {
   ];
 
   return (
-    <section className="bg-sandal-50/50 py-16 px-4">
+    <section className="bg-sandal-50/50 py-16 px-4 home-section-pad-fluid">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold text-gray-800 mb-2 home-sec-title-fluid">
@@ -245,7 +245,7 @@ export function Testimonials() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {reviews.map((r) => (
-            <div key={r.name} className="card p-6 flex flex-col gap-3.5 shadow-sm border border-sandal-100">
+            <div key={r.name} className="card p-6 home-card-pad-fluid flex flex-col gap-3.5 shadow-sm border border-sandal-100">
               {/* stars */}
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -296,7 +296,7 @@ export function NewsletterCTA() {
 
   return (
     <section className="page-wrap py-12">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-12 sm:px-12 flex flex-col sm:flex-row items-center gap-6 shadow-md">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-sandal-200/10 rounded-3xl px-6 py-12 sm:px-12 home-nl-pad-fluid flex flex-col sm:flex-row items-center gap-6 shadow-md">
         <div className="flex-1 text-center sm:text-left">
           <h3 className="font-display text-white text-xl sm:text-2xl font-bold mb-2 home-promo-title-fluid">
             Get fresh catch alerts & exclusive deals

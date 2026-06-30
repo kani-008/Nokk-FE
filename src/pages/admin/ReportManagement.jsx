@@ -3,7 +3,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, TrendingDown,
   Download, RefreshCw, BarChart2,
 } from "lucide-react";
-import { useReportsData } from "../../hooks/queries/useReports";
+import { useReportsData } from "../../hookqueries/useReports";
 import {
   AdminPage, AdminCard, StatCard, DataTable, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -88,7 +88,7 @@ export default function ReportManagement() {
       {/* period selector */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
+          <button key={p.key} type="button" onClick={() => setPeriod(p.key)}
             className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${period === p.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
             {p.label}
           </button>

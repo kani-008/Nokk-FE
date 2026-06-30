@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
 import { Link }     from "react-router-dom";
-import { useActiveOffers } from "../hooks/queries/useOffers";
+import { useActiveOffers } from "../hookqueries/useOffers";
 
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);

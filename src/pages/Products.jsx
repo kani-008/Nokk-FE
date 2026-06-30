@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  SlidersHorizontal, X, ChevronDown, ChevronUp, Search,
+  SlidersHorizontal, X, ChevronDown, ChevronUp,
   Star, ArrowUpDown,
 } from "lucide-react";
-import { useProductCategories, useWeightLabels, useProductList } from "../hooks/queries/useProducts";
+import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
 
 
 import ProductCard from "../components/Product/ProductCard";
@@ -328,7 +328,6 @@ export default function Products() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState(search);
   const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
 
   const sortRef = useRef(null);
@@ -379,7 +378,6 @@ export default function Products() {
 
   const removeAllFilters = () => {
     setSearchParams({});
-    setSearchInput("");
     setPriceDraft({ min: "", max: "" });
   };
 
@@ -441,74 +439,53 @@ export default function Products() {
         )}
       </div> */}
 
-      {/* ── Top toolbar: search + sort + filter button ─────────── */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4 items-stretch sm:items-center justify-between bg-white p-3 rounded-2xl border border-sandal-100 shadow-sm">
-
-        {/* inline search */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); setParam("search", searchInput); }}
-          className="flex-1 min-w-[200px]"
-        >
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-sandal-500" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search products…"
-              className="field-input pl-9 pr-4 py-2 text-sm w-full bg-sandal-50/10 focus:bg-white"
-            />
-          </div>
-        </form>
-
-        {/* controls group */}
-        <div className="flex items-center gap-2.5">
-          {/* sort dropdown */}
-          <div className="relative" ref={sortRef}>
-            <button
-              type="button"
-              onClick={() => setSortOpen((s) => !s)}
-              className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
-            >
-              <ArrowUpDown size={14} className="text-sandal-500" />
-              <span>Sort: {currentSortLabel}</span>
-              <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
-            </button>
-            {sortOpen && (
-              <div className="absolute right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-35 min-w-[170px]">
-                {SORT_OPTIONS.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* filter button */}
+      {/* ── Sort + Filter controls (no card wrapper — search lives in NavBar on this route) ── */}
+      <div className="flex items-center justify-end gap-2.5 mb-4">
+        {/* sort dropdown */}
+        <div className="relative" ref={sortRef}>
           <button
             type="button"
-            onClick={() => {
-              setFilterOpen((s) => !s);
-              setDesktopSidebarOpen((s) => !s);
-            }}
+            onClick={() => setSortOpen((s) => !s)}
             className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
           >
-            <SlidersHorizontal size={14} className="text-sandal-500" />
-            <span>Filter</span>
-            {activeFilters.length > 0 && (
-              <span className="bg-sandal-400 text-gray-900 font-num text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-                {activeFilters.length}
-              </span>
-            )}
+            <ArrowUpDown size={14} className="text-sandal-500" />
+            <span>Sort: {currentSortLabel}</span>
+            <ChevronDown size={14} className={`transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
           </button>
+          {sortOpen && (
+            <div className="absolute right-0 top-full mt-1.5 bg-white border border-sandal-100 rounded-xl shadow-lg overflow-hidden z-35 min-w-[170px]">
+              {SORT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => { setParam("sort", o.value === "popular" ? "" : o.value); setSortOpen(false); }}
+                  className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors cursor-pointer ${sort === o.value ? "bg-sandal-100 text-sandal-800 font-bold" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* filter button */}
+        <button
+          type="button"
+          onClick={() => {
+            setFilterOpen((s) => !s);
+            setDesktopSidebarOpen((s) => !s);
+          }}
+          className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
+        >
+          <SlidersHorizontal size={14} className="text-sandal-500" />
+          <span>Filter</span>
+          {activeFilters.length > 0 && (
+            <span className="bg-sandal-400 text-gray-900 font-num text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+              {activeFilters.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* ── Active filter pills ───────────────────────────────────── */}

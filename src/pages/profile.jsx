@@ -8,7 +8,7 @@ import {
   useUpdateAddress,
   useDeleteAddress,
   lookupPincode,
-} from "../hooks/queries/useProfile";
+} from "../hookqueries/useProfile";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import { useToast }     from "../components/useToast.jsx";
 import Dropdown         from "../components/admin/Dropdown.jsx";

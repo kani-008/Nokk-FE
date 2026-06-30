@@ -7,7 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { useProductDetail, useProductList } from "../hooks/queries/useProducts";
+import { useProductDetail, useProductList } from "../hookqueries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";

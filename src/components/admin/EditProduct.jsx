@@ -13,7 +13,7 @@ import {
   useDeleteProductImage,
   useUploadProductImage,
   useDeleteUploadedFile
-} from "../../hooks/queries/useProducts";
+} from "../../hookqueries/useProducts";
 
 const EMPTY = {
   nameEn: "", nameTa: "", slug: "", description: "", howToUse: "", storageTips: "",

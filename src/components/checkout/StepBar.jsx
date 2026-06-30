@@ -1,13 +1,13 @@
 import { Check } from "lucide-react";
 
 const STEPS = [
-  { key: "address", label: "Address" },
-  { key: "payment", label: "Payment" },
-  { key: "review",  label: "Review"  },
+  { key: "address", label: "Address"       },
+  { key: "summary", label: "Order Summary" },
+  { key: "payment", label: "Payment"       },
 ];
 
 // Props:
-//   current {string} — "address" | "payment" | "review"
+//   current {string} — "address" | "summary" | "payment"
 export default function StepBar({ current }) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
 

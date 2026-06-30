@@ -26,28 +26,26 @@ import API from "../../ApiCall/Api.jsx";
        that a saver mode refused to autoplay).
 */
 export default function HeroBanner({ banners }) {
-  const [slides, setSlides] = useState([]);
-
-  useEffect(() => {
+  const [slides, setSlides] = useState(() => {
     const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
-    if (!activeBanner?.id) return;
-    const fetchBtexts = async () => {
-      try {
-        const res = await API.get(`/btext/get-by-banner?bannerId=${activeBanner.id}`);
-        console.log(res.data);
-        setSlides((res.data.btexts || []).filter((o) => o.isActive));
-      } catch (err) {
-        console.error("Failed to load banner texts:", err);
+    if (!activeBanner?.id) return [];
+    try {
+      const cached = localStorage.getItem(`nokk_banner_texts_${activeBanner.id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) return parsed;
       }
-    };
-    fetchBtexts();
-  }, [banners]);
+    } catch (err) {
+      console.error("Failed to read cached slides:", err);
+    }
+    return [];
+  });
 
   const count = slides.length;
 
   // Clones front and back enable seamless looping.
   const slidesWithClones = count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
-  const trackLength = slidesWithClones.length;
+  const trackLength = slidesWithClones.length || 1;
 
   const [domIdx, setDomIdx] = useState(count > 1 ? 1 : 0);
   const [animate, setAnimate] = useState(true);
@@ -59,6 +57,42 @@ export default function HeroBanner({ banners }) {
 
   // true once the video element emits a real `playing` event
   const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
+    if (!activeBanner?.id) return;
+
+    const storageKey = `nokk_banner_texts_${activeBanner.id}`;
+
+    // Load from localStorage immediately for fast rendering
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setSlides(parsed);
+          setDomIdx(parsed.length > 1 ? 1 : 0);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load cached banner texts:", err);
+    }
+
+    const fetchBtexts = async () => {
+      try {
+        const res = await API.get(`/btext/get-by-banner?bannerId=${activeBanner.id}`);
+        console.log(res.data);
+        const activeTexts = (res.data.btexts || []).filter((o) => o.isActive);
+        setSlides(activeTexts);
+        setDomIdx(activeTexts.length > 1 ? 1 : 0);
+        localStorage.setItem(storageKey, JSON.stringify(activeTexts));
+      } catch (err) {
+        console.error("Failed to load banner texts:", err);
+      }
+    };
+    fetchBtexts();
+  }, [banners]);
 
   const minSwipeDistance = 50;
 
@@ -80,13 +114,13 @@ export default function HeroBanner({ banners }) {
     if (count <= 1 || isResetting.current) return;
     setAnimate(true);
     setDomIdx((d) => d + 1);
-  }, [count]);
+  }, [count, setAnimate, setDomIdx]);
 
   const stepToPrevious = useCallback(() => {
     if (count <= 1 || isResetting.current) return;
     setAnimate(true);
     setDomIdx((d) => d - 1);
-  }, [count]);
+  }, [count, setAnimate, setDomIdx]);
 
   const goToLogical = useCallback((targetLogical) => {
     if (count <= 1 || isResetting.current) return;
@@ -97,7 +131,7 @@ export default function HeroBanner({ banners }) {
       if (forwardSteps <= 0) forwardSteps += count;
       return d + forwardSteps;
     });
-  }, [count]);
+  }, [count, setAnimate, setDomIdx]);
 
   const handleTransitionEnd = () => {
     if (count <= 1) return;
