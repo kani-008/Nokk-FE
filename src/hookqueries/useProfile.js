@@ -42,15 +42,20 @@ export async function lookupPincode(pincode) {
   const resourceId = import.meta.env.VITE_GOV_PINCODE_RESOURCE_ID;
   const url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[pincode]=${pincode}`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Failed to fetch pincode details from government API");
-  }
-  const result = await response.json();
-  const records = result.records || [];
-  if (records.length === 0) {
-    throw new Error("Pincode not found");
-  }
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    if (!response.ok) {
+      throw new Error("Failed to fetch pincode details from government API");
+    }
+    const result = await response.json();
+    const records = result.records || [];
+    if (records.length === 0) {
+      throw new Error("Pincode not found");
+    }
 
   let bestRecord = records.find(r => r.deliverystatus === "Delivery" && r.taluk && r.taluk !== "NA");
   if (!bestRecord) {
@@ -68,12 +73,19 @@ export async function lookupPincode(pincode) {
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  return {
-    pincode: pincode,
-    district: bestRecord.districtname || "",
-    state: formatState(bestRecord.statename) || "",
-    taluk: bestRecord.taluk && bestRecord.taluk !== "NA" ? bestRecord.taluk : "",
-  };
+    return {
+      pincode: pincode,
+      district: bestRecord.districtname || "",
+      state: formatState(bestRecord.statename) || "",
+      taluk: bestRecord.taluk && bestRecord.taluk !== "NA" ? bestRecord.taluk : "",
+    };
+  } catch (err) {
+    clearTimeout(id);
+    if (err.name === "AbortError") {
+      throw new Error("Pincode request timed out. Please try again or fill fields manually.");
+    }
+    throw err;
+  }
 }
 
 // ── MUTATIONS ───────────────────────────────────────────────────────
@@ -154,22 +166,34 @@ export async function reverseGeocode(lat, lng) {
   const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
   const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${apiKey}`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Failed to detect location details");
-  }
-  const data = await response.json();
-  if (!data.features || data.features.length === 0) {
-    throw new Error("Location details not found");
-  }
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 7000);
 
-  const properties = data.features[0].properties || {};
-  return {
-    pincode: properties.postcode || "",
-    city: properties.city || properties.county || "",
-    taluk: properties.suburb || properties.district || "",
-    state: properties.state || ""
-  };
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    if (!response.ok) {
+      throw new Error("Failed to detect location details");
+    }
+    const data = await response.json();
+    if (!data.features || data.features.length === 0) {
+      throw new Error("Location details not found");
+    }
+
+    const properties = data.features[0].properties || {};
+    return {
+      pincode: properties.postcode || "",
+      city: properties.city || properties.county || "",
+      taluk: properties.suburb || properties.district || "",
+      state: properties.state || ""
+    };
+  } catch (err) {
+    clearTimeout(id);
+    if (err.name === "AbortError") {
+      throw new Error("Location detection timed out. Please try again or fill fields manually.");
+    }
+    throw err;
+  }
 }
 
 export async function detectAddressFromCoords(lat, lng) {

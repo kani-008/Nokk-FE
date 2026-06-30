@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAddresses, useAddAddress } from "../hookqueries/useProfile";
 import { useDeliverySettings } from "../hookqueries/useHome";
@@ -78,8 +78,8 @@ export default function Checkout() {
   }, 0);
 
   // ── step ───────────────────────────────────────────────────────────
-  // null = determining initial step (while addresses load)
-  const [step, setStep] = useState(null);
+  const { stepParam } = useParams();
+  const step = stepParam || "address"; // default step
   const [stepInitialized, setStepInitialized] = useState(false);
 
   // ── address picker sheet ───────────────────────────────────────────
@@ -121,25 +121,33 @@ export default function Checkout() {
     setPaymentMsg("");
   };
 
+  // Ensure default saved address is selected when list loads
+  useEffect(() => {
+    if (!addrLoading && addressesList.length > 0 && !selectedSaved) {
+      setSelectedSaved(addressesList[0]);
+    }
+  }, [addressesList, addrLoading, selectedSaved]);
+
   // ── Smart entry: once addresses finish loading, set initial step ───
   useEffect(() => {
     if (addrLoading || stepInitialized) return;
     const t = setTimeout(() => {
+      if (stepParam === "address" || stepParam === "summary" || stepParam === "payment") {
+        setStepInitialized(true);
+        return;
+      }
       if (addressesList.length > 0) {
-        // Has saved addresses → pre-select the first (default/most-recent)
-        // and skip straight to the Order Summary step.
         setSelectedSaved(addressesList[0]);
         setShowNewForm(false);
-        setStep("summary");
+        navigate("/checkout/summary", { replace: true });
       } else {
-        // No saved addresses → show address entry first
         setShowNewForm(true);
-        setStep("address");
+        navigate("/checkout/address", { replace: true });
       }
       setStepInitialized(true);
     }, 0);
     return () => clearTimeout(t);
-  }, [addressesList, addrLoading, stepInitialized]);
+  }, [addressesList, addrLoading, stepInitialized, stepParam, navigate]);
 
   // ── redirect if cart emptied (skip when in buy-now mode) ──────────
   useEffect(() => {
@@ -149,7 +157,7 @@ export default function Checkout() {
   // ── clear buy-now item when leaving checkout ───────────────────────
   useEffect(() => {
     return () => {
-      if (window.location.pathname !== "/checkout") {
+      if (!window.location.pathname.startsWith("/checkout")) {
         clearBuyNow();
       }
     };
@@ -158,7 +166,7 @@ export default function Checkout() {
   // ── handlers ──────────────────────────────────────────────────────
   const handleAddressNext = () => {
     if (!showNewForm && selectedSaved) {
-      setStep("summary");
+      navigate("/checkout/summary", { replace: true });
       return;
     }
     const errs = validateAddress(newAddress);
@@ -167,7 +175,11 @@ export default function Checkout() {
       return;
     }
     setAddrErrors({});
-    setStep("summary");
+    // Promote the new address into selectedSaved so that OrderSummaryStep
+    // (which reads address={selectedSaved}) can display it and enable Continue.
+    // showNewForm stays true so handlePlaceOrder knows to save it to backend.
+    setSelectedSaved(newAddress);
+    navigate("/checkout/summary", { replace: true });
   };
 
   const handleChangeNew = (key, value) => {
@@ -255,8 +267,8 @@ export default function Checkout() {
           );
           throw new Error(
             saveAddrErr.response?.data?.message ||
-              saveAddrErr.message ||
-              "Failed to save address to profile",
+            saveAddrErr.message ||
+            "Failed to save address to profile",
             { cause: saveAddrErr },
           );
         }
@@ -369,8 +381,7 @@ export default function Checkout() {
                 verifyErr,
               );
               setOrderErr(
-                `Payment verified with signature mismatch or database processing error. If money was deducted, please contact support with Payment ID: ${response.razorpay_payment_id}. Error: ${
-                  verifyErr.response?.data?.message || verifyErr.message
+                `Payment verified with signature mismatch or database processing error. If money was deducted, please contact support with Payment ID: ${response.razorpay_payment_id}. Error: ${verifyErr.response?.data?.message || verifyErr.message
                 }`,
               );
             } finally {
@@ -385,7 +396,7 @@ export default function Checkout() {
               setPaymentMsg(
                 "Payment cancelled. You can select a payment method and try again.",
               );
-              setStep("payment");
+              navigate("/checkout/payment");
             },
           },
           prefill: {
@@ -393,11 +404,11 @@ export default function Checkout() {
             email: user?.email || "",
             contact: user?.phone
               ? `+91${String(user.phone)
-                  .replace(/^\+?91/, "")
-                  .replace(/\D/g, "")}`
+                .replace(/^\+?91/, "")
+                .replace(/\D/g, "")}`
               : `+91${String(payload.address.phone)
-                  .replace(/^\+?91/, "")
-                  .replace(/\D/g, "")}`,
+                .replace(/^\+?91/, "")
+                .replace(/\D/g, "")}`,
           },
           readonly: {
             name: true,
@@ -459,8 +470,8 @@ export default function Checkout() {
     } catch (err) {
       setOrderErr(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to place order. Please try again.",
+        err.message ||
+        "Failed to place order. Please try again.",
       );
     }
   };
@@ -526,9 +537,9 @@ export default function Checkout() {
           ship={ship}
           tot={tot}
           coupon={coupon}
-          onBack={() => setStep("address")}
+          onBack={() => navigate("/checkout/address", { replace: true })}
           onContinue={() => {
-            if (selectedSaved) setStep("payment");
+            if (selectedSaved) navigate("/checkout/payment");
           }}
           onChangeAddress={() => setPickerOpen(true)}
           onUpdateQty={handleUpdateQty}
@@ -548,7 +559,7 @@ export default function Checkout() {
           placing={placing}
           error={orderErr}
           placedOrderId={placedOrderId}
-          onBack={() => setStep("summary")}
+          onBack={() => navigate("/checkout/summary", { replace: true })}
         />
       )}
 

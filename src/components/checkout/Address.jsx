@@ -387,7 +387,7 @@ export default function Address({
         disabled={!showNewForm && !selectedSaved}
         className="btn-lg btn-primary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Continue to Order Summary <ChevronRight size={16} />
+        Continue <ChevronRight size={16} />
       </button>
     </div>
   );

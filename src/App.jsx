@@ -91,7 +91,7 @@ export default function App() {
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/:stepParam?" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
