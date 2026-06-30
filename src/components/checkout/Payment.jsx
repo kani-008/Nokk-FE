@@ -117,10 +117,9 @@ export default function Payment({
       {/* Collapsible price details for mobile view */}
       <div className="md:hidden mb-4 overflow-hidden border border-brand-100 rounded-2xl bg-brand-50 transition-all duration-500 ease-in-out">
         {/* Collapsible details (rendered at the top of the card) */}
-        <div 
-          className={`transition-all duration-500 ease-in-out overflow-hidden ${
-            priceDetailsOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-          }`}
+        <div
+          className={`transition-all duration-500 ease-in-out overflow-hidden ${priceDetailsOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+            }`}
         >
           <div className="px-4 pt-4 pb-1 border-b border-brand-100/50">
             <div className="space-y-3.5 text-sm pb-3">
@@ -156,9 +155,8 @@ export default function Payment({
             <span>Total Amount</span>
             <ChevronDown
               size={16}
-              className={`text-brand-500 transition-transform duration-500 ${
-                priceDetailsOpen ? "rotate-180" : ""
-              }`}
+              className={`text-brand-500 transition-transform duration-500 ${priceDetailsOpen ? "rotate-180" : ""
+                }`}
             />
           </div>
           <span className="font-num text-lg font-extrabold text-brand-900">
@@ -192,19 +190,17 @@ export default function Payment({
                   <button
                     type="button"
                     onClick={() => onSelect(m.key)}
-                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-2xl text-left transition-colors ${
-                      selected === m.key
+                    className={`w-full flex items-center gap-4 p-4 border-2 rounded-2xl text-left transition-colors ${selected === m.key
                         ? "border-brand-700 bg-brand-50"
                         : "border-amber-100 hover:border-amber-300 bg-white"
-                    }`}
+                      }`}
                   >
                     {/* radio dot */}
                     <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        selected === m.key
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selected === m.key
                           ? "border-brand-700 bg-brand-700"
                           : "border-amber-300"
-                      }`}
+                        }`}
                     >
                       {selected === m.key && (
                         <div className="w-2 h-2 rounded-full bg-white" />
@@ -272,9 +268,8 @@ export default function Payment({
                 <div className="flex justify-between font-body text-amber-700">
                   <span>Delivery Charges</span>
                   <span
-                    className={`font-num ${
-                      shipping === 0 ? "text-green-600 font-semibold" : ""
-                    }`}
+                    className={`font-num ${shipping === 0 ? "text-green-600 font-semibold" : ""
+                      }`}
                   >
                     {shipping === 0 ? "FREE" : rupee(shipping)}
                   </span>
@@ -288,6 +283,7 @@ export default function Payment({
             </div>
 
             {/* ── Place Order Action Box (hidden on mobile, visible on desktop/tablet md+) ── */}
+            {/*
             <div className="hidden md:flex items-center justify-between bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
               <div>
                 {discount > 0 && (
@@ -316,6 +312,7 @@ export default function Payment({
                 {placing ? "Placing..." : "Place Order"}
               </button>
             </div>
+            */}
           </div>
         </div>
       </div>

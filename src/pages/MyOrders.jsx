@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useLocation }   from "react-router-dom";
 import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
-  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check,
+  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star,
 } from "lucide-react";
 import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hookqueries/useOrders";
+import { useAddReview } from "../hookqueries/useProducts";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import comboImg from "../assets/products/combo.jpg";
 
@@ -119,6 +120,99 @@ function ReplacementModal({ orderId, onClose, onSuccess }) {
   );
 }
 
+// ── Write review modal ─────────────────────────────────────────────────
+function ReviewModal({ item, onClose, onReviewed }) {
+  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const addReviewMutation = useAddReview();
+  const loading = addReviewMutation.isPending;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.comment.trim()) { setError("Please write your review comment"); return; }
+    setError("");
+    try {
+      await addReviewMutation.mutateAsync({ productId: item.productId, ...form });
+      setDone(true);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to submit review");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-base font-bold text-brand-900">Write a Review</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={16} /></button>
+        </div>
+
+        <p className="font-body text-sm text-amber-700 font-semibold line-clamp-1">{item.productName}</p>
+
+        {done ? (
+          <div className="py-6 text-center">
+            <p className="font-body text-sm text-green-700 font-bold flex items-center justify-center gap-2">
+              <Check size={16} /> Review submitted — thank you!
+            </p>
+            <button onClick={() => { onReviewed?.(); onClose(); }} className="btn-md btn-primary mt-4 w-full">Done</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="field-label">Your Rating</label>
+              <div className="flex gap-1.5 mt-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, rating: s }))}
+                    className="cursor-pointer transition-transform active:scale-90"
+                  >
+                    <Star
+                      size={24}
+                      className={s <= form.rating ? "fill-amber-400 text-amber-400" : "fill-gray-200 text-gray-300"}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="field-label">Review Title (optional)</label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="Summarize your review…"
+                className="field-input"
+              />
+            </div>
+
+            <div>
+              <label className="field-label">Your Review</label>
+              <textarea
+                value={form.comment}
+                onChange={(e) => { setForm((f) => ({ ...f, comment: e.target.value })); setError(""); }}
+                placeholder="Share your experience with this product…"
+                rows={3}
+                className="field-input resize-none"
+              />
+              {error && <p className="font-body text-xs text-red-500 mt-1">{error}</p>}
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-md btn-primary w-full">
+              {loading ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : "Submit Review"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Order card ─────────────────────────────────────────────────────────
 function OrderCard({ order }) {
   const { token }   = useAuthStore();
@@ -129,6 +223,8 @@ function OrderCard({ order }) {
   const [replacementRequested, setReplacementRequested] = useState(
     ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
   );
+  const [reviewItem, setReviewItem] = useState(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
 
   const canCancel  = ["pending","confirmed"].includes(status);
   const isDelivered = status === "delivered";
@@ -185,7 +281,7 @@ function OrderCard({ order }) {
           {/* items */}
           <div className="space-y-3">
             {(order.items || []).map((item, i) => (
-              <div key={i} className="flex gap-3 items-center">
+              <div key={i} className="flex gap-3 items-start">
                 <img
                   src={item.imageUrl || item.image || PH} alt={item.productName}
                   className="w-12 h-12 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
@@ -194,6 +290,20 @@ function OrderCard({ order }) {
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-medium text-brand-900 line-clamp-1">{item.productName}</p>
                   <p className="font-body text-xs text-amber-500">{item.weightLabel} · Qty {item.quantity}</p>
+                  {status === "delivered" && item.productId && (
+                    reviewedProductIds.has(item.productId) ? (
+                      <span className="font-body text-xs text-green-600 font-semibold flex items-center gap-1 mt-1">
+                        <Check size={11} /> Reviewed
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setReviewItem(item)}
+                        className="font-body text-xs text-brand-700 font-semibold hover:underline mt-1 flex items-center gap-1"
+                      >
+                        <Star size={11} className="fill-amber-400 text-amber-400" /> Write Review
+                      </button>
+                    )
+                  )}
                 </div>
                 <span className="font-num text-sm font-semibold text-brand-900 shrink-0">{rupee(item.price * item.quantity)}</span>
               </div>
@@ -320,6 +430,14 @@ function OrderCard({ order }) {
             setStatus("replacement_requested");
             setShowReplacementModal(false);
           }}
+        />
+      )}
+
+      {reviewItem && (
+        <ReviewModal
+          item={reviewItem}
+          onClose={() => setReviewItem(null)}
+          onReviewed={() => setReviewedProductIds((prev) => new Set([...prev, reviewItem.productId]))}
         />
       )}
     </div>

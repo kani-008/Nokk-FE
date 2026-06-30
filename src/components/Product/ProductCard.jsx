@@ -153,10 +153,10 @@ export default function ProductCard({ product }) {
 
             {/* label badge */}
             {product.isBestseller && (
-              <span className="absolute top-2.5 right-10 badge-amber shadow-sm">Best Seller</span>
+              <span className="absolute top-2.5 right-11 badge-amber shadow-sm">Best Seller</span>
             )}
             {product.isNew && !product.isBestseller && (
-              <span className="absolute top-2.5 right-10 badge-green shadow-sm">New</span>
+              <span className="absolute top-2.5 right-11 badge-green shadow-sm">New</span>
             )}
 
             {/* out of stock overlay */}
@@ -170,11 +170,11 @@ export default function ProductCard({ product }) {
             <button
               onClick={handleWishlist}
               aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-              className="absolute top-2.5 right-2.5 w-7.5 h-7.5 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all"
+              className="absolute top-1.5 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all"
             >
               <svg
                 viewBox="0 0 24 24"
-                className={`w-4 h-4 transition-colors ${wishlisted
+                className={`w-4.5 h-4.5 transition-colors ${wishlisted
                   ? "fill-rose-500 stroke-rose-500"
                   : "fill-none stroke-sandal-500 hover:stroke-rose-500"
                   }`}

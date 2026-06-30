@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight, ShoppingCart, Heart, Star,
@@ -7,7 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { useProductDetail, useProductList } from "../hookqueries/useProducts";
+import { useProductDetail, useSimilarProducts } from "../hookqueries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
@@ -16,16 +16,17 @@ import { useBuyNowStore } from "../components/store/BuyNowStore.js";
 import { useToast } from "../components/useToast";
 import ProductDescription from "../components/Product/ProductDescription.jsx";
 import ProductReviews from "../components/Product/ProductReviews.jsx";
+import ProductCard from "../components/Product/ProductCard.jsx";
 
 import comboImg from "../assets/products/combo.jpg";
 
-// ─── placeholder ──────────────────────────────────────────────────────
+// placeholder 
 const PH = comboImg;
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-// ── Detail skeleton ────────────────────────────────────────────────────
+// Detail skeleton 
 function DetailSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-pulse">
@@ -187,15 +188,7 @@ export default function ProductDetails() {
   const { data: product, isLoading: productLoading, error: productError, refetch: refetchProduct } = useProductDetail(slug);
   const notFound = productError?.response?.status === 404;
 
-  const categorySlug = product?.categorySlug;
-  const { data: relatedData } = useProductList(
-    { category: categorySlug, limit: 4 },
-    { enabled: !!categorySlug }
-  );
-
-  const related = useMemo(() => {
-    return (relatedData?.products || []).filter((p) => p.slug !== slug);
-  }, [relatedData, slug]);
+  const { data: similar = [] } = useSimilarProducts(product?.id, { enabled: !!product?.id });
 
   const loading = productLoading;
 
@@ -413,7 +406,7 @@ export default function ProductDetails() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
 
       {/* ── Toast (Red for Error, Green for Success) ── */}
       <div
@@ -456,10 +449,10 @@ export default function ProductDetails() {
 
       {/* ── Main product section ──────────────────────────────────── */}
       {/* extra bottom padding on mobile so content isn't hidden behind the sticky CTA bar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-12 pb-20 md:pb-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 mb-12 pb-20 md:pb-0">
 
         {/* Gallery — sticky on desktop */}
-        <div>
+        <div className="max-w-xl w-full mx-auto md:sticky md:top-[104px] self-start">
           <ImageGallery images={product.images} onShare={handleShare} />
         </div>
 
@@ -586,41 +579,26 @@ export default function ProductDetails() {
           {/* Product Description Tabs */}
           <ProductDescription product={product} />
 
-          {/* Product Reviews with Flipkart-Style breakdown */}
-          <ProductReviews product={product} onSubmitReview={refetchProduct} />
+          
 
         </div>
       </div>
 
-      {/* ── Related products ──────────────────────────────────────── */}
-      {related.length > 0 && (
-        <section>
-          <h2 className="font-display text-xl font-bold text-brand-900 mb-5">You May Also Like</h2>
-          <div className="product-grid">
-            {related.map((p) => (
-              <Link key={p.id} to={`/products/${p.slug}`} className="group block">
-                <div className="card-hover">
-                  <div className="aspect-square overflow-hidden rounded-t-2xl bg-brand-50">
-                    <img
-                      src={p.primaryImage || PH}
-                      alt={p.nameEn}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.src = PH; }}
-                    />
-                  </div>
-                  <div className="p-3">
-                    <p className="font-body text-sm font-semibold text-brand-900 line-clamp-2">{p.nameEn}</p>
-                    <p className="font-num text-sm font-bold text-brand-800 mt-1">
-                      {rupee(p.variants?.[0]?.price ?? p.minPrice ?? 0)}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+      {/* ── Similar products ──────────────────────────────────────── */}
+      {similar.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-display text-xl font-bold text-brand-900 mb-4">Similar Products</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {similar.map((p) => (
+              <div key={p.id} className="shrink-0" style={{ width: "200px" }}>
+                <ProductCard product={p} />
+              </div>
             ))}
           </div>
         </section>
       )}
+      {/* Product Reviews with Flipkart-Style breakdown */}
+      <ProductReviews product={product} />
 
       {/* ── Mobile sticky bottom CTA bar ─────────────────────────────
           Fixed to the viewport bottom, mobile only (hidden md:up).

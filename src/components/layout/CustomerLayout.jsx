@@ -17,9 +17,10 @@ function ScrollToTop() {
 export default function CustomerLayout() {
   const location = useLocation();
   const isAuthPage     = location.pathname === "/login" || location.pathname === "/register";
+  const isCheckoutPage = location.pathname.startsWith("/checkout");
   // footer hidden on mobile for auth + shopping-flow pages where bottom UX is self-contained
   const isNoFooterMobile = isAuthPage
-    || location.pathname.startsWith("/checkout")
+    || isCheckoutPage
     || location.pathname === "/cart"
     || location.pathname === "/wishlist";
 
@@ -86,12 +87,24 @@ export default function CustomerLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">
       <ScrollToTop />
-      <NavBar />
+      {/* 
+        The top navigation bar is commented/hidden on mobile for checkout pages (address, summary, payment)
+        but is restored on desktop viewports.
+      */}
+      {isCheckoutPage ? (
+        <div className="hidden md:block">
+          <NavBar />
+        </div>
+      ) : (
+        <NavBar />
+      )}
       {/*
         Padding offsets the fixed NavBar height:
           - NavBar always visible → pt-16 (mobile) / pt-[88px] (sm+)
+          - If isCheckoutPage, top navbar is hidden on mobile (so no top padding)
+            but visible on desktop (needs md:pt-[88px] offset).
       */}
-      <main className="flex-1 pt-16 sm:pt-[88px]">
+      <main className={`flex-1 ${isCheckoutPage ? "md:pt-[88px]" : "pt-16 sm:pt-[88px]"}`}>
         <Outlet />
       </main>
       {/* Hide footer on mobile for auth + focused shopping-flow pages */}
