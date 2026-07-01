@@ -34,6 +34,18 @@ export function useProductList(params, options = {}) {
   });
 }
 
+export function useSimilarProducts(productId, options = {}) {
+  return useQuery({
+    queryKey: ["products", "similar", productId],
+    queryFn: async () => {
+      const res = await API.get("/products/similar", { params: { productId, limit: 8 } });
+      return res.data.products || [];
+    },
+    enabled: !!productId,
+    ...options,
+  });
+}
+
 export function useProductDetail(slug) {
   return useQuery({
     queryKey: ["product", slug],

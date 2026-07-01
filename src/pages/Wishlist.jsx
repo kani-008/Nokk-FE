@@ -197,9 +197,12 @@ export default function Wishlist() {
           const res = await API.get("/wishlist/get-wishlist");
           console.log(res.data);
           const serverIds = (res.data.wishlist ?? []).map((i) => i.productId);
-          const merged = Array.from(new Set([...useWishlistStore.getState().ids, ...serverIds]));
-          useWishlistStore.getState().setIds(merged);
-          setLocalIds(merged);
+          // Server is authoritative — replace local state outright so stale
+          // persisted IDs can never resurrect a deleted item on reload.
+          // Guest (not authenticated) falls through the outer `if` entirely,
+          // so local-only Zustand store remains the source of truth for guests.
+          useWishlistStore.getState().setIds(serverIds);
+          setLocalIds(serverIds);
         } catch (err) {
           console.error("loadFromServer failed:", err);
         }
@@ -269,16 +272,23 @@ export default function Wishlist() {
   };
 
   // ── Clear all ─────────────────────────────────────────────────────
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     clear();
     setLocalIds([]);
     setProducts([]);
+    if (token) {
+      try {
+        await API.delete("/wishlist/clear");
+      } catch (err) {
+        console.error("Failed to clear server wishlist:", err);
+      }
+    }
   };
 
   // ── Empty state ───────────────────────────────────────────────────
   if (!localIds.length && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 px-4 text-center">
         <Heart size={56} className="text-amber-200 mb-4" />
         <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">

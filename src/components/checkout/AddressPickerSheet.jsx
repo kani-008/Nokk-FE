@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Plus, Home, MapPin, MoreVertical, Pencil, Trash2, Check, Loader2 } from "lucide-react";
-import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode } from "../../hookqueries/useProfile";
+import { X, Plus, Home, MapPin, MoreVertical, Pencil, Trash2, Check, Loader2, Navigation } from "lucide-react";
+import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode, detectAddressFromCoords } from "../../hookqueries/useProfile";
 import { Field, SavedAddressEditForm } from "./Address";
 import { INDIAN_STATES } from "./statesList.js";
 import { useAuthStore } from "../store/AuthStore";
@@ -100,10 +100,42 @@ function AddNewForm({ onSaved, onCancel }) {
   });
   const [errors,     setErrors]     = useState({});
   const [pinLoading, setPinLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   const set = (k, v) => {
     setForm((f) => ({ ...f, [k]: v }));
     setErrors((e) => ({ ...e, [k]: "" }));
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const details = await detectAddressFromCoords(latitude, longitude);
+          
+          if (details.pincode) set("pincode", details.pincode);
+          if (details.city) set("city", details.city);
+          if (details.taluk) set("taluk", details.taluk);
+          const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
+          if (matchedState) set("state", matchedState);
+        } catch (err) {
+          alert("Failed to detect location: " + err.message);
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (error) => {
+        alert("Geolocation error: " + error.message);
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handlePincodeChange = async (_, val) => {
@@ -174,6 +206,19 @@ function AddNewForm({ onSaved, onCancel }) {
       <p className="font-body text-xs font-semibold text-amber-600 mb-3">New address</p>
 
       <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          disabled={geoLoading}
+          onClick={handleDetectLocation}
+          className="col-span-2 flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-900 border border-brand-200 hover:border-brand-300 rounded-lg px-3 py-1.5 bg-brand-50/50 w-fit transition-all duration-200 disabled:opacity-50 cursor-pointer"
+        >
+          {geoLoading ? (
+            <><Loader2 size={12} className="animate-spin mr-1" /> Detecting…</>
+          ) : (
+            <><Navigation size={12} className="shrink-0" /> Detect my location</>
+          )}
+        </button>
+
         <Field label="Full Name"      name="name"         placeholder="Recipient"          required half
           value={form.name}         onChange={(_, v) => set("name", v)}         error={errors.name} />
         <Field label="Phone"          name="phone"        type="tel" placeholder="10-digit" required half
@@ -257,16 +302,16 @@ export default function AddressPickerSheet({ open, onClose, selectedId, onSelect
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
       {/* backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 "
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* sheet panel */}
-      <div className="relative w-full sm:max-w-md max-h-[90vh] flex flex-col bg-white rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative w-full sm:max-w-md max-h-[90vh] sm:max-h-none flex flex-col bg-white rounded-t-3xl sm:rounded-none overflow-hidden shadow-2xl">
 
         {/* drag pill (mobile) */}
         <div className="sm:hidden w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />

@@ -83,6 +83,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
@@ -91,7 +92,7 @@ export default function App() {
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/:stepParam?" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
             <Route path="/profile" element={<Profile />} />
           </Route>

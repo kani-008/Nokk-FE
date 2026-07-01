@@ -1,8 +1,4 @@
-import { useState } from "react";
-import { Star, Loader2, Check } from "lucide-react";
-import { useAddReview } from "../../hookqueries/useProducts";
-import { useAuthStore } from "../store/AuthStore.jsx";
-import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 
 // Helper to distribute total review counts realistically if actual review logs are empty or partial.
 // This ensures progress bars look populated and accurate.
@@ -65,107 +61,8 @@ function StarBadge({ rating, size = 12 }) {
   );
 }
 
-// ── Write review form ──
-function ReviewForm({ productId, productSlug, onSubmit }) {
-  const { isAuthenticated, token } = useAuthStore();
-  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
-
-  const addReviewMutation = useAddReview();
-  const loading = addReviewMutation.isPending;
-
-  if (!isAuthenticated) {
-    return (
-      <div className="card p-5 text-center mt-4">
-        <p className="font-body text-sm text-gray-650 font-bold">
-          Please{" "}
-          <Link to="/login" className="font-bold text-sandal-700 hover:underline">Sign In</Link>
-          {" "}to submit a product review.
-        </p>
-      </div>
-    );
-  }
-
-  if (done) {
-    return (
-      <div className="card p-5 text-center mt-4">
-        <p className="font-body text-sm text-green-700 font-bold flex items-center justify-center gap-2">
-          <Check size={16} /> Review submitted successfully — thank you!
-        </p>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.comment.trim()) { setError("Please write your review comment"); return; }
-    setError("");
-    try {
-      await addReviewMutation.mutateAsync({ productId, slug: productSlug, ...form });
-      setDone(true);
-      onSubmit?.();
-    } catch (err) {
-      setError(err.message || "Failed to submit review");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="card p-5 mt-5 space-y-4 bg-sandal-50/20">
-      <h4 className="font-display text-sm font-bold text-gray-800 uppercase tracking-wide">Write a Customer Review</h4>
-
-      {/* star picker */}
-      <div>
-        <label className="field-label">Your Rating</label>
-        <div className="flex gap-1.5 mt-1">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, rating: s }))}
-              className="cursor-pointer transition-transform active:scale-90"
-            >
-              <Star
-                size={22}
-                className={s <= form.rating ? "fill-sandal-500 text-sandal-500" : "fill-gray-205 text-gray-300"}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="field-label">Review Title (optional)</label>
-        <input
-          type="text"
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          placeholder="Summarize your review in a title..."
-          className="field-input"
-        />
-      </div>
-
-      <div>
-        <label className="field-label">Review Comment</label>
-        <textarea
-          value={form.comment}
-          onChange={(e) => { setForm((f) => ({ ...f, comment: e.target.value })); setError(""); }}
-          placeholder="Share your detailed experience cooking or tasting this product..."
-          rows={3}
-          className="field-input resize-none"
-        />
-        {error && <p className="font-body text-xs text-red-500 mt-1">{error}</p>}
-      </div>
-
-      <button type="submit" disabled={loading} className="btn-md btn-primary cursor-pointer w-full">
-        {loading ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : "Submit Product Review"}
-      </button>
-    </form>
-  );
-}
-
 // ── Main Reviews Component ──
-export default function ProductReviews({ product, onSubmitReview }) {
+export default function ProductReviews({ product }) {
   const avgRating = product.avgRating || 0;
   const reviewCount = product.reviewCount || 0;
   const reviewsList = product.reviews || [];
@@ -262,10 +159,6 @@ export default function ProductReviews({ product, onSubmitReview }) {
         )}
       </div>
 
-      {/* Submit review */}
-      <div className="border-t border-sandal-100/55 pt-4">
-        <ReviewForm productId={product.id} productSlug={product.slug} onSubmit={onSubmitReview} />
-      </div>
     </div>
   );
 }
