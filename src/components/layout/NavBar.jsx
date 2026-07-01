@@ -379,15 +379,6 @@ export default function NavBar() {
                   {/* Desktop dropdown */}
                   {profileOpen && (
                     <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
-                      {/* user info */}
-                      <div className="px-4 py-2.5 border-b border-sandal-100 mb-1">
-                        <p className="font-body text-xs font-bold text-gray-800 truncate">
-                          {user?.fullName ?? user?.name}
-                        </p>
-                        <p className="font-body text-[11px] text-gray-500 truncate">
-                          {user?.phone ?? user?.email}
-                        </p>
-                      </div>
                       <DropItem
                         to="/profile"
                         icon={<User size={14} />}
@@ -397,11 +388,6 @@ export default function NavBar() {
                         to="/my-orders"
                         icon={<Package size={14} />}
                         label="My Orders"
-                      />
-                      <DropItem
-                        to="/wishlist"
-                        icon={<Heart size={14} />}
-                        label="Wishlist"
                       />
                       <DropItem
                         to="/offers"

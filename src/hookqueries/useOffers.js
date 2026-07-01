@@ -142,6 +142,17 @@ export function useAdminCouponList() {
   });
 }
 
+export function usePublicCoupons() {
+  return useQuery({
+    queryKey: ["coupons", "public"],
+    queryFn: async () => {
+      const res = await API.get("/coupons/get-public");
+      return (res.data.coupons || []).map(mapCouponToFrontend);
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 // ── MUTATIONS ───────────────────────────────────────────────────────
 
 export function useCreateOffer() {

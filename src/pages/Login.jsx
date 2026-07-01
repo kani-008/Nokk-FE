@@ -32,7 +32,10 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
 
     // ── View States ──
-    const [view, setView] = useState("login"); // "login" | "forgot-phone" | "forgot-otp" | "forgot-reset"
+    const [view, setView] = useState("login"); // "login" | "deactivated" | "forgot-phone" | "forgot-otp" | "forgot-reset"
+
+    // ── Reactivation credentials (saved from login attempt) ──
+    const [reactivateCreds, setReactivateCreds] = useState(null);
 
     // ── Forgot Password Form State ──
     const [phone, setPhone] = useState("");
@@ -105,6 +108,11 @@ export default function Login() {
             const response = await API.post("/auth/user-login", payload);
             console.log("[FE] POST /auth/user-login →", response.status, { userId: response.data.user?.id, role: response.data.user?.role });
             const res = response.data;
+            if (res.code === "DEACTIVATED") {
+                setReactivateCreds(payload);
+                setView("deactivated");
+                return;
+            }
             login(res.user, res.accessToken || res.token, res.refreshToken);
             navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
@@ -117,6 +125,22 @@ export default function Login() {
 
     const handleLoginKeyDown = (e) => {
         if (e.key === "Enter" && !loading) handleSubmit(e);
+    };
+
+    // ── Reactivation Handler ──
+    const handleReactivate = async () => {
+        if (!reactivateCreds) return;
+        setLoading(true);
+        try {
+            const res = await API.post("/auth/reactivate", reactivateCreds);
+            login(res.data.user, res.data.accessToken, res.data.refreshToken);
+            navigate(res.data.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to reactivate account. Please try again.");
+            setView("login");
+        } finally {
+            setLoading(false);
+        }
     };
 
     // ── Forgot Password Handlers ──
@@ -308,12 +332,14 @@ export default function Login() {
     ) : (
         <h2 className="font-display text-2xl md:text-3xl font-extrabold text-brand-900 mb-1">
             {view === "login" && "Welcome back"}
+            {view === "deactivated" && "Account Inactive"}
             {view === "forgot-phone" && "Forgot password?"}
             {view === "forgot-reset" && "Set new password"}
         </h2>
     );
 
     const subtitleNode =
+        view === "deactivated" ? "We found your account" :
         view === "login" ? "Sign in to continue shopping" :
         view === "forgot-otp" ? (
             <>Enter the 6-digit code sent to{" "}
@@ -422,6 +448,33 @@ export default function Login() {
                         </Link>
                     </p>
                 </form>
+            )}
+
+            {/* ── View: Account Deactivated ── */}
+            {view === "deactivated" && (
+                <div className="flex flex-col gap-5 text-center">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p className="font-body text-sm font-semibold text-amber-800 mb-1">Account Deactivated</p>
+                        <p className="font-body text-xs text-amber-700 leading-relaxed">
+                            Your account has been deactivated. Would you like to reactivate it and sign in?
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleReactivate}
+                        disabled={loading}
+                        className="btn-md btn-primary w-full"
+                    >
+                        {loading ? <><Loader2 size={16} className="animate-spin" /> Reactivating…</> : "Yes, Reactivate My Account"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setView("login"); setReactivateCreds(null); }}
+                        className="font-body text-xs text-amber-500 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                        ← Back to Login
+                    </button>
+                </div>
             )}
 
             {/* ── View: Forgot Phone ── */}
