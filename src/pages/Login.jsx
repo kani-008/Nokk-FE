@@ -101,11 +101,14 @@ export default function Login() {
             const payload = isPhoneLike(trimmedId)
                 ? { identifier: trimmedId, password: form.password }
                 : { identifier: trimmedId.toLowerCase(), password: form.password };
+            console.log("[FE] POST /auth/user-login", { identifier: payload.identifier });
             const response = await API.post("/auth/user-login", payload);
+            console.log("[FE] POST /auth/user-login →", response.status, { userId: response.data.user?.id, role: response.data.user?.role });
             const res = response.data;
             login(res.user, res.accessToken || res.token, res.refreshToken);
             navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
+            console.error("[FE] POST /auth/user-login →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Invalid credentials. Please try again.");
         } finally {
             setLoading(false);
@@ -124,10 +127,13 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create", { phone });
+            const res = await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create →", res.status, res.data?.message);
             setView("forgot-otp");
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] POST /auth/otp-create →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
@@ -142,9 +148,12 @@ export default function Login() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create (resend)", { phone });
+            const res = await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create (resend) →", res.status, res.data?.message);
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] POST /auth/otp-create (resend) →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {
             setLoading(false);
@@ -158,9 +167,12 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await API.post("/auth/otp-verify", { phone, identifier: phone, otp: otpValue });
+            console.log("[FE] POST /auth/otp-verify", { phone });
+            const res = await API.post("/auth/otp-verify", { phone, identifier: phone, otp: otpValue });
+            console.log("[FE] POST /auth/otp-verify →", res.status, res.data?.message);
             setView("forgot-reset");
         } catch (err) {
+            console.error("[FE] POST /auth/otp-verify →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Invalid or expired OTP.");
         } finally {
             setLoading(false);
@@ -215,16 +227,19 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await API.post("/auth/reset-password", {
+            console.log("[FE] POST /auth/reset-password", { phone: phone.trim() });
+            const res = await API.post("/auth/reset-password", {
                 phone: phone.trim(),
                 identifier: phone.trim(),
                 password: newPw,
                 newPassword: newPw,
                 confirmPass: confirmPw,
             });
+            console.log("[FE] POST /auth/reset-password →", res.status, res.data?.message);
             setSuccess("Password reset successful.");
             resetForgotFlow(true);
         } catch (err) {
+            console.error("[FE] POST /auth/reset-password →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Could not reset password. Please try again.");
         } finally {
             setLoading(false);

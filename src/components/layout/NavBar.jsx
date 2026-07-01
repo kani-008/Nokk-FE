@@ -14,6 +14,7 @@ import {
   Settings,
   Tag,
   Grid3x3,
+  TrendingUp,
 } from "lucide-react";
 import Logo from "./Logo";
 import MobileDrawer from "./MobileDrawer.jsx";
@@ -307,19 +308,6 @@ export default function NavBar() {
                 )}
               </div>
 
-              {navLinks.map((l) => (
-                <Link
-                  key={l.label}
-                  to={l.to}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
-                    isActive(l.to)
-                      ? "bg-white/10 text-white"
-                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
             </nav>
 
             {/* Right icon group */}
@@ -419,6 +407,11 @@ export default function NavBar() {
                         to="/offers"
                         icon={<Tag size={14} />}
                         label="Offers"
+                      />
+                      <DropItem
+                        to="/products?isBestseller=true"
+                        icon={<TrendingUp size={14} />}
+                        label="Bestsellers"
                       />
                       {user?.role === "admin" && (
                         <>

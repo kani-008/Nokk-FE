@@ -118,17 +118,23 @@ export default function Register() {
         if (!validateStep1()) return;
         setLoading(true);
         try {
-            await API.post("/auth/check-phone", { phone: form.phone });
+            console.log("[FE] POST /auth/check-phone", { phone: form.phone });
+            const checkRes = await API.post("/auth/check-phone", { phone: form.phone });
+            console.log("[FE] POST /auth/check-phone →", checkRes.status, checkRes.data?.message);
 
             if (import.meta.env.DEV) {
+                console.log("[FE] DEV mode — skipping OTP, going straight to password step");
                 setView("password");
                 return;
             }
 
-            await API.post("/auth/register-otp", { phone: form.phone });
+            console.log("[FE] POST /auth/register-otp", { phone: form.phone });
+            const otpRes = await API.post("/auth/register-otp", { phone: form.phone });
+            console.log("[FE] POST /auth/register-otp →", otpRes.status, otpRes.data?.message);
             setView("otp");
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] register step-1 →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setApiErr(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
@@ -139,9 +145,12 @@ export default function Register() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            await API.post("/auth/register-otp", { phone: form.phone });
+            console.log("[FE] POST /auth/register-otp (resend)", { phone: form.phone });
+            const res = await API.post("/auth/register-otp", { phone: form.phone });
+            console.log("[FE] POST /auth/register-otp (resend) →", res.status, res.data?.message);
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] POST /auth/register-otp (resend) →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setApiErr(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {
             setLoading(false);
@@ -203,7 +212,8 @@ export default function Register() {
 
         setLoading(true);
         try {
-            await API.post("/auth/register", {
+            console.log("[FE] POST /auth/register", { fullName: form.fullName.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, hasOtp: !!otp.join("") });
+            const res = await API.post("/auth/register", {
                 fullName: form.fullName.trim(),
                 phone: form.phone.trim(),
                 identifier: form.phone.trim(),
@@ -211,11 +221,13 @@ export default function Register() {
                 password: form.password,
                 otp: otp.join(""),
             });
+            console.log("[FE] POST /auth/register →", res.status, res.data?.message);
             navigate("/login", {
                 replace: true,
                 state: { registeredPhone: form.phone.trim() },
             });
         } catch (err) {
+            console.error("[FE] POST /auth/register →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setApiErr(err.response?.data?.message || err.message || "Registration failed. Please try again.");
         } finally {
             setLoading(false);

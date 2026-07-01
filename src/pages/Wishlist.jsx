@@ -288,7 +288,7 @@ export default function Wishlist() {
   // ── Empty state ───────────────────────────────────────────────────
   if (!localIds.length && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 px-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
         <Heart size={56} className="text-amber-200 mb-4" />
         <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
