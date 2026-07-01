@@ -427,7 +427,7 @@ export default function Products() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[76px] pb-6 md:py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6 md:py-6">
 
       {/* ── Page header ──────────────────────────────────────────── */}
       {/* <div className="mb-5">
@@ -521,7 +521,7 @@ export default function Products() {
           ) : (
             <>
               <div className="product-grid-compact">
-                {products.map((p) => <ProductCard key={p.id} product={p} />)}
+                {products.map((p) => <ProductCard key={p.id} product={p} selectedWeights={weights} />)}
               </div>
 
               {/* Pagination */}

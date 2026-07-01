@@ -455,13 +455,6 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Products page mobile logo row — appears below the topbar (back+search+cart) so the
-          logo stays visible without competing with the expanded search input */}
-      {isProductsPage && (
-        <div className="md:hidden bg-gray-800 border-t border-white/5 px-4 py-1.5">
-          <Logo inverse />
-        </div>
-      )}
 
       {/* Mobile drawer — extracted to components/layout/MobileDrawer.jsx */}
       <MobileDrawer

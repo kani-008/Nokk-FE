@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
@@ -181,10 +181,6 @@ function CartItem({ item, onQty, onRemove, syncing }) {
             </button>
           </div>
         </div>
-
-        <p className="font-body text-xs text-amber-500 mt-1.5 text-right">
-          Line total: <span className="font-num font-semibold text-amber-700">{rupee(item.price * item.quantity)}</span>
-        </p>
       </div>
     </div>
   );

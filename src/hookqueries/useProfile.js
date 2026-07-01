@@ -20,6 +20,17 @@ function mapAddr(addr) {
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
+export function useMyProfile() {
+  return useQuery({
+    queryKey: ["my-profile"],
+    queryFn: async () => {
+      const res = await API.get("/users/me");
+      return res.data.user;
+    },
+    staleTime: 2 * 60_000,
+  });
+}
+
 export function useAddresses() {
   return useQuery({
     queryKey: ["addresses"],

@@ -3,6 +3,7 @@ import { Link, useLocation }   from "react-router-dom";
 import {
   Package, ChevronDown, ChevronUp, ShoppingBag,
   MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star,
+  ArrowLeft, ChevronRight
 } from "lucide-react";
 import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hookqueries/useOrders";
 import { useAddReview } from "../hookqueries/useProducts";
@@ -214,232 +215,45 @@ function ReviewModal({ item, onClose, onReviewed }) {
 }
 
 // ── Order card ─────────────────────────────────────────────────────────
-function OrderCard({ order }) {
-  const { token }   = useAuthStore();
-  const [open,      setOpen]      = useState(false);
-  const [cancelled, setCancelled] = useState(order.status === "cancelled");
-  const [status,    setStatus]    = useState(order.status);
-  const [showReplacementModal, setShowReplacementModal] = useState(false);
-  const [replacementRequested, setReplacementRequested] = useState(
-    ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
-  );
-  const [reviewItem, setReviewItem] = useState(null);
-  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
-
-  const canCancel  = ["pending","confirmed"].includes(status);
-  const isDelivered = status === "delivered";
-  const canRequestReplacement = isDelivered && !replacementRequested;
-  const addr = order.address || {};
-
-  const cancelOrderMutation = useCancelOrder();
-  const cancelling = cancelOrderMutation.isPending;
-
-  const handleCancel = async () => {
-    if (!confirm("Cancel this order?")) return;
-    try {
-      await cancelOrderMutation.mutateAsync(order.id);
-      setStatus("cancelled");
-      setCancelled(true);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Could not cancel order");
-    }
-  };
+function OrderCard({ order, onClick }) {
+  const firstItem = order.items?.[0] || {};
+  const itemImg = firstItem.imageUrl || firstItem.image || PH;
+  const itemName = firstItem.productName || "Order";
+  const hasMore = order.items?.length > 1;
+  const moreCount = order.items?.length - 1;
 
   return (
-    <div className="card overflow-hidden">
-      {/* header row */}
-      <div
-        className="flex items-center justify-between px-4 sm:px-5 py-4 cursor-pointer hover:bg-amber-50/50 transition-colors"
-        onClick={() => setOpen((s) => !s)}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-            <Package size={16} className="text-brand-700" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-num text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg inline-block mb-1">
-              #{String(order.id).slice(0, 8).toUpperCase()}
+    <div
+      onClick={onClick}
+      className="card flex items-center justify-between px-4 sm:px-5 py-4 cursor-pointer hover:bg-amber-50/50 transition-colors"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <img
+          src={itemImg}
+          alt={itemName}
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+          onError={(e) => { e.target.src = PH; }}
+        />
+        <div className="min-w-0">
+          <h3 className="font-body text-xs sm:text-sm font-semibold text-brand-900 leading-snug line-clamp-1">
+            {itemName}
+          </h3>
+          {hasMore && (
+            <p className="font-body text-[10px] text-amber-500 font-medium mt-0.5">
+              + {moreCount} more item{moreCount > 1 ? "s" : ""}
             </p>
-            <p className="font-body text-xs text-amber-500">{fmtDate(order.createdAt)}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0 ml-2">
-          <div className="text-right hidden sm:block">
-            <p className="font-num text-base font-bold text-brand-900">{rupee(order.total)}</p>
-            <p className="font-body text-xs text-amber-500 capitalize">{order.paymentMethod}</p>
-          </div>
-          <StatusPill status={status} />
-          {open ? <ChevronUp size={16} className="text-amber-400" /> : <ChevronDown size={16} className="text-amber-400" />}
+          )}
+          <p className="font-body text-[10px] sm:text-xs text-gray-400 mt-1">{fmtDate(order.createdAt)}</p>
         </div>
       </div>
 
-      {/* expanded */}
-      {open && (
-        <div className="border-t border-amber-50 px-4 sm:px-5 py-4 space-y-5">
-
-          {/* items */}
-          <div className="space-y-3">
-            {(order.items || []).map((item, i) => (
-              <div key={i} className="flex gap-3 items-start">
-                <img
-                  src={item.imageUrl || item.image || PH} alt={item.productName}
-                  className="w-12 h-12 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-                  onError={(e) => { e.target.src = PH; }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-medium text-brand-900 line-clamp-1">{item.productName}</p>
-                  <p className="font-body text-xs text-amber-500">{item.weightLabel} · Qty {item.quantity}</p>
-                  {status === "delivered" && item.productId && (
-                    reviewedProductIds.has(item.productId) ? (
-                      <span className="font-body text-xs text-green-600 font-semibold flex items-center gap-1 mt-1">
-                        <Check size={11} /> Reviewed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setReviewItem(item)}
-                        className="font-body text-xs text-brand-700 font-semibold hover:underline mt-1 flex items-center gap-1"
-                      >
-                        <Star size={11} className="fill-amber-400 text-amber-400" /> Write Review
-                      </button>
-                    )
-                  )}
-                </div>
-                <span className="font-num text-sm font-semibold text-brand-900 shrink-0">{rupee(item.price * item.quantity)}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* price breakdown */}
-          <div className="bg-amber-50 rounded-xl p-3 space-y-1.5 text-sm">
-            <div className="flex justify-between font-body text-amber-700">
-              <span>Subtotal</span><span className="font-num">{rupee(order.subtotal)}</span>
-            </div>
-            {Number(order.discount) > 0 && (
-              <div className="flex justify-between font-body text-green-600">
-                <span>Discount</span><span className="font-num">−{rupee(order.discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-body text-amber-700">
-              <span>Delivery</span>
-              <span className="font-num">{Number(order.deliveryCharge) === 0 ? "FREE" : rupee(order.deliveryCharge)}</span>
-            </div>
-            <div className="flex justify-between font-body font-bold text-brand-900 text-base border-t border-amber-100 pt-1.5">
-              <span>Total</span><span className="font-num">{rupee(order.total)}</span>
-            </div>
-          </div>
-
-          {/* address */}
-          <div className="flex gap-2.5 items-start">
-            <MapPin size={14} className="text-amber-400 mt-0.5 shrink-0" />
-            <p className="font-body text-xs text-amber-700 leading-relaxed">
-              <span className="font-semibold">{order.customerName}</span><br />
-              {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ""},&nbsp;
-              {addr.city}, {addr.state} – {addr.pincode}
-            </p>
-          </div>
-
-          {/* tracking */}
-          {order.trackingNumber && (
-            <div className="flex gap-2.5 items-start">
-              <Clock size={14} className="text-amber-400 mt-0.5 shrink-0" />
-              <p className="font-body text-xs text-amber-700">
-                {order.courierName && <span className="font-semibold">{order.courierName} · </span>}
-                {order.trackingNumber}
-                {order.trackingUrl && (
-                  <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 text-brand-700 hover:underline font-semibold">
-                    Track
-                  </a>
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* timeline — vertical connected line */}
-          {order.timeline?.length > 0 && (
-            <div>
-              <p className="font-body text-xs font-semibold text-amber-700 uppercase tracking-wider mb-3">Timeline</p>
-              <ol className="relative">
-                {order.timeline.map((t, i) => {
-                  const isLatest = i === order.timeline.length - 1;
-                  const isLast   = i === order.timeline.length - 1;
-                  return (
-                    <li key={i} className="flex gap-3 pb-4 last:pb-0 relative">
-                      {/* vertical connector line — runs through all but the last item */}
-                      {!isLast && (
-                        <div className="absolute left-[9px] top-[18px] bottom-0 w-0.5 bg-brand-200" aria-hidden="true" />
-                      )}
-                      {/* node */}
-                      <div className={`relative z-10 mt-0.5 shrink-0 flex items-center justify-center rounded-full transition-all
-                        ${isLatest
-                          ? "w-[18px] h-[18px] bg-brand-700 ring-2 ring-brand-300 ring-offset-1"
-                          : "w-[18px] h-[18px] bg-brand-600"
-                        }`}
-                      >
-                        <Check size={10} className="text-white" strokeWidth={3} />
-                      </div>
-                      {/* content */}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-body text-xs font-semibold text-brand-900 capitalize leading-snug">
-                          {String(t.status).replace(/_/g, " ")}
-                        </p>
-                        {t.note && <p className="font-body text-xs text-amber-500 mt-0.5">{t.note}</p>}
-                        <p className="font-body text-[10px] text-amber-400 mt-0.5">{fmtDate(t.createdAt)}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          )}
-
-          {/* actions */}
-          <div className="flex gap-2 flex-wrap border-t border-amber-50 pt-3">
-            {canCancel && !cancelled && (
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="btn-sm btn-danger"
-              >
-                <X size={13} /> {cancelling ? "Cancelling…" : "Cancel Order"}
-              </button>
-            )}
-            {canRequestReplacement && (
-              <button onClick={() => setShowReplacementModal(true)} className="btn-sm btn-outline">
-                <RotateCcw size={13} /> Request Replacement
-              </button>
-            )}
-            {replacementRequested && (
-              <span className="font-body text-xs text-amber-500 self-center flex items-center gap-1.5">
-                <Check size={13} className="text-green-600" /> Replacement requested
-              </span>
-            )}
-            <Link to="/products" className="btn-sm btn-ghost ml-auto">
-              Buy Again <ArrowRight size={13} />
-            </Link>
-          </div>
+      <div className="flex items-center gap-3 shrink-0 ml-2">
+        <div className="text-right mr-1">
+          <p className="font-num text-sm sm:text-base font-bold text-brand-900">{rupee(order.total)}</p>
+          <p className="font-body text-[10px] sm:text-xs text-amber-500 capitalize">{order.paymentMethod}</p>
         </div>
-      )}
-
-      {showReplacementModal && (
-        <ReplacementModal
-          orderId={order.id}
-          onClose={() => setShowReplacementModal(false)}
-          onSuccess={() => {
-            setReplacementRequested(true);
-            setStatus("replacement_requested");
-            setShowReplacementModal(false);
-          }}
-        />
-      )}
-
-      {reviewItem && (
-        <ReviewModal
-          item={reviewItem}
-          onClose={() => setReviewItem(null)}
-          onReviewed={() => setReviewedProductIds((prev) => new Set([...prev, reviewItem.productId]))}
-        />
-      )}
+        <ChevronRight size={16} className="text-amber-400" />
+      </div>
     </div>
   );
 }
@@ -469,7 +283,15 @@ export default function MyOrders() {
   const { token }  = useAuthStore();
   const location   = useLocation();
   const { data: orders = [], isLoading: loading } = useMyOrders();
+  const cancelOrderMutation = useCancelOrder();
   const [filter,   setFilter]   = useState("all");
+
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showReplacementModal, setShowReplacementModal] = useState(false);
+  const [replacementRequested, setReplacementRequested] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [reviewItem, setReviewItem] = useState(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
 
   const newOrderId = location.state?.newOrderId;
 
@@ -480,6 +302,13 @@ export default function MyOrders() {
     { key: "cancelled",label: "Cancelled" },
   ];
 
+  const handleSelectOrder = (order) => {
+    setSelectedOrder(order);
+    setReplacementRequested(
+      ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
+    );
+  };
+
   const filtered = orders.filter((o) => {
     if (filter === "all")       return true;
     if (filter === "active")    return !["delivered","cancelled","replacement_completed"].includes(o.status);
@@ -487,6 +316,274 @@ export default function MyOrders() {
     if (filter === "cancelled") return ["cancelled","replacement_completed"].includes(o.status);
     return true;
   });
+
+  if (selectedOrder) {
+    const order = selectedOrder;
+    const addr = order.address || {};
+    const status = order.status;
+    const isDelivered = status === "delivered";
+
+    // 24 hours replacement limit from delivery
+    const deliveryEvent = order.timeline?.find((t) => t.status === "delivered");
+    const deliveryTime = deliveryEvent
+      ? new Date(deliveryEvent.createdAt)
+      : (status === "delivered" ? new Date(order.updatedAt || order.createdAt) : null);
+    const isWithin24Hours = deliveryTime
+      ? (new Date() - deliveryTime) < 24 * 60 * 60 * 1000
+      : false;
+
+    const canRequestReplacement = isDelivered && !replacementRequested;
+    const canCancel = ["pending", "confirmed"].includes(status);
+
+    const handleCancelOrder = async () => {
+      setCancelError("");
+      try {
+        await cancelOrderMutation.mutateAsync(order.id);
+        setSelectedOrder((prev) => ({ ...prev, status: "cancelled" }));
+      } catch (e) {
+        setCancelError(e.response?.data?.message || "Failed to cancel order");
+      }
+    };
+
+    return (
+      <div className="page-wrap pt-2 space-y-5">
+        {/* header row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center  -ml-2">
+            <button
+              onClick={() => setSelectedOrder(null)}
+              className="p-1.5  hover:bg-sandal-100/50 rounded-lg text-gray-800 transition-colors cursor-pointer"
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900">Order Details</h2>
+          </div>
+          <a
+            href="https://wa.me/919999999999?text=Hello,%20I%20need%20help%20with%20my%20order."
+            target="_blank"
+            rel="noreferrer"
+            className="btn-sm btn-outline flex items-center gap-1.5"
+          >
+            Help
+          </a>
+        </div>
+
+        {/* product card & details */}
+        <div className="card p-4 sm:p-5 space-y-4">
+          <div className="flex justify-between items-center border-b border-amber-100/30 pb-3">
+            <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider">Product Details</p>
+            <p className="font-num text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">
+              Order ID: #{String(order.id).toUpperCase()}
+            </p>
+          </div>
+          <div className="space-y-4">
+            {(order.items || []).map((item, i) => (
+              <div key={i} className="flex gap-3 items-start border-b border-amber-100/30 pb-3 last:border-none last:pb-0">
+                <img
+                  src={item.imageUrl || item.image || PH} alt={item.productName}
+                  className="w-12 h-12 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+                  onError={(e) => { e.target.src = PH; }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-body text-sm font-bold text-brand-900 line-clamp-1">{item.productName}</p>
+                  <p className="font-body text-xs text-amber-500 mt-0.5">{item.weightLabel}</p>
+                  <p className="font-body text-xs text-amber-700 font-medium mt-1.5">
+                    Qty: <span className="font-semibold text-brand-900">{item.quantity}</span> &middot; Price: <span className="font-semibold text-brand-900">{rupee(item.price)}</span>
+                  </p>
+                </div>
+                <span className="font-num text-sm font-semibold text-brand-900 shrink-0">{rupee(item.price * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Track status */}
+        {(order.trackingNumber || order.courierName || order.timeline?.length > 0) && (
+          <div className="card p-4 sm:p-5 space-y-4">
+            <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider border-b border-amber-100/30 pb-3">Track Status</p>
+            
+            {order.trackingNumber && (
+              <div className="flex gap-2.5 items-start bg-amber-50/50 rounded-xl p-3 border border-amber-100/30">
+                <Clock size={15} className="text-amber-500 mt-0.5 shrink-0" />
+                <div className="text-xs text-amber-800">
+                  <p className="font-semibold">Tracking Information</p>
+                  <p className="mt-1">
+                    {order.courierName && <span className="font-bold">{order.courierName}</span>}
+                    {order.courierName && " - "}
+                    <span className="font-mono">{order.trackingNumber}</span>
+                  </p>
+                  {order.trackingUrl && (
+                    <a
+                      href={order.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-brand-700 hover:underline font-semibold"
+                    >
+                      Track Shipment <ArrowRight size={12} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {order.timeline?.length > 0 && (
+              <div className="pl-1.5">
+                <ol className="relative border-l border-brand-200 ml-2 pl-4 space-y-5">
+                  {order.timeline.map((t, i) => {
+                    const isLatest = i === order.timeline.length - 1;
+                    return (
+                      <li key={i} className="relative">
+                        <span className={`absolute -left-[25px] top-0.5 flex items-center justify-center rounded-full w-4 h-4 transition-all
+                          ${isLatest ? "bg-brand-700 ring-2 ring-brand-100" : "bg-brand-500"}`}
+                        >
+                          <Check size={9} className="text-white" strokeWidth={3} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-body text-xs sm:text-sm font-bold text-brand-900 capitalize leading-snug">
+                            {String(t.status).replace(/_/g, " ")}
+                          </p>
+                          {t.note && <p className="font-body text-xs text-amber-500 mt-0.5">{t.note}</p>}
+                          <p className="font-body text-[10px] text-gray-400 mt-1">{fmtDate(t.createdAt)}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isDelivered && (
+          <div className="card p-4 sm:p-5 space-y-4">
+            <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider border-b border-amber-100/30 pb-3">Rate Your Experience</p>
+            <div className="space-y-4">
+              {(order.items || []).map((item, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 text-xs sm:text-sm">
+                  <span className="font-body font-medium text-brand-900 line-clamp-1">{item.productName}</span>
+                  {reviewedProductIds.has(item.productId) ? (
+                    <span className="font-body text-xs text-green-600 font-semibold flex items-center gap-1 shrink-0">
+                      <Check size={11} /> Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setReviewItem(item)}
+                      className="font-body text-xs text-white bg-sandal-600 hover:bg-sandal-700 font-semibold py-1.5 px-3 rounded-lg shrink-0 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Star size={11} className="fill-amber-300 text-amber-300" /> Write Review
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Delivery address */}
+        <div className="card p-4 sm:p-5 space-y-3">
+          <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider border-b border-amber-100/30 pb-3">Delivery Address</p>
+          <div>
+            <p className="font-body text-sm font-bold text-brand-900">{order.customerName}</p>
+            {order.customerPhone && (
+              <p className="font-body text-xs text-amber-700 font-semibold mt-0.5">{order.customerPhone}</p>
+            )}
+            <p className="font-body text-xs text-amber-600 mt-2 leading-relaxed">
+              {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ""},&nbsp;
+              {addr.city}, {addr.state} – {addr.pincode}
+            </p>
+          </div>
+        </div>
+
+        {/* Price details */}
+        <div className="card p-4 sm:p-5 space-y-3">
+          <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider border-b border-amber-100/30 pb-3">Price Details</p>
+          <div className="space-y-2.5 text-sm">
+            <div className="flex justify-between font-body text-amber-700">
+              <span>Subtotal</span><span className="font-num font-semibold">{rupee(order.subtotal)}</span>
+            </div>
+            {Number(order.discount) > 0 && (
+              <div className="flex justify-between font-body text-green-600">
+                <span>Discount</span><span className="font-num font-semibold">−{rupee(order.discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-body text-amber-700">
+              <span>Delivery</span>
+              <span className="font-num font-semibold">{Number(order.deliveryCharge) === 0 ? "FREE" : rupee(order.deliveryCharge)}</span>
+            </div>
+            <div className="flex justify-between font-body font-bold text-brand-900 text-base border-t border-amber-100 pt-2.5">
+              <span>Total Amount</span><span className="font-num font-bold">{rupee(order.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cancel order */}
+        {canCancel && (
+          <div className="pt-2">
+            {cancelError && (
+              <p className="font-body text-xs text-red-600 mb-2 text-center">{cancelError}</p>
+            )}
+            <button
+              onClick={handleCancelOrder}
+              disabled={cancelOrderMutation.isPending}
+              className="btn-md w-full flex items-center justify-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-60 rounded-xl"
+            >
+              {cancelOrderMutation.isPending
+                ? <><Loader2 size={14} className="animate-spin" /> Cancelling…</>
+                : <><X size={14} /> Cancel Order</>
+              }
+            </button>
+          </div>
+        )}
+
+        {/* actions (replacement request) */}
+        {(canRequestReplacement || replacementRequested) && (
+          <div className="pt-2">
+            {canRequestReplacement && (
+              <button
+                onClick={() => setShowReplacementModal(true)}
+                disabled={!isWithin24Hours}
+                className={`btn-md flex items-center gap-1.5 w-full justify-center sm:w-auto ${
+                  isWithin24Hours
+                    ? "btn-outline cursor-pointer"
+                    : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                }`}
+                title={!isWithin24Hours ? "Replacement requests are only allowed within 24 hours of delivery" : ""}
+              >
+                <RotateCcw size={13} /> Request Replacement {!isWithin24Hours && "(Expired)"}
+              </button>
+            )}
+            {replacementRequested && (
+              <div className="bg-amber-50 rounded-xl p-3 border border-amber-100 flex items-center justify-center text-xs text-amber-800 font-semibold gap-1.5">
+                <Check size={14} className="text-green-600" /> Replacement requested
+              </div>
+            )}
+          </div>
+        )}
+
+        {showReplacementModal && (
+          <ReplacementModal
+            orderId={order.id}
+            onClose={() => setShowReplacementModal(false)}
+            onSuccess={() => {
+              setReplacementRequested(true);
+              // Optimistically update selected order status locally
+              setSelectedOrder((prev) => ({ ...prev, status: "replacement_requested" }));
+              setShowReplacementModal(false);
+            }}
+          />
+        )}
+
+        {reviewItem && (
+          <ReviewModal
+            item={reviewItem}
+            onClose={() => setReviewItem(null)}
+            onReviewed={() => setReviewedProductIds((prev) => new Set([...prev, reviewItem.productId]))}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrap py-8">
@@ -506,12 +603,12 @@ export default function MyOrders() {
       )}
 
       {/* filter tabs */}
-      <div className="flex gap-1 bg-amber-50 p-1 rounded-xl mb-5 w-fit">
+      <div className="hidden sm:flex gap-1 bg-amber-50 p-1 rounded-xl mb-5 w-fit">
         {FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${
+            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer ${
               filter === f.key ? "bg-white text-brand-900 shadow-sm" : "text-amber-600 hover:text-brand-800"
             }`}
           >
@@ -546,7 +643,7 @@ export default function MyOrders() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((o) => <OrderCard key={o.id} order={o} />)}
+          {filtered.map((o) => <OrderCard key={o.id} order={o} onClick={() => handleSelectOrder(o)} />)}
         </div>
       )}
     </div>

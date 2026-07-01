@@ -6,12 +6,12 @@ import {
   Check, Loader2, X, ChevronRight, ChevronLeft, ArrowLeft,
   Phone, Mail, LogOut, Package, Heart,
   Tag, AlertTriangle, ShoppingCart, Ticket,
-  UserX, UserMinus, Power,
+  UserX, UserMinus, Power, Navigation, Copy, MoreVertical,
 } from "lucide-react";
 import {
-  useAddresses, useUpdateProfile,
+  useMyProfile, useAddresses, useUpdateProfile,
   useAddAddress, useUpdateAddress, useDeleteAddress,
-  lookupPincode,
+  lookupPincode, detectAddressFromCoords,
 } from "../hookqueries/useProfile";
 import { usePublicCoupons }  from "../hookqueries/useOffers";
 import { useAuthStore }      from "../components/store/AuthStore.jsx";
@@ -76,8 +76,10 @@ function ConfirmModal({ title, body, extra, onConfirm, onCancel, confirmLabel, d
 // ── Address card ─────────────────────────────────────────────────────
 function AddressCard({ addr, onEdit, setError, setSuccess }) {
   const del = useDeleteAddress();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleDelete = async () => {
+    setMenuOpen(false);
     if (!confirm("Remove this address?")) return;
     try {
       await del.mutateAsync(addr.id);
@@ -87,25 +89,67 @@ function AddressCard({ addr, onEdit, setError, setSuccess }) {
     }
   };
 
+  // Close menu on click outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClose = () => setMenuOpen(false);
+    window.addEventListener("click", handleClose);
+    return () => window.removeEventListener("click", handleClose);
+  }, [menuOpen]);
+
   return (
-    <div className="relative flex flex-col gap-3 p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-sandal-200 hover:shadow-md transition-all duration-200">
-      {/* badges */}
-      <div className="absolute top-3 right-3 flex gap-1.5">
-        {addr.isDefault && (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">DEFAULT</span>
-        )}
-        {addr.label && !addr.isDefault && (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sandal-100 text-sandal-800 border border-sandal-200 uppercase">{addr.label}</span>
+    <div className="relative flex flex-col gap-2 py-2.5 px-3.5 rounded-2xl bg-white border-2 border-gray-100 hover:border-sandal-200 hover:shadow-md transition-all duration-200">
+      {/* 3-dot Menu */}
+      <div className="absolute top-3 right-3">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+          className="p-1.5 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          aria-label="Address options"
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-10 animate-in fade-in slide-in-from-top-1 duration-100">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onEdit(addr);
+              }}
+              className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-sandal-50 hover:text-sandal-800 flex items-center gap-1.5 cursor-pointer font-semibold"
+            >
+              <Pencil size={11} className="text-gray-400" /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={del.isPending}
+              className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 flex items-center gap-1.5 cursor-pointer font-semibold disabled:opacity-50"
+            >
+              {del.isPending ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} className="text-red-400" />}
+              Remove
+            </button>
+          </div>
         )}
       </div>
 
       {/* content */}
-      <div className="flex items-start gap-3 pr-16">
+      <div className="flex items-start gap-3 pr-10">
         <div className="w-9 h-9 rounded-xl bg-sandal-50 border border-sandal-100 flex items-center justify-center shrink-0 mt-0.5">
           <MapPin size={15} className="text-sandal-700" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-sm text-gray-900">{addr.name}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-sm text-gray-900 leading-snug">{addr.name}</p>
+            {addr.isDefault && (
+              <span className="px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] font-bold bg-green-100 text-green-700 border border-green-200 tracking-wider">DEFAULT</span>
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">
             {addr.addressLine1}
             {addr.addressLine2 ? `, ${addr.addressLine2}` : ""},&nbsp;
@@ -117,24 +161,6 @@ function AddressCard({ addr, onEdit, setError, setSuccess }) {
           </p>
         </div>
       </div>
-
-      {/* actions */}
-      <div className="flex gap-2 pt-3 border-t border-gray-100">
-        <button
-          onClick={() => onEdit(addr)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-sandal-700 hover:bg-sandal-50 border border-sandal-200 transition-colors cursor-pointer"
-        >
-          <Pencil size={12} /> Edit
-        </button>
-        <button
-          onClick={handleDelete}
-          disabled={del.isPending}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 border border-red-100 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          {del.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-          {del.isPending ? "Removing…" : "Remove"}
-        </button>
-      </div>
     </div>
   );
 }
@@ -145,6 +171,7 @@ const ADDR_EMPTY = { name: "", phone: "", addressLine1: "", addressLine2: "", ta
 function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
   const [form, setForm] = useState(initial || ADDR_EMPTY);
   const [pinLoading, setPinLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handlePincodeChange = async (val) => {
@@ -163,6 +190,37 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
       }));
     } catch { /* leave editable */ }
     finally { setPinLoading(false); }
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError("location detector is currently not working use pin code to fill");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const details = await detectAddressFromCoords(latitude, longitude);
+          
+          if (details.pincode) set("pincode", details.pincode);
+          if (details.city) set("city", details.city);
+          if (details.taluk) set("taluk", details.taluk);
+          const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
+          if (matchedState) set("state", matchedState);
+        } catch (err) {
+          setError("location detector is currently not working use pin code to fill");
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (error) => {
+        setError("location detector is currently not working use pin code to fill");
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const addM    = useAddAddress();
@@ -200,8 +258,8 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
   };
 
   return (
-    <div className="rounded-2xl border-2 border-sandal-200 bg-gradient-to-br from-sandal-50/60 to-white p-5 mb-5">
-      <div className="flex items-center justify-between mb-5 pb-4 border-b border-sandal-100">
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 mb-5">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-amber-100">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-sandal-100 flex items-center justify-center">
             <MapPin size={14} className="text-sandal-700" />
@@ -210,52 +268,81 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
             {form.id ? "Edit Address" : "Add New Address"}
           </span>
         </div>
-        <button type="button" onClick={onCancel} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+        <button type="button" onClick={onCancel} className="w-7 h-7 rounded-lg hover:bg-gray-200/50 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
           <X size={15} />
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="field-label">Full Name *</label>
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Recipient name" className="field-input" />
-        </div>
-        <div>
-          <label className="field-label">Phone *</label>
-          <input value={form.phone} onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit mobile" className="field-input" inputMode="numeric" />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="field-label">Address Line 1 *</label>
-          <input value={form.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} placeholder="Flat no., House, Building, Company" className="field-input" />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="field-label">Address Line 2 <span className="text-gray-400 normal-case font-normal text-[11px]">(optional)</span></label>
-          <input value={form.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} placeholder="Area, Street, Sector, Village" className="field-input" />
-        </div>
-        <div>
-          <label className="field-label flex items-center justify-between">
-            Pincode *
-            {pinLoading && <span className="flex items-center gap-1 text-sandal-600 text-[10px] font-normal"><Loader2 size={10} className="animate-spin" /> Detecting…</span>}
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+        <div className="col-span-1">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Name <span className="text-red-400 ml-0.5">*</span>
           </label>
-          <input value={form.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="6-digit pincode" inputMode="numeric" className="field-input" />
+          <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Recipient" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
         </div>
-        <div>
-          <label className="field-label">Taluk <span className="text-gray-400 normal-case font-normal text-[11px]">(auto-filled)</span></label>
-          <input value={form.taluk} onChange={(e) => set("taluk", e.target.value)} placeholder="Taluk / Sub-district" className="field-input" />
+        <div className="col-span-1">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Phone <span className="text-red-400 ml-0.5">*</span>
+          </label>
+          <input value={form.phone} onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" inputMode="numeric" />
         </div>
-        <div>
-          <label className="field-label">City / District *</label>
-          <input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="City or district" className="field-input" />
+        <div className="col-span-2">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Address Line 1 <span className="text-red-400 ml-0.5">*</span>
+          </label>
+          <input value={form.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} placeholder="House / Street" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
         </div>
-        <div>
-          <label className="field-label">State *</label>
+        <div className="col-span-2">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Address Line 2 <span className="text-gray-400 normal-case font-normal text-[11px]">(optional)</span>
+          </label>
+          <input value={form.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} placeholder="Area / Landmark" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
+        </div>
+        <div className="col-span-1">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Pincode <span className="text-red-400 ml-0.5">*</span>
+            {pinLoading && <Loader2 size={11} className="animate-spin text-amber-400" />}
+          </label>
+          <input value={form.pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="6 digits" inputMode="numeric" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
+        </div>
+        <div className="col-span-1 flex flex-col justify-end">
+          <button
+            type="button"
+            disabled={geoLoading}
+            onClick={handleDetectLocation}
+            className="w-full bg-brand-800 hover:bg-brand-900 text-sandal-100 font-body text-[11px] sm:text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 h-[38px] sm:h-[42px] transition-all duration-200 disabled:opacity-50 cursor-pointer mb-[1px]"
+          >
+            {geoLoading ? (
+              <><Loader2 size={13} className="animate-spin" /> Detecting…</>
+            ) : (
+              <><Navigation size={13} className="shrink-0" /> Use my location</>
+            )}
+          </button>
+        </div>
+        <div className="col-span-1">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            Taluk <span className="text-gray-400 normal-case font-normal text-[11px]">(auto-filled)</span>
+          </label>
+          <input value={form.taluk} onChange={(e) => set("taluk", e.target.value)} placeholder="Auto-filled" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
+        </div>
+        <div className="col-span-1">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            City / District <span className="text-red-400 ml-0.5">*</span>
+          </label>
+          <input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="District" className="field-input px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm h-[38px] sm:h-[42px]" />
+        </div>
+        <div className="col-span-2">
+          <label className="block font-body text-[12px] sm:text-xs font-semibold text-gray-600 mb-1 sm:mb-1.5 tracking-wide flex items-center gap-1">
+            State <span className="text-red-400 ml-0.5">*</span>
+          </label>
           <Dropdown
             value={form.state}
             onChange={(val) => set("state", val)}
             options={INDIAN_STATES.map((s) => ({ value: s, label: s }))}
             placeholder="Select state"
+            className="!h-[38px] sm:!h-[42px]"
           />
         </div>
-        <div className="sm:col-span-2 flex items-center gap-3 pt-3 border-t border-sandal-100">
+        <div className="col-span-2 flex items-center gap-3 pt-3 border-t border-sandal-100">
           <button type="submit" disabled={saving} className="btn-md btn-primary rounded-xl">
             {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : <><Check size={14} /> {form.id ? "Update Address" : "Save Address"}</>}
           </button>
@@ -296,6 +383,12 @@ export default function Profile() {
 
   const [isMobile, setIsMobile] = useState(false);
   const [section, setSection] = useState("profile-info");
+
+  // Fetch fresh profile (picks up gender for existing logged-in sessions)
+  const { data: freshProfile } = useMyProfile();
+  useEffect(() => {
+    if (freshProfile) updateUser(freshProfile);
+  }, [freshProfile]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -344,6 +437,7 @@ export default function Profile() {
   // ── Modal state ────────────────────────────────────────────────────
   const [modal, setModal]             = useState(null); // "deactivate" | "delete" | null
   const [deleteReason, setDeleteReason] = useState("");
+  const [copiedCode, setCopiedCode] = useState(null);
 
   // ── Data queries ───────────────────────────────────────────────────
   const { data: addressesList = [], isLoading: addrLoading } = useAddresses();
@@ -386,6 +480,7 @@ export default function Profile() {
         fullName: profile.fullName,
         phone:    profile.phone,
         gender:   profile.gender || null,
+        email:    profile.email,
       });
       updateUser(res.user || { ...authUser, ...profile });
       setSuccess("Profile updated.");
@@ -405,6 +500,13 @@ export default function Profile() {
   };
 
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setSuccess("Coupon code copied to clipboard!");
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   // ── Sidebar sections ───────────────────────────────────────────────
   const NAV = [
@@ -472,7 +574,7 @@ export default function Profile() {
         />
       )}
 
-      <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-0 pb-10 md:py-10">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 pt-3 pb-10 md:py-10">
         <div className="flex flex-col md:flex-row gap-5 items-start">
 
           {/* ════════════════════════════════════════════════════════════
@@ -537,14 +639,14 @@ export default function Profile() {
               RIGHT CONTENT
           ════════════════════════════════════════════════════════════ */}
           {(!isMobile || section !== "menu") && (
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 w-full">
 
 
             {/* ── Profile Information ─────────────────────────────────── */}
             {section === "profile-info" && (
               <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
                 {/* header */}
-                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4">
                   <div className="flex items-center gap-2.5">
                     {isMobile && (
                       <button
@@ -553,14 +655,14 @@ export default function Profile() {
                           setSection("menu");
                           setEditing(false);
                         }}
-                        className="p-1 hover:bg-sandal-100/50 rounded-lg transition-colors cursor-pointer text-gray-800"
+                        className="p-1 -pl-2 hover:bg-sandal-100/50 rounded-lg transition-colors cursor-pointer text-gray-800"
                         aria-label="Back"
                       >
                         <ArrowLeft size={18} />
                       </button>
                     )}
                     <div>
-                      <h2 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">Personal Information</h2>
+                      <h2 className="font-bold text-gray-900  sm:text-base md:text-lg">Personal Information</h2>
                       {!isMobile && (
                         <p className="text-xs text-gray-400 mt-0.5">Update your name, contact details and gender</p>
                       )}
@@ -586,7 +688,7 @@ export default function Profile() {
                           <input
                             value={profile.fullName}
                             onChange={(e) => setProfile((p) => ({ ...p, fullName: e.target.value }))}
-                            className="field-input mt-1"
+                            className="field-input !py-1.5 !px-3 mt-1"
                             placeholder="Your full name"
                           />
                         ) : (
@@ -608,7 +710,7 @@ export default function Profile() {
                           <input
                             value={profile.phone}
                             onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                            className="field-input mt-1"
+                            className="field-input !py-1.5 !px-3 mt-1"
                             placeholder="10-digit mobile"
                             inputMode="numeric"
                           />
@@ -630,8 +732,9 @@ export default function Profile() {
                         {editing ? (
                           <input
                             value={profile.email}
-                            disabled
-                            className="field-input bg-gray-50 text-gray-400 cursor-not-allowed mt-1"
+                            onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
+                            className="field-input !py-1.5 !px-3 mt-1"
+                            placeholder="Your email address"
                           />
                         ) : (
                           <p className="font-semibold text-sm text-gray-900 truncate">
@@ -659,6 +762,7 @@ export default function Profile() {
                                 { value: "other",  label: "Other"  },
                               ]}
                               placeholder="Select gender"
+                              className="!h-9 !py-1 !px-3 text-sm"
                             />
                           </div>
                         ) : (
@@ -680,30 +784,28 @@ export default function Profile() {
                     )}
 
                     {/* ── Account actions ── */}
-                    {!editing && (
-                      <div className="pt-2 border-t border-gray-100">
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setModal("deactivate")}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-transparent border-none transition-colors cursor-pointer"
-                          >
-                            <Power size={13} /> Deactivate Account
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setModal("delete")}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-red-600 hover:text-red-700 bg-transparent border-none transition-colors cursor-pointer"
-                          >
-                            <UserX size={13} /> Delete Account
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-gray-400 mt-3 leading-relaxed">
-                          Deactivate pauses your account — you can restore it anytime by logging back in.
-                          Delete permanently removes your personal data.
-                        </p>
+                    <div className="pt-4 mt-2">
+                      <div className="flex flex-row flex-nowrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setModal("deactivate")}
+                          className="flex items-center gap-1 py-1.5 pr-12 text-[11px] sm:text-xs font-semibold text-amber-700 hover:text-amber-800 bg-transparent border-none transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          <Power size={13} className="shrink-0" /> Deactivate Account
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModal("delete")}
+                          className="flex items-center gap-1 py-1.5 px-1 text-[11px] sm:text-xs font-semibold text-red-600 hover:text-red-800 bg-transparent border-none transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          <UserX size={13} className="shrink-0" /> Delete Account
+                        </button>
                       </div>
-                    )}
+                      <p className="text-[10px] text-gray-400 mt-2 text-center leading-relaxed">
+                        Deactivate pauses your account — restore anytime by logging in.
+                        Delete permanently removes data.
+                      </p>
+                    </div>
                   </form>
                 </div>
               </div>
@@ -730,7 +832,7 @@ export default function Profile() {
                       </button>
                     )}
                     <div>
-                      <h2 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">Manage Addresses</h2>
+                      <h2 className="font-bold text-gray-900  sm:text-base md:text-lg">Manage Addresses</h2>
                       {!isMobile && (
                         <p className="text-xs text-gray-400 mt-0.5">Saved delivery locations used at checkout</p>
                       )}
@@ -745,7 +847,7 @@ export default function Profile() {
                     </button>
                   )}
                 </div>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   {/* Form */}
                   {(showAddForm || editAddr) && (
                     <AddressForm
@@ -810,7 +912,7 @@ export default function Profile() {
                       </button>
                     )}
                     <div>
-                      <h2 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">My Coupons</h2>
+                      <h2 className="font-bold text-gray-900  sm:text-base md:text-lg">My Coupons</h2>
                       {!isMobile && (
                         <p className="text-xs text-gray-400 mt-0.5">Use these at checkout to save on your order</p>
                       )}
@@ -839,9 +941,23 @@ export default function Profile() {
                           <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-sandal-50 border-l-2 border-dashed border-sandal-200" />
 
                           <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex items-center gap-2 bg-white border border-sandal-200 rounded-xl px-3 py-2 flex-1 min-w-0">
-                              <Tag size={13} className="text-sandal-600 shrink-0" />
-                              <span className="font-mono font-bold text-sandal-800 text-sm tracking-wider truncate select-all">{c.code}</span>
+                            <div className="flex items-center justify-between gap-2 bg-white border border-sandal-200 rounded-xl px-3 py-2 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <Tag size={13} className="text-sandal-600 shrink-0" />
+                                <span className="font-mono font-bold text-sandal-800 text-sm tracking-wider truncate select-all">{c.code}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode(c.code)}
+                                className="p-1 hover:bg-sandal-50 rounded-lg text-gray-400 hover:text-sandal-700 transition-colors cursor-pointer shrink-0"
+                                title="Copy code"
+                              >
+                                {copiedCode === c.code ? (
+                                  <Check size={13} className="text-green-600 animate-in fade-in duration-200" />
+                                ) : (
+                                  <Copy size={13} />
+                                )}
+                              </button>
                             </div>
                             <span className="shrink-0 text-xs font-black text-white bg-sandal-600 rounded-xl px-3 py-2">
                               {c.discountType === "percentage"
@@ -879,9 +995,9 @@ export default function Profile() {
 
             {/* ── My Wishlist ──────────────────────────────────────────── */}
             {section === "wishlist" && (
-              <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
+              <div className="flex flex-col gap-3">
                 {/* header */}
-                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2.5">
                     {isMobile && (
                       <button
@@ -894,7 +1010,7 @@ export default function Profile() {
                       </button>
                     )}
                     <div>
-                      <h2 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">My Wishlist</h2>
+                      <h2 className="font-bold text-gray-900 text-[11px] sm:text-base md:text-lg">My Wishlist</h2>
                       {!isMobile && (
                         <p className="text-xs text-gray-400 mt-0.5">
                           {wishIds?.length ? `${wishIds.length} item${wishIds.length > 1 ? "s" : ""} saved` : "Nothing saved yet"}
@@ -903,7 +1019,7 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                <div className="p-6">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6">
                   {!wishIds?.length ? (
                     <div className="text-center py-14">
                       <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-3">
@@ -919,48 +1035,78 @@ export default function Profile() {
                       <Loader2 size={18} className="animate-spin text-sandal-500" /> Loading wishlist…
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="flex flex-col divide-y divide-amber-100/50">
                       {wishProducts.map((product) => {
-                        const price = product.salePrice || product.price || product.basePrice || 0;
-                        const compare = product.comparePrice || product.mrp;
-                        const img = product.imageUrls?.[0] || product.image_urls?.[0] || product.imageUrl;
+                        const firstV = product.variants?.[0];
+                        const price = firstV?.price ?? product.minPrice ?? 0;
+                        const compare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
+                        const img = product.primaryImage;
+                        const weight = firstV?.weightLabel;
                         return (
-                          <div key={product.id} className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-sandal-200 hover:shadow-md transition-all duration-200">
+                          <Link
+                            key={product.id}
+                            to={`/products/${product.slug}`}
+                            className="flex gap-4 items-center py-3.5 first:pt-0 last:pb-0 group cursor-pointer hover:bg-sandal-50/40 px-2 rounded-xl transition-colors"
+                          >
                             {/* image */}
-                            <div className="relative aspect-square bg-sandal-50 overflow-hidden">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-sandal-50 shrink-0 block">
                               {img ? (
-                                <img src={img} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={img} alt={product.nameEn} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <Package size={28} className="text-gray-200" />
+                                  <Package size={20} className="text-gray-300" />
                                 </div>
                               )}
-                              {/* remove btn */}
-                              <button
-                                onClick={() => handleWishRemove(product.id)}
-                                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow border border-gray-100 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors cursor-pointer"
-                                title="Remove"
-                              >
-                                <X size={13} />
-                              </button>
                             </div>
+
                             {/* info */}
-                            <div className="p-3 flex flex-col gap-1.5 flex-1">
-                              <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">{product.name}</p>
-                              <div className="flex items-baseline gap-1.5 mt-auto">
-                                <span className="text-sm font-bold text-sandal-800">₹{parseFloat(price).toFixed(0)}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-body text-xs sm:text-sm font-semibold text-brand-900 line-clamp-1 leading-snug group-hover:text-sandal-800 transition-colors">
+                                {product.nameEn}
+                              </p>
+                              {product.nameTa && (
+                                <p className="font-tamil text-[10px] sm:text-[11px] text-amber-500 mt-0.5">
+                                  {product.nameTa}
+                                </p>
+                              )}
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1">
+                                <span className="font-num text-xs sm:text-sm font-bold text-sandal-800">
+                                  ₹{parseFloat(price).toFixed(0)}
+                                </span>
                                 {compare && parseFloat(compare) > parseFloat(price) && (
-                                  <span className="text-[10px] line-through text-gray-400">₹{parseFloat(compare).toFixed(0)}</span>
+                                  <span className="font-num text-[10px] sm:text-xs line-through text-gray-400">
+                                    ₹{parseFloat(compare).toFixed(0)}
+                                  </span>
+                                )}
+                                {weight && (
+                                  <span className="font-body text-[10px] sm:text-xs text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                                    {weight}
+                                  </span>
                                 )}
                               </div>
-                              <Link
-                                to={`/products/${product.id}`}
-                                className="mt-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-sandal-600 text-white hover:bg-sandal-700 transition-colors"
+                            </div>
+
+                            {/* action column */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span
+                                className="hidden sm:inline-flex items-center gap-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-sandal-600 text-white group-hover:bg-sandal-700 transition-colors"
                               >
                                 <ShoppingCart size={11} /> View
-                              </Link>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleWishRemove(product.id);
+                                }}
+                                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Remove item"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>

@@ -22,7 +22,8 @@ export default function CustomerLayout() {
   const isNoFooterMobile = isAuthPage
     || isCheckoutPage
     || location.pathname === "/cart"
-    || location.pathname === "/wishlist";
+    || location.pathname === "/wishlist"
+    || location.pathname === "/my-orders";
 
   const { token, isAuthenticated } = useAuthStore();
 

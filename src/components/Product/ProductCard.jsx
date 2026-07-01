@@ -29,7 +29,7 @@ const rupee = (n) =>
 */
 import API from "../../ApiCall/Api.jsx";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, selectedWeights = [] }) {
   const { items } = useCartStore();
   const { isWishlisted } = useWishlistStore();
   const { token, isAuthenticated } = useAuthStore();
@@ -37,7 +37,15 @@ export default function ProductCard({ product }) {
   const [shakeKey, setShakeKey] = useState(0);
 
   const wishlisted = isWishlisted(product.id);
-  const firstV = product.variants?.[0];
+
+  // When a weight filter is active, show the matching variant's price/weight.
+  // Falls back to first variant when no filter is set or no match found.
+  const firstV = (
+    selectedWeights.length > 0
+      ? product.variants?.find((v) => selectedWeights.includes(v.weightLabel))
+      : null
+  ) ?? product.variants?.[0];
+
   const price = firstV?.price ?? product.minPrice ?? 0;
   const compare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
   const hasDisc = compare > price;
@@ -151,14 +159,6 @@ export default function ProductCard({ product }) {
               <span className="absolute top-2.5 left-2.5 badge-red shadow-sm">−{disc}%</span>
             )}
 
-            {/* label badge */}
-            {product.isBestseller && (
-              <span className="absolute top-2.5 right-11 badge-amber shadow-sm">Best Seller</span>
-            )}
-            {product.isNew && !product.isBestseller && (
-              <span className="absolute top-2.5 right-11 badge-green shadow-sm">New</span>
-            )}
-
             {/* out of stock overlay */}
             {!inStock && (
               <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-t-2xl">
@@ -201,9 +201,21 @@ export default function ProductCard({ product }) {
               </p>
             )}
 
+            {/* label badge */}
+            {(product.isBestseller || product.isNew) && (
+              <div>
+                {product.isBestseller && (
+                  <span className="badge-amber">Best Seller</span>
+                )}
+                {product.isNew && !product.isBestseller && (
+                  <span className="badge-green">New</span>
+                )}
+              </div>
+            )}
+
             {/* stars */}
             {product.avgRating > 0 && (
-              <div className="flex items-center gap-0.5 mb-3">
+              <div className="flex items-center gap-0.5  mt-1 -mb-2">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
