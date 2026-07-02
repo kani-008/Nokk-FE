@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../ApiCall/Api.jsx";
+import { useAuthStore } from "../components/store/AuthStore";
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
@@ -143,6 +144,7 @@ export function useDeleteReview() {
 }
 
 export function useMyReview(productId) {
+  const token = useAuthStore((s) => s.token);
   return useQuery({
     queryKey: ["my-review", productId],
     queryFn: async () => {
@@ -150,7 +152,7 @@ export function useMyReview(productId) {
       const res = await API.get(`/products/get-my-review?productId=${productId}`);
       return res.data.review;
     },
-    enabled: !!productId,
+    enabled: !!productId && !!token,
   });
 }
 
@@ -288,6 +290,20 @@ export function useUploadProductImage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;
+    },
+  });
+}
+
+export function useUploadReviewImage() {
+  return useMutation({
+    mutationFn: async (body) => {
+      // body must be a FormData containing `file` (binary) and `slug` (string).
+      // The caller must verify slug is non-empty before calling mutateAsync —
+      // the backend rejects the request without it.
+      const res = await API.post("/upload/review-image", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data; // expected: { url: "..." }
     },
   });
 }

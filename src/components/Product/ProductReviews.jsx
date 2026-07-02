@@ -1,4 +1,5 @@
-import { Star } from "lucide-react";
+import { useState } from "react";
+import { Star, X } from "lucide-react";
 
 // Helper to distribute total review counts realistically if actual review logs are empty or partial.
 // This ensures progress bars look populated and accurate.
@@ -61,6 +62,59 @@ function StarBadge({ rating, size = 12 }) {
   );
 }
 
+// ── Lightbox overlay ──
+function Lightbox({ url, onClose }) {
+  if (!url) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+        aria-label="Close image"
+      >
+        <X size={18} />
+      </button>
+      {/* Image — stop propagation so clicking the image itself doesn't close */}
+      <img
+        src={url}
+        alt="Review photo"
+        className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
+// ── Review images thumbnail row ──
+function ReviewImages({ images, onOpen }) {
+  if (!images || images.length === 0) return null;
+  const shown = images.slice(0, 3); // max 3 thumbnails
+  return (
+    <div className="flex gap-2 mt-2.5">
+      {shown.map((imgSrc, idx) => {
+        const url = typeof imgSrc === "string" ? imgSrc : imgSrc?.url;
+        if (!url) return null;
+        return (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => onOpen(url)}
+            className="w-14 h-14 rounded-xl overflow-hidden border border-sandal-100 bg-sandal-50 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+            aria-label="View review photo"
+          >
+            <img src={url} alt="" className="w-full h-full object-cover" />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Reviews Component ──
 export default function ProductReviews({ product }) {
   const avgRating = product.avgRating || 0;
@@ -69,11 +123,17 @@ export default function ProductReviews({ product }) {
 
   const dist = getDistribution(avgRating, reviewCount, reviewsList);
 
+  // Lightbox state — local, no new dependency
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+
   return (
     <div className="border border-sandal-100 rounded-2xl p-4 sm:p-5 space-y-6">
       <h3 className="font-display text-sm sm:text-base font-bold text-gray-800 uppercase tracking-wide">
         Ratings &amp; Reviews
       </h3>
+
+      {/* Lightbox overlay */}
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* Flipkart style breakdown card */}
       <div className="flex flex-col sm:flex-row gap-6 items-center bg-sandal-100/10 p-4.5 rounded-xl border border-sandal-100/50">
@@ -99,8 +159,9 @@ export default function ProductReviews({ product }) {
                 {/* progress bar */}
                 <div className="flex-1 h-1.5 bg-gray-250/50 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${star >= 4 ? "bg-green-600" : star === 3 ? "bg-amber-500" : "bg-red-500"
-                      }`}
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      star >= 4 ? "bg-green-600" : star === 3 ? "bg-amber-500" : "bg-red-500"
+                    }`}
                     style={{ width: `${percent}%` }}
                   />
                 </div>
@@ -143,6 +204,11 @@ export default function ProductReviews({ product }) {
               <p className="font-body text-sm text-gray-600 leading-relaxed font-medium">
                 {review.comment}
               </p>
+              {/* Image thumbnails — shown only when review.images exists and is non-empty */}
+              <ReviewImages
+                images={review.images}
+                onOpen={(url) => setLightboxUrl(url)}
+              />
               <p className="font-body text-[10px] text-gray-400 font-bold mt-2">
                 {new Date(review.createdAt).toLocaleDateString("en-IN", {
                   day: "numeric",

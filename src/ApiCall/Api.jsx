@@ -11,23 +11,69 @@ const API = axios.create({
   },
 });
 
-// Request Interceptor: Automatically inject Authorization token if available in store
-API.interceptors.request.use(
-  (config) => {
-    const { token } = useAuthStore.getState();
-    if (token && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Decode a JWT payload without a library — returns null if malformed.
+function jwtExpiry(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 
 // Single in-flight refresh promise shared across all concurrent 401 responses.
 // Without this, if 3 requests expire at the same time all 3 would independently
 // call /refresh-token — wasting calls now, and breaking outright if refresh
 // tokens are ever rotated (the 2nd and 3rd calls would use an already-invalidated token).
 let refreshPromise = null;
+
+function doRefresh(refreshToken) {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_URL}/auth/refresh-token`, { refreshToken })
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+// Request interceptor: inject token and proactively refresh if it's expired or
+// expiring within 60 seconds — eliminates the reactive 401 → refresh → retry round-trip.
+API.interceptors.request.use(
+  async (config) => {
+    // Skip auth injection for the refresh endpoint itself to avoid recursion.
+    if (config.url?.includes("/auth/refresh-token")) return config;
+    if (config.headers.Authorization) return config;
+
+    const { token, refreshToken, setAccessToken, logout } = useAuthStore.getState();
+    if (!token) return config;
+
+    const expiry = jwtExpiry(token);
+    const isExpiredOrExpiringSoon = expiry !== null && expiry - Date.now() < 60_000;
+
+    if (isExpiredOrExpiringSoon && refreshToken) {
+      try {
+        const res = await doRefresh(refreshToken);
+        if (res.data?.accessToken) {
+          setAccessToken(res.data.accessToken);
+          config.headers.Authorization = `Bearer ${res.data.accessToken}`;
+        } else {
+          logout();
+        }
+      } catch (err) {
+        const status = err.response?.status;
+        if (status === 401 || status === 403) logout();
+        // On network error keep the (possibly stale) token — let the response
+        // interceptor handle the 401 if the server actually rejects it.
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response Interceptor: silent token refresh on 401
 API.interceptors.response.use(
@@ -49,15 +95,7 @@ API.interceptors.response.use(
     }
 
     try {
-      // Reuse the in-flight refresh if one is already running (deduplication).
-      // All concurrent 401 responses await the same single refresh call.
-      if (!refreshPromise) {
-        refreshPromise = axios
-          .post(`${API_URL}/auth/refresh-token`, { refreshToken })
-          .finally(() => { refreshPromise = null; });
-      }
-
-      const res = await refreshPromise;
+      const res = await doRefresh(refreshToken);
 
       if (!res.data?.accessToken) {
         logout();

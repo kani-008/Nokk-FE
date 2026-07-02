@@ -29,6 +29,7 @@ export function useHomeBanners() {
       }
       return banners;
     },
+    staleTime: 10 * 60_000,
     initialData: () => {
       try {
         const cached = localStorage.getItem("nokk_home_banners");
@@ -36,6 +37,13 @@ export function useHomeBanners() {
       } catch (err) {
         console.error("Failed to parse cached banners:", err);
         return undefined;
+      }
+    },
+    initialDataUpdatedAt: () => {
+      try {
+        return localStorage.getItem("nokk_home_banners") ? Date.now() : 0;
+      } catch {
+        return 0;
       }
     },
   });
@@ -48,6 +56,7 @@ export function useHomeCategories() {
       const res = await API.get("/categories/get-all");
       return res.data.categories || [];
     },
+    staleTime: 10 * 60_000,
   });
 }
 
@@ -58,6 +67,7 @@ export function useHomeBestsellers() {
       const res = await API.get("/products/get-all?isBestseller=true&limit=8");
       return res.data.products || [];
     },
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -68,5 +78,6 @@ export function useHomeNewArrivals() {
       const res = await API.get("/products/get-all?sort=newest&limit=8");
       return res.data.products || [];
     },
+    staleTime: 5 * 60_000,
   });
 }

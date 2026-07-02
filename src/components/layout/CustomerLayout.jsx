@@ -83,7 +83,11 @@ export default function CustomerLayout() {
 
       syncAndLoad();
     }
-  }, [isAuthenticated, token]);
+  // token is intentionally excluded: Api.jsx always reads the latest token from the store
+  // via the request interceptor, so we don't need to re-run the sync on every silent
+  // token refresh (which would cause a second redundant cart/wishlist fetch).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">
