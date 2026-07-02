@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle } from "lucide-react";
 import {
   useAdminOfferList,
   useAdminCouponList,
@@ -24,8 +24,36 @@ const OFFER_EMPTY = { title: "", description: "", imageUrl: "", offerType: "perc
 const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", maxUsesPerUser: "", isActive: true, expiresAt: "" };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-
-
+// ── Confirm dialog (replaces native confirm()) ─────────────────────────
+function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onCancel} />
+      <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-red-50 shrink-0">
+            <AlertTriangle size={18} className="text-red-500" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-bold text-gray-900">{title}</h3>
+            <p className="font-body text-sm text-gray-500 mt-1">{message}</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <AdminButton variant="outline" onClick={onCancel} disabled={loading} type="button">Cancel</AdminButton>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 font-body text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
+          >
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Offer modal ────────────────────────────────────────────────────────
 function OfferModal({ offer, categories, products, onClose, onSaved }) {
@@ -248,6 +276,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
 export default function OfferManagement() {
   const [tab, setTab] = useState("offers");
   const [modal, setModal] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: "offer"|"coupon", id, name }
 
   const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
   const { data: coupons = [], isLoading: couponsLoading } = useAdminCouponList();
@@ -259,22 +288,20 @@ export default function OfferManagement() {
 
   const deleteOfferMutation = useDeleteOffer();
   const deleteCouponMutation = useDeleteCoupon();
+  const deleting = deleteOfferMutation.isPending || deleteCouponMutation.isPending;
 
-  const handleDeleteOffer = async (id) => {
-    if (!confirm("Delete this offer?")) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteOfferMutation.mutateAsync(id);
+      if (deleteTarget.type === "offer") {
+        await deleteOfferMutation.mutateAsync(deleteTarget.id);
+      } else {
+        await deleteCouponMutation.mutateAsync(deleteTarget.id);
+      }
+      setDeleteTarget(null);
     } catch (err) {
-      console.error("Failed to delete offer:", err);
-    }
-  };
-
-  const handleDeleteCoupon = async (id) => {
-    if (!confirm("Delete this coupon?")) return;
-    try {
-      await deleteCouponMutation.mutateAsync(id);
-    } catch (err) {
-      console.error("Failed to delete coupon:", err);
+      console.error(`Failed to delete ${deleteTarget.type}:`, err);
+      setDeleteTarget(null);
     }
   };
 
@@ -292,7 +319,7 @@ export default function OfferManagement() {
       key: "action", label: "", width: "80px", render: (r) => (
         <div className="flex gap-1">
           <IconButton onClick={() => setModal({ type: "offer", data: r })} variant="brand" aria-label="Edit offer"><Pencil size={15} /></IconButton>
-          <IconButton onClick={() => handleDeleteOffer(r.id)} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteTarget({ type: "offer", id: r.id, name: r.title })} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
         </div>
       )
     },
@@ -310,7 +337,7 @@ export default function OfferManagement() {
       key: "action", label: "", width: "80px", render: (r) => (
         <div className="flex gap-1">
           <IconButton onClick={() => setModal({ type: "coupon", data: r })} variant="brand" aria-label="Edit coupon"><Pencil size={15} /></IconButton>
-          <IconButton onClick={() => handleDeleteCoupon(r.id)} variant="danger" aria-label="Delete coupon"><Trash2 size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteTarget({ type: "coupon", id: r.id, name: r.code })} variant="danger" aria-label="Delete coupon"><Trash2 size={15} /></IconButton>
         </div>
       )
     },
@@ -363,6 +390,15 @@ export default function OfferManagement() {
         />
       )}
       {modal?.type === "coupon" && <CouponModal coupon={modal.data} onClose={() => setModal(null)} onSaved={upsertCoupon} />}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={`Delete ${deleteTarget?.type === "coupon" ? "Coupon" : "Offer"}?`}
+        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        loading={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </AdminPage>
   );
 }

@@ -16,6 +16,7 @@ import {
 import { usePublicCoupons }  from "../hookqueries/useOffers";
 import { useAuthStore }      from "../components/store/AuthStore.jsx";
 import { useWishlistStore }  from "../components/store/WishlistStore.jsx";
+import { useCartStore }      from "../components/store/CartStore.jsx";
 import { useToast }          from "../components/useToast.jsx";
 import Dropdown              from "../components/admin/Dropdown.jsx";
 import API                   from "../ApiCall/Api.jsx";
@@ -194,6 +195,7 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
+      console.log("Location not detected. Geolocation is not supported by this browser.");
       setError("location detector is currently not working use pin code to fill");
       return;
     }
@@ -210,13 +212,17 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
           const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
           if (matchedState) set("state", matchedState);
         } catch (err) {
+          console.log("Location not detected. API status code:", err.response?.status || "N/A", "error:", err.message);
           setError("location detector is currently not working use pin code to fill");
         } finally {
           setGeoLoading(false);
         }
       },
       (error) => {
-        setError("location detector is currently not working use pin code to fill");
+        console.log("Location not detected. Geolocation error status code:", error.code, "message:", error.message);
+        setError(error.code === 1
+          ? "Location access blocked. Please allow location in your browser settings and try again."
+          : "location detector is currently not working use pin code to fill");
         setGeoLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -377,7 +383,7 @@ function SideNavItem({ icon: Icon, label, active, onClick }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function Profile() {
   const navigate = useNavigate();
-  const { user: authUser, updateUser, logout } = useAuthStore();
+  const { token, user: authUser, updateUser, logout } = useAuthStore();
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
   const { ids: wishIds, toggle: wishToggle } = useWishlistStore();
 
@@ -499,6 +505,55 @@ export default function Profile() {
     }
   };
 
+  const handleAddToCart = async (product) => {
+    const firstV = product.variants?.[0];
+    if (!firstV) {
+      setError("Product variant not found.");
+      return;
+    }
+
+    const itemData = {
+      variantId:    firstV.id,
+      productId:    product.id,
+      productName:  product.nameEn,
+      nameTa:       product.nameTa,
+      image:        product.primaryImage,
+      price:        firstV.price,
+      comparePrice: firstV.comparePrice,
+      weight:       firstV.weightLabel,
+      quantity:     1
+    };
+
+    if (token) {
+      try {
+        const response = await API.post("/cart/add-item", {
+          variantId: firstV.id,
+          quantity: 1,
+        });
+        const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+          itemId:       i.itemId,
+          variantId:    i.variantId,
+          productId:    i.productId,
+          productName:  i.nameEn ?? i.name,
+          nameTa:       i.nameTa,
+          image:        i.primaryImage,
+          price:        i.price,
+          comparePrice: i.comparePrice,
+          weight:       i.weightLabel,
+          quantity:     i.quantity,
+        }));
+        useCartStore.getState().setItems(serverItems);
+        setSuccess("Item added to cart.");
+      } catch (err) {
+        console.error("addItem server sync failed:", err);
+        setError("Failed to add item to cart.");
+      }
+    } else {
+      useCartStore.getState().addItem(itemData);
+      setSuccess("Item added to cart.");
+    }
+  };
+
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
 
   const handleCopyCode = (code) => {
@@ -527,7 +582,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-sandal-50">
+    <div className="w-full">
 
       {/* ── Toast ── */}
       <div className={`fixed top-4 right-4 z-50 max-w-sm transition-all duration-300 ${toastVisible ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0 pointer-events-none"}`}>
@@ -814,42 +869,8 @@ export default function Profile() {
             {/* ── Manage Addresses ────────────────────────────────────── */}
             {section === "addresses" && (
               <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
-                {/* header */}
-                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2.5">
-                    {isMobile && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSection("menu");
-                          setShowAddForm(false);
-                          setEditAddr(null);
-                        }}
-                        className="p-1 hover:bg-sandal-100/50 rounded-lg transition-colors cursor-pointer text-gray-800"
-                        aria-label="Back"
-                      >
-                        <ArrowLeft size={18} />
-                      </button>
-                    )}
-                    <div>
-                      <h2 className="font-bold text-gray-900  sm:text-base md:text-lg">Manage Addresses</h2>
-                      {!isMobile && (
-                        <p className="text-xs text-gray-400 mt-0.5">Saved delivery locations used at checkout</p>
-                      )}
-                    </div>
-                  </div>
-                  {!showAddForm && !editAddr && (
-                    <button
-                      onClick={() => setShowAddForm(true)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-sandal-700 hover:text-sandal-900 cursor-pointer"
-                    >
-                      <Plus size={13} /> Add New
-                    </button>
-                  )}
-                </div>
-                <div className="p-4 sm:p-6">
-                  {/* Form */}
-                  {(showAddForm || editAddr) && (
+                {showAddForm || editAddr ? (
+                  <div className="p-4 sm:p-6">
                     <AddressForm
                       key={editAddr?.id || "new"}
                       initial={editAddr}
@@ -858,40 +879,76 @@ export default function Profile() {
                       onSave={() => { setEditAddr(null); setShowAddForm(false); }}
                       onCancel={() => { setEditAddr(null); setShowAddForm(false); }}
                     />
-                  )}
-
-                  {addrLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-400 py-10 justify-center">
-                      <Loader2 size={18} className="animate-spin text-sandal-500" /> Loading addresses…
-                    </div>
-                  ) : addressesList.length === 0 && !showAddForm ? (
-                    <div className="text-center py-14">
-                      <div className="w-14 h-14 rounded-2xl bg-sandal-50 flex items-center justify-center mx-auto mb-3">
-                        <MapPin size={24} className="text-sandal-300" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Header for list view */}
+                    <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 border-b border-gray-100">
+                      <div className="flex items-center gap-2.5">
+                        {isMobile && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSection("menu");
+                              setShowAddForm(false);
+                              setEditAddr(null);
+                            }}
+                            className="p-1 hover:bg-sandal-100/50 rounded-lg transition-colors cursor-pointer text-gray-800"
+                            aria-label="Back"
+                          >
+                            <ArrowLeft size={18} />
+                          </button>
+                        )}
+                        <div>
+                          <h2 className="font-bold text-gray-900 sm:text-base md:text-lg">Manage Addresses</h2>
+                          {!isMobile && (
+                            <p className="text-xs text-gray-400 mt-0.5">Saved delivery locations used at checkout</p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm font-semibold text-gray-500">No addresses saved yet</p>
-                      <p className="text-xs text-gray-400 mt-1">Saved addresses appear here and speed up checkout</p>
                       <button
                         onClick={() => setShowAddForm(true)}
-                        className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-sandal-700 hover:text-sandal-900 hover:underline cursor-pointer bg-transparent border-none"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-sandal-700 hover:text-sandal-900 cursor-pointer animate-in fade-in"
                       >
-                        <Plus size={13} /> Add your first address
+                        <Plus size={13} /> Add New
                       </button>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {addressesList.map((addr) => (
-                        <AddressCard
-                          key={addr.id}
-                          addr={addr}
-                          onEdit={(a) => { setEditAddr(a); setShowAddForm(false); }}
-                          setError={setError}
-                          setSuccess={setSuccess}
-                        />
-                      ))}
+
+                    <div className="p-4 sm:p-6">
+                      {addrLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-400 py-10 justify-center">
+                          <Loader2 size={18} className="animate-spin text-sandal-500" /> Loading addresses…
+                        </div>
+                      ) : addressesList.length === 0 ? (
+                        <div className="text-center py-14">
+                          <div className="w-14 h-14 rounded-2xl bg-sandal-50 flex items-center justify-center mx-auto mb-3">
+                            <MapPin size={24} className="text-sandal-300" />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-500">No addresses saved yet</p>
+                          <p className="text-xs text-gray-400 mt-1">Saved addresses appear here and speed up checkout</p>
+                          <button
+                            onClick={() => setShowAddForm(true)}
+                            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-sandal-700 hover:text-sandal-900 hover:underline cursor-pointer bg-transparent border-none"
+                          >
+                            <Plus size={13} /> Add your first address
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {addressesList.map((addr) => (
+                            <AddressCard
+                              key={addr.id}
+                              addr={addr}
+                              onEdit={(a) => { setEditAddr(a); setShowAddForm(false); }}
+                              setError={setError}
+                              setSuccess={setSuccess}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -1010,7 +1067,7 @@ export default function Profile() {
                       </button>
                     )}
                     <div>
-                      <h2 className="font-bold text-gray-900 text-[11px] sm:text-base md:text-lg">My Wishlist</h2>
+                      <h2 className="font-bold text-gray-900  sm:text-base md:text-lg">My Wishlist</h2>
                       {!isMobile && (
                         <p className="text-xs text-gray-400 mt-0.5">
                           {wishIds?.length ? `${wishIds.length} item${wishIds.length > 1 ? "s" : ""} saved` : "Nothing saved yet"}
@@ -1088,11 +1145,18 @@ export default function Profile() {
 
                             {/* action column */}
                             <div className="flex items-center gap-2 shrink-0">
-                              <span
-                                className="hidden sm:inline-flex items-center gap-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-sandal-600 text-white group-hover:bg-sandal-700 transition-colors"
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleAddToCart(product);
+                                }}
+                                className="p-1.5 text-sandal-700 hover:text-sandal-900 hover:bg-sandal-50/70 rounded-lg transition-colors cursor-pointer"
+                                title="Add to Cart"
                               >
-                                <ShoppingCart size={11} /> View
-                              </span>
+                                <ShoppingCart size={15} />
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => {

@@ -122,17 +122,18 @@ export default function Register() {
             const checkRes = await API.post("/auth/check-phone", { phone: form.phone });
             console.log("[FE] POST /auth/check-phone →", checkRes.status, checkRes.data?.message);
 
-            if (import.meta.env.DEV) {
-                console.log("[FE] DEV mode — skipping OTP, going straight to password step");
-                setView("password");
-                return;
-            }
+            // OTP step bypassed — WhatsApp OTP integration will replace SMS OTP.
+            // To re-enable: remove the next two lines and uncomment the register-otp block below.
+            setView("password");
+            return;
 
+            /* --- restore when WhatsApp OTP is ready ---
             console.log("[FE] POST /auth/register-otp", { phone: form.phone });
             const otpRes = await API.post("/auth/register-otp", { phone: form.phone });
             console.log("[FE] POST /auth/register-otp →", otpRes.status, otpRes.data?.message);
             setView("otp");
             setOtpExpiryTime(Date.now() + 180 * 1000);
+            --- */
         } catch (err) {
             console.error("[FE] register step-1 →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setApiErr(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");

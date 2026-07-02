@@ -54,6 +54,7 @@ export function SavedAddressEditForm({ address, onSaved, onCancel }) {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
+      console.log("Location not detected. Geolocation is not supported by this browser.");
       setError("location detector is currently not working use pin code to fill");
       return;
     }
@@ -70,13 +71,17 @@ export function SavedAddressEditForm({ address, onSaved, onCancel }) {
           const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
           if (matchedState) set("state", matchedState);
         } catch (err) {
+          console.log("Location not detected. API status code:", err.response?.status || "N/A", "error:", err.message);
           setError("location detector is currently not working use pin code to fill");
         } finally {
           setGeoLoading(false);
         }
       },
       (error) => {
-        setError("location detector is currently not working use pin code to fill");
+        console.log("Location not detected. Geolocation error status code:", error.code, "message:", error.message);
+        setError(error.code === 1
+          ? "Location access blocked. Please allow location in your browser settings and try again."
+          : "location detector is currently not working use pin code to fill");
         setGeoLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -311,6 +316,7 @@ export default function Address({
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
+      console.log("Location not detected. Geolocation is not supported by this browser.");
       setError("location detector is currently not working use pin code to fill");
       return;
     }
@@ -327,13 +333,17 @@ export default function Address({
           const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
           if (matchedState) onChangeNew("state", matchedState);
         } catch (err) {
+          console.log("Location not detected. API status code:", err.response?.status || "N/A", "error:", err.message);
           setError("location detector is currently not working use pin code to fill");
         } finally {
           setGeoLoading(false);
         }
       },
       (error) => {
-        setError("location detector is currently not working use pin code to fill");
+        console.log("Location not detected. Geolocation error status code:", error.code, "message:", error.message);
+        setError(error.code === 1
+          ? "Location access blocked. Please allow location in your browser settings and try again."
+          : "location detector is currently not working use pin code to fill");
         setGeoLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }

@@ -38,11 +38,15 @@ export default function ProductCard({ product, selectedWeights = [] }) {
 
   const wishlisted = isWishlisted(product.id);
 
+  const normWeight = (w) => String(w || "").toLowerCase().replace(/\s+/g, "");
+
   // When a weight filter is active, show the matching variant's price/weight.
   // Falls back to first variant when no filter is set or no match found.
   const firstV = (
     selectedWeights.length > 0
-      ? product.variants?.find((v) => selectedWeights.includes(v.weightLabel))
+      ? product.variants?.find((v) =>
+          selectedWeights.some((sw) => normWeight(sw) === normWeight(v.weightLabel))
+        )
       : null
   ) ?? product.variants?.[0];
 
@@ -154,10 +158,13 @@ export default function ProductCard({ product, selectedWeights = [] }) {
               onError={(e) => { e.target.src = PH; }}
             />
 
-            {/* discount badge */}
-            {hasDisc && (
-              <span className="absolute top-2.5 left-2.5 badge-red shadow-sm">−{disc}%</span>
+            {/* Best Seller / New labels */}
+            {product.isBestseller && (
+              <span className="absolute top-2.5 left-2.5 badge-amber shadow-sm">Best Seller</span>
             )}
+            {/* {product.isNew && !product.isBestseller && (
+              <span className="absolute top-2.5 left-2.5 badge-green shadow-sm">New</span>
+            )} */}
 
             {/* out of stock overlay */}
             {!inStock && (
@@ -201,17 +208,7 @@ export default function ProductCard({ product, selectedWeights = [] }) {
               </p>
             )}
 
-            {/* label badge */}
-            {(product.isBestseller || product.isNew) && (
-              <div>
-                {product.isBestseller && (
-                  <span className="badge-amber">Best Seller</span>
-                )}
-                {product.isNew && !product.isBestseller && (
-                  <span className="badge-green">New</span>
-                )}
-              </div>
-            )}
+
 
             {/* stars */}
             {product.avgRating > 0 && (
@@ -248,10 +245,23 @@ export default function ProductCard({ product, selectedWeights = [] }) {
                 </span>
               )}
             </div>
-            {firstV?.weightLabel && (
-              <p className="font-body text-[11px] text-gray-500 font-medium mt-0.5">
-                {firstV.weightLabel}
-              </p>
+            {firstV?.weightLabel ? (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="font-body text-[11px] text-gray-500 font-medium">
+                  {firstV.weightLabel}
+                </span>
+                {hasDisc && (
+                  <span className="text-red-600 font-semibold !border-none !px-1.5 !py-0.5 !text-[11px]">
+                    −{disc}%
+                  </span>
+                )}
+              </div>
+            ) : (
+              hasDisc && (
+                <span className="badge-red !border-none !px-1.5 !py-0.5 !text-[9px] mt-0.5 w-fit">
+                  −{disc}%
+                </span>
+              )
             )}
           </div>
 

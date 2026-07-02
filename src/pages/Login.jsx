@@ -149,6 +149,12 @@ export default function Login() {
         if (!isValidPhone(phone)) { setForgotErrors({ phone: "Enter a valid 10-digit mobile number" }); return; }
         setForgotErrors({});
 
+        // OTP step bypassed — WhatsApp OTP integration will replace SMS OTP.
+        // To re-enable: remove the next line and uncomment the otp-create block below.
+        setView("forgot-reset");
+        return;
+
+        /* --- restore when WhatsApp OTP is ready ---
         setLoading(true);
         try {
             console.log("[FE] POST /auth/otp-create", { phone });
@@ -162,6 +168,7 @@ export default function Login() {
         } finally {
             setLoading(false);
         }
+        --- */
     };
 
     const handlePhoneKeyDown = (e) => {

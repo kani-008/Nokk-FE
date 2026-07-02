@@ -20,6 +20,13 @@ const SORT_OPTIONS = [
   { value: "relevance", label: "Relevance" },
 ];
 
+const PRICE_RANGES = [
+  { label: "Under ₹150", min: "", max: "150" },
+  { label: "₹150 - ₹300", min: "150", max: "300" },
+  { label: "₹300 - ₹500", min: "300", max: "500" },
+  { label: "Over ₹500", min: "500", max: "" },
+];
+
 
 
 // ── skeleton card ──────────────────────────────────────────────────────
@@ -102,9 +109,9 @@ function Sidebar({
   setParam,
   category,
   categories,
-  priceDraft,
-  setPriceDraft,
-  applyPriceRange,
+  minPrice,
+  maxPrice,
+  selectPriceRange,
   rating,
   allWeightLabels,
   weights,
@@ -176,33 +183,22 @@ function Sidebar({
 
         {/* Price range */}
         <FilterSection title="Price Range">
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              placeholder="Min"
-              value={priceDraft.min}
-              onChange={(e) => setPriceDraft((d) => ({ ...d, min: e.target.value }))}
-              className="field-input py-1.5 text-xs px-2.5"
-            />
-            <span className="text-gray-400 text-xs">to</span>
-            <input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              placeholder="Max"
-              value={priceDraft.max}
-              onChange={(e) => setPriceDraft((d) => ({ ...d, max: e.target.value }))}
-              className="field-input py-1.5 text-xs px-2.5"
-            />
+          <div className="space-y-1.5">
+            {PRICE_RANGES.map((r) => {
+              const isSelected = minPrice === r.min && maxPrice === r.max;
+              return (
+                <label key={r.label} className="filter-row group cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => selectPriceRange(r.min, r.max)}
+                    className="filter-checkbox"
+                  />
+                  <span className="filter-row-label">{r.label}</span>
+                </label>
+              );
+            })}
           </div>
-          <button
-            onClick={applyPriceRange}
-            className="btn-sm btn-outline w-full"
-          >
-            Apply
-          </button>
         </FilterSection>
 
         {/* Customer rating */}
@@ -347,15 +343,18 @@ export default function Products() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [desktopSidebarOpen] = useState(true);
-  const [priceDraft, setPriceDraft] = useState({ min: minPrice, max: maxPrice });
-
-  // keep the price draft inputs synced if filters are cleared elsewhere (e.g. "Clear all")
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPriceDraft({ min: minPrice, max: maxPrice });
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [minPrice, maxPrice]);
+  const selectPriceRange = (min, max) => {
+    const p = new URLSearchParams(searchParams);
+    if (p.get("minPrice") === min && p.get("maxPrice") === max) {
+      p.delete("minPrice");
+      p.delete("maxPrice");
+    } else {
+      if (min) p.set("minPrice", min); else p.delete("minPrice");
+      if (max) p.set("maxPrice", max); else p.delete("maxPrice");
+    }
+    p.delete("page");
+    setSearchParams(p);
+  };
 
 
 
@@ -376,17 +375,10 @@ export default function Products() {
     setParam(key, next.join(","));
   };
 
-  const applyPriceRange = () => {
-    const p = new URLSearchParams(searchParams);
-    if (priceDraft.min) p.set("minPrice", priceDraft.min); else p.delete("minPrice");
-    if (priceDraft.max) p.set("maxPrice", priceDraft.max); else p.delete("maxPrice");
-    p.delete("page");
-    setSearchParams(p);
-  };
+  const applyPriceRange = () => {};
 
   const removeAllFilters = () => {
     setSearchParams({});
-    setPriceDraft({ min: "", max: "" });
   };
 
 
@@ -414,9 +406,9 @@ export default function Products() {
     setParam,
     category,
     categories,
-    priceDraft,
-    setPriceDraft,
-    applyPriceRange,
+    minPrice,
+    maxPrice,
+    selectPriceRange,
     rating,
     allWeightLabels,
     weights,

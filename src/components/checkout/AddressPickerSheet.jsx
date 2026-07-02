@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Plus, Home, MapPin, MoreVertical, Pencil, Trash2, Check, Loader2, Navigation } from "lucide-react";
+import { X, Plus, Home, MapPin, MoreVertical, Pencil, Trash2, Check, Loader2, Navigation, ArrowLeft } from "lucide-react";
 import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode, detectAddressFromCoords } from "../../hookqueries/useProfile";
 import { Field, SavedAddressEditForm } from "./Address";
 import { INDIAN_STATES } from "./statesList.js";
@@ -109,6 +109,7 @@ function AddNewForm({ onSaved, onCancel }) {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
+      console.log("Location not detected. Geolocation is not supported by your browser.");
       alert("Geolocation is not supported by your browser");
       return;
     }
@@ -125,13 +126,17 @@ function AddNewForm({ onSaved, onCancel }) {
           const matchedState = INDIAN_STATES.find((s) => norm(s) === norm(details.state)) || details.state;
           if (matchedState) set("state", matchedState);
         } catch (err) {
+          console.log("Location not detected. API status code:", err.response?.status || "N/A", "error:", err.message);
           alert("Failed to detect location: " + err.message);
         } finally {
           setGeoLoading(false);
         }
       },
       (error) => {
-        alert("Geolocation error: " + error.message);
+        console.log("Location not detected. Geolocation error status code:", error.code, "message:", error.message);
+        alert(error.code === 1
+          ? "Location access blocked. Please allow location in your browser settings and try again."
+          : "location detector is currently not working use pin code to fill");
         setGeoLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -301,6 +306,10 @@ export default function AddressPickerSheet({ open, onClose, selectedId, onSelect
     setEditingId(null);
   };
 
+  const isEditing = editingId !== null;
+  const showForm = showAddForm || isEditing;
+  const sheetHeightClass = showForm ? "h-[85vh] sm:h-auto" : "h-[55vh] sm:h-auto";
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
       {/* backdrop */}
@@ -311,91 +320,112 @@ export default function AddressPickerSheet({ open, onClose, selectedId, onSelect
       />
 
       {/* sheet panel */}
-      <div className="relative w-full sm:max-w-md max-h-[90vh] sm:max-h-none flex flex-col bg-white rounded-t-3xl sm:rounded-none overflow-hidden shadow-2xl">
+      <div className={`relative w-full ${sheetHeightClass} sm:max-w-md max-h-[90vh] sm:max-h-none flex flex-col bg-white rounded-t-3xl sm:rounded-none overflow-hidden shadow-2xl`}>
 
         {/* drag pill (mobile) */}
         <div className="sm:hidden w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
-        {/* header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-          <p className="font-body text-base font-bold text-brand-900">Select delivery address</p>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* scrollable body */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Saved addresses header + Add New */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <p className="font-body text-xs font-semibold text-amber-500 uppercase tracking-wide">
-              Saved addresses
-            </p>
-            <button
-              onClick={() => { setShowAddForm((v) => !v); setEditingId(null); }}
-              className="flex items-center gap-1 font-body text-sm font-semibold text-brand-700 hover:text-brand-900 transition-colors"
-            >
-              <Plus size={15} /> Add New
-            </button>
-          </div>
-
-          {/* address list */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-10 text-amber-400">
-              <Loader2 size={18} className="animate-spin mr-2" />
-              <span className="font-body text-sm">Loading…</span>
+        {showForm ? (
+          <>
+            {/* Header for Form View inside the sheet */}
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingId(null);
+                }}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-800 flex items-center justify-center shrink-0"
+                aria-label="Back to address list"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <p className="font-body text-base font-bold text-brand-900">
+                {isEditing ? "Edit Address" : "Add New Address"}
+              </p>
             </div>
-          ) : addresses.length === 0 ? (
-            <p className="font-body text-sm text-amber-500 text-center py-6">No saved addresses yet.</p>
-          ) : (
-            <div>
-              {addresses.map((addr) => (
-                <div key={addr.id}>
-                  <AddressRow
-                    address={addr}
-                    isSelected={addr.id === selectedId}
-                    onSelect={() => handleSelect(addr)}
-                    onEdit={() => setEditingId((id) => (id === addr.id ? null : addr.id))}
-                    onDelete={() => handleDelete(addr)}
-                  />
-                  {editingId === addr.id && (
-                    <div className="px-4 pb-4 bg-amber-50/40 border-b border-amber-50">
-                      <SavedAddressEditForm
-                        address={addr}
-                        onSaved={(updated) => {
-                          onSavedEdited(updated);
-                          setEditingId(null);
-                          // If this was the selected address, keep it selected with updated data
-                          if (addr.id === selectedId) onSelect(updated);
-                        }}
-                        onCancel={() => setEditingId(null)}
-                      />
-                    </div>
-                  )}
+
+            {/* Form body */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {isEditing ? (
+                <SavedAddressEditForm
+                  address={addresses.find((a) => a.id === editingId)}
+                  onSaved={(updated) => {
+                    onSavedEdited(updated);
+                    setEditingId(null);
+                    if (editingId === selectedId) onSelect(updated);
+                  }}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : (
+                <AddNewForm
+                  onSaved={(newAddr) => {
+                    setShowAddForm(false);
+                    onSelect(newAddr);
+                    onClose();
+                  }}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+              <p className="font-body text-base font-bold text-brand-900">Select delivery address</p>
+              <button
+                onClick={onClose}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* scrollable body */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Saved addresses header + Add New */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <p className="font-body text-xs font-semibold text-amber-500 uppercase tracking-wide">
+                  Saved addresses
+                </p>
+                <button
+                  onClick={() => { setShowAddForm(true); setEditingId(null); }}
+                  className="flex items-center gap-1 font-body text-sm font-semibold text-brand-700 hover:text-brand-900 transition-colors"
+                >
+                  <Plus size={15} /> Add New
+                </button>
+              </div>
+
+              {/* address list */}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-10 text-amber-400">
+                  <Loader2 size={18} className="animate-spin mr-2" />
+                  <span className="font-body text-sm">Loading…</span>
                 </div>
-              ))}
+              ) : addresses.length === 0 ? (
+                <p className="font-body text-sm text-amber-500 text-center py-6">No saved addresses yet.</p>
+              ) : (
+                <div>
+                  {addresses.map((addr) => (
+                    <AddressRow
+                      key={addr.id}
+                      address={addr}
+                      isSelected={addr.id === selectedId}
+                      onSelect={() => handleSelect(addr)}
+                      onEdit={() => setEditingId(addr.id)}
+                      onDelete={() => handleDelete(addr)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* bottom safe area padding */}
+              <div className="h-4" />
             </div>
-          )}
-
-          {/* new address form */}
-          {showAddForm && (
-            <AddNewForm
-              onSaved={(newAddr) => {
-                setShowAddForm(false);
-                onSelect(newAddr);
-                onClose();
-              }}
-              onCancel={() => setShowAddForm(false)}
-            />
-          )}
-
-          {/* bottom safe area padding */}
-          <div className="h-4" />
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

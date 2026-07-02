@@ -74,6 +74,8 @@ const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
+const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
+const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
 
 export default function App() {
   return (
@@ -121,8 +123,10 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
             <Route path="orders" element={<OrderManagement />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="reviews" element={<ReviewManagement />} />
             <Route path="offers" element={<OfferManagement />} />
             <Route path="banners" element={<BannerManagement />} />
             <Route path="inventory" element={<InventoryManagement />} />

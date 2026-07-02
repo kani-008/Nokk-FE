@@ -10,6 +10,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import StepBar from "./StepBar";
 
 export const PAYMENT_METHODS = [
   {
@@ -168,6 +169,11 @@ export default function Payment({
       <div className="md:flex md:items-start md:gap-6 pb-28 md:pb-0">
         {/* ── LEFT COLUMN ─────────────────────────────────────── */}
         <div className="space-y-4 md:space-y-5 md:flex-1 md:min-w-0">
+          {/* Step bar aligned to the left column on desktop */}
+          <div className="card p-3.5 sm:p-5 hidden md:block">
+            <StepBar current="payment" />
+          </div>
+
           <div className="card p-5 sm:p-6">
             {/* header (desktop only, hidden on mobile) */}
             <div className="hidden md:flex items-center gap-2 mb-5">
@@ -283,7 +289,6 @@ export default function Payment({
             </div>
 
             {/* ── Place Order Action Box (hidden on mobile, visible on desktop/tablet md+) ── */}
-            {/*
             <div className="hidden md:flex items-center justify-between bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
               <div>
                 {discount > 0 && (
@@ -312,7 +317,6 @@ export default function Payment({
                 {placing ? "Placing..." : "Place Order"}
               </button>
             </div>
-            */}
           </div>
         </div>
       </div>

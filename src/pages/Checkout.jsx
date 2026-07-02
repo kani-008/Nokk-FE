@@ -557,7 +557,7 @@ export default function Checkout() {
       )}
 
       {/* step bar */}
-      {step !== "summary" && (
+      {step !== "summary" && step !== "payment" && (
         <div className="card p-3.5 sm:p-5 mb-2.5 max-w-xl mx-auto w-full hidden md:block">
           <StepBar current={step} />
         </div>

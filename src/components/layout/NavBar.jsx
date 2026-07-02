@@ -234,7 +234,7 @@ export default function NavBar() {
             {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex flex-1 max-w-md mx-4"
+              className="hidden md:flex w-full max-w-2xl ml-4 mr-2"
             >
               <div className="relative w-full">
                 <input
@@ -254,7 +254,7 @@ export default function NavBar() {
             </form>
 
             {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
+            <nav className="hidden md:flex items-center gap-1">
               {/* Categories Dropdown */}
               <div
                 ref={catDropdownRef}

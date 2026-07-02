@@ -17,6 +17,8 @@ import {
   Bell,
   ExternalLink,
   Search,
+  MessageSquare,
+  Grid3x3,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -27,11 +29,13 @@ import IconButton from "../../components/admin/IconButton.jsx";
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/products", label: "Products", icon: Package },
+  { to: "/admin/categories", label: "Categories", icon: Grid3x3 },
   { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/offers", label: "Offers", icon: Tag },
   { to: "/admin/banners", label: "Banners", icon: Image },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];

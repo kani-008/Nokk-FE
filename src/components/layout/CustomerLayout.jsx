@@ -23,7 +23,8 @@ export default function CustomerLayout() {
     || isCheckoutPage
     || location.pathname === "/cart"
     || location.pathname === "/wishlist"
-    || location.pathname === "/my-orders";
+    || location.pathname === "/my-orders"
+    || location.pathname === "/profile";
 
   const { token, isAuthenticated } = useAuthStore();
 

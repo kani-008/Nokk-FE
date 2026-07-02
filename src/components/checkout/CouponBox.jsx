@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
 import { useCartStore } from "../store/CartStore";
-import { useActiveOffers } from "../../hookqueries/useOffers";
+import { usePublicCoupons } from "../../hookqueries/useOffers";
 import API from "../../ApiCall/Api";
 
 export default function CouponBox() {
@@ -10,20 +10,46 @@ export default function CouponBox() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
-  // Load active offers/coupons from backend
-  const { data: offers = [] } = useActiveOffers();
-  const couponOffers = offers.filter(o => o.code);
+  // Load public coupons from backend
+  const { data: publicCoupons = [], isLoading: couponsLoading, isError: couponsError } = usePublicCoupons();
+  console.log("[CouponBox] STATUS: public coupons fetch —", couponsLoading ? "loading" : couponsError ? "error" : `ok (${publicCoupons.length} coupons)`, publicCoupons.map(c => c.code));
 
   const handleApply = async () => {
-    if (!code.trim()) return;
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) {
+      console.warn("[CouponBox] STATUS 400 — empty coupon code, aborted");
+      return;
+    }
     setError("");
     setLoading(true);
+    const sub = subtotal();
+    console.log("[CouponBox] REQUEST — POST /coupons/validate | code:", trimmed, "| subtotal: ₹" + sub);
     try {
-      const res = await API.post("/coupons/validate", { code: code.trim().toUpperCase(), subtotal: subtotal() });
+      const res = await API.post("/coupons/validate", { code: trimmed, subtotal: sub });
+      console.log("[CouponBox] STATUS", res.status, "— validate success | response:", res.data);
+      if (!res.data.coupon) {
+        console.warn("[CouponBox] STATUS 200 but no coupon object in response:", res.data);
+        setError("Coupon could not be applied. Please try again.");
+        return;
+      }
       setCoupon(res.data.coupon);
+      console.log("[CouponBox] STATUS 200 — coupon applied to store:", {
+        code: res.data.coupon.code,
+        discountPercent: res.data.coupon.discountPercent,
+        discountFlat: res.data.coupon.discountFlat,
+        discountAmount: res.data.discountAmount,
+        freeShipping: res.data.freeShipping,
+      });
       setCode("");
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Invalid coupon code");
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || err.message || "Invalid coupon code";
+      console.error("[CouponBox] STATUS", status, "— validate failed | message:", msg, "| full error:", err.response?.data || err.message);
+      if (status === 401) {
+        setError("Please log in to apply a coupon.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -77,17 +103,17 @@ export default function CouponBox() {
       </div>
       {error && <p className="font-body text-xs text-red-500 mt-1.5">{error}</p>}
 
-      {couponOffers.length > 0 && (
+      {publicCoupons.length > 0 && (
         <div className="mt-2.5">
           <p className="font-body text-[10px] text-amber-500 font-bold tracking-wider mb-1">
             Available Coupon Codes
           </p>
           <div className="flex gap-1.5 flex-wrap">
-            {couponOffers.map((o) => (
+            {publicCoupons.map((o) => (
               <button
                 key={o.id}
                 type="button"
-                onClick={() => { setCode(o.code); setError(""); }}
+                onClick={() => { setCode(o.code); setError(""); console.log("[CouponBox] Chip selected — coupon code set to:", o.code); }}
                 className="inline-flex items-center gap-1 font-num text-xs font-bold bg-[#fdfaf2] text-[#ac8345] border border-[#f5eedf] hover:bg-amber-50 hover:border-amber-200 transition-colors px-2.5 py-1 rounded-lg cursor-pointer"
               >
                 <Tag size={10} />
