@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 
 /* Layouts & Guards */
@@ -76,6 +77,7 @@ const Settings = lazy(() => import("./pages/admin/Settings"));
 
 export default function App() {
   return (
+    <HelmetProvider>
     <BrowserRouter>
       <Routes>
 
@@ -132,5 +134,6 @@ export default function App() {
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
+    </HelmetProvider>
   );
 }

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import HeroBanner from "../components/home/HeroBanner.jsx";
 import {
   CategoryScroll,
@@ -28,8 +29,21 @@ export default function Home() {
 
   const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 
+  const SITE_URL = "https://nammaoorkaruvattukadai.com";
+  const title = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
+  const description = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai. Fresh, authentic, delivered to your doorstep.";
+
   return (
     <div className="min-h-screen bg-sandal-50">
+      <Helmet>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={`${SITE_URL}/og-home.jpg`} />
+        <meta property="og:url" content={SITE_URL} />
+        <meta property="og:type" content="website" />
+      </Helmet>
 
       {/* 1 – Hero */}
       <HeroBanner banners={banners} />

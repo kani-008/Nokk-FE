@@ -7,6 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
+import { Helmet } from "react-helmet-async";
 import { useProductDetail, useSimilarProducts } from "../hookqueries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
@@ -204,7 +205,19 @@ export default function ProductDetails() {
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
-  if (loading) return <DetailSkeleton />;
+  const SITE_URL = "https://nammaoorkaruvattukadai.com";
+  const DEFAULT_TITLE = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
+  const DEFAULT_DESC = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai.";
+
+  if (loading) return (
+    <>
+      <Helmet>
+        <title>{DEFAULT_TITLE}</title>
+        <meta name="description" content={DEFAULT_DESC} />
+      </Helmet>
+      <DetailSkeleton />
+    </>
+  );
   if (notFound) return (
     <div className="flex flex-col items-center justify-center py-24 text-center px-4">
       <span className="text-5xl mb-4">🐟</span>
@@ -405,8 +418,24 @@ export default function ProductDetails() {
     setShareModalOpen(false);
   };
 
+  const productTitle = `${product.nameEn} — Namma Oor Karuvattu Kadai`;
+  const productDesc = product.description
+    ? product.description.slice(0, 160).trimEnd()
+    : DEFAULT_DESC;
+  const productUrl = `${SITE_URL}/products/${product.slug}`;
+  const productImage = product.primaryImage || null;
+
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
+      <Helmet>
+        <title>{productTitle}</title>
+        <meta name="description" content={productDesc} />
+        <meta property="og:title" content={productTitle} />
+        <meta property="og:description" content={productDesc} />
+        {productImage && <meta property="og:image" content={productImage} />}
+        <meta property="og:url" content={productUrl} />
+        <meta property="og:type" content="product" />
+      </Helmet>
 
       {/* ── Toast (Red for Error, Green for Success) ── */}
       <div

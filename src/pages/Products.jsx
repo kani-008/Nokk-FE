@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import {
   SlidersHorizontal, X, ChevronDown, ChevronUp,
   Star,
@@ -426,8 +427,19 @@ export default function Products() {
     isNew,
   };
 
+  const pageTitle = "Shop All Products — Namma Oor Karuvattu Kadai";
+  const pageDescription = "Browse our full catalog of authentic sun-dried fish, traditional seafood, and coastal delicacies. Filter by category, weight, price, and more.";
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6 md:py-6">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content="https://nammaoorkaruvattukadai.com/products" />
+        <meta property="og:type" content="website" />
+      </Helmet>
 
       {/* ── Page header ──────────────────────────────────────────── */}
       {/* <div className="mb-5">
