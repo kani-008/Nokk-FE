@@ -90,11 +90,67 @@ export function useAddReview() {
       return res.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the specific product details query to load the new review list
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      }
     },
+  });
+}
+
+export function useUpdateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.put("/products/update-review", payload);
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.slug) {
+        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      }
+    },
+  });
+}
+
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.delete("/products/delete-my-review", { data: payload });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.slug) {
+        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      }
+    },
+  });
+}
+
+export function useMyReview(productId) {
+  return useQuery({
+    queryKey: ["my-review", productId],
+    queryFn: async () => {
+      if (!productId) return null;
+      const res = await API.get(`/products/get-my-review?productId=${productId}`);
+      return res.data.review;
+    },
+    enabled: !!productId,
   });
 }
 

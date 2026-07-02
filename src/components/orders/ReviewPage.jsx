@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, Star, X } from "lucide-react";
-import { useAddReview } from "../../hookqueries/useProducts";
+import { useAddReview, useUpdateReview, useMyReview } from "../../hookqueries/useProducts";
+import { useToast } from "../../components/useToast";
 import comboImg from "../../assets/products/combo.jpg";
 
 const PH = comboImg;
@@ -21,26 +22,75 @@ export default function ReviewPage() {
   const [rating, setRating] = useState(initialRating || 0);
   const [comment, setComment] = useState("");
   const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [reviewId, setReviewId] = useState(null);
+
+  const { setError: setToastError, setSuccess: setToastSuccess, displayedError, displayedType, toastVisible } = useToast();
 
   const addReviewMutation = useAddReview();
-  const submitting = addReviewMutation.isPending;
+  const updateReviewMutation = useUpdateReview();
+  const { data: myReview, refetch: fetchMyReview } = useMyReview(item?.productId);
+
+  const submitting = addReviewMutation.isPending || updateReviewMutation.isPending;
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (myReview) {
+      setRating(myReview.rating);
+      setComment(myReview.comment || "");
+      setReviewId(myReview.id);
+      setIsEditing(true);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [myReview]);
 
   const ratingLabels = ["Horrible", "Bad", "Average", "Good", "Excellent"];
 
   const handleSubmit = async () => {
-    setError("");
     try {
-      // Temporarily commented out backend API submit:
-      // await addReviewMutation.mutateAsync({
-      //   productId: item.productId,
-      //   rating: rating,
-      //   title: "",
-      //   comment: comment.trim()
-      // });
-      setDone(true);
+      if (isEditing && reviewId) {
+        await updateReviewMutation.mutateAsync({
+          reviewId,
+          rating,
+          title: "",
+          comment: comment.trim(),
+          productId: item.productId,
+          slug: item.slug || item.productSlug
+        });
+        setToastSuccess("Review updated successfully!");
+        setDone(true);
+      } else {
+        await addReviewMutation.mutateAsync({
+          productId: item.productId,
+          rating,
+          title: "",
+          comment: comment.trim(),
+          orderId: item.orderId,
+          slug: item.slug || item.productSlug
+        });
+        setToastSuccess("Review submitted successfully!");
+        setDone(true);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to submit review");
+      if (err.response?.status === 409) {
+        try {
+          const { data } = await fetchMyReview();
+          if (data) {
+            setRating(data.rating);
+            setComment(data.comment || "");
+            setReviewId(data.id);
+            setIsEditing(true);
+            setToastError("You have already reviewed this product. Prefilled existing review.");
+          } else {
+            setToastError("You have already reviewed this product.");
+          }
+        } catch (fetchErr) {
+          console.error(fetchErr);
+          setToastError("Failed to fetch your existing review.");
+        }
+      } else {
+        setToastError(err.response?.data?.message || err.message || "Failed to submit review");
+      }
     }
   };
 
@@ -72,6 +122,16 @@ export default function ReviewPage() {
 
   return (
     <div className="fixed inset-0 z-50 bg-sandal-50 flex flex-col md:max-w-md md:mx-auto md:shadow-2xl md:border-x md:border-sandal-200 transition-all duration-300">
+      {/* ── Toast ── */}
+      <div className={`fixed top-4 right-4 z-50 max-w-sm transition-all duration-300 ${toastVisible ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0 pointer-events-none"}`}>
+        {displayedError && (
+          <div className={`flex items-start gap-3 bg-white shadow-2xl border rounded-2xl px-4 py-3.5 text-sm ${displayedType === "success" ? "border-green-200 text-green-700" : "border-red-200 text-red-700"}`}>
+            {displayedType === "success" ? <Check size={16} className="shrink-0 mt-0.5" /> : <X size={16} className="shrink-0 mt-0.5" />}
+            <span className="leading-snug">{displayedError}</span>
+          </div>
+        )}
+      </div>
+
       {/* Header banner - sandal theme, no blue */}
       <div className="bg-gray-800 text-sandal-100 px-4 py-3.5 flex items-center justify-between shrink-0 shadow-sm">
         <button
@@ -81,14 +141,10 @@ export default function ReviewPage() {
         >
           <X size={20} />
         </button>
-        <h2 className="font-display text-sm sm:text-base font-bold flex-1 text-center pr-6">Review Product</h2>
+        <h2 className="font-display text-sm sm:text-base font-bold flex-1 text-center pr-6">
+          {isEditing ? "Edit Product Review" : "Review Product"}
+        </h2>
       </div>
-
-      {error && (
-        <div className="bg-red-50 border-y border-red-200 text-red-700 font-body text-xs px-4 py-2 shrink-0">
-          {error}
-        </div>
-      )}
 
       {/* Step 1: Rate the product */}
       {step === 1 && (

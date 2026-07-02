@@ -1,14 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate }   from "react-router-dom";
 import {
-  Package, ChevronDown, ChevronUp, ShoppingBag,
-  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star,
-  ArrowLeft, ChevronRight
+  Package, ShoppingBag, ArrowRight, Star, ChevronRight
 } from "lucide-react";
 import { useMyOrders } from "../hookqueries/useOrders";
-import { useAuthStore } from "../components/store/AuthStore.jsx";
-import { useAddReview } from "../hookqueries/useProducts";
-import OrderDetail, { ReviewModal } from "../components/orders/OrderDetail";
+import OrderDetail from "../components/orders/OrderDetail";
 import comboImg from "../assets/products/combo.jpg";
 
 const PH = comboImg;
@@ -19,28 +15,7 @@ const rupee = (n) =>
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
-// ── Status pill ────────────────────────────────────────────────────────
-const STATUS_STYLE = {
-  pending:               "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed:             "bg-blue-50 text-blue-700 border-blue-200",
-  processing:            "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped:               "bg-purple-50 text-purple-700 border-purple-200",
-  out_for_delivery:      "bg-orange-50 text-orange-700 border-orange-200",
-  delivered:             "bg-green-50 text-green-700 border-green-200",
-  cancelled:             "bg-red-50 text-red-600 border-red-200",
-  replacement_requested: "bg-pink-50 text-pink-700 border-pink-200",
-  replacement_approved:  "bg-blue-50 text-blue-700 border-blue-200",
-  replacement_rejected:  "bg-red-50 text-red-600 border-red-200",
-  replacement_completed: "bg-teal-50 text-teal-700 border-teal-200",
-};
-function StatusPill({ status }) {
-  const cls = STATUS_STYLE[status] ?? "bg-gray-50 text-gray-600 border-gray-200";
-  return (
-    <span className={`inline-flex items-center font-num text-[11px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${cls}`}>
-      {String(status).replace(/_/g, " ")}
-    </span>
-  );
-}
+
 
 
 
@@ -87,24 +62,6 @@ function OrderCard({ order, onClick, onWriteReviewClick }) {
   const statusTitle = getStatusTitle(order.status, order.updatedAt || order.createdAt);
   const subtitleText = itemName + (hasMore ? ` (+${moreCount} more)` : "");
   const isDelivered = order.status === "delivered";
-
-  const [rating, setRating] = useState(0);
-  const addReviewMutation = useAddReview();
-
-  const handleRateClick = async (clickedRating) => {
-    setRating(clickedRating);
-    try {
-      // Temporarily commented out backend API submit:
-      // await addReviewMutation.mutateAsync({
-      //   productId: firstItem.productId,
-      //   rating: clickedRating,
-      //   title: "",
-      //   comment: ""
-      // });
-    } catch (e) {
-      console.error("Failed to submit rating", e);
-    }
-  };
 
   return (
     <div
@@ -155,7 +112,7 @@ function OrderCard({ order, onClick, onWriteReviewClick }) {
         </div>
       </div>
 
-      {isDelivered && rating === 0 && (
+      {isDelivered && firstItem.productId && !firstItem.isReviewed && (
         <div 
           onClick={(e) => {
             e.stopPropagation();
@@ -169,14 +126,14 @@ function OrderCard({ order, onClick, onWriteReviewClick }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleRateClick(s);
+                  onWriteReviewClick?.(firstItem, s);
                 }}
                 className="cursor-pointer transition-transform hover:scale-110 active:scale-95"
                 aria-label={`Rate ${s} star`}
               >
                 <Star
                   size={20}
-                  className={s <= rating ? "fill-amber-400 text-amber-400" : "fill-amber-100 text-amber-200"}
+                  className="fill-amber-100 text-amber-200"
                 />
               </button>
             ))}
@@ -185,11 +142,11 @@ function OrderCard({ order, onClick, onWriteReviewClick }) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onWriteReviewClick?.(firstItem, rating);
+              onWriteReviewClick?.(firstItem, 0);
             }}
             className="font-body text-xs font-semibold text-sandal-700 hover:text-brand-800 mt-1.5 transition-colors cursor-pointer"
           >
-            {rating > 0 ? "Write a Review" : "Rate this product"}
+            Rate this product
           </button>
         </div>
       )}
@@ -219,7 +176,6 @@ function OrderSkeleton() {
 // MY ORDERS PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function MyOrders() {
-  const { token }  = useAuthStore();
   const location   = useLocation();
   const navigate   = useNavigate();
   const { data: orders = [], isLoading: loading } = useMyOrders();
@@ -284,7 +240,7 @@ export default function MyOrders() {
               key={o.id}
               order={o}
               onClick={() => handleSelectOrder(o)}
-              onWriteReviewClick={(item, rating) => navigate("/my-orders/review", { state: { item, initialRating: rating } })}
+              onWriteReviewClick={(item, rating) => navigate("/my-orders/review", { state: { item: { ...item, orderId: o.id }, initialRating: rating } })}
             />
           ))}
         </div>

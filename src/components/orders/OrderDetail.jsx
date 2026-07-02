@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star, ArrowLeft, ShoppingBag, FileDown
+  Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star, ArrowLeft, FileDown
 } from "lucide-react";
 import { useRequestReplacement } from "../../hookqueries/useOrders";
-import { useAddReview } from "../../hookqueries/useProducts";
 import comboImg from "../../assets/products/combo.jpg";
 import ReviewPage from "./ReviewPage";
 import { downloadInvoice } from "./InvoiceDownload";
@@ -103,12 +102,11 @@ function ReplacementModal({ orderId, onClose, onSuccess }) {
 
 
 // ── Review Card Subcomponent ───────────────────────────────────────────
-function ReviewCard({ item, onWriteReviewClick, onRated }) {
+function ReviewCard({ item, onWriteReviewClick }) {
   const [localRating, setLocalRating] = useState(0);
 
   const handleRateClick = (clickedRating) => {
     setLocalRating(clickedRating);
-    onRated?.();
   };
 
   return (
@@ -145,35 +143,7 @@ function ReviewCard({ item, onWriteReviewClick, onRated }) {
   );
 }
 
-const getStatusTitle = (status, date) => {
-  const formatted = date ? new Date(date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "";
-  switch (status) {
-    case "delivered":
-      return `Delivered on ${formatted}`;
-    case "cancelled":
-      return `Cancelled on ${formatted}`;
-    case "replacement_completed":
-      return "Replacement Completed";
-    case "replacement_requested":
-      return "Replacement Requested";
-    case "replacement_approved":
-      return "Replacement Approved";
-    case "replacement_rejected":
-      return "Replacement Rejected";
-    case "pending":
-      return `Ordered on ${formatted}`;
-    case "confirmed":
-      return `Confirmed on ${formatted}`;
-    case "processing":
-      return `Processing on ${formatted}`;
-    case "shipped":
-      return `Shipped on ${formatted}`;
-    case "out_for_delivery":
-      return "Out for Delivery";
-    default:
-      return String(status).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-  }
-};
+
 
 
 
@@ -184,16 +154,7 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
   const isDelivered = status === "delivered";
 
   const [showReplacementModal, setShowReplacementModal] = useState(false);
-  const [replacementRequested, setReplacementRequested] = useState(
-    ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
-  );
-  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
-
-  useEffect(() => {
-    setReplacementRequested(
-      ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
-    );
-  }, [order.status]);
+  const replacementRequested = ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status);
 
   // 24 hours replacement limit from delivery
   const deliveryEvent = order.timeline?.find((t) => t.status === "delivered");
@@ -316,16 +277,15 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
         </div>
       )}
 
-      {isDelivered && (order.items || []).filter(item => !reviewedProductIds.has(item.productId)).length > 0 && (
+      {isDelivered && (order.items || []).filter(item => !item.isReviewed).length > 0 && (
         <div className="space-y-4">
           <h3 className="font-display text-lg font-bold text-brand-900">Rate your experience</h3>
           <div className="space-y-4">
-            {(order.items || []).filter(item => !reviewedProductIds.has(item.productId)).map((item, i) => (
+            {(order.items || []).filter(item => !item.isReviewed).map((item, i) => (
               <ReviewCard
                 key={item.productId || i}
                 item={item}
-                onWriteReviewClick={(rating) => navigate("/my-orders/review", { state: { item, initialRating: rating } })}
-                onRated={() => setReviewedProductIds((prev) => new Set([...prev, item.productId]))}
+                onWriteReviewClick={(rating) => navigate("/my-orders/review", { state: { item: { ...item, orderId: order.id }, initialRating: rating } })}
               />
             ))}
           </div>
@@ -342,6 +302,7 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
           )}
           <p className="font-body text-xs text-amber-600 mt-2 leading-relaxed">
             {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ""},&nbsp;
+            {addr.taluk && addr.taluk.trim() && addr.taluk.trim().toUpperCase() !== "NA" ? `${addr.taluk.trim()}, ` : ""}
             {addr.city}, {addr.state} – {addr.pincode}
           </p>
         </div>
@@ -420,7 +381,6 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
           orderId={order.id}
           onClose={() => setShowReplacementModal(false)}
           onSuccess={() => {
-            setReplacementRequested(true);
             onStatusUpdate("replacement_requested");
             setShowReplacementModal(false);
           }}
