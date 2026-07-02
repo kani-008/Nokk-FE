@@ -60,6 +60,7 @@ import Offers from "./pages/Offers";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
+import ReviewPage from "./components/orders/ReviewPage";
 
 /* Lazy Loaded Admin Pages (reduces initial bundle size) */
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -94,6 +95,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout/:stepParam?" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
+            <Route path="/my-orders/review" element={<ReviewPage />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>

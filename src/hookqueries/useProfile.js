@@ -43,59 +43,20 @@ export function useAddresses() {
 }
 
 // ── Pincode lookup (not a query — called imperatively from forms) ────
+// Proxied through the backend (/api/location/pincode) so the gov API key
+// never ships to the client.
 export async function lookupPincode(pincode) {
-  /*
-  const res = await API.get(`/pincode/get-by-pincode?pincode=${pincode}`);
-  return res.data.data; // { pincode, district, state, taluk, offices }
-  */
-
-  const apiKey = import.meta.env.VITE_GOV_API_KEY;
-  const resourceId = import.meta.env.VITE_GOV_PINCODE_RESOURCE_ID;
-  const url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[pincode]=${pincode}`;
-
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 6000);
-
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
-    if (!response.ok) {
-      throw new Error("Failed to fetch pincode details from government API");
-    }
-    const result = await response.json();
-    const records = result.records || [];
-    if (records.length === 0) {
-      throw new Error("Pincode not found");
-    }
-
-  let bestRecord = records.find(r => r.deliverystatus === "Delivery" && r.taluk && r.taluk !== "NA");
-  if (!bestRecord) {
-    bestRecord = records.find(r => r.taluk && r.taluk !== "NA");
-  }
-  if (!bestRecord) {
-    bestRecord = records.find(r => r.deliverystatus === "Delivery");
-  }
-  if (!bestRecord) {
-    bestRecord = records[0];
-  }
-
-  const formatState = (str) => {
-    if (!str) return "";
-    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-    return {
-      pincode: pincode,
-      district: bestRecord.districtname || "",
-      state: formatState(bestRecord.statename) || "",
-      taluk: bestRecord.taluk && bestRecord.taluk !== "NA" ? bestRecord.taluk : "",
-    };
+    const res = await API.get("/location/pincode", { params: { pincode } });
+    return res.data.data; // { pincode, district, state, taluk }
   } catch (err) {
-    clearTimeout(id);
-    if (err.name === "AbortError") {
+    if (err.code === "ECONNABORTED") {
       throw new Error("Pincode request timed out. Please try again or fill fields manually.");
     }
-    throw err;
+    if (err.response?.status === 404) {
+      throw new Error("Pincode not found");
+    }
+    throw new Error(err.response?.data?.message || "Failed to fetch pincode details");
   }
 }
 
@@ -173,54 +134,20 @@ export function useDeleteAddress() {
 }
 
 // ── Geolocation Reverse Geocoding ──
+// Proxied through the backend (/api/location/reverse-geocode), which also
+// enriches the result via the gov pincode directory server-side.
 export async function reverseGeocode(lat, lng) {
-  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
-  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${apiKey}`;
-
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 7000);
-
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
-    if (!response.ok) {
-      throw new Error("Failed to detect location details");
-    }
-    const data = await response.json();
-    if (!data.features || data.features.length === 0) {
-      throw new Error("Location details not found");
-    }
-
-    const properties = data.features[0].properties || {};
-    return {
-      pincode: properties.postcode || "",
-      city: properties.city || properties.county || "",
-      taluk: properties.suburb || properties.district || "",
-      state: properties.state || ""
-    };
+    const res = await API.get("/location/reverse-geocode", { params: { lat, lng } });
+    return res.data.data; // { pincode, city, taluk, state }
   } catch (err) {
-    clearTimeout(id);
-    if (err.name === "AbortError") {
+    if (err.code === "ECONNABORTED") {
       throw new Error("Location detection timed out. Please try again or fill fields manually.");
     }
-    throw err;
+    throw new Error(err.response?.data?.message || "Failed to detect location details");
   }
 }
 
 export async function detectAddressFromCoords(lat, lng) {
-  const geo = await reverseGeocode(lat, lng);
-  if (geo.pincode && /^\d{6}$/.test(geo.pincode)) {
-    try {
-      const gov = await lookupPincode(geo.pincode);
-      return {
-        pincode: geo.pincode,
-        city: gov.district || geo.city,
-        taluk: gov.taluk && gov.taluk !== "NA" ? gov.taluk : geo.taluk,
-        state: gov.state || geo.state
-      };
-    } catch {
-      // fallback to raw OSM values
-    }
-  }
-  return geo;
+  return reverseGeocode(lat, lng);
 }
