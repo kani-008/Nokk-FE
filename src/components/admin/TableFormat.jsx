@@ -1,5 +1,5 @@
 
-export default function TableFormat({ columns, rows, emptyText = "No data found.", loading }) {
+export default function TableFormat({ columns, rows, emptyText = "No data found.", loading, onRowClick }) {
   if (loading) {
     return (
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -45,7 +45,8 @@ export default function TableFormat({ columns, rows, emptyText = "No data found.
               rows.map((row, i) => (
                 <tr
                   key={row.id ?? i}
-                  className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors duration-100"
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors duration-100 ${onRowClick ? "cursor-pointer" : ""}`}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 py-3 font-body text-gray-700 align-middle ${col.className || ""}`}>

@@ -132,6 +132,7 @@ export default function App() {
             <Route path="orders" element={<OrderManagement />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="reviews" element={<ReviewManagement />} />
+            <Route path="reviews/:productId" element={<ReviewManagement />} />
             <Route path="offers" element={<OfferManagement />} />
             <Route path="coupons" element={<CouponManagement />} />
             <Route path="banners" element={<BannerManagement />} />

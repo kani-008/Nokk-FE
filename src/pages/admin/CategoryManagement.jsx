@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import {
-  AdminPage, StatusBadge, AdminButton, AdminCard,
+  AdminPage, StatusBadge, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
@@ -225,9 +225,8 @@ export default function CategoryManagement() {
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchCategories(); }, []);
 
   // Sync with global header search
   useEffect(() => {

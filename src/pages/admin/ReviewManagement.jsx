@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
-import { X, Check, Eye, Trash2, AlertTriangle, Star, ShieldCheck, ShieldAlert } from "lucide-react";
+import { useOutletContext, useParams, useLocation, useNavigate } from "react-router-dom";
+import { X, Check, Trash2, Star, ArrowLeft } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AdminPage, StatusBadge, AdminButton, AdminCard,
+  AdminPage, StatusBadge, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
+import { useAdminProductList } from "../../hookqueries/useProducts";
 import API from "../../ApiCall/Api.jsx";
 
 const fmtDate = (d) =>
@@ -16,6 +18,20 @@ const fmtDate = (d) =>
         year: "numeric",
       })
     : "—";
+
+function StarRow({ rating, size = 11 }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={size}
+          className={s <= rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-300"}
+        />
+      ))}
+    </div>
+  );
+}
 
 // ── Review detail modal ───────────────────────────────────────────────
 function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
@@ -55,13 +71,7 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Rating</span>
             <div className="flex items-center gap-0.5 mt-0.5">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  size={15}
-                  className={s <= review.rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-300"}
-                />
-              ))}
+              <StarRow rating={review.rating} size={15} />
             </div>
           </div>
 
@@ -127,44 +137,103 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
   );
 }
 
-// ── ReviewManagement Page ─────────────────────────────────────────────
+// ──════════════════════════════════════════════════════════════════════
 export default function ReviewManagement() {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { productId } = useParams();
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState(""); // "" | "approved" | "pending"
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState(null);
 
+  // ── View B state (reset each time a product is opened) ────────────
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortOrder, setSortOrder] = useState("lowest");
+  const [selected, setSelected] = useState(null); // review modal
+
+  const queryClient = useQueryClient();
   const { registerSearch, unregisterSearch } = useOutletContext();
 
-  const fetchReviews = async () => {
-    setLoading(true);
-    setError("");
-    try {
+  const LIMIT = 10;
+
+  // ── View A: product list — shares TanStack Query cache with ProductManagement
+  const { data: productsData, isLoading: productsLoading } = useAdminProductList({
+    page,
+    limit: LIMIT,
+    search: debouncedSearch || undefined,
+  });
+  const products = useMemo(() => productsData?.products || [], [productsData]);
+  const totalPages = Math.ceil((productsData?.pagination?.total || 0) / LIMIT) || 1;
+
+  // ── View A: all reviews for per-product pending/total counts ──────
+  const { data: allReviews = [] } = useQuery({
+    queryKey: ["reviews", "admin", "all"],
+    queryFn: async () => {
       const res = await API.get("/products/admin-reviews");
-      setReviews(res.data.reviews || []);
-    } catch (err) {
-      console.error("Failed to fetch admin reviews:", err);
-      setError(err.response?.data?.message || "Failed to load reviews");
-    } finally {
-      setLoading(false);
+      return res.data.reviews || [];
+    },
+  });
+
+  const reviewCounts = useMemo(() => {
+    const map = {};
+    allReviews.forEach((r) => {
+      if (!map[r.productId]) map[r.productId] = { total: 0, pending: 0 };
+      map[r.productId].total++;
+      if (!r.isApproved) map[r.productId].pending++;
+    });
+    return map;
+  }, [allReviews]);
+
+  // ── View B: selected product's reviews ────────────────────────────
+  const { data: productReviews = [], isLoading: productReviewsLoading } = useQuery({
+    queryKey: ["reviews", "admin", productId],
+    queryFn: async () => {
+      const res = await API.get(`/products/admin-reviews?productId=${productId}`);
+      return res.data.reviews || [];
+    },
+    enabled: !!productId,
+  });
+
+  const selectedProduct = useMemo(() => {
+    if (!productId) return null;
+    // Find product name in productReviews
+    if (productReviews && productReviews.length > 0) {
+      return { id: productId, name: productReviews[0].productName };
     }
-  };
+    // Or location.state (if navigated from list)
+    if (location.state?.productName) {
+      return { id: productId, name: location.state.productName };
+    }
+    // Or lookup in allReviews (since reviews might exist but be filtered)
+    const foundReview = allReviews.find(r => String(r.productId) === String(productId));
+    if (foundReview) {
+      return { id: productId, name: foundReview.productName };
+    }
+    // Or lookup in product list
+    const foundProd = products.find(p => String(p.id) === String(productId));
+    if (foundProd) {
+      return { id: productId, name: foundProd.nameEn };
+    }
+    return { id: productId, name: "Product Reviews" };
+  }, [productId, productReviews, allReviews, products, location.state]);
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
+  const pendingCount = useMemo(
+    () => productReviews.filter((r) => !r.isApproved).length,
+    [productReviews]
+  );
 
-  // Sync filter topbar search box
-  useEffect(() => {
-    registerSearch({ placeholder: "Search reviewer, product, comments…", value: search, onChange: setSearch });
-    return () => unregisterSearch();
-  }, [search, registerSearch, unregisterSearch]);
+  const filteredReviews = useMemo(() => {
+    let list = [...productReviews];
+    if (statusFilter === "approved") list = list.filter((r) => r.isApproved);
+    if (statusFilter === "pending") list = list.filter((r) => !r.isApproved);
+    if (sortOrder === "lowest") list.sort((a, b) => a.rating - b.rating || new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sortOrder === "highest") list.sort((a, b) => b.rating - a.rating || new Date(b.createdAt) - new Date(a.createdAt));
+    else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return list;
+  }, [productReviews, statusFilter, sortOrder]);
 
-  // Debounce search
+  // ── Debounce search ───────────────────────────────────────────────
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(search);
@@ -173,43 +242,34 @@ export default function ReviewManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Filter reviews locally
-  const filteredReviews = useMemo(() => {
-    return reviews.filter((r) => {
-      if (statusFilter === "approved" && !r.isApproved) return false;
-      if (statusFilter === "pending" && r.isApproved) return false;
-
-      if (debouncedSearch) {
-        const term = debouncedSearch.toLowerCase();
-        return (
-          (r.userName || "").toLowerCase().includes(term) ||
-          (r.productName || "").toLowerCase().includes(term) ||
-          (r.title || "").toLowerCase().includes(term) ||
-          (r.comment || "").toLowerCase().includes(term) ||
-          String(r.rating).includes(term)
-        );
-      }
-      return true;
+  // ── Sync topbar search ────────────────────────────────────────────
+  useEffect(() => {
+    registerSearch({
+      placeholder: productId ? "Search reviews…" : "Search products…",
+      value: search,
+      onChange: setSearch,
     });
-  }, [reviews, statusFilter, debouncedSearch]);
+    return () => unregisterSearch();
+  }, [search, productId, registerSearch, unregisterSearch]);
 
-  // Pagination
-  const limit = 10;
-  const totalPages = Math.ceil(filteredReviews.length / limit) || 1;
-  const paginatedReviews = useMemo(() => {
-    const start = (page - 1) * limit;
-    return filteredReviews.slice(start, start + limit);
-  }, [filteredReviews, page]);
 
+  // ── Navigation helpers ────────────────────────────────────────────
+  const handleSelectProduct = (product) => {
+    navigate(`/admin/reviews/${product.id}`, { state: { productName: product.nameEn } });
+  };
+
+  const handleBackToProducts = () => {
+    queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
+    navigate("/admin/reviews");
+  };
+
+  // ── Moderation handlers ───────────────────────────────────────────
   const handleToggleApprove = async (reviewId, currentApproved) => {
     try {
       const targetApproved = !currentApproved;
       await API.put("/products/admin-approve-review", { reviewId, isApproved: targetApproved });
-      
-      setReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? { ...r, isApproved: targetApproved } : r))
-      );
-
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", productId] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
       if (selected?.id === reviewId) {
         setSelected((prev) => ({ ...prev, isApproved: targetApproved }));
       }
@@ -219,11 +279,12 @@ export default function ReviewManagement() {
     }
   };
 
-  const handleDeleteReview = async (productId, reviewId) => {
+  const handleDeleteReview = async (prodId, reviewId) => {
     if (!confirm("Are you sure you want to permanently delete this review? This action cannot be undone.")) return;
     try {
-      await API.delete("/products/delete-review", { data: { productId, reviewId } });
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      await API.delete("/products/delete-review", { data: { productId: prodId, reviewId } });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", productId] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
       setSelected(null);
     } catch (err) {
       console.error("Failed to delete review:", err);
@@ -231,17 +292,72 @@ export default function ReviewManagement() {
     }
   };
 
-  const COLS = [
+  // ── View A columns ────────────────────────────────────────────────
+  const PRODUCT_COLS = [
     {
       key: "product",
       label: "Product",
-      render: (r) => (
-        <div className="flex flex-col min-w-0">
-          <span className="font-body text-sm font-semibold text-gray-900 truncate max-w-[180px]">{r.productName}</span>
-          <span className="font-body text-[10px] text-gray-400 mt-0.5">Rating: {r.rating}★</span>
+      render: (p) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+            {p.primaryImage ? (
+              <img src={p.primaryImage} alt={p.nameEn} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gray-100" />
+            )}
+          </div>
+          <span className="font-body text-sm font-semibold text-gray-900 truncate">{p.nameEn}</span>
         </div>
       ),
     },
+    {
+      key: "rating",
+      label: "Rating",
+      className: "hidden md:table-cell",
+      render: (p) => {
+        const avg = parseFloat(p.avgRating) || 0;
+        return (
+          <div className="flex items-center gap-1.5">
+            <StarRow rating={Math.round(avg)} />
+            <span className="font-num text-xs text-gray-500">{avg > 0 ? avg.toFixed(1) : "—"}</span>
+          </div>
+        );
+      },
+    },
+    {
+      key: "reviews",
+      label: "Reviews",
+      render: (p) => {
+        const counts = reviewCounts[p.id] || { total: 0, pending: 0 };
+        return (
+          <div>
+            <span className="font-num text-sm text-gray-700">{counts.total}</span>
+            {counts.pending > 0 && (
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 mt-0.5">
+                {counts.pending} pending
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "action",
+      label: "Action",
+      width: "120px",
+      render: (p) => (
+        <button
+          onClick={() => handleSelectProduct(p)}
+          className="font-body text-xs text-brand-700 hover:underline font-semibold cursor-pointer"
+        >
+          View Reviews
+        </button>
+      ),
+    },
+  ];
+
+  // ── View B columns ────────────────────────────────────────────────
+  const REVIEW_COLS = [
     {
       key: "reviewer",
       label: "Reviewer",
@@ -256,17 +372,7 @@ export default function ReviewManagement() {
       key: "stars",
       label: "Rating",
       className: "hidden md:table-cell",
-      render: (r) => (
-        <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Star
-              key={s}
-              size={11}
-              className={s <= r.rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-300"}
-            />
-          ))}
-        </div>
-      ),
+      render: (r) => <StarRow rating={r.rating} />,
     },
     {
       key: "comment",
@@ -286,7 +392,7 @@ export default function ReviewManagement() {
     {
       key: "action",
       label: "Action",
-      width: "120px",
+      width: "140px",
       render: (r) => (
         <div className="flex items-center gap-2">
           <button
@@ -298,7 +404,9 @@ export default function ReviewManagement() {
           <span className="text-gray-300 text-xs">|</span>
           <button
             onClick={() => handleToggleApprove(r.id, r.isApproved)}
-            className={`font-body text-xs hover:underline font-semibold cursor-pointer shrink-0 ${r.isApproved ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"}`}
+            className={`font-body text-xs hover:underline font-semibold cursor-pointer shrink-0 ${
+              r.isApproved ? "text-amber-600 hover:text-amber-800" : "text-green-600 hover:text-green-800"
+            }`}
           >
             {r.isApproved ? "Disapprove" : "Approve"}
           </button>
@@ -307,50 +415,106 @@ export default function ReviewManagement() {
     },
   ];
 
+  // ══════════════════════════════════════════════════════════════════
+  // VIEW B — single product's reviews
+  // ══════════════════════════════════════════════════════════════════
+  if (productId && selectedProduct) {
+    const totalReviews = productReviews.length;
+    const summaryText = `${totalReviews} review${totalReviews !== 1 ? "s" : ""}${pendingCount > 0 ? ` · ${pendingCount} pending` : ""}`;
+    const noReviews = totalReviews === 0;
+    const emptyText = noReviews
+      ? "This product has no reviews yet."
+      : "No reviews match this filter.";
+
+    return (
+      <AdminPage key={productId} className="space-y-3">
+        {/* Header row with back button left-aligned, product name next to it */}
+        <div className="flex items-center gap-3 w-full mb-2">
+          <button
+            onClick={handleBackToProducts}
+            className="p-1.5 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-700 shrink-0"
+            aria-label="Back to Products"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="min-w-0">
+            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 truncate">
+              {selectedProduct.name}
+            </h2>
+            <p className="font-body text-[11px] text-gray-500 mt-0.5">{summaryText}</p>
+          </div>
+        </div>
+
+        {/* Filters: two filter boxes in one row on mobile (grid grid-cols-2) and flex layout on desktop */}
+        <div className="grid grid-cols-2 gap-3 w-full sm:flex sm:items-center sm:justify-end sm:w-auto">
+          {statusFilter && (
+            <button
+              onClick={() => { setStatusFilter(""); setSortOrder("lowest"); }}
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 font-body text-xs text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1 cursor-pointer bg-transparent border-none"
+            >
+              <X size={13} /> Clear Filters
+            </button>
+          )}
+          <div className="w-full sm:w-44">
+            <Dropdown
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val)}
+              options={[
+                { value: "", label: "All Statuses" },
+                { value: "approved", label: "Approved" },
+                { value: "pending", label: "Pending" },
+              ]}
+              placeholder="All Statuses"
+              className="w-full"
+              optionClassName="w-full"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Dropdown
+              value={sortOrder}
+              onChange={(val) => setSortOrder(val)}
+              options={[
+                { value: "lowest", label: "Lowest rating first" },
+                { value: "newest", label: "Newest first" },
+                { value: "highest", label: "Highest rating first" },
+              ]}
+              className="w-full"
+              optionClassName="w-full"
+            />
+          </div>
+        </div>
+
+        <TableFormat
+          columns={REVIEW_COLS}
+          rows={filteredReviews}
+          loading={productReviewsLoading}
+          emptyText={emptyText}
+        />
+
+        {selected && (
+          <ReviewModal
+            review={selected}
+            onClose={() => setSelected(null)}
+            onToggleApprove={handleToggleApprove}
+            onDelete={handleDeleteReview}
+          />
+        )}
+      </AdminPage>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // VIEW A — product list
+  // ══════════════════════════════════════════════════════════════════
   return (
     <AdminPage className="space-y-3">
-      {/* Filters bar */}
-      <div className="flex items-center justify-end gap-3 w-full">
-        {(search || statusFilter) && (
-          <button
-            onClick={() => {
-              setSearch("");
-              setStatusFilter("");
-              setPage(1);
-            }}
-            className="flex items-center gap-1.5 font-body text-sm text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1 cursor-pointer bg-transparent border-none"
-          >
-            <X size={14} /> Clear
-          </button>
-        )}
-
-        <div className="w-40 sm:w-44 shrink-0">
-          <Dropdown
-            value={statusFilter}
-            onChange={(val) => {
-              setStatusFilter(val);
-              setPage(1);
-            }}
-            options={[
-              { value: "", label: "All Statuses" },
-              { value: "approved", label: "Approved" },
-              { value: "pending", label: "Pending Moderation" },
-            ]}
-            placeholder="All Statuses"
-            className="rm-filter-fluid"
-            optionClassName="rm-filter-fluid"
-          />
-        </div>
-      </div>
-
-      {error && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3">
-          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <TableFormat columns={COLS} rows={paginatedReviews} loading={loading} emptyText="No reviews found." />
+      <TableFormat
+        columns={PRODUCT_COLS}
+        rows={products}
+        loading={productsLoading}
+        onRowClick={handleSelectProduct}
+        emptyText="No products found."
+      />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-4">
@@ -364,15 +528,6 @@ export default function ReviewManagement() {
             Next
           </AdminButton>
         </div>
-      )}
-
-      {selected && (
-        <ReviewModal
-          review={selected}
-          onClose={() => setSelected(null)}
-          onToggleApprove={handleToggleApprove}
-          onDelete={handleDeleteReview}
-        />
       )}
     </AdminPage>
   );
