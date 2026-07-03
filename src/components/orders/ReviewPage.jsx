@@ -295,7 +295,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
   const addReviewMutation = useAddReview();
   const updateReviewMutation = useUpdateReview();
   const uploadReviewImageMutation = useUploadReviewImage();
-  const { data: myReview, refetch: fetchMyReview } = useMyReview(item?.productId);
+  const { data: myReview, refetch: fetchMyReview } = useMyReview(item?.productId, item?.orderId);
 
   const submitting =
     addReviewMutation.isPending ||

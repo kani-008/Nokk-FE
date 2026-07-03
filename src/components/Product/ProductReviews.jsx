@@ -48,14 +48,14 @@ const getDistribution = (avg, count, reviews = []) => {
 };
 
 // ── Stars component ──
-function StarBadge({ rating, size = 12 }) {
+export function StarBadge({ rating, size = 12 }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
         <Star
           key={s}
           size={size}
-          className={s <= Math.round(rating) ? "fill-sandal-500 text-sandal-500" : "fill-gray-200 text-gray-300"}
+          className={s <= Math.round(rating) ? "fill-sandal-500 text-sandal-500" : "fill-gray-250 text-gray-300"}
         />
       ))}
     </div>
@@ -63,7 +63,7 @@ function StarBadge({ rating, size = 12 }) {
 }
 
 // ── Lightbox overlay ──
-function Lightbox({ url, onClose }) {
+export function Lightbox({ url, onClose }) {
   if (!url) return null;
   return (
     <div
@@ -91,7 +91,7 @@ function Lightbox({ url, onClose }) {
 }
 
 // ── Review images thumbnail row ──
-function ReviewImages({ images, onOpen }) {
+export function ReviewImages({ images, onOpen }) {
   if (!images || images.length === 0) return null;
   const shown = images.slice(0, 3); // max 3 thumbnails
   return (
@@ -111,6 +111,51 @@ function ReviewImages({ images, onOpen }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ── Review row component ──
+export function ReviewRow({ review, onImageClick }) {
+  return (
+    <div className="border-b border-sandal-50/50 pb-4 last:border-b-0 last:pb-0">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-extrabold shrink-0 shadow-sm">
+            {(review.userName || "Customer")[0].toUpperCase()}
+          </div>
+          <div>
+            <p className="font-body text-sm font-bold text-gray-900 leading-none">
+              {review.userName || "Customer"}
+            </p>
+            {review.isVerified && (
+              <span className="font-body text-[10px] text-green-600 font-bold leading-none mt-1 block">
+                ✓ Verified Purchase
+              </span>
+            )}
+          </div>
+        </div>
+        <StarBadge rating={review.rating} />
+      </div>
+      {review.title && (
+        <h4 className="font-body text-sm font-bold text-gray-800 mb-1">
+          {review.title}
+        </h4>
+      )}
+      <p className="font-body text-sm text-gray-600 leading-relaxed font-medium">
+        {review.comment}
+      </p>
+      <ReviewImages
+        images={review.images}
+        onOpen={onImageClick}
+      />
+      <p className="font-body text-[10px] text-gray-400 font-bold mt-2">
+        {new Date(review.createdAt).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })}
+      </p>
     </div>
   );
 }

@@ -96,8 +96,8 @@ export function useAddReview() {
       }
       queryClient.invalidateQueries({ queryKey: ["product"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      if (variables.productId) {
-        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
       }
     },
   });
@@ -116,8 +116,8 @@ export function useUpdateReview() {
       }
       queryClient.invalidateQueries({ queryKey: ["product"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      if (variables.productId) {
-        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
       }
     },
   });
@@ -136,23 +136,23 @@ export function useDeleteReview() {
       }
       queryClient.invalidateQueries({ queryKey: ["product"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      if (variables.productId) {
-        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
       }
     },
   });
 }
 
-export function useMyReview(productId) {
+export function useMyReview(productId, orderId) {
   const token = useAuthStore((s) => s.token);
   return useQuery({
-    queryKey: ["my-review", productId],
+    queryKey: ["my-review", productId, orderId],
     queryFn: async () => {
-      if (!productId) return null;
-      const res = await API.get(`/products/get-my-review?productId=${productId}`);
+      if (!productId || !orderId) return null;
+      const res = await API.get(`/products/get-my-review?productId=${productId}&orderId=${orderId}`);
       return res.data.review;
     },
-    enabled: !!productId && !!token,
+    enabled: !!productId && !!orderId && !!token,
   });
 }
 

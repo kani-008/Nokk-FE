@@ -3,15 +3,28 @@ import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
 import { Link }     from "react-router-dom";
 import { useActiveOffers } from "../hookqueries/useOffers";
 
+// Fallback for mobile browsers that don't support navigator.clipboard (HTTP or older WebKit)
+function fallbackCopy(text, onDone) {
+  const el = document.createElement("textarea");
+  el.value = text;
+  el.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+  document.body.appendChild(el);
+  el.focus();
+  el.select();
+  try { document.execCommand("copy"); onDone(); } catch (_) {}
+  document.body.removeChild(el);
+}
+
 function OfferCard({ offer }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    if (offer.code) {
-      navigator.clipboard?.writeText(offer.code).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+    if (!offer.code) return;
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(offer.code).then(done).catch(() => fallbackCopy(offer.code, done));
+    } else {
+      fallbackCopy(offer.code, done);
     }
   };
 
