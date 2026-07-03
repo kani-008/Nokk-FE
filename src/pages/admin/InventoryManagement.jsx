@@ -14,8 +14,7 @@ const rupee = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n) || 0);
 
-import comboImg from "../../assets/products/combo.jpg";
-const PH = comboImg;
+const PH = "";
 
 /**
  * ── Mobile-only fluid sizing for the Refresh / Filter cluster ──

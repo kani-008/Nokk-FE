@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import { Star, MessageSquare, ArrowRight } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import API from "../ApiCall/Api";
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
+const PH = "";
 
 // ── Skeleton card (matches Wishlist.jsx WishSkeleton) ──────────────────
 function ReviewCardSkeleton() {

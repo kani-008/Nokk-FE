@@ -8,9 +8,7 @@ import {
   Lightbox,
   ReviewRow,
 } from "../components/Product/ProductReviews.jsx";
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
+const PH = "";
 const PAGE_SIZE = 10;
 
 // Helper to distribute total review counts realistically for progress bars

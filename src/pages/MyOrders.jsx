@@ -5,9 +5,7 @@ import {
 } from "lucide-react";
 import { useMyOrders } from "../hookqueries/useOrders";
 import OrderDetail from "../components/orders/OrderDetail";
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);

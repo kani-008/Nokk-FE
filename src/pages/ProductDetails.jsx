@@ -19,10 +19,8 @@ import ProductDescription from "../components/Product/ProductDescription.jsx";
 import ProductReviews from "../components/Product/ProductReviews.jsx";
 import ProductCard from "../components/Product/ProductCard.jsx";
 
-import comboImg from "../assets/products/combo.jpg";
-
 // placeholder 
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

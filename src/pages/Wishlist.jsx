@@ -5,10 +5,8 @@ import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import API from "../ApiCall/Api";
-import comboImg from "../assets/products/combo.jpg";
-
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

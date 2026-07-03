@@ -4,14 +4,14 @@ import {
   X, RotateCcw, Loader2, Check, Star, ArrowLeft, FileDown
 } from "lucide-react";
 import { useRequestReplacement } from "../../hookqueries/useOrders";
-import comboImg from "../../assets/products/combo.jpg";
+
 import ReviewPage from "./ReviewPage";
 import { downloadInvoice } from "./InvoiceDownload";
 import { TrackingView, TrackingStatusCard } from "./TrackingTimeline";
 
 export { ReviewPage as ReviewModal };
 
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);

@@ -4,8 +4,7 @@ import { Tag, ChevronRight, Home, MapPin, ArrowLeft, Lock, Truck, Minus, Plus, B
 import CouponBox from "./CouponBox";
 import StepBar from "./StepBar";
 
-import comboImg from "../../assets/products/combo.jpg";
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", {

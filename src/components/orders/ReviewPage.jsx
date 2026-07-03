@@ -227,9 +227,7 @@ import {
   useUploadReviewImage,
 } from "../../hookqueries/useProducts";
 import { useToast } from "../../components/useToast";
-import comboImg from "../../assets/products/combo.jpg";
-
-const PH = comboImg;
+const PH = "";
 const MAX_REVIEW_IMAGES = 3;
 const MAX_FILE_BYTES = 3 * 1024 * 1024; // 3 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];

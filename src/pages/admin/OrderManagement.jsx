@@ -13,7 +13,7 @@ import {
 } from "../../hookqueries/useOrders";
 
 
-import comboImg from "../../assets/products/combo.jpg";
+
 import {
   AdminPage, StatusBadge, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";

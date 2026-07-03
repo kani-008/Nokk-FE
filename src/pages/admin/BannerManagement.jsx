@@ -21,9 +21,7 @@ import {
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import TabToggle from "../../components/admin/TabToggle.jsx";
-import comboImg from "../../assets/products/combo.jpg";
-
-const PH = comboImg;
+const PH = "";
 
 const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", videoUrl: "", isActive: true };
 

@@ -2,10 +2,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Star, ShieldCheck, Truck } from "lucide-react";
 import { useState } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
-import comboImg from "../../assets/products/combo.jpg";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
 
-const PH_CAT = comboImg;
+const PH_CAT = "";
 
 // ══════════════════════════════════════════════════════════════════════
 // TRUST STRIP

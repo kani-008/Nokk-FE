@@ -8,8 +8,7 @@ import { useDeliverySettings } from "../hookqueries/useHome";
 import { useToast } from "../components/useToast";
 import API from "../ApiCall/Api";
 
-import comboImg from "../assets/products/combo.jpg";
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
