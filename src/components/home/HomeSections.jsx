@@ -3,6 +3,7 @@ import { ArrowRight, Star, ShieldCheck, Truck } from "lucide-react";
 import { useState } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
 import comboImg from "../../assets/products/combo.jpg";
+import { useDeliverySettings } from "../../hookqueries/useHome.js";
 
 const PH_CAT = comboImg;
 
@@ -10,8 +11,10 @@ const PH_CAT = comboImg;
 // TRUST STRIP
 // ══════════════════════════════════════════════════════════════════════
 export function TrustStrip() {
+  const { data: delivery } = useDeliverySettings();
+  const threshold = delivery?.freeShippingThreshold || 499;
   const items = [
-    { icon: <Truck size={18} />, label: "Free shipping above ₹499" },
+    { icon: <Truck size={18} />, label: `Free shipping above ₹${threshold}` },
     { icon: <ShieldCheck size={18} />, label: "100% natural & authentic" },
     { icon: <ShieldCheck size={18} />, label: "Secure Payment Checkout" },
   ];

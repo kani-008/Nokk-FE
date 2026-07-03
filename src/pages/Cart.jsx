@@ -55,7 +55,7 @@ function EmptyCart() {
 // This widget shows the coupon effect (discount line) if one is applied,
 // but does not provide an input to enter new coupon codes.
 // ══════════════════════════════════════════════════════════════════════
-function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout, loading, freeShippingThreshold }) {
+function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout, loading, freeShippingThreshold, minOrderValue, belowMinOrder }) {
   return (
     <div className="card p-5 sticky top-24">
       <h2 className="font-display text-base font-bold text-brand-900 mb-4">Order Summary</h2>
@@ -84,12 +84,23 @@ function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout,
         )}
       </div>
 
-      <div className="border-t border-amber-100 pt-3 flex justify-between items-center mb-5">
+      <div className="border-t border-amber-100 pt-3 flex justify-between items-center mb-4">
         <span className="font-body text-base font-bold text-brand-900">Total</span>
         <span className="font-num text-lg font-extrabold text-brand-900">{rupee(total)}</span>
       </div>
 
-      <button onClick={onCheckout} disabled={loading} className="btn-lg btn-primary w-full">
+      {belowMinOrder && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
+          <p className="font-body text-xs text-amber-700 font-semibold">
+            Minimum order value is {rupee(minOrderValue)}
+          </p>
+          <p className="font-body text-[11px] text-amber-500 mt-0.5">
+            Add {rupee(minOrderValue - subtotal)} more to proceed
+          </p>
+        </div>
+      )}
+
+      <button onClick={onCheckout} disabled={loading || belowMinOrder} className="btn-lg btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
         {loading
           ? <><Loader2 size={16} className="animate-spin" /> Processing…</>
           : <>Proceed to Checkout <ArrowRight size={16} /></>
@@ -160,7 +171,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
             )}
           </div>
 
-          {/* qty stepper */}
+          {/* qty stepper — max 3 per variant */}
           <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
             <button
               onClick={() => onQty(item.variantId, item.quantity - 1)}
@@ -174,12 +185,16 @@ function CartItem({ item, onQty, onRemove, syncing }) {
             </span>
             <button
               onClick={() => onQty(item.variantId, item.quantity + 1)}
-              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
+              disabled={item.quantity >= 3}
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
             >
               <Plus size="clamp(12px,1.5vw,16px)" />
             </button>
           </div>
+          {/* {item.quantity >= 3 && (
+            <span className="font-body text-[10px] text-amber-500 ml-1">Max 3</span>
+          )} */}
         </div>
       </div>
     </div>
@@ -212,6 +227,7 @@ export default function Cart() {
 
   // Sync delivery config from backend into the cart store
   const { data: deliverySettings } = useDeliverySettings();
+  const minOrderValue = deliverySettings?.minOrderValue ?? 0;
   useEffect(() => {
     if (deliverySettings) {
       setDeliveryConfig(deliverySettings.freeShippingThreshold, deliverySettings.flatDeliveryCharge);
@@ -266,13 +282,15 @@ export default function Cart() {
       return;
     }
 
+    const capped = Math.min(3, quantity);
+
     // 1. Update UI immediately (zero perceived lag)
-    updateQtyLocal(variantId, quantity);
+    updateQtyLocal(variantId, capped);
 
     if (!isAuthenticated) return;
 
     // 2. Track latest desired qty across rapid taps
-    pendingQty.current[variantId] = quantity;
+    pendingQty.current[variantId] = capped;
 
     // 3. Debounce: only send API call 400ms after last tap
     clearTimeout(debounceRef.current[variantId]);
@@ -301,6 +319,8 @@ export default function Cart() {
   }, [isAuthenticated, updateQtyLocal, setItems, handleRemoveItem]);
 
   // ── checkout ───────────────────────────────────────────────────────
+  const belowMinOrder = minOrderValue > 0 && subtotal() < minOrderValue;
+
   const handleCheckout = () => {
     useBuyNowStore.getState().clearItem();
     if (!isAuthenticated) {
@@ -308,6 +328,7 @@ export default function Cart() {
       return;
     }
     if (items.every((i) => i.inStock === false)) return;
+    if (belowMinOrder) return;
     navigate("/checkout");
   };
 
@@ -354,7 +375,7 @@ export default function Cart() {
             <OrderSummary
               subtotal={sub} discount={disc} shipping={ship} total={tot}
               coupon={coupon}
-              onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
+              onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold} minOrderValue={minOrderValue} belowMinOrder={belowMinOrder}
             />
           </div>
         </div>
@@ -364,7 +385,7 @@ export default function Cart() {
           <OrderSummary
             subtotal={sub} discount={disc} shipping={ship} total={tot}
             coupon={coupon}
-            onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
+            onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold} minOrderValue={minOrderValue} belowMinOrder={belowMinOrder}
           />
         </div>
       </div>

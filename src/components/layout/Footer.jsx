@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Phone, Mail, MapPin,
   ShieldCheck, Truck, Headphones,
   ChevronDown, ChevronUp,
 } from "lucide-react";
-import { FaInstagram, FaFacebook, FaYoutube, FaTwitter } from "react-icons/fa";
+import { FaInstagram, FaFacebook, FaYoutube, FaTwitter, FaWhatsapp } from "react-icons/fa";
 import Logo from "./Logo";
+import API from "../../ApiCall/Api.jsx";
+import { useDeliverySettings } from "../../hookqueries/useHome.js";
 
 const QUICK_LINKS = [
   { label: "All Products",    to: "/products" },
@@ -38,21 +40,16 @@ const CATEGORIES = [
   { label: "Pickles & Chutneys",   to: "/products?category=pickles" },
 ];
 
-const TRUST_ITEMS = [
-  { icon: <Truck size={20} />,       label: "Free Shipping",    sub: "On orders ₹499+" },
-  { icon: <ShieldCheck size={20} />, label: "100% Natural",     sub: "No preservatives" },
-  // { icon: <RefreshCcw size={20} />,  label: "7-Day Returns",    sub: "Hassle free" },
-  { icon: <ShieldCheck size={20} />, label: "Secure Checkout", sub: "100% Encrypted" },
-  { icon: <Headphones size={20} />,  label: "24/7 Support",     sub: "Always here" },
-];
-
-
-const SOCIAL = [
-  { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
-  { icon: <FaFacebook size={16} />, href: "#", label: "Facebook" },
-  { icon: <FaYoutube   size={16} />, href: "#", label: "YouTube"   },
-  { icon: <FaTwitter   size={16} />, href: "#", label: "Twitter"   },
-];
+function useTrustItems() {
+  const { data: delivery } = useDeliverySettings();
+  const threshold = delivery?.freeShippingThreshold || 499;
+  return [
+    { icon: <Truck size={20} />,       label: "Free Shipping",    sub: `On orders ₹${threshold}+` },
+    { icon: <ShieldCheck size={20} />, label: "100% Natural",     sub: "No preservatives" },
+    { icon: <ShieldCheck size={20} />, label: "Secure Checkout",  sub: "100% Encrypted" },
+    { icon: <Headphones size={20} />,  label: "24/7 Support",     sub: "Always here" },
+  ];
+}
 
 // ── Mobile accordion section ─────────────────────────────────────────────
 function AccordionSection({ title, children }) {
@@ -74,6 +71,14 @@ function AccordionSection({ title, children }) {
 export default function Footer() {
   const [email,  setEmail]  = useState("");
   const [subMsg, setSubMsg] = useState("");
+  const [settings, setSettings] = useState({});
+  const trustItems = useTrustItems();
+
+  useEffect(() => {
+    API.get("/settings/get-all")
+      .then((res) => setSettings(res.data.settings || {}))
+      .catch(() => {});
+  }, []);
 
   const handleSub = (e) => {
     e.preventDefault();
@@ -82,13 +87,38 @@ export default function Footer() {
     setEmail("");
   };
 
+  const description = settings.storeDescription ||
+    "Authentic dry fish and coastal pickles sourced directly from coastal fishermen. Traditionally sun-dried, naturally preserved — delivered straight to your doorstep.";
+  const phone    = settings.storePhone    || settings.contactPhone || "+91 98765 43210";
+  const email_c  = settings.storeEmail    || settings.contactEmail || "hello@nammakadai.com";
+  const address  = settings.storeAddress  || "Ramanathapuram, Tamil Nadu — 623 526";
+
+  const socials = [
+    settings.instagramUrl  && { icon: <FaInstagram size={16} />, href: settings.instagramUrl,  label: "Instagram" },
+    settings.facebookUrl   && { icon: <FaFacebook  size={16} />, href: settings.facebookUrl,   label: "Facebook"  },
+    settings.youtubeUrl    && { icon: <FaYoutube   size={16} />, href: settings.youtubeUrl,    label: "YouTube"   },
+    settings.twitterUrl    && { icon: <FaTwitter   size={16} />, href: settings.twitterUrl,    label: "Twitter"   },
+    settings.whatsappNumber && {
+      icon: <FaWhatsapp size={16} />,
+      href: `https://wa.me/${String(settings.whatsappNumber).replace(/[^0-9]/g, "")}`,
+      label: "WhatsApp",
+    },
+  ].filter(Boolean);
+
+  const socialLinks = socials.length > 0 ? socials : [
+    { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
+    { icon: <FaFacebook  size={16} />, href: "#", label: "Facebook"  },
+    { icon: <FaYoutube   size={16} />, href: "#", label: "YouTube"   },
+    { icon: <FaTwitter   size={16} />, href: "#", label: "Twitter"   },
+  ];
+
   return (
     <footer className="bg-gray-900 text-gray-300 border-t border-sandal-100">
 
       {/* ── Trust bar ───────────────────────────────────────────────── */}
       <div className="border-b border-gray-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {TRUST_ITEMS.map((t) => (
+          {trustItems.map((t) => (
             <div key={t.label} className="flex items-center gap-3">
               <span className="text-sandal-400 shrink-0">{t.icon}</span>
               <div>
@@ -111,17 +141,18 @@ export default function Footer() {
             <Logo showText={true} inverse={true} className="mb-4" />
 
             <p className="font-body text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
-              Authentic dry fish and coastal pickles sourced directly from coastal fishermen.
-              Traditionally sun-dried, naturally preserved — delivered straight to your doorstep.
+              {description}
             </p>
 
             {/* Social */}
             <div className="flex gap-2.5 mb-6">
-              {SOCIAL.map((s) => (
+              {socialLinks.map((s) => (
                 <a
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-8 h-8 rounded-full bg-gray-800 hover:bg-sandal-600 flex items-center justify-center text-sandal-300 hover:text-white transition-all"
                 >
                   {s.icon}
@@ -133,15 +164,15 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-gray-400">
               <li className="flex items-center gap-2">
                 <Phone size={13} className="shrink-0 text-sandal-400" />
-                <a href="tel:+919876543210" className="hover:text-white transition-colors">+91 98765 43210</a>
+                <a href={`tel:${phone}`} className="hover:text-white transition-colors">{phone}</a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail size={13} className="shrink-0 text-sandal-400" />
-                <a href="mailto:hello@nammakadai.com" className="hover:text-white transition-colors">hello@nammakadai.com</a>
+                <a href={`mailto:${email_c}`} className="hover:text-white transition-colors">{email_c}</a>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin size={13} className="shrink-0 text-sandal-400 mt-0.5" />
-                <span>Ramanathapuram,<br />Tamil Nadu — 623 526</span>
+                <span>{address}</span>
               </li>
             </ul>
           </div>
@@ -231,11 +262,11 @@ export default function Footer() {
         <div className="sm:hidden mb-8">
           <Logo showText={true} inverse={true} className="mb-4" />
           <p className="font-body text-sm text-gray-400 leading-relaxed mb-6">
-            Authentic dry fish sourced directly from coastal fishermen.
+            {description}
           </p>
           <div className="flex gap-2.5 mb-6">
-            {SOCIAL.map((s) => (
-              <a key={s.label} href={s.href} aria-label={s.label}
+            {socialLinks.map((s) => (
+              <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-gray-800 hover:bg-sandal-600 flex items-center justify-center text-sandal-300 hover:text-white transition-all">
                 {s.icon}
               </a>
@@ -269,13 +300,13 @@ export default function Footer() {
           <AccordionSection title="Contact Us">
             <ul className="space-y-3 pl-2 text-sm text-gray-400">
               <li className="flex items-center gap-2.5"><Phone size={13} className="text-sandal-400" />
-                <a href="tel:+919876543210" className="hover:text-white">+91 98765 43210</a>
+                <a href={`tel:${phone}`} className="hover:text-white">{phone}</a>
               </li>
               <li className="flex items-center gap-2.5"><Mail size={13} className="text-sandal-400" />
-                <a href="mailto:hello@nammakadai.com" className="hover:text-white">hello@nammakadai.com</a>
+                <a href={`mailto:${email_c}`} className="hover:text-white">{email_c}</a>
               </li>
               <li className="flex items-start gap-2.5"><MapPin size={13} className="text-sandal-400 mt-0.5 shrink-0" />
-                <span>Ramanathapuram, Tamil Nadu — 623 526</span>
+                <span>{address}</span>
               </li>
             </ul>
           </AccordionSection>

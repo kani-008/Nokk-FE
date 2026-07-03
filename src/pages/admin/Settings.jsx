@@ -11,7 +11,7 @@ import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";
 import API from "../../ApiCall/Api.jsx";
 
 const DEFAULTS = {
-  storeName: "Namma Oor Karuvattu Kadai",
+  storeDescription: "",
   storeEmail: "",
   storePhone: "",
   storeAddress: "",
@@ -20,6 +20,7 @@ const DEFAULTS = {
   codEnabled: true,
   upiEnabled: true,
   cardEnabled: true,
+  netbankingEnabled: true,
   notifyOrderConfirmed: true,
   notifyOrderShipped: true,
   notifyReturnRequest: true,
@@ -28,6 +29,7 @@ const DEFAULTS = {
   instagramUrl: "",
   facebookUrl: "",
   twitterUrl: "",
+  youtubeUrl: "",
   whatsappNumber: "",
   websiteUrl: "",
   minOrderValue: 0,
@@ -87,9 +89,12 @@ function Field({ label, name, type = "text", value, onChange, placeholder, unit,
             className={`field-input resize-none ${disabled ? "bg-gray-50 cursor-not-allowed opacity-60" : ""}`}
           />
         ) : (
-          <input type={type} name={name} value={value ?? ""} onChange={onChange}
+          <input
+            type={type} name={name} value={value ?? ""}
+            onChange={onChange}
             placeholder={placeholder} disabled={disabled}
-            className={`field-input ${unit ? "pl-7" : ""} ${disabled ? "bg-gray-50 cursor-not-allowed opacity-60" : ""}`}
+            inputMode={type === "number" ? "numeric" : undefined}
+            className={`field-input no-spinner ${unit ? "pl-7" : ""} ${disabled ? "bg-gray-50 cursor-not-allowed opacity-60" : ""}`}
           />
         )}
       </div>
@@ -398,12 +403,38 @@ export default function Settings() {
   }, []);
 
   const set  = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const setE = (e)    => set(e.target.name, e.target.type === "number" ? Number(e.target.value) : e.target.value);
+  // For number inputs: keep as a clean string (no leading zeros) while editing.
+  // Empty string = 0 — coerced to a number only when saving.
+  const setE = (e) => {
+    if (e.target.type === "number") {
+      const raw = e.target.value;
+      // Strip leading zeros but allow empty string (user mid-delete)
+      const cleaned = raw === "" ? "" : String(Number(raw));
+      set(e.target.name, cleaned);
+    } else {
+      set(e.target.name, e.target.value);
+    }
+  };
+
+  // Coerce all number fields to actual numbers before saving (empty → 0)
+  const coerceNumbers = (f) => {
+    const numericKeys = [
+      "freeShippingThreshold", "shippingCharge",
+      "minOrderValue", "maxCartItems",
+    ];
+    const out = { ...f };
+    numericKeys.forEach((k) => {
+      out[k] = out[k] === "" || out[k] === null || out[k] === undefined
+        ? 0
+        : Number(out[k]);
+    });
+    return out;
+  };
 
   const handleSave = async () => {
     setSaving(true); setSaved(false); setError("");
     try {
-      await settingsApi.update(form);
+      await settingsApi.update(coerceNumbers(form));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) { setError(e.message || "Failed to save"); }
@@ -444,10 +475,22 @@ export default function Settings() {
         {/* ── Store Info ── */}
         <SectionCard icon={Store} title="Store Information" sub="Public-facing details shown to customers">
           <div className="space-y-4">
-            <Field label="Store Name"    name="storeName"    value={form.storeName}    onChange={setE} placeholder="NammaOor…" />
+            <Field label="Store Description" name="storeDescription" value={form.storeDescription} onChange={setE} placeholder="Authentic dry fish and coastal pickles…" rows={3} />
             <Field label="Support Email" name="storeEmail"   value={form.storeEmail}   onChange={setE} placeholder="hello@store.com" type="email" />
             <Field label="Phone"         name="storePhone"   value={form.storePhone}   onChange={setE} placeholder="+91 98765 43210" type="tel" />
             <Field label="Store Address" name="storeAddress" value={form.storeAddress} onChange={setE} placeholder="Full address…" rows={2} />
+          </div>
+        </SectionCard>
+
+        {/* ── Social & Contact Links ── */}
+        <SectionCard icon={Globe} title="Social & Contact Links" sub="Displayed in footer and contact page">
+          <div className="space-y-4">
+            <SocialField icon={Camera}        label="Instagram"   name="instagramUrl"   value={form.instagramUrl}   onChange={setE} placeholder="https://instagram.com/yourstore" color="text-pink-500"  />
+            <SocialField icon={Share2}        label="Facebook"    name="facebookUrl"    value={form.facebookUrl}    onChange={setE} placeholder="https://facebook.com/yourpage"  color="text-blue-600" />
+            <SocialField icon={AtSign}        label="Twitter / X" name="twitterUrl"     value={form.twitterUrl}     onChange={setE} placeholder="https://x.com/yourhandle"        color="text-sky-500"  />
+            <SocialField icon={MessageCircle} label="WhatsApp"    name="whatsappNumber" value={form.whatsappNumber} onChange={setE} placeholder="+91 98765 43210"                color="text-green-500"/>
+            <SocialField icon={Globe}         label="YouTube"     name="youtubeUrl"     value={form.youtubeUrl}     onChange={setE} placeholder="https://youtube.com/@yourstore"  color="text-red-500"  />
+            <SocialField icon={Globe}         label="Website"     name="websiteUrl"     value={form.websiteUrl}     onChange={setE} placeholder="https://yourstore.com"          color="text-gray-500" />
           </div>
         </SectionCard>
 
@@ -475,9 +518,10 @@ export default function Settings() {
         {/* ── Payment Methods ── */}
         <SectionCard icon={IndianRupee} title="Payment Methods" sub="Enable or disable checkout payment options">
           <div>
-            <ToggleRow label="Cash on Delivery (COD)" sub="Allow customers to pay on delivery" checked={form.codEnabled}  onChange={() => set("codEnabled",  !form.codEnabled)}  />
-            <ToggleRow label="UPI"                    sub="GPay, PhonePe, Paytm & more"        checked={form.upiEnabled}  onChange={() => set("upiEnabled",  !form.upiEnabled)}  />
-            <ToggleRow label="Credit / Debit Card"    sub="Visa, Mastercard, RuPay"            checked={form.cardEnabled} onChange={() => set("cardEnabled", !form.cardEnabled)} />
+            <ToggleRow label="Cash on Delivery (COD)" sub="Allow customers to pay on delivery"              checked={form.codEnabled}         onChange={() => set("codEnabled",         !form.codEnabled)}         />
+            <ToggleRow label="UPI"                    sub="GPay, PhonePe, Paytm & more"                     checked={form.upiEnabled}         onChange={() => set("upiEnabled",         !form.upiEnabled)}         />
+            <ToggleRow label="Credit / Debit Card"    sub="Visa, Mastercard, RuPay"                         checked={form.cardEnabled}        onChange={() => set("cardEnabled",        !form.cardEnabled)}        />
+            <ToggleRow label="Net Banking"            sub="Pay via Internet Banking from any Indian bank"   checked={form.netbankingEnabled}  onChange={() => set("netbankingEnabled",  !form.netbankingEnabled)}  />
           </div>
         </SectionCard>
 
@@ -496,6 +540,12 @@ export default function Settings() {
               checked={form.registrationsEnabled}
               onChange={() => set("registrationsEnabled", !form.registrationsEnabled)}
             />
+            <ToggleRow
+              label="Announcement Banner"
+              sub="Shows a top strip in the navbar (desktop only). When off, the strip is removed."
+              checked={form.announcementEnabled}
+              onChange={() => set("announcementEnabled", !form.announcementEnabled)}
+            />
           </div>
           {form.maintenanceMode && (
             <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
@@ -508,14 +558,8 @@ export default function Settings() {
         </SectionCard>
 
         {/* ── Announcement Banner ── */}
-        <SectionCard icon={Megaphone} title="Announcement Banner" sub="Shown in the top strip of the NavBar (desktop only)">
+        <SectionCard icon={Megaphone} title="Announcement Banner" sub="Shown in the top strip of the NavBar (desktop only) when enabled in Store Controls">
           <div className="space-y-4">
-            <ToggleRow
-              label="Show Announcement"
-              sub="Replaces the default free-shipping strip with your custom text below."
-              checked={form.announcementEnabled}
-              onChange={() => set("announcementEnabled", !form.announcementEnabled)}
-            />
             <Field
               label="Announcement Text"
               name="announcementText"
@@ -529,17 +573,9 @@ export default function Settings() {
                 <p className="font-body text-[11px] text-sandal-200/80 font-medium">{form.announcementText}</p>
               </div>
             )}
-          </div>
-        </SectionCard>
-
-        {/* ── Social & Contact Links ── */}
-        <SectionCard icon={Globe} title="Social & Contact Links" sub="Displayed in footer and contact page">
-          <div className="space-y-4">
-            <SocialField icon={Camera}        label="Instagram"   name="instagramUrl"   value={form.instagramUrl}   onChange={setE} placeholder="https://instagram.com/yourstore" color="text-pink-500"  />
-            <SocialField icon={Share2}        label="Facebook"   name="facebookUrl"    value={form.facebookUrl}    onChange={setE} placeholder="https://facebook.com/yourpage"  color="text-blue-600" />
-            <SocialField icon={AtSign}        label="Twitter / X" name="twitterUrl"   value={form.twitterUrl}     onChange={setE} placeholder="https://x.com/yourhandle"        color="text-sky-500"  />
-            <SocialField icon={MessageCircle} label="WhatsApp"   name="whatsappNumber" value={form.whatsappNumber} onChange={setE} placeholder="+91 98765 43210"                color="text-green-500"/>
-            <SocialField icon={Globe}         label="Website"    name="websiteUrl"     value={form.websiteUrl}     onChange={setE} placeholder="https://yourstore.com"          color="text-gray-500" />
+            {!form.announcementEnabled && (
+              <p className="font-body text-xs text-gray-400">Enable the Announcement Banner toggle in Store Controls to activate this strip.</p>
+            )}
           </div>
         </SectionCard>
 

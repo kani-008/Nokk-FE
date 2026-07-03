@@ -3,6 +3,7 @@ import { useNavigate, Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAddresses, useAddAddress } from "../hookqueries/useProfile";
 import { useDeliverySettings } from "../hookqueries/useHome";
+import { usePublicSettings } from "../hookqueries/useSettings";
 import {
   useCheckout,
   useCreateRazorpayOrder,
@@ -63,8 +64,10 @@ export default function Checkout() {
 
   // delivery config from backend settings (falls back to DB values while loading)
   const { data: deliverySettings } = useDeliverySettings();
-  const freeShippingThreshold = deliverySettings?.freeShippingThreshold ?? 500;
-  const flatDeliveryCharge = deliverySettings?.flatDeliveryCharge ?? 50;
+  const { data: publicSettings = {} } = usePublicSettings();
+  const freeShippingThreshold = deliverySettings?.freeShippingThreshold ?? 499;
+  const flatDeliveryCharge    = deliverySettings?.flatDeliveryCharge    ?? 60;
+  const minOrderValue         = deliverySettings?.minOrderValue         ?? 0;
 
   // computed totals
   const sub = buyNowItem ? buyNowItem.price * buyNowItem.quantity : subtotal();
@@ -221,9 +224,13 @@ export default function Checkout() {
 
   // Called by the sticky Continue button — only navigates when an address is confirmed.
   const handleAddressNext = () => {
-    if (selectedSaved) {
-      navigate("/checkout/summary", { replace: true });
+    if (!selectedSaved) return;
+    if (minOrderValue > 0 && sub < minOrderValue) {
+      setOrderErr(`Minimum order value of ₹${minOrderValue} required. Add ₹${minOrderValue - sub} more to your cart.`);
+      return;
     }
+    setOrderErr("");
+    navigate("/checkout/summary", { replace: true });
   };
 
   const handleChangeNew = (key, value) => {
@@ -563,6 +570,13 @@ export default function Checkout() {
         </div>
       )}
 
+      {/* ── Min-order error (address step) ─────────────────────── */}
+      {step === "address" && orderErr && (
+        <div className="max-w-xl mx-auto w-full mb-3 bg-amber-50 border border-amber-200 text-amber-800 font-body text-sm rounded-xl px-4 py-3">
+          {orderErr}
+        </div>
+      )}
+
       {/* ── Step panels ─────────────────────────────────────────── */}
       {step === "address" && (
         <div className="max-w-xl mx-auto w-full min-w-[320px]">
@@ -621,6 +635,7 @@ export default function Checkout() {
           error={orderErr}
           placedOrderId={placedOrderId}
           onBack={() => navigate("/checkout/summary", { replace: true })}
+          paymentSettings={publicSettings}
         />
       )}
 

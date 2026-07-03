@@ -127,7 +127,7 @@ function CategoryModal({ category, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Category" : "Add Category"}</h3>
           <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
@@ -400,3 +400,4 @@ export default function CategoryManagement() {
     </AdminPage>
   );
 }
+

@@ -353,6 +353,25 @@ body {
     animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
+  /* Admin modal panel — sandal-50 bg with gray text (used for bg-white override) */
+  .admin-modal-bg {
+    background-color: var(--color-sandal-50) !important;
+    color: var(--color-gray-800) !important;
+  }
+  .admin-modal-bg .border-b,
+  .admin-modal-bg .border-t {
+    border-color: var(--color-sandal-200) !important;
+  }
+  .admin-modal-bg h3,
+  .admin-modal-bg h4 {
+    color: var(--color-gray-900) !important;
+  }
+  .admin-modal-bg p,
+  .admin-modal-bg label,
+  .admin-modal-bg span:not(.badge-green):not(.badge-yellow):not(.badge-gray):not(.badge-red):not([class*="text-"]) {
+    color: var(--color-gray-700);
+  }
+
   /* Remove input spinner arrows for numeric fields with .no-spinner */
   input.no-spinner::-webkit-outer-spin-button,
   input.no-spinner::-webkit-inner-spin-button {
@@ -1286,7 +1305,7 @@ body {
   /* ── Admin fluid scaling (Part C) ── */
   .admin-content-fluid {
     width: 100% !important;
-    max-width: clamp(64rem, 92vw, 140rem) !important;
+    max-width: clamp(64rem, 95vw, 280rem) !important;
   }
   
   @media (min-width: 1440px) {

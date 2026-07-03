@@ -250,7 +250,7 @@ export const useCartStore = create(
         if (!existing) return;
         const name = existing.productName || existing.name || "Unknown Product";
 
-        const clamped = Math.max(1, quantity);
+        const clamped = Math.max(1, Math.min(3, quantity));
         set({
           items: get().items.map((i) =>
             i.variantId === variantId ? { ...i, quantity: clamped } : i

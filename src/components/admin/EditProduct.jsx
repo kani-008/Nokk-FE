@@ -472,7 +472,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : handleClose} />
 
-      <div className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-modal-slide-up">
+      <div className="relative bg-white admin-modal-bg w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-modal-slide-up">
 
         {/* header — sticky, safe-area aware */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 shrink-0">

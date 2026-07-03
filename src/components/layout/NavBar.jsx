@@ -169,15 +169,17 @@ export default function NavBar() {
       {/* ── Main bar — single unified gray bar (Amazon-style) ──────── */}
       <div className="bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* thin strip — shows custom admin announcement when enabled, otherwise default shipping note */}
-          <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
-            {settings.announcementEnabled && settings.announcementText
-              ? settings.announcementText
-              : <>🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
-                  <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
-                </>
-            }
-          </div>
+          {/* thin strip — only rendered when admin has enabled the announcement */}
+          {settings.announcementEnabled ? (
+            <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
+              {settings.announcementText && settings.announcementText.trim()
+                ? settings.announcementText
+                : <>🐟 Free shipping above ₹{settings.freeShippingThreshold || 499} &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
+                    <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
+                  </>
+              }
+            </div>
+          ) : null}
 
           <div className="flex items-center h-16 gap-3">
             {/* Back arrow — mobile /products only: lets user navigate back without the hamburger menu */}

@@ -8,11 +8,15 @@ export function useDeliverySettings() {
       const res = await API.get("/settings/get-all");
       const s = res.data.settings || {};
       return {
-        flatDeliveryCharge:    Number(s.flatDeliveryCharge)    || 50,
+        // shippingCharge is the canonical key saved by Settings page;
+        // flatDeliveryCharge is the legacy key — support both
+        flatDeliveryCharge:    Number(s.shippingCharge || s.flatDeliveryCharge) || 60,
         freeShippingThreshold: Number(s.freeShippingThreshold) || 499,
+        minOrderValue:         Number(s.minOrderValue)         || 0,
+        maxCartItems:          Number(s.maxCartItems)          || 20,
       };
     },
-    staleTime: 5 * 60_000, // settings rarely change — cache 5 min
+    staleTime: 5 * 60_000,
   });
 }
 

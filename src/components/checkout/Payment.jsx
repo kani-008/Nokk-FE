@@ -3,6 +3,7 @@ import {
   CreditCard,
   Smartphone,
   Banknote,
+  Building2,
   Loader2,
   CheckCircle2,
   ArrowLeft,
@@ -18,18 +19,28 @@ export const PAYMENT_METHODS = [
     label: "UPI Payment",
     sub: "Pay via GPay, PhonePe, Paytm, or any UPI app",
     icon: <Smartphone size={20} />,
+    settingsKey: "upiEnabled",
   },
   {
     key: "razorpay",
     label: "Card Payment",
-    sub: "Pay via Credit/Debit cards, Net Banking, or Wallets",
+    sub: "Pay via Credit/Debit cards",
     icon: <CreditCard size={20} />,
+    settingsKey: "cardEnabled",
+  },
+  {
+    key: "razorpay_netbanking",
+    label: "Net Banking",
+    sub: "Pay via Internet Banking from any Indian bank",
+    icon: <Building2 size={20} />,
+    settingsKey: "netbankingEnabled",
   },
   {
     key: "cod",
     label: "Cash on Delivery",
     sub: "Pay when you receive",
     icon: <Banknote size={20} />,
+    settingsKey: "codEnabled",
   },
 ];
 
@@ -53,9 +64,20 @@ export default function Payment({
   error = "",
   placedOrderId = null,
   onBack,
+  paymentSettings = {},
 }) {
   const navigate = useNavigate();
   const [priceDetailsOpen, setPriceDetailsOpen] = useState(false);
+
+  // Filter payment methods based on admin settings toggles
+  const visibleMethods = PAYMENT_METHODS.filter((m) => {
+    // If no settings yet, show all (fail-open)
+    if (!paymentSettings || Object.keys(paymentSettings).length === 0) return true;
+    // If no settingsKey defined, always show
+    if (!m.settingsKey) return true;
+    // Only show when explicitly enabled (default true if key missing)
+    return paymentSettings[m.settingsKey] !== false;
+  });
 
   // ── Render success screen if order has been successfully placed ────
   if (placedOrderId) {
@@ -191,7 +213,7 @@ export default function Payment({
 
             {/* method cards */}
             <div className="space-y-3 mb-6">
-              {PAYMENT_METHODS.map((m) => (
+              {visibleMethods.map((m) => (
                 <div key={m.key}>
                   <button
                     type="button"

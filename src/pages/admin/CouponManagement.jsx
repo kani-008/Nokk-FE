@@ -87,7 +87,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Coupon" : "Add Coupon"}</h3>
           <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
@@ -180,20 +180,13 @@ export default function CouponManagement() {
 
   return (
     <AdminPage className="space-y-3">
-      {/* Header section with title and add button */}
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between w-full mb-4">
-        <div>
-          <h1 className="font-display text-xl font-bold text-gray-900">Coupon Management</h1>
-          <p className="font-body text-xs text-gray-500 mt-0.5">Create, edit, and deactivate discount coupons for checkouts.</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-          <AdminButton
-            onClick={() => setModal({ type: "coupon", data: null })}
-            className="om-btn-fluid flex-1 sm:flex-none"
-          >
-            <Plus size={14} /> Add Coupon
-          </AdminButton>
-        </div>
+      <div className="flex justify-end w-full mb-4">
+        <AdminButton
+          onClick={() => setModal({ type: "coupon", data: null })}
+          className="om-btn-fluid w-full sm:w-auto"
+        >
+          <Plus size={14} /> Add Coupon
+        </AdminButton>
       </div>
 
       <DataTable columns={COUPON_COLS} rows={coupons} loading={loading} emptyText="No coupons yet." />
@@ -217,3 +210,4 @@ export default function CouponManagement() {
     </AdminPage>
   );
 }
+

@@ -9,6 +9,7 @@ import TableFormat from "../../components/admin/TableFormat.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import { useAdminProductList } from "../../hookqueries/useProducts";
 import API from "../../ApiCall/Api.jsx";
+import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 
 const fmtDate = (d) =>
   d
@@ -40,7 +41,7 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
         {/* header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-display text-base font-bold text-gray-900">Review Details</h3>
@@ -155,16 +156,16 @@ export default function ReviewManagement() {
   const queryClient = useQueryClient();
   const { registerSearch, unregisterSearch } = useOutletContext();
 
-  const LIMIT = 10;
+  const limit = useViewportPageSize(10, 18);
 
   // ── View A: product list — shares TanStack Query cache with ProductManagement
   const { data: productsData, isLoading: productsLoading } = useAdminProductList({
     page,
-    limit: LIMIT,
+    limit: limit,
     search: debouncedSearch || undefined,
   });
   const products = useMemo(() => productsData?.products || [], [productsData]);
-  const totalPages = Math.ceil((productsData?.pagination?.total || 0) / LIMIT) || 1;
+  const totalPages = Math.ceil((productsData?.pagination?.total || 0) / limit) || 1;
 
   // ── View A: all reviews for per-product pending/total counts ──────
   const { data: allReviews = [] } = useQuery({
@@ -428,59 +429,62 @@ export default function ReviewManagement() {
 
     return (
       <AdminPage key={productId} className="space-y-3">
-        {/* Header row with back button left-aligned, product name next to it */}
-        <div className="flex items-center gap-3 w-full mb-2">
-          <button
-            onClick={handleBackToProducts}
-            className="p-1.5 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-700 shrink-0"
-            aria-label="Back to Products"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div className="min-w-0">
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 truncate">
-              {selectedProduct.name}
-            </h2>
-            <p className="font-body text-[11px] text-gray-500 mt-0.5">{summaryText}</p>
-          </div>
-        </div>
-
-        {/* Filters: two filter boxes in one row on mobile (grid grid-cols-2) and flex layout on desktop */}
-        <div className="grid grid-cols-2 gap-3 w-full sm:flex sm:items-center sm:justify-end sm:w-auto">
-          {statusFilter && (
+        {/* Single row: back + title on left, filters on right (stacks on mobile) */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full mb-2">
+          {/* Left: back button + product name */}
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => { setStatusFilter(""); setSortOrder("lowest"); }}
-              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 font-body text-xs text-gray-500 hover:text-red-500 transition-colors shrink-0 px-1 cursor-pointer bg-transparent border-none"
+              onClick={handleBackToProducts}
+              className="p-1.5 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-700 shrink-0"
+              aria-label="Back to Products"
             >
-              <X size={13} /> Clear Filters
+              <ArrowLeft size={20} />
             </button>
-          )}
-          <div className="w-full sm:w-44">
-            <Dropdown
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
-              options={[
-                { value: "", label: "All Statuses" },
-                { value: "approved", label: "Approved" },
-                { value: "pending", label: "Pending" },
-              ]}
-              placeholder="All Statuses"
-              className="w-full"
-              optionClassName="w-full"
-            />
+            <div className="min-w-0">
+              <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 truncate">
+                {selectedProduct.name}
+              </h2>
+              <p className="font-body text-[11px] text-gray-500 mt-0.5">{summaryText}</p>
+            </div>
           </div>
-          <div className="w-full sm:w-48">
-            <Dropdown
-              value={sortOrder}
-              onChange={(val) => setSortOrder(val)}
-              options={[
-                { value: "lowest", label: "Lowest rating first" },
-                { value: "newest", label: "Newest first" },
-                { value: "highest", label: "Highest rating first" },
-              ]}
-              className="w-full"
-              optionClassName="w-full"
-            />
+
+          {/* Right: filters in one row (always, including mobile) */}
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            {statusFilter && (
+              <button
+                onClick={() => { setStatusFilter(""); setSortOrder("lowest"); }}
+                className="flex items-center gap-1.5 font-body text-xs text-gray-500 hover:text-red-500 transition-colors px-1 cursor-pointer bg-transparent border-none"
+              >
+                <X size={13} /> Clear
+              </button>
+            )}
+            <div className="w-36 sm:w-44">
+              <Dropdown
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val)}
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "approved", label: "Approved" },
+                  { value: "pending", label: "Pending" },
+                ]}
+                placeholder="All Statuses"
+                className="w-full"
+                optionClassName="w-full"
+              />
+            </div>
+            <div className="w-40 sm:w-48">
+              <Dropdown
+                value={sortOrder}
+                onChange={(val) => setSortOrder(val)}
+                options={[
+                  { value: "lowest", label: "Lowest rating first" },
+                  { value: "newest", label: "Newest first" },
+                  { value: "highest", label: "Highest rating first" },
+                ]}
+                className="w-full"
+                optionClassName="w-full"
+              />
+            </div>
           </div>
         </div>
 
@@ -532,3 +536,4 @@ export default function ReviewManagement() {
     </AdminPage>
   );
 }
+
