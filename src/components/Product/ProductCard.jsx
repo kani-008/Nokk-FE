@@ -149,7 +149,7 @@ export default function ProductCard({ product, selectedWeights = [] }) {
       <div className="card-hover overflow-hidden h-full flex flex-col justify-between">
         <div>
           {/* ── Image ─────────────────────────────────────────────── */}
-          <div className="relative aspect-square overflow-hidden bg-gray-100 rounded-t-2xl">
+          <div className="relative aspect-square overflow-hidden bg-gray-100 rounded-t-md">
             <img
               src={image}
               alt={product.nameEn}
@@ -168,7 +168,7 @@ export default function ProductCard({ product, selectedWeights = [] }) {
 
             {/* out of stock overlay */}
             {!inStock && (
-              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-t-2xl">
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-t-md">
                 <span className="badge-gray px-3 py-1.5 font-bold shadow-sm">Out of Stock</span>
               </div>
             )}

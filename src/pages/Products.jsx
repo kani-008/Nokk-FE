@@ -423,7 +423,7 @@ export default function Products() {
   const pageDescription = "Browse our full catalog of authentic sun-dried fish, traditional seafood, and coastal delicacies. Filter by category, weight, price, and more.";
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6 md:py-6">
+    <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-2 pb-6 md:py-6">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
@@ -450,7 +450,7 @@ export default function Products() {
       </div> */}
 
       {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
-      <div className="flex items-center justify-end mb-4 md:hidden">
+      <div className="flex items-center justify-end mb-4 md:hidden px-4">
         <button
           type="button"
           onClick={() => setFilterOpen((s) => !s)}
@@ -468,7 +468,7 @@ export default function Products() {
 
       {/* ── Active filter pills ───────────────────────────────────── */}
       {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4 px-4 sm:px-0">
           {activeFilters.map((f) => (
             <FilterPill
               key={f.key}
@@ -530,7 +530,7 @@ export default function Products() {
 
               {/* Pagination */}
               {pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
+                <div className="flex items-center justify-center gap-2 mt-10 flex-wrap px-4 sm:px-0">
                   <button
                     disabled={page <= 1}
                     onClick={() => setParam("page", String(page - 1))}

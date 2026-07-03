@@ -104,7 +104,7 @@ function WishCard({ product, onRemove }) {
     <Link to={`/products/${product.slug}`} className="group block">
       <div className="card-hover">
         {/* image */}
-        <div className="relative aspect-square overflow-hidden bg-brand-50 rounded-t-2xl">
+        <div className="relative aspect-square overflow-hidden bg-brand-50 rounded-t-md">
           <img
             src={image}
             alt={product.nameEn}

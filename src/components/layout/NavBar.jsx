@@ -230,7 +230,7 @@ export default function NavBar() {
             {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex w-full max-w-md md:ml-auto md:mr-0"
+              className="hidden md:flex w-full max-w-2xl md:ml-10"
             >
               <div className="relative w-full">
                 <input
@@ -238,7 +238,7 @@ export default function NavBar() {
                   value={query}
                   onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
                   placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles, nethili…"}
-                  className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                  className="w-full rounded-4xl py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                 />
                 <button
                   type="submit"
@@ -251,7 +251,7 @@ export default function NavBar() {
 
             {/* Right icon group */}
             {/* On /products, icons always visible even though search is open (it's permanently open, not a toggle) */}
-            <div className={`flex items-center gap-1.5 ml-auto md:ml-6 ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
+            <div className={`flex items-center gap-1.5 ml-auto md:ml-4 md:mr-auto md:gap-4 ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
               {/* Mobile search toggle — hidden on /products since search is always-open there */}
               {!isProductsPage && (
                 <button
