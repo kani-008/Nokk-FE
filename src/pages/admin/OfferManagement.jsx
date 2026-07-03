@@ -6,12 +6,6 @@ import {
   useUpdateOffer,
   useDeleteOffer
 } from "../../hookqueries/useOffers";
-import {
-  useAdminComboList,
-  useCreateCombo,
-  useUpdateCombo,
-  useDeleteCombo
-} from "../../hookqueries/useCombos";
 import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
@@ -20,31 +14,9 @@ import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
-import ComboItemPicker from "../../components/admin/ComboItemPicker.jsx";
+import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
 const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
-const COMBO_EMPTY = { name: "", description: "", imageUrl: "", imageFile: null, comboPrice: "", isActive: true, startDate: "", endDate: "", items: [] };
-const rupee = (n) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
-
-// ── Live/Scheduled/Expired/Inactive status badge ────────────────────────
-function computeStatus({ isActive, startDate, endDate }) {
-  if (!isActive) return "Inactive";
-  const now = new Date();
-  if (endDate && new Date(endDate) < now) return "Expired";
-  if (startDate && new Date(startDate) > now) return "Scheduled";
-  return "Live";
-}
-function StatusPill({ isActive, startDate, endDate }) {
-  const status = computeStatus({ isActive, startDate, endDate });
-  const cls = {
-    Live: "badge-green",
-    Scheduled: "badge-amber",
-    Expired: "badge-gray",
-    Inactive: "badge-gray",
-  }[status];
-  return <span className={cls}>{status}</span>;
-}
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -239,126 +211,16 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// COMBO MODAL
-// ══════════════════════════════════════════════════════════════════════
-function ComboModal({ combo, onClose, onSaved }) {
-  const isEdit = !!combo?.id;
-  const [form, setForm] = useState(
-    combo
-      ? { ...combo, imageFile: null, items: (combo.items || []).map((i) => ({ ...i })) }
-      : { ...COMBO_EMPTY }
-  );
-  const [previewUrl, setPreviewUrl] = useState(combo?.imageUrl || "");
-  const [error, setError] = useState("");
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    set("imageFile", file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const createComboMutation = useCreateCombo();
-  const updateComboMutation = useUpdateCombo();
-  const saving = createComboMutation.isPending || updateComboMutation.isPending;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.comboPrice) { setError("Name and combo price required"); return; }
-    if (Number(form.comboPrice) <= 0) { setError("Combo price must be greater than 0"); return; }
-    if (form.items.length < 2) { setError("Add at least 2 items to make a combo"); return; }
-    setError("");
-    try {
-      let res;
-      if (isEdit) {
-        res = await updateComboMutation.mutateAsync({ id: combo.id, form });
-      } else {
-        res = await createComboMutation.mutateAsync(form);
-      }
-      onSaved(res.combo || form);
-      onClose();
-    } catch (e) {
-      setError(e.response?.data?.message || e.message || "Failed");
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Combo" : "Add Combo"}</h3>
-          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
-        </div>
-        <div className="overflow-y-auto p-6 space-y-4 flex-1">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><label className="field-label">Name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Dry Fish Duo" className="field-input" /></div>
-            <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short combo description" /></div>
-            <div>
-              <label className="field-label">Combo Image</label>
-              <div className="flex items-start gap-4">
-                <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                  {previewUrl ? (
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon size={24} className="text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="combo-file-input" />
-                  <label htmlFor="combo-file-input" className="inline-flex items-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
-                    Choose Image
-                  </label>
-                  <p className="text-[10px] text-gray-400 mt-1">Recommended: 600×300. Max: 3MB.</p>
-                </div>
-              </div>
-            </div>
-
-            <ComboItemPicker items={form.items} onChange={(items) => set("items", items)} />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="field-label">Combo Price (₹) *</label>
-                <input type="number" value={form.comboPrice} onChange={(e) => set("comboPrice", e.target.value)} placeholder="350" className="field-input" />
-              </div>
-              <div><label className="field-label">Start Date</label><input type="date" value={form.startDate || ""} onChange={(e) => set("startDate", e.target.value)} className="field-input" /></div>
-              <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
-              <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
-            </label>
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
-              <AdminButton type="submit" disabled={saving}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isEdit ? "Update" : "Add Combo"}
-              </AdminButton>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ──════════════════════════════════════════════════════════════════════
 export default function OfferManagement() {
   const [offerModal, setOfferModal] = useState(null); // null | { data }
-  const [comboModal, setComboModal] = useState(null); // null | { data }
   const [deleteOfferTarget, setDeleteOfferTarget] = useState(null);
-  const [deleteComboTarget, setDeleteComboTarget] = useState(null);
 
   const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
-  const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
   const { data: categories = [] } = useProductCategories();
   const { data: productsData } = useAdminProductList({ limit: 100 });
   const products = productsData?.products || [];
 
   const deleteOfferMutation = useDeleteOffer();
-  const deleteComboMutation = useDeleteCombo();
 
   const handleConfirmDeleteOffer = async () => {
     if (!deleteOfferTarget) return;
@@ -368,17 +230,6 @@ export default function OfferManagement() {
     } catch (err) {
       console.error("Failed to delete offer:", err);
       setDeleteOfferTarget(null);
-    }
-  };
-
-  const handleConfirmDeleteCombo = async () => {
-    if (!deleteComboTarget) return;
-    try {
-      await deleteComboMutation.mutateAsync(deleteComboTarget.id);
-      setDeleteComboTarget(null);
-    } catch (err) {
-      console.error("Failed to delete combo:", err);
-      setDeleteComboTarget(null);
     }
   };
 
@@ -411,35 +262,6 @@ export default function OfferManagement() {
     },
   ];
 
-  const COMBO_COLS = [
-    {
-      key: "thumb", label: "", width: "56px", render: (r) => (
-        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
-          {r.imageUrl ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100" />}
-        </div>
-      )
-    },
-    { key: "name", label: "Name", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.name}</span> },
-    { key: "comboPrice", label: "Combo Price", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{rupee(r.comboPrice)}</span> },
-    {
-      key: "summary", label: "Items", render: (r) => (
-        <span className="font-body text-xs text-gray-500">
-          {(r.items || []).map((i) => `${i.productName} ${i.weightLabel} × ${i.quantity}`).join(", ") || "—"}
-        </span>
-      )
-    },
-    { key: "savings", label: "Savings", render: (r) => <span className="font-body text-xs font-semibold text-green-600">{r.savings > 0 ? `Save ${rupee(r.savings)}` : "—"}</span> },
-    { key: "status", label: "Status", render: (r) => <StatusPill isActive={r.isActive} startDate={r.startDate} endDate={r.endDate} /> },
-    {
-      key: "action", label: "", width: "80px", render: (r) => (
-        <div className="flex gap-1">
-          <IconButton onClick={() => setComboModal({ data: r })} variant="brand" aria-label="Edit combo"><Pencil size={15} /></IconButton>
-          <IconButton onClick={() => setDeleteComboTarget({ id: r.id, name: r.name })} variant="danger" aria-label="Delete combo"><Trash2 size={15} /></IconButton>
-        </div>
-      )
-    },
-  ];
-
   return (
     <div className="space-y-8">
       <AdminPage
@@ -447,13 +269,6 @@ export default function OfferManagement() {
         action={<AdminButton onClick={() => setOfferModal({ data: null })}><Plus size={14} /> Add Offer</AdminButton>}
       >
         <DataTable columns={OFFER_COLS} rows={offers} loading={offersLoading} emptyText="No offers yet." />
-      </AdminPage>
-
-      <AdminPage
-        title="Combos"
-        action={<AdminButton onClick={() => setComboModal({ data: null })}><Plus size={14} /> Add Combo</AdminButton>}
-      >
-        <DataTable columns={COMBO_COLS} rows={combos} loading={combosLoading} emptyText="No combos yet." />
       </AdminPage>
 
       {offerModal && (
@@ -465,13 +280,6 @@ export default function OfferManagement() {
           onSaved={() => {}}
         />
       )}
-      {comboModal && (
-        <ComboModal
-          combo={comboModal.data}
-          onClose={() => setComboModal(null)}
-          onSaved={() => {}}
-        />
-      )}
 
       <ConfirmDialog
         open={!!deleteOfferTarget}
@@ -480,14 +288,6 @@ export default function OfferManagement() {
         loading={deleteOfferMutation.isPending}
         onCancel={() => setDeleteOfferTarget(null)}
         onConfirm={handleConfirmDeleteOffer}
-      />
-      <ConfirmDialog
-        open={!!deleteComboTarget}
-        title="Delete Combo?"
-        message={`Are you sure you want to delete "${deleteComboTarget?.name}"? This action cannot be undone.`}
-        loading={deleteComboMutation.isPending}
-        onCancel={() => setDeleteComboTarget(null)}
-        onConfirm={handleConfirmDeleteCombo}
       />
     </div>
   );
