@@ -13,7 +13,7 @@ import {
   useAddAddress, useUpdateAddress, useDeleteAddress,
   lookupPincode, detectAddressFromCoords,
 } from "../hookqueries/useProfile";
-import { usePublicCoupons }  from "../hookqueries/useOffers";
+import { usePublicCoupons }  from "../hookqueries/useCoupons";
 import { useAuthStore }      from "../components/store/AuthStore.jsx";
 import { useWishlistStore }  from "../components/store/WishlistStore.jsx";
 import { useCartStore }      from "../components/store/CartStore.jsx";

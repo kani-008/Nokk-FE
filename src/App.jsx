@@ -72,6 +72,7 @@ const ProductManagement = lazy(() => import("./pages/admin/ProductManagement"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const OfferManagement = lazy(() => import("./pages/admin/OfferManagement"));
+const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
 const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="users" element={<UserManagement />} />
             <Route path="reviews" element={<ReviewManagement />} />
             <Route path="offers" element={<OfferManagement />} />
+            <Route path="coupons" element={<CouponManagement />} />
             <Route path="banners" element={<BannerManagement />} />
             <Route path="inventory" element={<InventoryManagement />} />
             <Route path="reports" element={<ReportManagement />} />

@@ -13,7 +13,6 @@ const CATEGORY_EMPTY = {
   nameEn: "",
   nameTa: "",
   slug: "",
-  description: "",
   imageUrl: "",
   sortOrder: 0,
   isActive: true,
@@ -95,7 +94,6 @@ function CategoryModal({ category, onClose, onSaved }) {
       formData.append("nameEn", form.nameEn.trim());
       formData.append("nameTa", form.nameTa ? form.nameTa.trim() : "");
       formData.append("slug", form.slug.trim().toLowerCase());
-      formData.append("description", form.description ? form.description.trim() : "");
       formData.append("sortOrder", String(form.sortOrder || 0));
       formData.append("isActive", String(form.isActive));
 
@@ -151,11 +149,6 @@ function CategoryModal({ category, onClose, onSaved }) {
           <div>
             <label className="field-label">Slug * (Unique identifier in URL)</label>
             <input value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="dry-fish" className="field-input" required />
-          </div>
-
-          <div>
-            <label className="field-label">Description</label>
-            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Authentic sun-dried dry fish..." className="field-input min-h-[80px]" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -258,8 +251,7 @@ export default function CategoryManagement() {
       (c) =>
         (c.nameEn || "").toLowerCase().includes(term) ||
         (c.nameTa || "").toLowerCase().includes(term) ||
-        (c.slug || "").toLowerCase().includes(term) ||
-        (c.description || "").toLowerCase().includes(term)
+        (c.slug || "").toLowerCase().includes(term)
     );
   }, [categories, debouncedSearch]);
 
@@ -283,7 +275,8 @@ export default function CategoryManagement() {
       setDeleteTarget(null);
     } catch (err) {
       console.error("Delete category failed:", err);
-      alert(err.response?.data?.message || "Failed to delete category");
+      setError(err.response?.data?.message || "Failed to delete category");
+      setDeleteTarget(null);
     } finally {
       setDeleting(false);
     }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
 import { useCartStore } from "../store/CartStore";
-import { usePublicCoupons } from "../../hookqueries/useOffers";
+import { usePublicCoupons } from "../../hookqueries/useCoupons";
 import API from "../../ApiCall/Api";
 
 export default function CouponBox() {
