@@ -15,6 +15,21 @@ const rupee = (n) =>
     maximumFractionDigits: 0,
   }).format(n);
 
+// Mirrors the backend's applyOfferToPrice (orderController.js) so the
+// displayed discount always matches what checkout will actually charge.
+function applyActiveOffer(price, offer) {
+  if (!offer) return null;
+  if (offer.type === "percentage") {
+    const raw = (price * offer.discountValue) / 100;
+    const discount = offer.maxDiscount != null ? Math.min(raw, offer.maxDiscount) : raw;
+    return Math.max(price - discount, 0);
+  }
+  if (offer.type === "flat") {
+    return Math.max(price - offer.discountValue, 0);
+  }
+  return null;
+}
+
 /*
   ProductCard — reusable grid card
   Receives a product object from the API:
@@ -48,8 +63,16 @@ export default function ProductCard({ product, selectedWeights = [] }) {
       : null
   ) ?? product.variants?.[0];
 
-  const price = firstV?.price ?? product.minPrice ?? 0;
-  const compare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
+  const rawPrice = firstV?.price ?? product.minPrice ?? 0;
+  const rawCompare = firstV?.comparePrice ?? product.minComparePrice ?? 0;
+
+  // An active offer takes priority over the plain comparePrice discount —
+  // both are visually the same "was/now" pattern, so they share one slot
+  // rather than stacking two different discount treatments.
+  const offer = product.activeOffer;
+  const offerPrice = offer ? applyActiveOffer(rawPrice, offer) : null;
+  const price = offerPrice != null ? offerPrice : rawPrice;
+  const compare = offerPrice != null ? rawPrice : rawCompare;
   const hasDisc = compare > price;
   const disc = hasDisc ? Math.round(((compare - price) / compare) * 100) : 0;
   const image = product.primaryImage || PH;
@@ -156,13 +179,20 @@ export default function ProductCard({ product, selectedWeights = [] }) {
               onError={(e) => { e.target.src = PH; }}
             />
 
-            {/* Best Seller / New labels */}
-            {product.isBestseller && (
-              <span className="absolute top-2.5 left-2.5 badge-amber shadow-sm">Best Seller</span>
-            )}
-            {/* {product.isNew && !product.isBestseller && (
-              <span className="absolute top-2.5 left-2.5 badge-green shadow-sm">New</span>
-            )} */}
+            {/* Best Seller / New / Offer labels */}
+            <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
+              {product.isBestseller && (
+                <span className="badge-amber shadow-sm">Best Seller</span>
+              )}
+              {/* {product.isNew && !product.isBestseller && (
+                <span className="badge-green shadow-sm">New</span>
+              )} */}
+              {offer && (
+                <span className="badge-red shadow-sm">
+                  {offer.type === "percentage" ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                </span>
+              )}
+            </div>
 
             {/* out of stock overlay */}
             {!inStock && (

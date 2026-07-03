@@ -25,7 +25,22 @@ const PH = "";
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-// Detail skeleton 
+// Mirrors the backend's applyOfferToPrice (orderController.js) so the
+// displayed discount always matches what checkout will actually charge.
+function applyActiveOffer(price, offer) {
+  if (!offer) return null;
+  if (offer.type === "percentage") {
+    const raw = (price * offer.discountValue) / 100;
+    const discount = offer.maxDiscount != null ? Math.min(raw, offer.maxDiscount) : raw;
+    return Math.max(price - discount, 0);
+  }
+  if (offer.type === "flat") {
+    return Math.max(price - offer.discountValue, 0);
+  }
+  return null;
+}
+
+// Detail skeleton
 function DetailSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-pulse">
@@ -227,10 +242,17 @@ export default function ProductDetails() {
   if (!product) return null;
 
   const wishlisted = isWishlisted(product.id);
-  const price = activeVariant?.price ?? product.minPrice ?? 0;
-  const compare = (activeVariant?.comparePrice ?? product.minComparePrice) > price
+  const rawPrice = activeVariant?.price ?? product.minPrice ?? 0;
+  const rawCompare = (activeVariant?.comparePrice ?? product.minComparePrice) > rawPrice
     ? (activeVariant?.comparePrice ?? product.minComparePrice)
     : null;
+
+  // An active offer takes priority over the plain comparePrice discount —
+  // both are visually the same "was/now" pattern, so they share one slot.
+  const offer = product.activeOffer;
+  const offerPrice = offer ? applyActiveOffer(rawPrice, offer) : null;
+  const price = offerPrice != null ? offerPrice : rawPrice;
+  const compare = offerPrice != null ? rawPrice : rawCompare;
   const disc = compare ? Math.round(((compare - price) / compare) * 100) : 0;
   const inStock = activeVariant?.inStock ?? product.inStock ?? false;
 
@@ -492,6 +514,11 @@ export default function ProductDetails() {
             <div className="flex gap-2 flex-wrap">
               {product.isBestseller && <span className="badge-amber">🏆 Best Seller</span>}
               {product.isNew && <span className="badge-green">✨ New Arrival</span>}
+              {offer && (
+                <span className="badge-red">
+                  {offer.type === "percentage" ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                </span>
+              )}
               {!inStock && <span className="badge-red">Out of Stock</span>}
             </div>
 

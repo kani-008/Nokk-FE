@@ -1,7 +1,102 @@
 import { useState } from "react";
-import { Copy, Check, Tag, Clock, ArrowRight } from "lucide-react";
-import { Link }     from "react-router-dom";
+import { Copy, Check, Tag, Clock, ArrowRight, Package, ShoppingCart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useActiveOffers } from "../hookqueries/useOffers";
+import { useActiveCombos } from "../hookqueries/useCombos";
+import { useCartStore } from "../components/store/CartStore";
+import { useAuthStore } from "../components/store/AuthStore";
+import API from "../ApiCall/Api.jsx";
+
+const rupee = (n) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+
+const mapServerItems = (raw = []) =>
+  raw.map((i) => ({
+    itemId:       i.itemId,
+    variantId:    i.variantId,
+    productId:    i.productId,
+    productName:  i.nameEn ?? i.name,
+    nameTa:       i.nameTa,
+    image:        i.primaryImage,
+    price:        i.price,
+    comparePrice: i.comparePrice,
+    weight:       i.weightLabel,
+    quantity:     i.quantity,
+    slug:         i.slug,
+    inStock:      i.inStock,
+    comboId:      i.comboId,
+    comboName:    i.comboName,
+    comboImage:   i.comboImage,
+    comboPrice:   i.comboPrice,
+  }));
+
+function ComboCard({ combo }) {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const [adding, setAdding] = useState(false);
+
+  const handleAddCombo = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: "/offers" } });
+      return;
+    }
+    setAdding(true);
+    try {
+      const res = await API.post("/cart/add-item", { comboId: combo.id, quantity: 1 });
+      useCartStore.getState().setItems(mapServerItems(res.data.cart?.items));
+    } catch (err) {
+      console.error("Failed to add combo to cart:", err);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="card overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <div className="relative h-36 bg-gradient-to-br from-brand-900 to-brand-700 overflow-hidden">
+        {combo.imageUrl ? (
+          <img src={combo.imageUrl} alt={combo.name} className="w-full h-full object-cover opacity-30" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Package size={40} className="text-white/30" />
+          </div>
+        )}
+        <div className="absolute inset-0 flex flex-col items-start justify-end p-5">
+          <h3 className="font-display text-white text-lg font-bold leading-snug">{combo.name}</h3>
+        </div>
+        {combo.savings > 0 && (
+          <div className="absolute top-3 right-3 bg-amber-400 text-amber-900 font-num text-xs font-bold px-3 py-1 rounded-full">
+            Save {rupee(combo.savings)}
+          </div>
+        )}
+      </div>
+
+      <div className="px-4 py-3 space-y-1.5">
+        {(combo.items || []).map((i) => (
+          <p key={i.variantId} className="font-body text-xs text-amber-600">
+            {i.productName} {i.weightLabel} × {i.quantity}
+          </p>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between px-4 py-3 border-t border-amber-50">
+        <div>
+          <span className="font-num text-lg font-extrabold text-brand-900">{rupee(combo.comboPrice)}</span>
+          {combo.individualTotal > combo.comboPrice && (
+            <span className="font-num text-xs text-amber-400 line-through ml-1.5">{rupee(combo.individualTotal)}</span>
+          )}
+        </div>
+        <button
+          onClick={handleAddCombo}
+          disabled={adding}
+          className="flex items-center gap-1.5 font-body text-xs font-semibold text-white bg-sandal-500 hover:bg-sandal-600 rounded-xl px-3.5 py-2 transition-colors disabled:opacity-60"
+        >
+          <ShoppingCart size={13} /> {adding ? "Adding…" : "Add to Cart"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Fallback for mobile browsers that don't support navigator.clipboard (HTTP or older WebKit)
 function fallbackCopy(text, onDone) {
@@ -120,6 +215,7 @@ function OfferSkeleton() {
 // ══════════════════════════════════════════════════════════════════════
 export default function Offers() {
   const { data: offers = [], isLoading: loading } = useActiveOffers();
+  const { data: combos = [], isLoading: combosLoading } = useActiveCombos();
 
   return (
     <div className="page-wrap py-8">
@@ -135,17 +231,42 @@ export default function Offers() {
           {[...Array(3)].map((_, i) => <OfferSkeleton key={i} />)}
         </div>
       ) : offers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
           <Tag size={48} className="text-amber-200 mb-4" />
           <h2 className="font-display text-xl font-bold text-brand-900 mb-2">No active offers</h2>
-          <p className="font-body text-amber-500 text-sm mb-6 max-w-xs">
+          <p className="font-body text-amber-500 text-sm mb-2 max-w-xs">
             Check back soon for exciting deals and seasonal discounts.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {offers.map((o) => <OfferCard key={o.id} offer={o} />)}
+        </div>
+      )}
+
+      <div className="mt-12 mb-7">
+        <h2 className="font-display text-2xl font-bold text-brand-900">Combos</h2>
+        <p className="font-body text-amber-500 text-sm mt-1">
+          Bundled favorites, priced together for extra savings
+        </p>
+      </div>
+
+      {combosLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(3)].map((_, i) => <OfferSkeleton key={i} />)}
+        </div>
+      ) : combos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Package size={48} className="text-amber-200 mb-4" />
+          <h2 className="font-display text-xl font-bold text-brand-900 mb-2">No combos yet</h2>
+          <p className="font-body text-amber-500 text-sm mb-6 max-w-xs">
+            Check back soon for bundled deals.
           </p>
           <Link to="/products" className="btn-lg btn-primary">Browse Products</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {offers.map((o) => <OfferCard key={o.id} offer={o} />)}
+          {combos.map((c) => <ComboCard key={c.id} combo={c} />)}
         </div>
       )}
     </div>

@@ -283,6 +283,29 @@ export const useCartStore = create(
         checkCouponEligibility(set, get);
       },
 
+      // Scales every cart row sharing this comboId together — never lets a
+      // single member's quantity drift out of sync with the rest of the group.
+      updateComboQtyLocal: (comboId, comboQty) => {
+        const clamped = Math.max(1, comboQty);
+        set({
+          items: get().items.map((i) =>
+            i.comboId === comboId && i.comboBaseQty
+              ? { ...i, quantity: i.comboBaseQty * clamped }
+              : i
+          ),
+        });
+        logAction(set, get, "update", `Updated combo quantity to ${clamped}`, { comboId, newComboQty: clamped });
+        checkCouponEligibility(set, get);
+      },
+
+      // Removes every cart row sharing this comboId in one go — a customer
+      // must never end up with only part of a combo priced individually.
+      removeComboLocal: (comboId) => {
+        set({ items: get().items.filter((i) => i.comboId !== comboId) });
+        logAction(set, get, "remove", `Removed combo from cart`, { comboId });
+        checkCouponEligibility(set, get);
+      },
+
       clearCartLocal: () => {
         const prevItemsCount = get().items.length;
         set({ items: [], coupon: null });

@@ -15,7 +15,6 @@ const mapOfferToFrontend = (o) => {
     offerType: o.offerType || "percentage",
     value: o.discountValue,
     discountValue: o.discountValue,
-    code: o.code || "",
     appliesTo: o.appliesTo || "all",
     productId: o.productId || "",
     productName: o.productName || null,
@@ -38,7 +37,6 @@ const mapOfferToBackend = (form) => {
     description: form.description || null,
     discountValue: Number(form.value) || 0,
     offerType: form.offerType || "percentage",
-    code: form.code ? form.code.trim().toUpperCase() : null,
     appliesTo: form.appliesTo || "all",
     productId: form.appliesTo === "product" ? (form.productId || null) : null,
     categoryId: form.appliesTo === "category" ? (form.categoryId || null) : null,
@@ -68,6 +66,16 @@ export function useAdminOfferList() {
     queryFn: async () => {
       const res = await API.get("/offers/get-all");
       return (res.data.offers || []).map(mapOfferToFrontend);
+    },
+  });
+}
+
+export function useActiveStoreWideOffer() {
+  return useQuery({
+    queryKey: ["offers", "active-storewide"],
+    queryFn: async () => {
+      const res = await API.get("/offers/active-storewide");
+      return res.data.offer || null;
     },
   });
 }

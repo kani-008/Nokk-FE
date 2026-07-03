@@ -6,6 +6,12 @@ import {
   useUpdateOffer,
   useDeleteOffer
 } from "../../hookqueries/useOffers";
+import {
+  useAdminComboList,
+  useCreateCombo,
+  useUpdateCombo,
+  useDeleteCombo
+} from "../../hookqueries/useCombos";
 import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
 import {
   AdminPage, AdminButton,
@@ -14,9 +20,31 @@ import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
+import ComboItemPicker from "../../components/admin/ComboItemPicker.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", code: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
+const COMBO_EMPTY = { name: "", description: "", imageUrl: "", imageFile: null, comboPrice: "", isActive: true, startDate: "", endDate: "", items: [] };
+const rupee = (n) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+
+// ── Live/Scheduled/Expired/Inactive status badge ────────────────────────
+function computeStatus({ isActive, startDate, endDate }) {
+  if (!isActive) return "Inactive";
+  const now = new Date();
+  if (endDate && new Date(endDate) < now) return "Expired";
+  if (startDate && new Date(startDate) > now) return "Scheduled";
+  return "Live";
+}
+function StatusPill({ isActive, startDate, endDate }) {
+  const status = computeStatus({ isActive, startDate, endDate });
+  const cls = {
+    Live: "badge-green",
+    Scheduled: "badge-amber",
+    Expired: "badge-gray",
+    Inactive: "badge-gray",
+  }[status];
+  return <span className={cls}>{status}</span>;
+}
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -49,7 +77,9 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
   );
 }
 
-// ── Offer modal ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// OFFER MODAL
+// ══════════════════════════════════════════════════════════════════════
 function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const isEdit = !!offer?.id;
   const [form, setForm] = useState(offer ? { ...offer, imageFile: null } : { ...OFFER_EMPTY });
@@ -120,7 +150,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="field-label">Applies To</label>
@@ -133,8 +163,10 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                       set("categoryId", "");
                     } else if (val === "product") {
                       set("categoryId", "");
+                      set("minOrderValue", "");
                     } else if (val === "category") {
                       set("productId", "");
+                      set("minOrderValue", "");
                     }
                   }}
                   options={[
@@ -181,8 +213,12 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                 />
               </div>
               <div><label className="field-label">Value *</label><input type="number" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder={form.offerType === "percentage" ? "10" : "100"} className="field-input" /></div>
-              <div><label className="field-label">Coupon Code</label><input value={form.code || ""} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="MONSOON10" className="field-input font-num" /></div>
-              <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>
+              {/* Min Order is only meaningful for store-wide offers — a per-product
+                  or per-category price reduction never depends on cart value, and
+                  the backend rejects a nonzero value for those scopes. */}
+              {form.appliesTo === "all" && (
+                <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>
+              )}
               <div><label className="field-label">Start Date</label><input type="date" value={form.startDate || ""} onChange={(e) => set("startDate", e.target.value)} className="field-input" /></div>
               <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
             </div>
@@ -203,82 +239,256 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
   );
 }
 
-// ──════════════════════════════════════════════════════════════════════
-export default function OfferManagement() {
-  const [modal, setModal] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
+// ══════════════════════════════════════════════════════════════════════
+// COMBO MODAL
+// ══════════════════════════════════════════════════════════════════════
+function ComboModal({ combo, onClose, onSaved }) {
+  const isEdit = !!combo?.id;
+  const [form, setForm] = useState(
+    combo
+      ? { ...combo, imageFile: null, items: (combo.items || []).map((i) => ({ ...i })) }
+      : { ...COMBO_EMPTY }
+  );
+  const [previewUrl, setPreviewUrl] = useState(combo?.imageUrl || "");
+  const [error, setError] = useState("");
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
-  const { data: catData = [] } = useProductCategories();
-  const categories = catData;
-  const { data: productsData } = useAdminProductList({ limit: 100 });
-  const products = productsData?.products || [];
-  const loading = offersLoading;
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    set("imageFile", file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
 
-  const deleteOfferMutation = useDeleteOffer();
-  const deleting = deleteOfferMutation.isPending;
+  const createComboMutation = useCreateCombo();
+  const updateComboMutation = useUpdateCombo();
+  const saving = createComboMutation.isPending || updateComboMutation.isPending;
 
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.comboPrice) { setError("Name and combo price required"); return; }
+    if (Number(form.comboPrice) <= 0) { setError("Combo price must be greater than 0"); return; }
+    if (form.items.length < 2) { setError("Add at least 2 items to make a combo"); return; }
+    setError("");
     try {
-      await deleteOfferMutation.mutateAsync(deleteTarget.id);
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("Failed to delete offer:", err);
-      setDeleteTarget(null);
+      let res;
+      if (isEdit) {
+        res = await updateComboMutation.mutateAsync({ id: combo.id, form });
+      } else {
+        res = await createComboMutation.mutateAsync(form);
+      }
+      onSaved(res.combo || form);
+      onClose();
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed");
     }
   };
 
-  const upsertOffer = () => {};
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Combo" : "Add Combo"}</h3>
+          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
+        </div>
+        <div className="overflow-y-auto p-6 space-y-4 flex-1">
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div><label className="field-label">Name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Dry Fish Duo" className="field-input" /></div>
+            <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short combo description" /></div>
+            <div>
+              <label className="field-label">Combo Image</label>
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon size={24} className="text-gray-300" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="combo-file-input" />
+                  <label htmlFor="combo-file-input" className="inline-flex items-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
+                    Choose Image
+                  </label>
+                  <p className="text-[10px] text-gray-400 mt-1">Recommended: 600×300. Max: 3MB.</p>
+                </div>
+              </div>
+            </div>
+
+            <ComboItemPicker items={form.items} onChange={(items) => set("items", items)} />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="field-label">Combo Price (₹) *</label>
+                <input type="number" value={form.comboPrice} onChange={(e) => set("comboPrice", e.target.value)} placeholder="350" className="field-input" />
+              </div>
+              <div><label className="field-label">Start Date</label><input type="date" value={form.startDate || ""} onChange={(e) => set("startDate", e.target.value)} className="field-input" /></div>
+              <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+              <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
+            </label>
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
+              <AdminButton type="submit" disabled={saving}>
+                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isEdit ? "Update" : "Add Combo"}
+              </AdminButton>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ──════════════════════════════════════════════════════════════════════
+export default function OfferManagement() {
+  const [offerModal, setOfferModal] = useState(null); // null | { data }
+  const [comboModal, setComboModal] = useState(null); // null | { data }
+  const [deleteOfferTarget, setDeleteOfferTarget] = useState(null);
+  const [deleteComboTarget, setDeleteComboTarget] = useState(null);
+
+  const { data: offers = [], isLoading: offersLoading } = useAdminOfferList();
+  const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
+  const { data: categories = [] } = useProductCategories();
+  const { data: productsData } = useAdminProductList({ limit: 100 });
+  const products = productsData?.products || [];
+
+  const deleteOfferMutation = useDeleteOffer();
+  const deleteComboMutation = useDeleteCombo();
+
+  const handleConfirmDeleteOffer = async () => {
+    if (!deleteOfferTarget) return;
+    try {
+      await deleteOfferMutation.mutateAsync(deleteOfferTarget.id);
+      setDeleteOfferTarget(null);
+    } catch (err) {
+      console.error("Failed to delete offer:", err);
+      setDeleteOfferTarget(null);
+    }
+  };
+
+  const handleConfirmDeleteCombo = async () => {
+    if (!deleteComboTarget) return;
+    try {
+      await deleteComboMutation.mutateAsync(deleteComboTarget.id);
+      setDeleteComboTarget(null);
+    } catch (err) {
+      console.error("Failed to delete combo:", err);
+      setDeleteComboTarget(null);
+    }
+  };
 
   const OFFER_COLS = [
-    { key: "title", label: "Title", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },
-    { key: "offerType", label: "Type", render: (r) => <span className="badge-amber capitalize">{r.offerType}</span> },
-    { key: "value", label: "Value", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{r.offerType === "percentage" ? `${r.value}%` : `₹${r.value}`}</span> },
-    { key: "code", label: "Code", render: (r) => r.code ? <span className="font-num text-xs bg-gray-100 px-2 py-0.5 rounded-lg">{r.code}</span> : <span className="text-gray-400">—</span> },
-    { key: "endDate", label: "Expires", render: (r) => <span className="font-body text-xs text-gray-400">{fmtDate(r.endDate)}</span> },
-    { key: "isActive", label: "Status", render: (r) => <span className={r.isActive ? "badge-green" : "badge-gray"}>{r.isActive ? "Active" : "Inactive"}</span> },
+    { key: "title", label: "Name", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },
+    {
+      key: "scope", label: "Scope", render: (r) => (
+        <span className="badge-gray">
+          {r.appliesTo === "product" ? `Product: ${r.productName || "—"}`
+            : r.appliesTo === "category" ? `Category: ${r.categoryName || "—"}`
+              : "Store-wide"}
+        </span>
+      )
+    },
+    {
+      key: "value", label: "Type & Value", render: (r) => (
+        <span className="font-num text-sm font-bold text-gray-900">
+          {r.offerType === "percentage" ? `${r.value}% off${r.maxDiscount ? `, max ₹${r.maxDiscount}` : ""}` : `₹${r.value} off`}
+        </span>
+      )
+    },
+    { key: "status", label: "Status", render: (r) => <StatusPill isActive={r.isActive} startDate={r.startDate} endDate={r.endDate} /> },
     {
       key: "action", label: "", width: "80px", render: (r) => (
         <div className="flex gap-1">
-          <IconButton onClick={() => setModal({ type: "offer", data: r })} variant="brand" aria-label="Edit offer"><Pencil size={15} /></IconButton>
-          <IconButton onClick={() => setDeleteTarget({ id: r.id, name: r.title })} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
+          <IconButton onClick={() => setOfferModal({ data: r })} variant="brand" aria-label="Edit offer"><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteOfferTarget({ id: r.id, name: r.title })} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
+        </div>
+      )
+    },
+  ];
+
+  const COMBO_COLS = [
+    {
+      key: "thumb", label: "", width: "56px", render: (r) => (
+        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+          {r.imageUrl ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100" />}
+        </div>
+      )
+    },
+    { key: "name", label: "Name", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.name}</span> },
+    { key: "comboPrice", label: "Combo Price", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{rupee(r.comboPrice)}</span> },
+    {
+      key: "summary", label: "Items", render: (r) => (
+        <span className="font-body text-xs text-gray-500">
+          {(r.items || []).map((i) => `${i.productName} ${i.weightLabel} × ${i.quantity}`).join(", ") || "—"}
+        </span>
+      )
+    },
+    { key: "savings", label: "Savings", render: (r) => <span className="font-body text-xs font-semibold text-green-600">{r.savings > 0 ? `Save ${rupee(r.savings)}` : "—"}</span> },
+    { key: "status", label: "Status", render: (r) => <StatusPill isActive={r.isActive} startDate={r.startDate} endDate={r.endDate} /> },
+    {
+      key: "action", label: "", width: "80px", render: (r) => (
+        <div className="flex gap-1">
+          <IconButton onClick={() => setComboModal({ data: r })} variant="brand" aria-label="Edit combo"><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteComboTarget({ id: r.id, name: r.name })} variant="danger" aria-label="Delete combo"><Trash2 size={15} /></IconButton>
         </div>
       )
     },
   ];
 
   return (
-    <AdminPage className="space-y-3">
-      <div className="flex justify-end w-full mb-4">
-        <AdminButton
-          onClick={() => setModal({ type: "offer", data: null })}
-          className="om-btn-fluid w-full sm:w-auto"
-        >
-          <Plus size={14} /> Add Offer
-        </AdminButton>
-      </div>
+    <div className="space-y-8">
+      <AdminPage
+        title="Price-Reduction Offers"
+        action={<AdminButton onClick={() => setOfferModal({ data: null })}><Plus size={14} /> Add Offer</AdminButton>}
+      >
+        <DataTable columns={OFFER_COLS} rows={offers} loading={offersLoading} emptyText="No offers yet." />
+      </AdminPage>
 
-      <DataTable columns={OFFER_COLS} rows={offers} loading={loading} emptyText="No offers yet." />
+      <AdminPage
+        title="Combos"
+        action={<AdminButton onClick={() => setComboModal({ data: null })}><Plus size={14} /> Add Combo</AdminButton>}
+      >
+        <DataTable columns={COMBO_COLS} rows={combos} loading={combosLoading} emptyText="No combos yet." />
+      </AdminPage>
 
-      {modal?.type === "offer" && (
+      {offerModal && (
         <OfferModal
-          offer={modal.data}
+          offer={offerModal.data}
           categories={categories}
           products={products}
-          onClose={() => setModal(null)}
-          onSaved={upsertOffer}
+          onClose={() => setOfferModal(null)}
+          onSaved={() => {}}
+        />
+      )}
+      {comboModal && (
+        <ComboModal
+          combo={comboModal.data}
+          onClose={() => setComboModal(null)}
+          onSaved={() => {}}
         />
       )}
 
       <ConfirmDialog
-        open={!!deleteTarget}
+        open={!!deleteOfferTarget}
         title="Delete Offer?"
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        loading={deleting}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
+        message={`Are you sure you want to delete "${deleteOfferTarget?.name}"? This action cannot be undone.`}
+        loading={deleteOfferMutation.isPending}
+        onCancel={() => setDeleteOfferTarget(null)}
+        onConfirm={handleConfirmDeleteOffer}
       />
-    </AdminPage>
+      <ConfirmDialog
+        open={!!deleteComboTarget}
+        title="Delete Combo?"
+        message={`Are you sure you want to delete "${deleteComboTarget?.name}"? This action cannot be undone.`}
+        loading={deleteComboMutation.isPending}
+        onCancel={() => setDeleteComboTarget(null)}
+        onConfirm={handleConfirmDeleteCombo}
+      />
+    </div>
   );
 }
