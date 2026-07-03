@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useOutletContext, useParams, useLocation, useNavigate } from "react-router-dom";
+import { useOutletContext, useParams, useNavigate } from "react-router-dom";
 import { X, Check, Trash2, Star, ArrowLeft } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -141,24 +141,54 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
 // ──════════════════════════════════════════════════════════════════════
 export default function ReviewManagement() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { productId } = useParams();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // ── View B state (reset each time a product is opened) ────────────
+  // ── View B state ──────────────────────────────────────────────────
   const [statusFilter, setStatusFilter] = useState("");
   const [sortOrder, setSortOrder] = useState("lowest");
-  const [selected, setSelected] = useState(null); // review modal
+  const [selected, setSelected] = useState(null);
 
   const queryClient = useQueryClient();
   const { registerSearch, unregisterSearch } = useOutletContext();
 
   const limit = useViewportPageSize(10, 18);
 
-  // ── View A: product list — shares TanStack Query cache with ProductManagement
+  // ── Fix 3: reset View B state whenever productId changes ──────────
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStatusFilter("");
+    setSortOrder("lowest");
+    setSelected(null);
+  }, [productId]);
+
+  // ── Fix 2: debounce search — page reset ONLY in View A ───────────
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      if (!productId) setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search, productId]);
+
+  // ── Fix 1: topbar search only while in View A ─────────────────────
+  useEffect(() => {
+    if (productId) {
+      unregisterSearch();
+      return;
+    }
+    registerSearch({
+      placeholder: "Search products…",
+      value: search,
+      onChange: setSearch,
+    });
+    return () => unregisterSearch();
+  }, [search, productId, registerSearch, unregisterSearch]);
+
+  // ── View A: product list ──────────────────────────────────────────
   const { data: productsData, isLoading: productsLoading } = useAdminProductList({
     page,
     limit: limit,
@@ -167,24 +197,31 @@ export default function ReviewManagement() {
   const products = useMemo(() => productsData?.products || [], [productsData]);
   const totalPages = Math.ceil((productsData?.pagination?.total || 0) / limit) || 1;
 
-  // ── View A: all reviews for per-product pending/total counts ──────
-  const { data: allReviews = [] } = useQuery({
-    queryKey: ["reviews", "admin", "all"],
+  // ── Fix 6: lightweight per-product review counts ──────────────────
+  const { data: reviewCounts = {} } = useQuery({
+    queryKey: ["reviews", "admin", "counts"],
     queryFn: async () => {
-      const res = await API.get("/products/admin-reviews");
-      return res.data.reviews || [];
+      const res = await API.get("/products/admin-review-counts");
+      return res.data.counts || {};
     },
   });
 
-  const reviewCounts = useMemo(() => {
-    const map = {};
-    allReviews.forEach((r) => {
-      if (!map[r.productId]) map[r.productId] = { total: 0, pending: 0 };
-      map[r.productId].total++;
-      if (!r.isApproved) map[r.productId].pending++;
-    });
-    return map;
-  }, [allReviews]);
+  // ── Fix 4: dedicated single-product fetch for View B header ───────
+  const { data: singleProduct, isLoading: singleProductLoading } = useQuery({
+    queryKey: ["product", "single", productId],
+    queryFn: async () => {
+      const res = await API.get(`/products/get-all?ids=${productId}&limit=1`);
+      return res.data.products?.[0] || null;
+    },
+    enabled: !!productId,
+  });
+
+  // null = still loading (show skeleton); string = resolved name
+  const productHeaderName = productId
+    ? singleProductLoading
+      ? null
+      : (singleProduct?.nameEn || "Deleted Product")
+    : null;
 
   // ── View B: selected product's reviews ────────────────────────────
   const { data: productReviews = [], isLoading: productReviewsLoading } = useQuery({
@@ -195,29 +232,6 @@ export default function ReviewManagement() {
     },
     enabled: !!productId,
   });
-
-  const selectedProduct = useMemo(() => {
-    if (!productId) return null;
-    // Find product name in productReviews
-    if (productReviews && productReviews.length > 0) {
-      return { id: productId, name: productReviews[0].productName };
-    }
-    // Or location.state (if navigated from list)
-    if (location.state?.productName) {
-      return { id: productId, name: location.state.productName };
-    }
-    // Or lookup in allReviews (since reviews might exist but be filtered)
-    const foundReview = allReviews.find(r => String(r.productId) === String(productId));
-    if (foundReview) {
-      return { id: productId, name: foundReview.productName };
-    }
-    // Or lookup in product list
-    const foundProd = products.find(p => String(p.id) === String(productId));
-    if (foundProd) {
-      return { id: productId, name: foundProd.nameEn };
-    }
-    return { id: productId, name: "Product Reviews" };
-  }, [productId, productReviews, allReviews, products, location.state]);
 
   const pendingCount = useMemo(
     () => productReviews.filter((r) => !r.isApproved).length,
@@ -234,33 +248,13 @@ export default function ReviewManagement() {
     return list;
   }, [productReviews, statusFilter, sortOrder]);
 
-  // ── Debounce search ───────────────────────────────────────────────
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  // ── Sync topbar search ────────────────────────────────────────────
-  useEffect(() => {
-    registerSearch({
-      placeholder: productId ? "Search reviews…" : "Search products…",
-      value: search,
-      onChange: setSearch,
-    });
-    return () => unregisterSearch();
-  }, [search, productId, registerSearch, unregisterSearch]);
-
-
   // ── Navigation helpers ────────────────────────────────────────────
   const handleSelectProduct = (product) => {
-    navigate(`/admin/reviews/${product.id}`, { state: { productName: product.nameEn } });
+    navigate(`/admin/reviews/${product.id}`);
   };
 
   const handleBackToProducts = () => {
-    queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
+    queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "counts"] });
     navigate("/admin/reviews");
   };
 
@@ -270,7 +264,7 @@ export default function ReviewManagement() {
       const targetApproved = !currentApproved;
       await API.put("/products/admin-approve-review", { reviewId, isApproved: targetApproved });
       queryClient.invalidateQueries({ queryKey: ["reviews", "admin", productId] });
-      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "counts"] });
       if (selected?.id === reviewId) {
         setSelected((prev) => ({ ...prev, isApproved: targetApproved }));
       }
@@ -285,7 +279,7 @@ export default function ReviewManagement() {
     try {
       await API.delete("/products/delete-review", { data: { productId: prodId, reviewId } });
       queryClient.invalidateQueries({ queryKey: ["reviews", "admin", productId] });
-      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "admin", "counts"] });
       setSelected(null);
     } catch (err) {
       console.error("Failed to delete review:", err);
@@ -419,7 +413,7 @@ export default function ReviewManagement() {
   // ══════════════════════════════════════════════════════════════════
   // VIEW B — single product's reviews
   // ══════════════════════════════════════════════════════════════════
-  if (productId && selectedProduct) {
+  if (productId) {
     const totalReviews = productReviews.length;
     const summaryText = `${totalReviews} review${totalReviews !== 1 ? "s" : ""}${pendingCount > 0 ? ` · ${pendingCount} pending` : ""}`;
     const noReviews = totalReviews === 0;
@@ -441,9 +435,13 @@ export default function ReviewManagement() {
               <ArrowLeft size={20} />
             </button>
             <div className="min-w-0">
-              <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 truncate">
-                {selectedProduct.name}
-              </h2>
+              {productHeaderName === null ? (
+                <div className="h-5 w-44 bg-gray-200 rounded-lg animate-pulse mb-1" />
+              ) : (
+                <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 truncate">
+                  {productHeaderName}
+                </h2>
+              )}
               <p className="font-body text-[11px] text-gray-500 mt-0.5">{summaryText}</p>
             </div>
           </div>
@@ -536,4 +534,3 @@ export default function ReviewManagement() {
     </AdminPage>
   );
 }
-
