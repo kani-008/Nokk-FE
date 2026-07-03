@@ -20,6 +20,7 @@ const mapComboToFrontend = (c) => {
     startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "",
     endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
     items: c.items || [],
+    inStock: c.inStock,
     individualTotal: c.individualTotal,
     savings: c.savings,
     createdAt: c.createdAt,
@@ -70,6 +71,18 @@ export function useAdminComboList() {
 export function useAdminComboDetail(id) {
   return useQuery({
     queryKey: ["combo", "admin", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await API.get(`/combos/get-by-id?id=${id}`);
+      return mapComboToFrontend(res.data.combo);
+    },
+    enabled: !!id,
+  });
+}
+
+export function useComboDetail(id) {
+  return useQuery({
+    queryKey: ["combo", "public", id],
     queryFn: async () => {
       if (!id) return null;
       const res = await API.get(`/combos/get-by-id?id=${id}`);

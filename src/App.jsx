@@ -54,6 +54,7 @@ import Profile from "./pages/profile";
 /* Catalog & Shopping Features */
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetails";
+import ComboDetails from "./pages/ComboDetails";
 import Wishlist from "./pages/Wishlist";
 import Offers from "./pages/Offers";
 import ReviewsOverview from "./pages/ReviewsOverview";
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="/products/combo/:comboId" element={<ComboDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />

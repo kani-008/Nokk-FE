@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   X, RotateCcw, Loader2, Check, Star, ArrowLeft, FileDown
@@ -11,7 +11,6 @@ import { TrackingView, TrackingStatusCard } from "./TrackingTimeline";
 
 export { ReviewPage as ReviewModal };
 
-const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -194,6 +193,51 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
   const canRequestReplacement = isDelivered && !replacementRequested;
   const hasTracking = order.trackingNumber || order.courierName || order.timeline?.length > 0;
 
+  const displayItems = useMemo(() => {
+    const list = [];
+    const combos = {};
+
+    (order.items || []).forEach((item) => {
+      if (item.comboId) {
+        if (!combos[item.comboId]) {
+          combos[item.comboId] = {
+            id: `combo-${item.comboId}`,
+            isCombo: true,
+            comboId: item.comboId,
+            productName: item.comboName,
+            comboName: item.comboName,
+            price: 0,
+            quantity: item.quantity,
+            imageUrl: item.imageUrl,
+            weightLabel: "Combo Pack",
+            items: [],
+            isReviewed: true
+          };
+        }
+        combos[item.comboId].items.push(item);
+        combos[item.comboId].price += item.price;
+        if (!item.isReviewed) {
+          combos[item.comboId].isReviewed = false;
+        }
+      } else {
+        list.push({
+          isCombo: false,
+          ...item
+        });
+      }
+    });
+
+    Object.values(combos).forEach((c) => {
+      list.push(c);
+    });
+
+    return list;
+  }, [order.items]);
+
+  const unreviewedDisplayItems = useMemo(() => {
+    return displayItems.filter((it) => !it.isReviewed);
+  }, [displayItems]);
+
   // Decide how to open the review:
   //   Desktop (lg) → inline popup, no route change
   //   Mobile       → navigate to the review route as before
@@ -282,17 +326,27 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
             </p>
           </div>
           <div className="space-y-4">
-            {(order.items || []).map((item, i) => (
+            {displayItems.map((item, i) => (
               <div key={i} className="flex gap-3 items-start border-b border-amber-100/30 pb-3 last:border-none last:pb-0">
-                <img
-                  src={item.imageUrl || item.image || PH}
-                  alt={item.productName}
-                  className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-                  onError={(e) => { e.target.src = PH; }}
-                />
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.productName}
+                    className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+                  />
+                ) : (
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-sandal-50 text-brand-850 flex items-center justify-center shrink-0 border border-sandal-100 text-xl font-bold">
+                    📦
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-bold text-brand-900 line-clamp-1">{item.productName}</p>
-                  <p className="font-body text-xs text-amber-500 mt-0.5">{item.weightLabel}</p>
+                  <p className="font-body text-xs text-amber-500 mt-0.5">{item.weightLabel || item.weight}</p>
+                  {item.isCombo && (
+                    <p className="font-body text-[11px] text-gray-500 mt-1 italic leading-tight">
+                      Includes: {item.items.map(it => `${it.quantity}x ${it.productName} (${it.weight})`).join(", ")}
+                    </p>
+                  )}
                   <p className="font-body text-xs text-amber-700 font-medium mt-1.5">
                     Qty: <span className="font-semibold text-brand-900">{item.quantity}</span>
                     {" · "}
@@ -319,13 +373,13 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
         )}
 
         {/* ── Review prompts ── */}
-        {isDelivered && (order.items || []).filter((item) => !item.isReviewed).length > 0 && (
+        {isDelivered && unreviewedDisplayItems.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-display text-base lg:text-lg font-bold text-brand-900">Rate your experience</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {(order.items || []).filter((item) => !item.isReviewed).map((item, i) => (
+              {unreviewedDisplayItems.map((item, i) => (
                 <ReviewCard
-                  key={item.productId || i}
+                  key={item.id || i}
                   item={item}
                   onWriteReviewClick={(rating) => handleOpenReview(item, rating)}
                 />

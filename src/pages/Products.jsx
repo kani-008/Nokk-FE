@@ -6,8 +6,7 @@ import {
   Star,
 } from "lucide-react";
 import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
-
-
+import { useActiveCombos } from "../hookqueries/useCombos";
 import ProductCard from "../components/Product/ProductCard";
 
 
@@ -96,7 +95,7 @@ function RatingRow({ value, checked, onChange }) {
           />
         ))}
       </span>
-      <span className="filter-row-label">&amp; above</span>
+      <span className="filter-row-label">& above</span>
     </label>
   );
 }
@@ -121,13 +120,14 @@ function Sidebar({
   isBest,
   isNew,
 }) {
+  const isCombosView = category === "combos" || category?.toLowerCase() === "combos";
   return (
     <aside className="w-full md:w-64 shrink-0">
       <div className="card p-4 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
 
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-body text-sm font-bold text-brand-900">Filters</h3>
-          {hasFilters && (
+          {hasFilters && !isCombosView && (
             <button
               onClick={removeAllFilters}
               className="font-body text-[11px] text-red-500 hover:text-red-700 transition-colors"
@@ -140,7 +140,10 @@ function Sidebar({
         {/* Sort By — replaces the removed top-bar sort dropdown */}
         <FilterSection title="Sort By">
           <div className="space-y-1.5">
-            {SORT_OPTIONS.map((o) => (
+            {(isCombosView
+              ? SORT_OPTIONS.filter((o) => ["popular", "newest"].includes(o.value))
+              : SORT_OPTIONS
+            ).map((o) => (
               <label key={o.value} className="filter-row group cursor-pointer">
                 <input
                   type="radio"
@@ -155,126 +158,130 @@ function Sidebar({
           </div>
         </FilterSection>
 
-        {/* Categories */}
-        <FilterSection title="Category">
-          <ul className="space-y-1">
-            <li>
-              <button
-                onClick={() => setParam("category", "")}
-                className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${!category ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                  }`}
-              >
-                All Products
-              </button>
-            </li>
-            {categories.map((cat) => (
-              <li key={cat.id}>
-                <button
-                  onClick={() => setParam("category", cat.slug)}
-                  className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${category === cat.slug ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                    }`}
-                >
-                  {cat.nameEn}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </FilterSection>
+        {!isCombosView && (
+          <>
+            {/* Categories */}
+            <FilterSection title="Category">
+              <ul className="space-y-1">
+                <li>
+                  <button
+                    onClick={() => setParam("category", "")}
+                    className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${!category ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
+                      }`}
+                  >
+                    All Products
+                  </button>
+                </li>
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => setParam("category", cat.slug)}
+                      className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${category === cat.slug ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
+                        }`}
+                    >
+                      {cat.nameEn}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </FilterSection>
 
-        {/* Price range */}
-        <FilterSection title="Price Range">
-          <div className="space-y-1.5">
-            {PRICE_RANGES.map((r) => {
-              const isSelected = minPrice === r.min && maxPrice === r.max;
-              return (
-                <label key={r.label} className="filter-row group cursor-pointer">
+            {/* Price range */}
+            <FilterSection title="Price Range">
+              <div className="space-y-1.5">
+                {PRICE_RANGES.map((r) => {
+                  const isSelected = minPrice === r.min && maxPrice === r.max;
+                  return (
+                    <label key={r.label} className="filter-row group cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => selectPriceRange(r.min, r.max)}
+                        className="filter-checkbox"
+                      />
+                      <span className="filter-row-label">{r.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </FilterSection>
+
+            {/* Customer rating */}
+            <FilterSection title="Customer Rating">
+              <div className="space-y-1.5">
+                {[4, 3, 2, 1].map((r) => (
+                  <RatingRow
+                    key={r}
+                    value={r}
+                    checked={rating === String(r)}
+                    onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
+                  />
+                ))}
+              </div>
+            </FilterSection>
+
+            {/* Pack size / quantity */}
+            {allWeightLabels.length > 0 && (
+              <FilterSection title="Pack Size">
+                <div className="space-y-1.5">
+                  {allWeightLabels.map((w) => (
+                    <label key={w} className="filter-row group">
+                      <input
+                        type="checkbox"
+                        checked={weights.includes(w)}
+                        onChange={() => toggleListParam("weight", weights, w)}
+                        className="filter-checkbox"
+                      />
+                      <span className="filter-row-label">{w}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+            )}
+
+            {/* Availability & offers */}
+            <FilterSection title="Availability & Offers" defaultOpen={true}>
+              <div className="space-y-1.5">
+                <label className="filter-row group">
                   <input
                     type="checkbox"
-                    checked={isSelected}
-                    onChange={() => selectPriceRange(r.min, r.max)}
+                    checked={inStock}
+                    onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
                     className="filter-checkbox"
                   />
-                  <span className="filter-row-label">{r.label}</span>
+                  <span className="filter-row-label">In Stock Only</span>
                 </label>
-              );
-            })}
-          </div>
-        </FilterSection>
-
-        {/* Customer rating */}
-        <FilterSection title="Customer Rating">
-          <div className="space-y-1.5">
-            {[4, 3, 2, 1].map((r) => (
-              <RatingRow
-                key={r}
-                value={r}
-                checked={rating === String(r)}
-                onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
-              />
-            ))}
-          </div>
-        </FilterSection>
-
-        {/* Pack size / quantity */}
-        {allWeightLabels.length > 0 && (
-          <FilterSection title="Pack Size">
-            <div className="space-y-1.5">
-              {allWeightLabels.map((w) => (
-                <label key={w} className="filter-row group">
+                <label className="filter-row group">
                   <input
                     type="checkbox"
-                    checked={weights.includes(w)}
-                    onChange={() => toggleListParam("weight", weights, w)}
+                    checked={hasOffer}
+                    onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
                     className="filter-checkbox"
                   />
-                  <span className="filter-row-label">{w}</span>
+                  <span className="filter-row-label">On Offer</span>
                 </label>
-              ))}
-            </div>
-          </FilterSection>
+                <label className="filter-row group">
+                  <input
+                    type="checkbox"
+                    checked={isBest}
+                    onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
+                    className="filter-checkbox"
+                  />
+                  <span className="filter-row-label">Best Sellers</span>
+                </label>
+                <label className="filter-row group">
+                  <input
+                    type="checkbox"
+                    checked={isNew}
+                    onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
+                    className="filter-checkbox"
+                  />
+                  <span className="filter-row-label">New Arrivals</span>
+                </label>
+              </div>
+            </FilterSection>
+          </>
         )}
-
-        {/* Availability & offers */}
-        <FilterSection title="Availability & Offers" defaultOpen={true}>
-          <div className="space-y-1.5">
-            <label className="filter-row group">
-              <input
-                type="checkbox"
-                checked={inStock}
-                onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
-                className="filter-checkbox"
-              />
-              <span className="filter-row-label">In Stock Only</span>
-            </label>
-            <label className="filter-row group">
-              <input
-                type="checkbox"
-                checked={hasOffer}
-                onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
-                className="filter-checkbox"
-              />
-              <span className="filter-row-label">On Offer</span>
-            </label>
-            <label className="filter-row group">
-              <input
-                type="checkbox"
-                checked={isBest}
-                onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
-                className="filter-checkbox"
-              />
-              <span className="filter-row-label">Best Sellers</span>
-            </label>
-            <label className="filter-row group">
-              <input
-                type="checkbox"
-                checked={isNew}
-                onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
-                className="filter-checkbox"
-              />
-              <span className="filter-row-label">New Arrivals</span>
-            </label>
-          </div>
-        </FilterSection>
 
       </div>
     </aside>
@@ -290,6 +297,7 @@ export default function Products() {
   // read from URL
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
+
   const sort = searchParams.get("sort") || "popular";
   const inStock = searchParams.get("inStock") === "true";
   const isBest = searchParams.get("isBestseller") === "true";
@@ -332,10 +340,72 @@ export default function Products() {
   const { data: weightData = [] } = useWeightLabels();
   const allWeightLabels = weightData;
 
+  const { data: combosData = [], isLoading: combosLoading } = useActiveCombos();
+
   const { data: productsData, isLoading: productsLoading } = useProductList(queryParams);
-  const products = productsData?.products || [];
+  const products = useMemo(() => productsData?.products || [], [productsData]);
   const pagination = productsData?.pagination || null;
-  const loading = productsLoading;
+  const loading = productsLoading || (combosLoading && page === 1);
+
+  const filteredCombos = useMemo(() => {
+    let list = [...combosData];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(q) ||
+          c.description?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [combosData, search]);
+
+  const combinedItems = useMemo(() => {
+    const isCombosCategory = category === "combos" || category?.toLowerCase() === "combos";
+
+    const productItems = products.map(p => ({
+      type: "product",
+      id: p.id,
+      data: p,
+      price: p.variants?.[0]?.price ?? p.minPrice ?? 0,
+      createdAt: p.createdAt
+    }));
+
+    if (isCombosCategory) {
+      return filteredCombos.map(c => ({
+        type: "combo",
+        id: c.id,
+        data: c,
+        price: c.comboPrice,
+        createdAt: c.createdAt
+      }));
+    }
+
+    if (category) {
+      return productItems;
+    }
+
+    // Merge both (combos on Page 1 only)
+    const comboItems = page === 1 ? filteredCombos.map(c => ({
+      type: "combo",
+      id: c.id,
+      data: c,
+      price: c.comboPrice,
+      createdAt: c.createdAt
+    })) : [];
+
+    const merged = [...comboItems, ...productItems];
+
+    if (sort === "price-low-high") {
+      merged.sort((a, b) => a.price - b.price);
+    } else if (sort === "price-high-low") {
+      merged.sort((a, b) => b.price - a.price);
+    } else if (sort === "newest") {
+      merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+    // default (popular): combos at the top, then products
+    return merged;
+  }, [products, filteredCombos, category, page, sort]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -375,7 +445,7 @@ export default function Products() {
     setParam(key, next.join(","));
   };
 
-  const applyPriceRange = () => {};
+
 
   const removeAllFilters = () => {
     setSearchParams({});
@@ -432,22 +502,6 @@ export default function Products() {
         <meta property="og:url" content="https://nammaoorkaruvattukadai.com/products" />
         <meta property="og:type" content="website" />
       </Helmet>
-
-      {/* ── Page header ──────────────────────────────────────────── */}
-      {/* <div className="mb-5">
-        <h1 className="font-display text-2xl font-bold text-brand-900">
-          {category
-            ? (categories.find((c) => c.slug === category)?.nameEn || "Products")
-            : search
-            ? `Results for "${search}"`
-            : "All Products"}
-        </h1>
-        {pagination && (
-          <p className="font-body text-sm text-amber-500 mt-0.5">
-            {pagination.total} product{pagination.total !== 1 ? "s" : ""} found
-          </p>
-        )}
-      </div> */}
 
       {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
       <div className="flex items-center justify-end mb-4 md:hidden px-4">
@@ -512,7 +566,7 @@ export default function Products() {
               {Array.from({ length: 12 }).map((_, i) => <ProductSkeleton key={i} />)}
             </div>
 
-          ) : products.length === 0 ? (
+          ) : combinedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <span className="text-5xl mb-4">🐟</span>
               <h3 className="font-display text-lg font-bold text-brand-900 mb-2">No products found</h3>
@@ -525,7 +579,13 @@ export default function Products() {
           ) : (
             <>
               <div className="product-grid-compact">
-                {products.map((p) => <ProductCard key={p.id} product={p} selectedWeights={weights} />)}
+                {combinedItems.map((item) =>
+                  item.type === "combo" ? (
+                    <ProductCard key={`combo-${item.id}`} itemType="combo" combo={item.data} />
+                  ) : (
+                    <ProductCard key={`prod-${item.id}`} product={item.data} selectedWeights={weights} />
+                  )
+                )}
               </div>
 
               {/* Pagination */}

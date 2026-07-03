@@ -79,8 +79,10 @@ function WebcamModal({ onUsePhoto, onClose }) {
   }, []);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setCaptured(null);
     setCamError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
     startStream(facingMode);
     return () => {
       if (streamRef.current) {
@@ -227,7 +229,6 @@ import {
   useUploadReviewImage,
 } from "../../hookqueries/useProducts";
 import { useToast } from "../../components/useToast";
-const PH = "";
 const MAX_REVIEW_IMAGES = 3;
 const MAX_FILE_BYTES = 3 * 1024 * 1024; // 3 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -277,6 +278,10 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
   const [isEditing, setIsEditing] = useState(false);
   const [reviewId, setReviewId] = useState(null);
 
+  const [comboIndex, setComboIndex] = useState(0);
+  const [comboReviews, setComboReviews] = useState([]);
+  const currentProduct = item.isCombo && item.items ? item.items[comboIndex] : item;
+
   // ── Image state ──────────────────────────────────────────────────────
   const [existingImages, setExistingImages] = useState([]);
   const [stagedImages, setStagedImages] = useState([]);
@@ -293,7 +298,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
   const addReviewMutation = useAddReview();
   const updateReviewMutation = useUpdateReview();
   const uploadReviewImageMutation = useUploadReviewImage();
-  const { data: myReview, refetch: fetchMyReview } = useMyReview(item?.productId, item?.orderId);
+  const { data: myReview } = useMyReview(currentProduct?.productId, item?.orderId);
 
   const submitting =
     addReviewMutation.isPending ||
@@ -303,6 +308,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
   // ── Pre-populate when editing an existing review ─────────────────────
   useEffect(() => {
     if (myReview) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setRating(myReview.rating);
       setComment(myReview.comment || "");
       setReviewId(myReview.id);
@@ -312,6 +318,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
           url: typeof img === "string" ? img : img.url,
         })));
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [myReview]);
 
@@ -371,76 +378,86 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
 
   // ── Submit ───────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    const slug = item.slug || item.productSlug;
-    if (!slug) {
-      setToastError("Product slug is missing. Cannot submit review.");
+    if (item.isCombo && item.items && comboIndex < item.items.length - 1) {
+      setComboReviews((prev) => [
+        ...prev,
+        {
+          product: currentProduct,
+          rating,
+          comment,
+          stagedImages: [...stagedImages],
+          existingImages: [...existingImages]
+        }
+      ]);
+      setRating(0);
+      setComment("");
+      setStagedImages([]);
+      setExistingImages([]);
+      setComboIndex((prev) => prev + 1);
+      setStep(1);
       return;
     }
 
+    const finalReview = {
+      product: currentProduct,
+      rating,
+      comment,
+      stagedImages,
+      existingImages
+    };
+    const reviewsToSubmit = item.isCombo ? [...comboReviews, finalReview] : [finalReview];
+
     try {
-      const newUrls = [];
-      for (const staged of stagedImages) {
-        const formData = new FormData();
-        formData.append("file", staged.file);
-        formData.append("slug", slug);
-        const result = await uploadReviewImageMutation.mutateAsync(formData);
-        newUrls.push(result.url);
+      for (const rev of reviewsToSubmit) {
+        const slug = rev.product.slug || rev.product.productSlug;
+        if (!slug) {
+          throw new Error(`Product slug is missing for ${rev.product.productName || rev.product.nameEn || "item"}`);
+        }
+
+        const newUrls = [];
+        for (const staged of rev.stagedImages) {
+          const formData = new FormData();
+          formData.append("file", staged.file);
+          formData.append("slug", slug);
+          const result = await uploadReviewImageMutation.mutateAsync(formData);
+          newUrls.push(result.url);
+        }
+
+        const imageUrls = [
+          ...rev.existingImages.map((img) => img.url),
+          ...newUrls,
+        ];
+
+        if (isEditing && reviewId && !item.isCombo) {
+          await updateReviewMutation.mutateAsync({
+            reviewId,
+            rating: rev.rating,
+            title: "",
+            comment: rev.comment.trim(),
+            productId: rev.product.productId,
+            slug,
+            imageUrls,
+          });
+        } else {
+          await addReviewMutation.mutateAsync({
+            productId: rev.product.productId,
+            rating: rev.rating,
+            title: "",
+            comment: rev.comment.trim(),
+            orderId: item.orderId,
+            slug,
+            imageUrls,
+          });
+        }
       }
 
-      const imageUrls = [
-        ...existingImages.map((img) => img.url),
-        ...newUrls,
-      ];
-
-      if (isEditing && reviewId) {
-        await updateReviewMutation.mutateAsync({
-          reviewId,
-          rating,
-          title: "",
-          comment: comment.trim(),
-          productId: item.productId,
-          slug,
-          imageUrls,
-        });
-        setToastSuccess("Review updated successfully!");
-        setDone(true);
-      } else {
-        await addReviewMutation.mutateAsync({
-          productId: item.productId,
-          rating,
-          title: "",
-          comment: comment.trim(),
-          orderId: item.orderId,
-          slug,
-          imageUrls,
-        });
-        setToastSuccess("Review submitted successfully!");
-        setDone(true);
-      }
+      setToastSuccess(item.isCombo ? "All combo product reviews submitted successfully!" : "Review submitted successfully!");
+      setDone(true);
     } catch (err) {
       if (err.response?.status === 409) {
-        try {
-          const { data } = await fetchMyReview();
-          if (data) {
-            setRating(data.rating);
-            setComment(data.comment || "");
-            setReviewId(data.id);
-            setIsEditing(true);
-            if (Array.isArray(data.images) && data.images.length > 0) {
-              setExistingImages(data.images.map((img) => ({
-                url: typeof img === "string" ? img : img.url,
-              })));
-            }
-            setToastError("You already reviewed this product. Prefilled your existing review.");
-          } else {
-            setToastError("You have already reviewed this product.");
-          }
-        } catch (fetchErr) {
-          console.error(fetchErr);
-          setToastError("Failed to fetch your existing review.");
-        }
+        setToastError("You have already reviewed one of the products in this order.");
       } else {
-        setToastError(err.response?.data?.message || err.message || "Failed to submit review.");
+        setToastError(err.response?.data?.message || err.message || "Failed to submit reviews.");
       }
     }
   };
@@ -530,21 +547,26 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
             <X size={20} />
           </button>
           <h2 className="font-display text-sm sm:text-base font-bold flex-1 text-center pr-6">
-            {isEditing ? "Edit Product Review" : "Review Product"}
+            {item.isCombo ? `Review Item ${comboIndex + 1} of ${item.items.length}` : (isEditing ? "Edit Product Review" : "Review Product")}
           </h2>
         </div>
 
         {/* ── Step 1: Rate ── */}
         {step === 1 && (
           <div className="flex-1 overflow-y-auto px-5 py-8 flex flex-col items-center justify-center space-y-6">
-            <img
-              src={item.imageUrl || item.image || PH}
-              alt={item.productName}
-              className="w-36 h-36 rounded-2xl object-cover border border-amber-100 bg-amber-50 shadow-sm shrink-0"
-              onError={(e) => { e.target.src = PH; }}
-            />
+            {currentProduct.imageUrl || currentProduct.image ? (
+              <img
+                src={currentProduct.imageUrl || currentProduct.image}
+                alt={currentProduct.productName}
+                className="w-36 h-36 rounded-2xl object-cover border border-amber-100 bg-amber-50 shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="w-36 h-36 rounded-2xl bg-sandal-50 text-brand-850 flex items-center justify-center shadow-sm shrink-0 border border-sandal-100 text-3xl font-bold">
+                📦
+              </div>
+            )}
             <h3 className="font-body text-xs sm:text-sm font-bold text-gray-900 text-center max-w-xs leading-snug line-clamp-2">
-              {item.productName}
+              {currentProduct.productName}
             </h3>
 
             <div className="text-center space-y-1">
@@ -584,15 +606,20 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
         {step === 2 && (
           <div className="flex-1 overflow-y-auto px-3.5 sm:px-5 py-4.5 flex flex-col space-y-4">
             <div className="flex items-center gap-3 border-b border-amber-100/40 pb-3.5 shrink-0">
-              <img
-                src={item.imageUrl || item.image || PH}
-                alt={item.productName}
-                className="w-12 h-12 rounded-xl object-cover border border-amber-100 bg-amber-50"
-                onError={(e) => { e.target.src = PH; }}
-              />
+              {currentProduct.imageUrl || currentProduct.image ? (
+                <img
+                  src={currentProduct.imageUrl || currentProduct.image}
+                  alt={currentProduct.productName}
+                  className="w-12 h-12 rounded-xl object-cover border border-amber-100 bg-amber-50"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-sandal-50 text-brand-850 flex items-center justify-center shrink-0 border border-sandal-100 text-lg font-bold">
+                  📦
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="font-body text-xs font-bold text-gray-900 line-clamp-1 leading-snug">
-                  {item.productName}
+                  {currentProduct.productName}
                 </p>
                 <div className="flex gap-1 mt-1">
                   {[1, 2, 3, 4, 5].map((s) => (
@@ -696,7 +723,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
               disabled={submitting}
               className="text-sm font-bold text-sandal-700 hover:text-sandal-900 disabled:opacity-40 transition-colors cursor-pointer uppercase"
             >
-              {submitting ? "Submitting…" : (comment.trim() ? "Submit" : "Skip & Finish")}
+              {submitting ? "Submitting…" : (item.isCombo && comboIndex < item.items.length - 1 ? "Next Product" : (comment.trim() ? "Submit" : "Skip & Finish"))}
             </button>
           </div>
         )}
