@@ -57,7 +57,7 @@ function AccordionSection({ title, children }) {
   return (
     <div className="border-b border-gray-800">
       <button
-        className="w-full flex items-center justify-between py-4 font-body text-sm font-bold text-white"
+        className="w-full flex items-center justify-between py-3 font-body text-sm font-bold text-white"
         onClick={() => setOpen((s) => !s)}
       >
         {title}
@@ -131,10 +131,10 @@ export default function Footer() {
       </div>
 
       {/* ── Main footer content ─────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
 
         {/* Desktop grid (hidden on mobile) */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-10">
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-2">
 
           {/* Brand col — 2 wide on lg */}
           <div className="lg:col-span-2">
@@ -185,6 +185,17 @@ export default function Footer() {
                 <li key={l.to}>
                   <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
                     {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {/* Categories list */}
+            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">Categories</h4>
+            <ul className="space-y-2">
+              {CATEGORIES.map((c) => (
+                <li key={c.to}>
+                  <Link to={c.to} className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors">
+                    › {c.label}
                   </Link>
                 </li>
               ))}
@@ -243,17 +254,7 @@ export default function Footer() {
               </p>
             )}
 
-            {/* Categories list */}
-            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">Categories</h4>
-            <ul className="space-y-2">
-              {CATEGORIES.map((c) => (
-                <li key={c.to}>
-                  <Link to={c.to} className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors">
-                    › {c.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            
           </div>
 
         </div>
@@ -312,7 +313,7 @@ export default function Footer() {
           </AccordionSection>
 
           {/* Mobile newsletter */}
-          <div className="pt-6">
+          <div className="pt-2 -mb-4">
             <p className="font-body text-sm font-bold text-white mb-2">Stay Updated</p>
             <form onSubmit={handleSub} className="flex gap-2">
               <input
@@ -336,7 +337,7 @@ export default function Footer() {
         </div>
 
         {/* ── Copyright ──────────────────────────────────────── */}
-        <div className="border-t border-gray-800 pt-6 text-center">
+        <div className="border-t border-gray-800 pt-1 text-center">
           <p className="font-body text-xs text-gray-500 leading-relaxed">
             © {new Date().getFullYear()} NammaOorKaruvattuKadai. All rights reserved.<br className="sm:hidden" />
             <span className="sm:ml-1">Made with ❤️ in Tamil Nadu</span>

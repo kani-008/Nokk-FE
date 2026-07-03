@@ -13,7 +13,6 @@ import {
   LogOut,
   Settings,
   Tag,
-  Grid3x3,
   TrendingUp,
 } from "lucide-react";
 import Logo from "./Logo";
@@ -38,7 +37,6 @@ export default function NavBar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const navbarSearchDebounceRef = useRef(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false); // collapsible category list inside the drawer (currently unused — category section is commented out in MobileDrawer)
   // On /products, seed query from the current search URL param so the input stays in sync
   const [query, setQuery] = useState(() =>
@@ -48,7 +46,6 @@ export default function NavBar() {
 
   const profileRef = useRef(null);
   const searchRef = useRef(null);
-  const catDropdownRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -78,8 +75,6 @@ export default function NavBar() {
         setProfileOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target))
         setSearchOpen(false);
-      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target))
-        setCatDropdownOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -90,7 +85,6 @@ export default function NavBar() {
     const timer = setTimeout(() => {
       setMobileOpen(false);
       setProfileOpen(false);
-      setCatDropdownOpen(false);
       setMobileCatOpen(false);
     }, 0);
     return () => clearTimeout(timer);
@@ -236,7 +230,7 @@ export default function NavBar() {
             {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex w-full max-w-2xl ml-4 mr-2"
+              className="hidden md:flex w-full max-w-md md:ml-auto md:mr-0"
             >
               <div className="relative w-full">
                 <input
@@ -255,66 +249,9 @@ export default function NavBar() {
               </div>
             </form>
 
-            {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center gap-1">
-              {/* Categories Dropdown */}
-              <div
-                ref={catDropdownRef}
-                className="relative"
-                onMouseEnter={() => setCatDropdownOpen(true)}
-                onMouseLeave={() => setCatDropdownOpen(false)}
-              >
-                <button
-                  onClick={() => setCatDropdownOpen((prev) => !prev)}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
-                    catDropdownOpen
-                      ? "bg-white/10 text-white"
-                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <Grid3x3 size={14} />
-                  Categories
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-200 ${catDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {catDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-sandal-100 rounded-2xl shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <Link
-                      to="/products"
-                      onClick={() => setCatDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
-                    >
-                      <Grid3x3 size={14} className="text-sandal-500" />
-                      All Products
-                    </Link>
-                    <div className="border-t border-sandal-100/50 my-1.5" />
-                    {categories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        to={`/products?category=${cat.slug}`}
-                        onClick={() => setCatDropdownOpen(false)}
-                        className="flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-700 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
-                      >
-                        <span>{cat.nameEn}</span>
-                        {cat.nameTa && (
-                          <span className="font-tamil text-[10px] text-sandal-400 font-normal">
-                            {cat.nameTa}
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-            </nav>
-
             {/* Right icon group */}
             {/* On /products, icons always visible even though search is open (it's permanently open, not a toggle) */}
-            <div className={`flex items-center gap-1.5 ml-auto ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
+            <div className={`flex items-center gap-1.5 ml-auto md:ml-6 ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
               {/* Mobile search toggle — hidden on /products since search is always-open there */}
               {!isProductsPage && (
                 <button

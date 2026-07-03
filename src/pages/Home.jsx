@@ -14,6 +14,7 @@ import {
   useHomeBestsellers,
   useHomeNewArrivals,
 } from "../hookqueries/useHome";
+import { usePublicSettings } from "../hookqueries/useSettings";
 
 // ══════════════════════════════════════════════════════════════════════
 // HOME PAGE — fetch + compose
@@ -26,6 +27,8 @@ export default function Home() {
   const { data: categories = [], isLoading: categoriesLoading } = useHomeCategories();
   const { data: bestsellers = [], isLoading: bestsellersLoading } = useHomeBestsellers();
   const { data: newest = [], isLoading: newestLoading } = useHomeNewArrivals();
+
+  const { data: settings = {} } = usePublicSettings();
 
   const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 
@@ -80,7 +83,7 @@ export default function Home() {
       <WhyUs />
 
       {/* Testimonials */}
-      <Testimonials />
+      {(settings.testimonialsEnabled ?? true) && <Testimonials />}
 
       {/* Newsletter */}
       <NewsletterCTA />

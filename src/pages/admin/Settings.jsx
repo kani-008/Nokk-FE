@@ -38,6 +38,7 @@ const DEFAULTS = {
   registrationsEnabled: true,
   announcementEnabled: false,
   announcementText: "",
+  testimonialsEnabled: true,
 };
 
 const settingsApi = {
@@ -545,6 +546,12 @@ export default function Settings() {
               sub="Shows a top strip in the navbar (desktop only). When off, the strip is removed."
               checked={form.announcementEnabled}
               onChange={() => set("announcementEnabled", !form.announcementEnabled)}
+            />
+            <ToggleRow
+              label="Display Testimonials"
+              sub="Show the 'What Our Customers Say' section on the homepage."
+              checked={form.testimonialsEnabled}
+              onChange={() => set("testimonialsEnabled", !form.testimonialsEnabled)}
             />
           </div>
           {form.maintenanceMode && (
