@@ -11,7 +11,7 @@ import { usePublicSettings } from "./hookqueries/useSettings";
 /* Shown to customers when admin enables Maintenance Mode */
 function MaintenancePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-sandal-50 px-6 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ backgroundColor: "var(--bg-page)" }}>
       <span className="text-5xl mb-6">🐟</span>
       <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-3">
         We'll be back soon!
@@ -30,7 +30,7 @@ function CustomerRoutes() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-sandal-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-page)" }}>
         <Loader2 className="animate-spin text-amber-500" size={28} />
       </div>
     );
@@ -120,7 +120,7 @@ export default function App() {
             element={
               <Suspense
                 fallback={
-                  <div className="min-h-screen flex flex-col items-center justify-center bg-sandal-50">
+                  <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: "var(--bg-page)" }}>
                     <Loader2 className="animate-spin text-amber-500 mb-2" size={32} />
                     <p className="font-body text-sm text-amber-600 font-semibold">Loading Admin Panel...</p>
                   </div>

@@ -94,7 +94,7 @@ export default function CustomerLayout() {
   }, [isAuthenticated]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-sandal-50">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg-page)" }}>
       <ScrollToTop />
       {/* 
         The top navigation bar is commented/hidden on mobile for checkout pages (address, summary, payment)

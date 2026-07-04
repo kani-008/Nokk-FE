@@ -138,6 +138,16 @@ body {
   }
 }
 
+@layer base {
+  :root {
+    --bg-page: #f5eedf; /* matches sandal-50 default */
+  }
+
+  html, body {
+    background-color: var(--bg-page);
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────────
    Global reusable component classes — strictly composed from Tailwind
    utilities via @apply. Anything used in 3+ places lives here so pages
@@ -151,11 +161,11 @@ body {
 
   /* Buttons  */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full bg-gray-800 text-sandal-100 border border-gray-800 cursor-pointer transition-all duration-200 hover:bg-gray-900 hover:text-sandal-50 hover:border-gray-900 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full bg-brand-800 text-sandal-100 border border-brand-800 cursor-pointer transition-all duration-200 hover:bg-brand-900 hover:text-sandal-50 hover:border-brand-900 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full bg-transparent text-gray-800 border-[1.5px] border-gray-500 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full bg-transparent text-brand-800 border-[1.5px] border-brand-500 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .checkout-page .btn-primary,
