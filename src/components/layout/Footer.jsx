@@ -25,10 +25,9 @@ const ACCOUNT_LINKS = [
 ];
 
 const POLICY_LINKS = [
-  { label: "Return Policy",    href: "#" },
   { label: "Shipping Policy",  href: "#" },
-  { label: "Privacy Policy",   href: "#" },
-  { label: "Terms of Use",     href: "#" },
+  { label: "Privacy Policy",   to: "/privacy-policy" },
+  { label: "Terms of Use",     to: "/terms-of-use" },
   { label: "FAQ",              href: "#" },
 ];
 
@@ -217,11 +216,17 @@ export default function Footer() {
 
             <h4 className="font-body text-sm font-bold text-white mb-4 mt-6 tracking-wider uppercase">Policies</h4>
             <ul className="space-y-3">
-              {POLICY_LINKS.slice(0, 3).map((l) => (
+              {POLICY_LINKS.map((l) => (
                 <li key={l.label}>
-                  <a href={l.href} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
-                    {l.label}
-                  </a>
+                  {l.to ? (
+                    <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a href={l.href} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                      {l.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -293,7 +298,17 @@ export default function Footer() {
           <AccordionSection title="Policies">
             <ul className="space-y-3 pl-2">
               {POLICY_LINKS.map((l) => (
-                <li key={l.label}><a href={l.href} className="font-body text-sm text-gray-400 hover:text-white">{l.label}</a></li>
+                <li key={l.label}>
+                  {l.to ? (
+                    <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a href={l.href} className="font-body text-sm text-gray-400 hover:text-white">
+                      {l.label}
+                    </a>
+                  )}
+                </li>
               ))}
             </ul>
           </AccordionSection>
@@ -339,7 +354,7 @@ export default function Footer() {
         {/* ── Copyright ──────────────────────────────────────── */}
         <div className="border-t border-gray-800 pt-1 text-center">
           <p className="font-body text-xs text-gray-500 leading-relaxed">
-            © {new Date().getFullYear()} NammaOorKaruvattuKadai. All rights reserved.<br className="sm:hidden" />
+            © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights reserved.<br className="sm:hidden" />
             <span className="sm:ml-1">Made with ❤️ in Tamil Nadu</span>
           </p>
         </div>
