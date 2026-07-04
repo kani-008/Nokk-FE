@@ -80,12 +80,23 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
       let res;
       if (isEdit) {
         res = await updateOfferMutation.mutateAsync({ id: offer.id, form });
+        console.log("[Offer Page] Update successful. Status: 200", {
+          showAsBanner: form.showAsBanner,
+          showInAnnouncement: form.showInAnnouncement,
+          offer: res.offer
+        });
       } else {
         res = await createOfferMutation.mutateAsync(form);
+        console.log("[Offer Page] Creation successful. Status: 201", {
+          showAsBanner: form.showAsBanner,
+          showInAnnouncement: form.showInAnnouncement,
+          offer: res.offer
+        });
       }
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
+      console.error("[Offer Page] Action failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
       setError(e.response?.data?.message || e.message || "Failed");
     }
   };

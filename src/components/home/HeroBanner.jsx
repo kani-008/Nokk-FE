@@ -27,10 +27,8 @@ import API from "../../ApiCall/Api.jsx";
 */
 export default function HeroBanner({ banners }) {
   const [slides, setSlides] = useState(() => {
-    const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
-    if (!activeBanner?.id) return [];
     try {
-      const cached = localStorage.getItem(`nokk_banner_texts_${activeBanner.id}`);
+      const cached = localStorage.getItem("nokk_all_banner_slides");
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed)) return parsed;
@@ -59,14 +57,11 @@ export default function HeroBanner({ banners }) {
   const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
-    const activeBanner = banners?.find((b) => b.isActive) || banners?.[0];
-    if (!activeBanner?.id) return;
-
-    const storageKey = `nokk_banner_texts_${activeBanner.id}`;
+    if (!banners || banners.length === 0) return;
 
     // Load from localStorage immediately for fast rendering
     try {
-      const cached = localStorage.getItem(storageKey);
+      const cached = localStorage.getItem("nokk_all_banner_slides");
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -81,12 +76,34 @@ export default function HeroBanner({ banners }) {
 
     const fetchBtexts = async () => {
       try {
-        const res = await API.get(`/btext/get-by-banner?bannerId=${activeBanner.id}`);
-        console.log(res.data);
-        const activeTexts = (res.data.btexts || []).filter((o) => o.isActive);
-        setSlides(activeTexts);
-        setDomIdx(activeTexts.length > 1 ? 1 : 0);
-        localStorage.setItem(storageKey, JSON.stringify(activeTexts));
+        const activeBanners = banners.filter(b => b.isActive);
+        if (activeBanners.length === 0) return;
+
+        const promises = activeBanners.map((b) =>
+          API.get(`/btext/get-by-banner?bannerId=${b.id}`).catch(() => ({ data: { btexts: [] } }))
+        );
+        const responses = await Promise.all(promises);
+
+        const allSlides = [];
+        responses.forEach((res, index) => {
+          const banner = activeBanners[index];
+          const btexts = res.data.btexts || [];
+          btexts.forEach((bt) => {
+            if (bt.isActive) {
+              allSlides.push({
+                ...bt,
+                imageUrl: banner.imageUrl,
+                videoUrl: banner.videoUrl,
+              });
+            }
+          });
+        });
+
+        if (allSlides.length > 0) {
+          setSlides(allSlides);
+          setDomIdx(allSlides.length > 1 ? 1 : 0);
+          localStorage.setItem("nokk_all_banner_slides", JSON.stringify(allSlides));
+        }
       } catch (err) {
         console.error("Failed to load banner texts:", err);
       }
