@@ -25,7 +25,6 @@ const ACCOUNT_LINKS = [
 ];
 
 const POLICY_LINKS = [
-  { label: "Return Policy",    href: "#" },
   { label: "Shipping Policy",  href: "#" },
   { label: "Privacy Policy",   to: "/privacy-policy" },
   { label: "Terms of Use",     to: "/terms-of-use" },

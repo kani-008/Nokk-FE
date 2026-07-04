@@ -1,102 +1,136 @@
-import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import API from "../ApiCall/Api.jsx";
 
 export default function PrivacyPolicy() {
-  const [settings, setSettings] = useState({});
-
-  useEffect(() => {
-    API.get("/settings/get-all")
-      .then((res) => setSettings(res.data.settings || {}))
-      .catch(() => {});
-  }, []);
-
-  const address = settings.storeAddress || "Ramanathapuram, Tamil Nadu — 623 526";
-
   return (
-    <div className="page-wrap py-8 sm:py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
       <Helmet>
         <title>Privacy Policy — Namma Oor Karuvattu Kadai</title>
-        <meta name="description" content="Privacy Policy for Namma Oor Karuvattu Kadai. Learn how we collect, use, and protect your personal information." />
+        <meta name="description" content="Privacy Policy for Namma Oor Karuvattu Kadai. Learn how we collect, use, and safeguard your data." />
       </Helmet>
 
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-sandal-100 p-6 sm:p-10 shadow-sm">
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+      <div className="bg-white rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-2">
           Privacy Policy
         </h1>
-        <p className="font-body text-xs text-gray-400 mb-8 uppercase tracking-wider">
-          Last Updated: July 4, 2026
+        <p className="font-body text-xs text-amber-600 mb-8 uppercase tracking-wider">
+          Last updated: July 4, 2026
         </p>
 
-        <div className="space-y-6 font-body text-sm text-gray-600 leading-relaxed">
+        <div className="font-body text-sm text-amber-800 leading-relaxed space-y-6">
           <p>
-            This Privacy Policy governs how <strong>Namma Oor Karuvattu Kadai</strong> ("we", "us", or "our") collects, uses, maintains, and discloses information collected from users (each, a "User") of the website.
+            At <strong>Namma Oor Karuvattu Kadai</strong> ("we", "us", "our"), we value your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our website.
           </p>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
               1. Information We Collect
             </h2>
             <p>
-              We may collect personal identification information from Users in a variety of ways, including, but not limited to, when Users visit our site, register on the site, place an order, subscribe to the newsletter, and in connection with other activities, services, features, or resources we make available on our site. Users may be asked for, as appropriate, name, email address, mailing address, phone number, and payment information.
+              We collect personal information necessary to provide our services and process your orders. This includes:
+            </p>
+            <ul className="list-disc list-inside ml-4 space-y-1.5 mt-2">
+              <li><strong>Personal Details:</strong> Your name, phone number, and email address.</li>
+              <li><strong>Shipping Address:</strong> Address details to coordinate delivery of your orders.</li>
+              <li><strong>Payment Details:</strong> Transaction details necessary to confirm order payments.</li>
+            </ul>
+            <p className="mt-2">
+              This information is collected solely for order processing, logistics/delivery, and customer support.
             </p>
           </section>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
-              2. How We Use It
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              2. How We Use Your Information
             </h2>
             <p>
-              Namma Oor Karuvattu Kadai may collect and use Users' personal information for the following purposes:
+              We use the collected information for the following business purposes:
             </p>
-            <ul className="list-disc list-inside ml-4 space-y-1 mt-2">
-              <li>To improve customer service and support.</li>
-              <li>To personalize user experience and present products customized to your preferences.</li>
-              <li>To process payments and fulfill orders.</li>
-              <li>To send periodic emails, newsletters, or order updates.</li>
+            <ul className="list-disc list-inside ml-4 space-y-1.5 mt-2">
+              <li>Fulfilling and processing your orders.</li>
+              <li>Coordinating with delivery partners for shipment logistics.</li>
+              <li>Providing active customer service and answering queries.</li>
+              <li>Sending order updates and OTP (One-Time Password) verification codes via WhatsApp.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
-              3. Cookies
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              3. WhatsApp OTP Verification
             </h2>
             <p>
-              Our Site may use "cookies" to enhance User experience. User's web browser places cookies on their hard drive for record-keeping purposes and sometimes to track information about them. Users may choose to set their web browser to refuse cookies, or to alert you when cookies are being sent. If they do so, note that some parts of the Site may not function properly.
+              To verify your phone number during login and registration, we send one-time passwords (OTP) via WhatsApp using Meta's WhatsApp Business Platform. Your phone number is shared with Meta Platforms, Inc. solely for the purpose of OTP delivery, in accordance with Meta's own privacy policy.
             </p>
           </section>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
-              4. Third-Party Sharing
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              4. Payment Information
             </h2>
             <p>
-              We do not sell, trade, or rent Users' personal identification information to others. We may share generic aggregated demographic information not linked to any personal identification information regarding visitors and users with our business partners, trusted affiliates, and advertisers.
-            </p>
-            <p className="mt-2">
-              For transaction processing, we use secure third-party payment gateways. Specifically, our payments are processed securely through <strong>Razorpay</strong>. We do not store credit card details or other sensitive payment credentials on our servers.
+              Payments are processed securely through <strong>Razorpay</strong>. We do not store your card, UPI, or banking credentials on our servers — these are handled directly by Razorpay's PCI-DSS compliant systems.
             </p>
           </section>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
-              5. Data Security
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              5. Cookies
             </h2>
             <p>
-              We adopt appropriate data collection, storage, and processing practices and security measures to protect against unauthorized access, alteration, disclosure, or destruction of your personal information, username, password, transaction information, and data stored on our Site.
+              Our website uses cookies to enhance your browsing experience. Cookies are small text files stored on your device that help us persist items in your shopping cart, remember your preference settings, and track session information. You may disable cookies in your browser settings, though doing so might affect the functionality of certain features on the site.
             </p>
           </section>
 
           <section>
-            <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 mb-2">
-              6. Contact Us
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              6. Data Sharing
             </h2>
             <p>
-              If you have any questions about this Privacy Policy, the practices of this site, or your dealings with this site, please contact us at:
+              We do not sell your personal information. We share data only with:
             </p>
-            <div className="mt-4 p-5 bg-sandal-50/50 rounded-xl border border-sandal-100 text-xs sm:text-sm text-gray-700">
-              <p className="font-bold text-gray-900">Namma Oor Karuvattu Kadai</p>
-              <p className="mt-1 font-body">{address}</p>
+            <ol className="list-decimal list-inside ml-4 space-y-1.5 mt-2">
+              <li><strong>Razorpay</strong> for processing transaction payments.</li>
+              <li><strong>Meta / WhatsApp</strong> for secure OTP delivery.</li>
+              <li>Our logistics and delivery partners for order fulfillment and shipping.</li>
+              <li>Regulatory or governmental authorities when required by applicable laws.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              7. Your Rights
+            </h2>
+            <p>
+              Under India's Digital Personal Data Protection Act, 2023 (DPDP Act), you have the right to request access to, correction of, or deletion of your personal data. To exercise any of these rights, please reach out to us at <a href="mailto:nammaoorkaruvattukadai@gmail.com" className="text-brand-900 font-semibold underline hover:text-amber-600 transition-colors">nammaoorkaruvattukadai@gmail.com</a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              8. Data Security
+            </h2>
+            <p>
+              We adopt reasonable technical and organizational security measures to prevent unauthorized access, alteration, disclosure, or destruction of your personal data. We transfer sensitive data via encrypted channels. However, please note that no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute data security.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              9. Changes to This Policy
+            </h2>
+            <p>
+              We may update this Privacy Policy periodically to reflect changes in our operational or regulatory practices. Continued use of our website after changes are posted constitutes your acceptance of the updated policy.
+            </p>
+          </section>
+
+          <section className="pt-6 border-t border-amber-100">
+            <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-3">
+              Contact Us
+            </h2>
+            <div className="p-5 bg-amber-50/50 rounded-xl border border-amber-100 text-xs sm:text-sm text-amber-900 font-body space-y-1">
+              <p className="font-bold text-brand-900 text-sm">Namma Oor Karuvattu Kadai</p>
+              <p>No: 13, North Street, Singarathoppu, Cuddalore Old Town,</p>
+              <p>Cuddalore - 607003, Tamil Nadu, India</p>
+              <p className="pt-2"><strong>Email:</strong> <a href="mailto:nammaoorkaruvattukadai@gmail.com" className="text-brand-900 underline hover:text-amber-600 transition-colors">nammaoorkaruvattukadai@gmail.com</a></p>
             </div>
           </section>
         </div>
