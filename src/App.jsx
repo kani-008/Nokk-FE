@@ -56,7 +56,6 @@ import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetails";
 import ComboDetails from "./pages/ComboDetails";
 import Wishlist from "./pages/Wishlist";
-import Offers from "./pages/Offers";
 import ReviewsOverview from "./pages/ReviewsOverview";
 import ProductReviewsPage from "./pages/ProductReviewsPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -99,7 +98,6 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/offers" element={<Offers />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/reviews" element={<ReviewsOverview />} />
           <Route path="/reviews/:slug" element={<ProductReviewsPage />} />

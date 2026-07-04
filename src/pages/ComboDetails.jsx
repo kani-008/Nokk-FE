@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, ShoppingCart, Star, ShieldCheck, Truck, AlertCircle } from "lucide-react";
+import {
+  ChevronRight, ShoppingCart, Star, Truck, ShieldCheck,
+  Share2, ChevronLeft, ChevronRight as ChevronR,
+  AlertCircle, X
+} from "lucide-react";
+import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 import { useComboDetail } from "../hookqueries/useCombos";
+import { useSimilarProducts } from "../hookqueries/useProducts";
+import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
 import { useToast } from "../components/useToast";
 import ProductReviews from "../components/Product/ProductReviews.jsx";
+import ProductCard from "../components/Product/ProductCard.jsx";
+import ImageGallery from "../components/Product/ImageGallery.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -49,11 +58,15 @@ function Stars({ rating, count, size = 14 }) {
 export default function ComboDetails() {
   const { comboId } = useParams();
   const navigate = useNavigate();
-  const { addItem, items } = useCartStore();
+  const { items } = useCartStore();
   const { token } = useAuthStore();
-  const { setSuccess, displayedError, displayedType, toastVisible } = useToast();
+  const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const { data: combo, isLoading } = useComboDetail(comboId);
+
+  const firstProductId = combo?.items?.[0]?.productId;
+  const { data: similar = [] } = useSimilarProducts(firstProductId);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -75,59 +88,144 @@ export default function ComboDetails() {
   const inCart = !!cartItem;
   const inStock = combo.inStock;
 
-  const englishTitle = combo.items ? combo.items.map((it) => `${it.quantity} × ${it.productName}`).join(" + ") : combo.name;
-  const tamilTitle = combo.items ? combo.items.map((it) => `${it.quantity} × ${it.productNameTa || it.productName}`).join(" + ") : "";
+  const englishTitle = combo.items ? combo.items.map((it) => it.productName).join(" + ") : combo.name;
 
-  let totalWeight = 0;
+  const uniqueCategories = [];
+  const seen = new Set();
   if (combo.items) {
-    try {
-      totalWeight = combo.items.reduce((sum, it) => {
-        const match = it.weightLabel.match(/(\d+)/);
-        return sum + (match ? parseInt(match[1]) * it.quantity : 0);
-      }, 0);
-    } catch {
-      totalWeight = 0;
-    }
+    combo.items.forEach(it => {
+      if (it.categoryName && !seen.has(it.categoryName)) {
+        seen.add(it.categoryName);
+        uniqueCategories.push({
+          categoryName: it.categoryName,
+          categorySlug: it.categorySlug
+        });
+      }
+    });
   }
-  const weightStr = totalWeight > 0 ? `${totalWeight}g` : "Combo Pack";
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!token) {
-      navigate("/login");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
-    addItem({
-      comboId: combo.id,
-      name: combo.name,
-      price: combo.comboPrice,
-      imageUrl: combo.imageUrl || null,
-      quantity: 1,
-      isCombo: true
-    });
-    setSuccess("Added combo pack to your cart!");
+    try {
+      const response = await API.post("/cart/add-item", {
+        comboId: combo.id,
+        quantity: 1,
+      });
+      const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+        itemId:       i.itemId,
+        variantId:    i.variantId,
+        productId:    i.productId,
+        productName:  i.nameEn ?? i.name,
+        nameTa:       i.nameTa,
+        image:        i.primaryImage,
+        price:        i.price,
+        comparePrice: i.comparePrice,
+        weight:       i.weightLabel,
+        quantity:     i.quantity,
+        comboId:      i.comboId,
+        comboName:    i.comboName,
+        comboImage:   i.comboImage,
+        comboPrice:   i.comboPrice,
+      }));
+      useCartStore.getState().setItems(serverItems);
+      setSuccess("Added combo pack to your cart!");
+    } catch (err) {
+      console.error("addComboItem server sync failed:", err);
+    }
   };
 
-  const handleBuyNow = () => {
+  const handleCartClick = () => {
+    if (inCart) {
+      navigate("/cart");
+    } else {
+      handleAddToCart();
+    }
+  };
+
+  const handleBuyNow = async () => {
     if (!token) {
-      navigate("/login");
+      navigate("/login", { state: { from: "/checkout" } });
       return;
     }
-    addItem({
-      comboId: combo.id,
-      name: combo.name,
-      price: combo.comboPrice,
-      imageUrl: combo.imageUrl || null,
-      quantity: 1,
-      isCombo: true
-    });
-    navigate("/cart");
+    try {
+      const response = await API.post("/cart/add-item", {
+        comboId: combo.id,
+        quantity: 1,
+      });
+      const serverItems = (response.data.cart?.items ?? []).map((i) => ({
+        itemId:       i.itemId,
+        variantId:    i.variantId,
+        productId:    i.productId,
+        productName:  i.nameEn ?? i.name,
+        nameTa:       i.nameTa,
+        image:        i.primaryImage,
+        price:        i.price,
+        comparePrice: i.comparePrice,
+        weight:       i.weightLabel,
+        quantity:     i.quantity,
+        comboId:      i.comboId,
+        comboName:    i.comboName,
+        comboImage:   i.comboImage,
+        comboPrice:   i.comboPrice,
+      }));
+      useCartStore.getState().setItems(serverItems);
+      navigate("/checkout");
+    } catch (err) {
+      console.error("buyNow combo server sync failed:", err);
+    }
   };
 
-  const pageTitle = `${combo.name} — sun-dried fish combo pack`;
+  const handleShare = () => {
+    const shareUrl = window.location.href;
+    const shareTitle = combo.name;
+    if (navigator.share) {
+      navigator.share({ title: shareTitle, url: shareUrl })
+        .catch((err) => {
+          if (err?.name !== "AbortError") {
+            setShareModalOpen(true);
+          }
+        });
+    } else {
+      setShareModalOpen(true);
+    }
+  };
+
+  const isMobileDevice = () =>
+    window.innerWidth < 768 ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  const handleSocialShare = (platform, customUrl, customMessage) => {
+    window.open(customUrl, "_blank", "noopener,noreferrer");
+    if (customMessage) setSuccess(customMessage);
+    setShareModalOpen(false);
+  };
+
+  const handleInstagramShare = () => {
+    const isMobile = isMobileDevice();
+    if (isMobile) {
+      window.location.href = "instagram://app";
+      setTimeout(() => {
+        window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      }, 600);
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(window.location.href)
+          .then(() => setSuccess("Link copied! Paste it into your Instagram Story or DM."))
+          .catch(() => {});
+      }
+      window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+    }
+    setShareModalOpen(false);
+  };
+
+  const pageTitle = `${combo.name} — Namma Oor Karuvattu Kadai`;
   const pageDescription = combo.description || `Special combo pack: ${combo.name}. Save with combined pricing on sun-dried fish delicacies.`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-10">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
@@ -137,65 +235,84 @@ export default function ComboDetails() {
         <meta property="og:type" content="product" />
       </Helmet>
 
+      {/* Toast */}
+      <div
+        className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
+          }`}
+      >
+        {displayedError && (
+          <div
+            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
+              ? "border-green-200 shadow-green-900/5 text-green-700"
+              : "border-red-200 shadow-red-900/5 text-red-700"
+              }`}
+          >
+            {displayedType === "success" ? (
+              <ShieldCheck size={17} className="shrink-0 mt-0.5 text-green-500" />
+            ) : (
+              <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" />
+            )}
+            <p className="leading-snug">{displayedError}</p>
+          </div>
+        )}
+      </div>
+
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 font-body text-[11px] lg:text-xs text-amber-700 mb-6 bg-amber-50/50 px-3 py-2 rounded-xl border border-amber-100/50 w-fit">
-        <Link to="/" className="hover:text-brand-900 transition-colors font-medium">Home</Link>
-        <ChevronRight size={12} className="text-amber-400" />
-        <Link to="/products?category=combos" className="hover:text-brand-900 transition-colors font-medium">Combos</Link>
-        <ChevronRight size={12} className="text-amber-400" />
-        <span className="text-brand-900 font-semibold truncate max-w-[150px] lg:max-w-xs">{englishTitle}</span>
+      <nav className="flex items-center gap-1.5 font-body text-xs text-amber-500 mb-6 flex-wrap">
+        <Link to="/" className="hover:text-brand-700 transition-colors">Home</Link>
+        <ChevronRight size={12} />
+        <Link to="/products" className="hover:text-brand-700 transition-colors">Products</Link>
+        {uniqueCategories.map((cat, idx) => (
+          <span key={idx} className="flex items-center gap-1.5">
+            <ChevronRight size={12} />
+            <Link to={`/products?category=${cat.categorySlug}`} className="hover:text-brand-700 transition-colors">
+              {cat.categoryName}
+            </Link>
+          </span>
+        ))}
+        <ChevronRight size={12} />
+        <span className="text-brand-900 font-medium truncate max-w-[140px]">{englishTitle}</span>
       </nav>
 
-      {/* Main product detail container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14 mb-16">
-        
-        {/* Left: Combo Image */}
-        <div className="flex flex-col gap-4">
-          <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-sandal-100 select-none">
-            {combo.imageUrl ? (
-              <img
-                src={combo.imageUrl}
-                alt={combo.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-sandal-50 text-sandal-400">
-                <span className="text-6xl mb-2">📦</span>
-                <span className="text-xs uppercase font-extrabold tracking-wider font-body">No Combo Image</span>
-              </div>
-            )}
-            
-            {combo.savings > 0 && (
-              <span className="absolute top-4 left-4 bg-rose-600 text-white font-body text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md animate-bounce">
-                Save ₹{combo.savings}
-              </span>
-            )}
-          </div>
+      {/* Main Container */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 mb-12 pb-20 md:pb-0">
+
+        {/* Left: Image Gallery */}
+        <div className="max-w-xl w-full mx-auto md:sticky md:top-[104px] self-start">
+          <ImageGallery images={[{ imageUrl: combo.imageUrl, isPrimary: true }]} onShare={handleShare} />
         </div>
 
-        {/* Right: Details & Buying options */}
-        <div className="flex flex-col justify-between">
-          <div className="space-y-4">
+        {/* Right Column */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            
+            {/* Badges */}
+            <div className="flex gap-2 flex-wrap">
+              <span className="badge-amber">🏆 Combo</span>
+              {uniqueCategories.map((cat, idx) => (
+                <span key={idx} className="badge-green">{cat.categoryName}</span>
+              ))}
+              {!inStock && <span className="badge-red">Out of Stock</span>}
+            </div>
+
+            {/* Heading */}
             <div>
               <p className="font-body text-xs text-amber-500 uppercase tracking-wider font-medium mb-1">
-                Dry Fish
+                {uniqueCategories.map(c => c.categoryName.toUpperCase()).join(" • ") || "COMBO PACK"}
               </p>
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 leading-snug pdetails-title-fluid">
                 {englishTitle}
               </h1>
-              {tamilTitle && (
-                <p className="font-tamil text-amber-500 mt-1">{tamilTitle}</p>
-              )}
             </div>
 
-            {/* Ratings and Reviews Summary */}
+            {/* Rating */}
             {combo.avgRating > 0 && (
               <div className="flex items-center gap-2">
                 <Stars rating={combo.avgRating} count={combo.reviewCount} />
               </div>
             )}
 
-            {/* Price section */}
+            {/* Price */}
             <div className="flex items-baseline gap-3 flex-wrap">
               <span className="font-num text-3xl font-extrabold text-brand-900 pdetails-price-fluid">{rupee(combo.comboPrice)}</span>
               {combo.individualTotal > combo.comboPrice && (
@@ -211,106 +328,208 @@ export default function ComboDetails() {
               </p>
             )}
 
-            {/* QTY selector */}
-            <div className="flex items-center gap-4 flex-wrap pt-2">
-              <span className="field-label mb-0">QTY</span>
-              <div className="flex flex-wrap gap-2">
-                <button className="font-body text-sm px-4 py-2 rounded-xl border-2 border-brand-700 bg-brand-700 text-white font-semibold">
-                  {weightStr}
-                </button>
-              </div>
-              <p className="font-body text-xs font-semibold text-green-600">
-                In Stock
-              </p>
-            </div>
-
-            {/* Combo Description */}
-            {combo.description && (
-              <div className="space-y-2 pt-4 border-t border-sandal-100/30">
-                <h3 className="font-display text-xs font-extrabold text-amber-800 uppercase tracking-widest">
-                  About this Combo Pack
-                </h3>
-                <p className="font-body text-sm text-gray-600 leading-relaxed font-medium">
-                  {combo.description}
+            {/* QTY selector (Pills) */}
+            {combo.items?.length > 0 && (
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="field-label mb-0">QTY</span>
+                <div className="flex flex-wrap gap-2">
+                  {combo.items.map((item, idx) => (
+                    <button
+                      key={idx}
+                      disabled
+                      className="font-body text-sm px-4 py-2 rounded-xl border-2 border-brand-700 bg-brand-700 text-white font-semibold opacity-90 cursor-default"
+                    >
+                      {item.productName} × {item.quantity}
+                    </button>
+                  ))}
+                </div>
+                <p className={`font-body text-xs font-semibold ${inStock ? "text-green-600" : "text-red-500"}`}>
+                  {inStock ? "In Stock" : "Out of Stock"}
                 </p>
               </div>
             )}
-          </div>
 
-          {/* Cart Buttons & Trust features */}
-          <div className="mt-8 space-y-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              {inCart ? (
-                <Link
-                  to="/cart"
-                  className="flex-1 btn-lg btn-secondary flex items-center justify-center gap-2 shadow-md cursor-pointer hover:scale-[1.01]"
-                >
-                  <ShoppingCart size={18} />
-                  <span>Go to Cart</span>
-                </Link>
-              ) : (
-                <>
-                  <button
-                    disabled={!inStock}
-                    onClick={handleAddToCart}
-                    className="flex-1 btn-lg btn-outline flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 transition-all active:scale-[0.99] border-brand-800 text-brand-900 font-bold hover:bg-brand-50"
-                  >
-                    <ShoppingCart size={18} />
-                    <span>Add to Cart</span>
-                  </button>
-                  <button
-                    disabled={!inStock}
-                    onClick={handleBuyNow}
-                    className="flex-1 btn-lg btn-primary flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 transition-all active:scale-[0.99] font-bold shadow-md"
-                  >
-                    Buy Now
-                  </button>
-                </>
-              )}
+            {/* CTAs (desktop) */}
+            <div className="hidden md:flex gap-3">
+              <button
+                onClick={handleCartClick}
+                disabled={!inStock}
+                className="flex-1 min-w-0 btn-lg btn-primary disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {inCart ? "Go to Cart" : <><ShoppingCart size={18} /> Add to Cart</>}
+              </button>
+              <button
+                onClick={handleBuyNow}
+                disabled={!inStock}
+                className="flex-1 min-w-0 btn-lg btn-outline disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                Buy Now
+              </button>
             </div>
 
-            {/* Quality and Delivery Badges */}
-            <div className="grid grid-cols-2 gap-4 border-t border-sandal-100/50 pt-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sandal-50 text-brand-800 flex items-center justify-center border border-sandal-100">
-                  <Truck size={18} />
+            {/* Trust Badges */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-100">
+              {[
+                { icon: <Truck size={16} />, text: "Free shipping above threshold" },
+                { icon: <ShieldCheck size={16} />, text: "100% Safe & Natural" },
+              ].map((t) => (
+                <div key={t.text} className="flex flex-col items-center gap-1 text-center">
+                  <span className="text-brand-700">{t.icon}</span>
+                  <span className="font-body text-[10px] text-amber-600 leading-tight">{t.text}</span>
                 </div>
-                <div>
-                  <h4 className="font-body text-xs font-bold text-gray-800 leading-tight">Fast Delivery</h4>
-                  <p className="font-body text-[10px] text-gray-400 mt-0.5">Dispatched in 24 hours</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sandal-50 text-brand-800 flex items-center justify-center border border-sandal-100">
-                  <ShieldCheck size={18} />
-                </div>
-                <div>
-                  <h4 className="font-body text-xs font-bold text-gray-800 leading-tight">100% Secure</h4>
-                  <p className="font-body text-[10px] text-gray-400 mt-0.5">UPI, Cards, and Net Banking</p>
-                </div>
-              </div>
+              ))}
             </div>
+
           </div>
+
+          {/* Description Tabs */}
+          <ComboProductsDescription items={combo.items} />
+
         </div>
+
       </div>
 
-      {/* Component Products Detailed Descriptions */}
-      <div className="mb-12">
-        <ComboProductsDescription items={combo.items} />
+      {/* Similar products */}
+      {similar.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-display text-xl font-bold text-brand-900 mb-4">Similar Products</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+            {similar.map((p) => (
+              <div key={p.id} className="shrink-0" style={{ width: "200px" }}>
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Product Reviews */}
+      <ProductReviews product={combo} />
+
+      {/* Mobile sticky bottom CTA bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+        <button
+          onClick={handleCartClick}
+          disabled={!inStock}
+          className="flex-1 min-w-0 py-3 px-3 rounded-xl btn-outline disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap font-semibold text-center"
+        >
+          {inCart ? "Go to Cart" : <><ShoppingCart size={14} className="inline mr-1" /> Add to Cart</>}
+        </button>
+
+        <button
+          onClick={handleBuyNow}
+          disabled={!inStock}
+          className="flex-1 min-w-0 py-3 px-3 rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap font-semibold text-center"
+        >
+          Buy at {rupee(combo.comboPrice)}
+        </button>
       </div>
 
-      {/* Product Reviews section */}
-      <div className="border-t border-sandal-100/50 pt-10">
-        <ProductReviews product={combo} />
-      </div>
+      {/* Share Modal Fallback */}
+      {shareModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 relative">
+            <button
+              onClick={() => setShareModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-800 transition-colors"
+              aria-label="Close share dialog"
+            >
+              <X size={18} />
+            </button>
 
-      {/* Toast Alert */}
-      {toastVisible && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl font-body text-sm font-semibold border bg-white animate-fade-in">
-          <span className={displayedType === "success" ? "text-green-600" : "text-red-600"}>
-            {displayedType === "success" ? "✓" : "⚠️"}
-          </span>
-          <span className="text-gray-800">{displayedError}</span>
+            <h3 className="font-display text-lg font-bold text-brand-900 mb-6">Share Combo</h3>
+
+            <div className="grid grid-cols-5 gap-2 mb-6">
+              {/* WhatsApp */}
+              <button
+                onClick={() => handleSocialShare(
+                  "WhatsApp",
+                  `https://wa.me/?text=${encodeURIComponent(combo.name + ' - ' + window.location.href)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaWhatsapp size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">WhatsApp</span>
+              </button>
+
+              {/* Instagram */}
+              <button
+                onClick={handleInstagramShare}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaInstagram size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Instagram</span>
+              </button>
+
+              {/* Facebook */}
+              <button
+                onClick={() => handleSocialShare(
+                  "Facebook",
+                  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaFacebook size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Facebook</span>
+              </button>
+
+              {/* X */}
+              <button
+                onClick={() => handleSocialShare(
+                  "X",
+                  `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(combo.name)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-gray-50 text-gray-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaTwitter size={22} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">X</span>
+              </button>
+
+              {/* Telegram */}
+              <button
+                onClick={() => handleSocialShare(
+                  "Telegram",
+                  `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(combo.name)}`
+                )}
+                className="flex flex-col items-center gap-2 group cursor-pointer border-none bg-transparent text-center"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm mx-auto">
+                  <FaTelegramPlane size={24} />
+                </div>
+                <span className="font-body text-[10px] sm:text-xs text-amber-900 group-hover:text-brand-900 truncate w-full">Telegram</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 bg-sandal-50 p-2.5 rounded-xl border border-sandal-200">
+              <input
+                type="text"
+                readOnly
+                value={window.location.href}
+                className="flex-1 bg-transparent border-none font-body text-xs text-amber-950 focus:outline-none select-all truncate"
+              />
+              <button
+                onClick={() => {
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(window.location.href)
+                      .then(() => setSuccess("Link copied!"))
+                      .catch(() => {});
+                  }
+                  setShareModalOpen(false);
+                }}
+                className="btn-md py-1.5 px-3 bg-brand-700 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-sm"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

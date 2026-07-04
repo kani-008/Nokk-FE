@@ -25,6 +25,9 @@ const mapComboToFrontend = (c) => {
     savings: c.savings,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
+    avgRating: c.avgRating || 0,
+    reviewCount: c.reviewCount || 0,
+    reviews: c.reviews || [],
   };
 };
 
@@ -85,7 +88,7 @@ export function useComboDetail(id) {
     queryKey: ["combo", "public", id],
     queryFn: async () => {
       if (!id) return null;
-      const res = await API.get(`/combos/get-by-id?id=${id}`);
+      const res = await API.get(`/combos/get-public-detail?id=${id}`);
       return mapComboToFrontend(res.data.combo);
     },
     enabled: !!id,

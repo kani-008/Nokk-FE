@@ -153,9 +153,7 @@ export default function NavBar() {
 
   const navLinks = [
     { label: "Products", to: "/products" },
-    { label: "Offers", to: "/offers" },
     { label: "Bestsellers", to: "/products?isBestseller=true" },  
-    
   ];
 
   return (
@@ -168,9 +166,7 @@ export default function NavBar() {
             <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
               {settings.announcementText && settings.announcementText.trim()
                 ? settings.announcementText
-                : <>🐟 Free shipping above ₹{settings.freeShippingThreshold || 499} &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
-                    <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
-                  </>
+                : <>🐟 Free shipping above ₹{settings.freeShippingThreshold || 499} &nbsp;·&nbsp; Sourced from coastal fishermen</>
               }
             </div>
           ) : null}
@@ -327,11 +323,6 @@ export default function NavBar() {
                         to="/my-orders"
                         icon={<Package size={14} />}
                         label="My Orders"
-                      />
-                      <DropItem
-                        to="/offers"
-                        icon={<Tag size={14} />}
-                        label="Offers"
                       />
                       <DropItem
                         to="/products?isBestseller=true"

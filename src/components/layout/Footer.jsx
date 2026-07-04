@@ -25,7 +25,6 @@ const QUICK_LINKS = [
   { label: "All Products", to: "/products" },
   { label: "Best Sellers", to: "/products?isBestseller=true" },
   { label: "New Arrivals", to: "/products?sort=newest" },
-  { label: "Offers & Deals", to: "/offers" },
 ];
 
 const ACCOUNT_LINKS = [
