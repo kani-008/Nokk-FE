@@ -9,7 +9,7 @@ import { useActiveStoreWideOffer } from "../hookqueries/useOffers";
 import { useToast } from "../components/useToast";
 import API from "../ApiCall/Api";
 
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -526,9 +526,9 @@ export default function Cart() {
       </h1>
 
       {/* Toast notification */}
-      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${toastVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}>
+      <div className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"}`}>
         {displayedError && (
-          <div className={`px-4 py-2.5 rounded-xl shadow-lg text-sm font-body font-medium ${displayedType === "success" ? "bg-green-600 text-white" : "bg-red-500 text-white"}`}>
+          <div className={`px-4 py-2.5 rounded-xl shadow-lg border text-sm font-body font-medium ${displayedType === "success" ? "border-green-200 bg-white text-green-700 shadow-green-900/5" : "border-red-200 bg-white text-red-700 shadow-red-900/5"}`}>
             {displayedError}
           </div>
         )}

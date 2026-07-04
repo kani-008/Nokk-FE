@@ -5,7 +5,7 @@ import Footer from "./Footer";
 import { useAuthStore } from "../store/AuthStore";
 import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
-
+import { usePublicSettings } from "../../hookqueries/useSettings";
 import API from "../../ApiCall/Api.jsx";
 
 function ScrollToTop() {
@@ -27,6 +27,9 @@ export default function CustomerLayout() {
     || location.pathname === "/profile";
 
   const { token, isAuthenticated } = useAuthStore();
+  const { data: settings } = usePublicSettings();
+  // Announcement strip adds ~24px on sm+ → offset changes when it is on/off
+  const announcementOn = !!settings?.announcementEnabled;
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -91,7 +94,7 @@ export default function CustomerLayout() {
   }, [isAuthenticated]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-sandal-50">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg-page)" }}>
       <ScrollToTop />
       {/* 
         The top navigation bar is commented/hidden on mobile for checkout pages (address, summary, payment)
@@ -110,7 +113,11 @@ export default function CustomerLayout() {
           - If isCheckoutPage, top navbar is hidden on mobile (so no top padding)
             but visible on desktop (needs md:pt-[88px] offset).
       */}
-      <main className={`flex-1 ${isCheckoutPage ? "md:pt-[88px]" : "pt-16 sm:pt-[88px]"}`}>
+      <main className={`flex-1 ${
+        isCheckoutPage
+          ? announcementOn ? "md:pt-[86px]" : "md:pt-16"
+          : announcementOn ? "pt-[86px]" : "pt-16"
+      }`}>
         <Outlet />
       </main>
       {/* Hide footer on mobile for auth + focused shopping-flow pages */}

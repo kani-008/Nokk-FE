@@ -6,7 +6,7 @@ import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import API from "../ApiCall/Api";
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

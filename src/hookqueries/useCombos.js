@@ -25,13 +25,15 @@ const mapComboToFrontend = (c) => {
     savings: c.savings,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
+    avgRating: c.avgRating || 0,
+    reviewCount: c.reviewCount || 0,
+    reviews: c.reviews || [],
   };
 };
 
 const mapComboToBackend = (form) => {
   return {
     name: form.name,
-    description: form.description || null,
     comboPrice: Number(form.comboPrice) || 0,
     isActive: form.isActive ?? true,
     startDate: form.startDate || null,
@@ -85,7 +87,7 @@ export function useComboDetail(id) {
     queryKey: ["combo", "public", id],
     queryFn: async () => {
       if (!id) return null;
-      const res = await API.get(`/combos/get-by-id?id=${id}`);
+      const res = await API.get(`/combos/get-public-detail?id=${id}`);
       return mapComboToFrontend(res.data.combo);
     },
     enabled: !!id,
@@ -101,7 +103,9 @@ export function useCreateCombo() {
       const payload = mapComboToBackend(form);
       const fd = new FormData();
       Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
-      if (form.imageFile) fd.append("imageFile", form.imageFile);
+      if (form.imageFiles && form.imageFiles.length > 0) {
+        form.imageFiles.forEach(file => fd.append("imageFiles", file));
+      }
       const res = await API.post("/combos/create-combo", fd, { headers: { "Content-Type": "multipart/form-data" } });
       return { ...res.data, combo: mapComboToFrontend(res.data.combo) };
     },
@@ -119,7 +123,12 @@ export function useUpdateCombo() {
       const fd = new FormData();
       fd.append("id", id);
       Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
-      if (form.imageFile) fd.append("imageFile", form.imageFile);
+      if (form.imageFiles && form.imageFiles.length > 0) {
+        form.imageFiles.forEach(file => fd.append("imageFiles", file));
+      }
+      if (form.removeImageIds && form.removeImageIds.length > 0) {
+        fd.append("removeImageIds", JSON.stringify(form.removeImageIds));
+      }
       const res = await API.put("/combos/update-combo", fd, { headers: { "Content-Type": "multipart/form-data" } });
       return { ...res.data, combo: mapComboToFrontend(res.data.combo) };
     },

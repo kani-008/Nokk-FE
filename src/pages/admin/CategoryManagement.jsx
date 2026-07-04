@@ -60,24 +60,27 @@ function CategoryModal({ category, onClose, onSaved }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Auto-generate slug from English name for new categories
+  // Auto-generate slug from English name for categories
   const handleNameEnChange = (e) => {
     const val = e.target.value;
     set("nameEn", val);
-    if (!isEdit) {
-      const generatedSlug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") // remove special chars
-        .replace(/\s+/g, "-") // replace spaces with hyphens
-        .replace(/-+/g, "-") // collapse multiple hyphens
-        .trim();
-      set("slug", generatedSlug);
-    }
+    const generatedSlug = val
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+      .replace(/\s+/g, "-") // replace spaces with hyphens
+      .replace(/-+/g, "-") // collapse multiple hyphens
+      .trim();
+    set("slug", generatedSlug);
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size must be less than 5MB");
+      return;
+    }
+    setError("");
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
@@ -180,7 +183,7 @@ function CategoryModal({ category, onClose, onSaved }) {
                 <label htmlFor="category-file-input" className="inline-flex items-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
                   Choose Image
                 </label>
-                <p className="text-[10px] text-gray-400 mt-1">Recommended size: 300x300. Max: 3MB.</p>
+                <p className="text-[10px] text-gray-400 mt-1">Recommended size: 300x300. Max: 5MB.</p>
               </div>
             </div>
           </div>
@@ -352,11 +355,7 @@ export default function CategoryManagement() {
   return (
     <AdminPage className="space-y-4">
       {/* Action Header */}
-      <div className="flex justify-between items-center w-full">
-        <div>
-          <h2 className="font-display text-lg font-bold text-gray-900">Categories</h2>
-          <p className="font-body text-xs text-gray-500 mt-0.5">Manage dry fish and seafood categories</p>
-        </div>
+      <div className="flex justify-end items-center w-full">
         <AdminButton
           variant="primary"
           onClick={() => {

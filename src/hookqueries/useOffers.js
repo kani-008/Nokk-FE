@@ -28,6 +28,7 @@ const mapOfferToFrontend = (o) => {
     isLive: o.isLive,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
+    showInAnnouncement: o.showInAnnouncement ?? false,
   };
 };
 
@@ -44,7 +45,8 @@ const mapOfferToBackend = (form) => {
     maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : null,
     startDate: form.startDate || null,
     endDate: form.endDate || null,
-    isActive: form.isActive ?? true
+    isActive: form.isActive ?? true,
+    showInAnnouncement: form.showInAnnouncement ?? false,
   };
 };
 
@@ -99,15 +101,7 @@ export function useCreateOffer() {
   return useMutation({
     mutationFn: async (form) => {
       const payload = mapOfferToBackend(form);
-      let res;
-      if (form.imageFile) {
-        const fd = new FormData();
-        Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
-        fd.append("imageFile", form.imageFile);
-        res = await API.post("/offers/create-offer", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      } else {
-        res = await API.post("/offers/create-offer", payload);
-      }
+      const res = await API.post("/offers/create-offer", payload);
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
@@ -121,16 +115,7 @@ export function useUpdateOffer() {
   return useMutation({
     mutationFn: async ({ id, form }) => {
       const payload = mapOfferToBackend(form);
-      let res;
-      if (form.imageFile) {
-        const fd = new FormData();
-        fd.append("id", id);
-        Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
-        fd.append("imageFile", form.imageFile);
-        res = await API.put("/offers/update-offer", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      } else {
-        res = await API.put("/offers/update-offer", { id, ...payload });
-      }
+      const res = await API.put("/offers/update-offer", { id, ...payload });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {

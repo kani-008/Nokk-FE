@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle } from "lucide-react";
 import {
   useAdminOfferList,
   useCreateOffer,
@@ -16,7 +16,7 @@ import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
+const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false };
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -54,17 +54,9 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
 // ══════════════════════════════════════════════════════════════════════
 function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const isEdit = !!offer?.id;
-  const [form, setForm] = useState(offer ? { ...offer, imageFile: null } : { ...OFFER_EMPTY });
-  const [previewUrl, setPreviewUrl] = useState(offer?.imageUrl || "");
+  const [form, setForm] = useState(offer ? { ...offer } : { ...OFFER_EMPTY });
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    set("imageFile", file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
 
   const createOfferMutation = useCreateOffer();
   const updateOfferMutation = useUpdateOffer();
@@ -86,6 +78,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
+      console.error("[Offer Page] Action failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
       setError(e.response?.data?.message || e.message || "Failed");
     }
   };
@@ -103,23 +96,16 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="field-label">Title *</label><input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Monsoon Sale" className="field-input" /></div>
             <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short offer description" /></div>
-            <div>
-              <label className="field-label">Offer Image</label>
-              <div className="flex items-start gap-4">
-                <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                  {previewUrl ? (
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon size={24} className="text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="offer-file-input" />
-                  <label htmlFor="offer-file-input" className="inline-flex items-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
-                    Choose Image
-                  </label>
-                  <p className="text-[10px] text-gray-400 mt-1">Recommended: 600×300. Max: 3MB.</p>
-                </div>
+            {/* Announcement Options */}
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Toggle checked={form.showInAnnouncement} onChange={() => set("showInAnnouncement", !form.showInAnnouncement)} />
+                  <span className="font-body text-sm text-gray-700 font-semibold">Show in Announcement Bar</span>
+                </label>
+                <p className="text-[11px] text-gray-500 pl-8">
+                  Displays this offer as the site-wide announcement strip in the navigation bar.
+                </p>
               </div>
             </div>
 

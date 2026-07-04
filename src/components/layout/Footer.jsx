@@ -1,52 +1,78 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Phone, Mail, MapPin,
-  ShieldCheck, Truck, Headphones,
-  ChevronDown, ChevronUp,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Truck,
+  Headphones,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { FaInstagram, FaFacebook, FaYoutube, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import {
+  FaInstagram,
+  FaFacebook,
+  FaYoutube,
+  FaTwitter,
+  FaWhatsapp,
+} from "react-icons/fa";
 import Logo from "./Logo";
 import API from "../../ApiCall/Api.jsx";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
 
 const QUICK_LINKS = [
-  { label: "All Products",    to: "/products" },
-  { label: "Best Sellers",    to: "/products?isBestseller=true" },
-  { label: "New Arrivals",    to: "/products?sort=newest" },
-  { label: "Offers & Deals",  to: "/offers" },
+  { label: "All Products", to: "/products" },
+  { label: "Best Sellers", to: "/products?isBestseller=true" },
+  { label: "New Arrivals", to: "/products?sort=newest" },
 ];
 
 const ACCOUNT_LINKS = [
-  { label: "My Account",   to: "/profile" },
-  { label: "My Orders",    to: "/my-orders" },
-  { label: "Wishlist",     to: "/wishlist" },
-  { label: "Track Order",  to: "/my-orders" },
+  { label: "My Account", to: "/profile" },
+  { label: "My Orders", to: "/my-orders" },
+  { label: "Wishlist", to: "/wishlist" },
+  { label: "Track Order", to: "/my-orders" },
 ];
 
 const POLICY_LINKS = [
-  { label: "Shipping Policy",  href: "#" },
-  { label: "Privacy Policy",   to: "/privacy-policy" },
-  { label: "Terms of Use",     to: "/terms-of-use" },
-  { label: "FAQ",              href: "#" },
+  { label: "Shipping Policy", href: "#" },
+  { label: "Privacy Policy", to: "/privacy-policy" },
+  { label: "Terms of Use", to: "/terms-of-use" },
+  { label: "FAQ", href: "#" },
 ];
 
 const CATEGORIES = [
-  { label: "Nethili (Anchovy)",    to: "/products?category=nethili" },
-  { label: "Sura (Shark)",         to: "/products?category=sura" },
-  { label: "Kelanga (Catfish)",    to: "/products?category=kelanga" },
-  { label: "Vanjaram (Kingfish)",  to: "/products?category=vanjaram" },
-  { label: "Pickles & Chutneys",   to: "/products?category=pickles" },
+  { label: "Nethili (Anchovy)", to: "/products?category=nethili" },
+  { label: "Sura (Shark)", to: "/products?category=sura" },
+  { label: "Kelanga (Catfish)", to: "/products?category=kelanga" },
+  { label: "Vanjaram (Kingfish)", to: "/products?category=vanjaram" },
+  { label: "Pickles & Chutneys", to: "/products?category=pickles" },
 ];
 
 function useTrustItems() {
   const { data: delivery } = useDeliverySettings();
   const threshold = delivery?.freeShippingThreshold || 499;
   return [
-    { icon: <Truck size={20} />,       label: "Free Shipping",    sub: `On orders ₹${threshold}+` },
-    { icon: <ShieldCheck size={20} />, label: "100% Natural",     sub: "No preservatives" },
-    { icon: <ShieldCheck size={20} />, label: "Secure Checkout",  sub: "100% Encrypted" },
-    { icon: <Headphones size={20} />,  label: "24/7 Support",     sub: "Always here" },
+    {
+      icon: <Truck size={20} />,
+      label: "Free Shipping",
+      sub: `On orders ₹${threshold}+`,
+    },
+    {
+      icon: <ShieldCheck size={20} />,
+      label: "100% Natural",
+      sub: "No preservatives",
+    },
+    {
+      icon: <ShieldCheck size={20} />,
+      label: "Secure Checkout",
+      sub: "100% Encrypted",
+    },
+    {
+      icon: <Headphones size={20} />,
+      label: "24/7 Support",
+      sub: "Always here",
+    },
   ];
 }
 
@@ -60,7 +86,11 @@ function AccordionSection({ title, children }) {
         onClick={() => setOpen((s) => !s)}
       >
         {title}
-        {open ? <ChevronUp size={16} className="text-sandal-400" /> : <ChevronDown size={16} className="text-sandal-400" />}
+        {open ? (
+          <ChevronUp size={16} className="text-sandal-400" />
+        ) : (
+          <ChevronDown size={16} className="text-sandal-400" />
+        )}
       </button>
       {open && <div className="pb-4">{children}</div>}
     </div>
@@ -68,7 +98,7 @@ function AccordionSection({ title, children }) {
 }
 
 export default function Footer() {
-  const [email,  setEmail]  = useState("");
+  const [email, setEmail] = useState("");
   const [subMsg, setSubMsg] = useState("");
   const [settings, setSettings] = useState({});
   const trustItems = useTrustItems();
@@ -81,22 +111,45 @@ export default function Footer() {
 
   const handleSub = (e) => {
     e.preventDefault();
-    if (!email.includes("@")) { setSubMsg("Enter a valid email"); return; }
+    if (!email.includes("@")) {
+      setSubMsg("Enter a valid email");
+      return;
+    }
     setSubMsg("Thank you for subscribing! 🎉");
     setEmail("");
   };
 
-  const description = settings.storeDescription ||
+  const description =
+    settings.storeDescription ||
     "Authentic dry fish and coastal pickles sourced directly from coastal fishermen. Traditionally sun-dried, naturally preserved — delivered straight to your doorstep.";
-  const phone    = settings.storePhone    || settings.contactPhone || "+91 98765 43210";
-  const email_c  = settings.storeEmail    || settings.contactEmail || "hello@nammakadai.com";
-  const address  = settings.storeAddress  || "Ramanathapuram, Tamil Nadu — 623 526";
+  const phone =
+    settings.storePhone || settings.contactPhone || "+91 98765 43210";
+  const email_c =
+    settings.storeEmail || settings.contactEmail || "hello@nammakadai.com";
+  const address =
+    settings.storeAddress || "Ramanathapuram, Tamil Nadu — 623 526";
 
   const socials = [
-    settings.instagramUrl  && { icon: <FaInstagram size={16} />, href: settings.instagramUrl,  label: "Instagram" },
-    settings.facebookUrl   && { icon: <FaFacebook  size={16} />, href: settings.facebookUrl,   label: "Facebook"  },
-    settings.youtubeUrl    && { icon: <FaYoutube   size={16} />, href: settings.youtubeUrl,    label: "YouTube"   },
-    settings.twitterUrl    && { icon: <FaTwitter   size={16} />, href: settings.twitterUrl,    label: "Twitter"   },
+    settings.instagramUrl && {
+      icon: <FaInstagram size={16} />,
+      href: settings.instagramUrl,
+      label: "Instagram",
+    },
+    settings.facebookUrl && {
+      icon: <FaFacebook size={16} />,
+      href: settings.facebookUrl,
+      label: "Facebook",
+    },
+    settings.youtubeUrl && {
+      icon: <FaYoutube size={16} />,
+      href: settings.youtubeUrl,
+      label: "YouTube",
+    },
+    settings.twitterUrl && {
+      icon: <FaTwitter size={16} />,
+      href: settings.twitterUrl,
+      label: "Twitter",
+    },
     settings.whatsappNumber && {
       icon: <FaWhatsapp size={16} />,
       href: `https://wa.me/${String(settings.whatsappNumber).replace(/[^0-9]/g, "")}`,
@@ -104,16 +157,18 @@ export default function Footer() {
     },
   ].filter(Boolean);
 
-  const socialLinks = socials.length > 0 ? socials : [
-    { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
-    { icon: <FaFacebook  size={16} />, href: "#", label: "Facebook"  },
-    { icon: <FaYoutube   size={16} />, href: "#", label: "YouTube"   },
-    { icon: <FaTwitter   size={16} />, href: "#", label: "Twitter"   },
-  ];
+  const socialLinks =
+    socials.length > 0
+      ? socials
+      : [
+          { icon: <FaInstagram size={16} />, href: "#", label: "Instagram" },
+          { icon: <FaFacebook size={16} />, href: "#", label: "Facebook" },
+          { icon: <FaYoutube size={16} />, href: "#", label: "YouTube" },
+          { icon: <FaTwitter size={16} />, href: "#", label: "Twitter" },
+        ];
 
   return (
     <footer className="bg-gray-900 text-gray-300 border-t border-sandal-100">
-
       {/* ── Trust bar ───────────────────────────────────────────────── */}
       <div className="border-b border-gray-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -121,8 +176,12 @@ export default function Footer() {
             <div key={t.label} className="flex items-center gap-3">
               <span className="text-sandal-400 shrink-0">{t.icon}</span>
               <div>
-                <p className="font-body text-xs font-bold text-white leading-none">{t.label}</p>
-                <p className="font-body text-[11px] text-sandal-300/80 mt-1">{t.sub}</p>
+                <p className="font-body text-xs font-bold text-white leading-none">
+                  {t.label}
+                </p>
+                <p className="font-body text-[11px] text-sandal-300/80 mt-1">
+                  {t.sub}
+                </p>
               </div>
             </div>
           ))}
@@ -131,10 +190,8 @@ export default function Footer() {
 
       {/* ── Main footer content ─────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
-
         {/* Desktop grid (hidden on mobile) */}
         <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-2">
-
           {/* Brand col — 2 wide on lg */}
           <div className="lg:col-span-2">
             <Logo showText={true} inverse={true} className="mb-4" />
@@ -163,11 +220,21 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm text-gray-400">
               <li className="flex items-center gap-2">
                 <Phone size={13} className="shrink-0 text-sandal-400" />
-                <a href={`tel:${phone}`} className="hover:text-white transition-colors">{phone}</a>
+                <a
+                  href={`tel:${phone}`}
+                  className="hover:text-white transition-colors"
+                >
+                  {phone}
+                </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail size={13} className="shrink-0 text-sandal-400" />
-                <a href={`mailto:${email_c}`} className="hover:text-white transition-colors">{email_c}</a>
+                <a
+                  href={`mailto:${email_c}`}
+                  className="hover:text-white transition-colors"
+                >
+                  {email_c}
+                </a>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin size={13} className="shrink-0 text-sandal-400 mt-0.5" />
@@ -178,22 +245,32 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-body text-sm font-bold text-white mb-4 tracking-wider uppercase">Shop</h4>
+            <h4 className="font-body text-sm font-bold text-white mb-4 tracking-wider uppercase">
+              Shop
+            </h4>
             <ul className="space-y-3">
               {QUICK_LINKS.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                  <Link
+                    to={l.to}
+                    className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors"
+                  >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
             {/* Categories list */}
-            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">Categories</h4>
+            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
+              Categories
+            </h4>
             <ul className="space-y-2">
               {CATEGORIES.map((c) => (
                 <li key={c.to}>
-                  <Link to={c.to} className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors">
+                  <Link
+                    to={c.to}
+                    className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
+                  >
                     › {c.label}
                   </Link>
                 </li>
@@ -203,27 +280,40 @@ export default function Footer() {
 
           {/* My Account */}
           <div>
-            <h4 className="font-body text-sm font-bold text-white mb-4 tracking-wider uppercase">My Account</h4>
+            <h4 className="font-body text-sm font-bold text-white mb-4 tracking-wider uppercase">
+              My Account
+            </h4>
             <ul className="space-y-3">
               {ACCOUNT_LINKS.map((l) => (
                 <li key={l.label}>
-                  <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                  <Link
+                    to={l.to}
+                    className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors"
+                  >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
 
-            <h4 className="font-body text-sm font-bold text-white mb-4 mt-6 tracking-wider uppercase">Policies</h4>
+            <h4 className="font-body text-sm font-bold text-white mb-4 mt-6 tracking-wider uppercase">
+              Policies
+            </h4>
             <ul className="space-y-3">
               {POLICY_LINKS.map((l) => (
                 <li key={l.label}>
                   {l.to ? (
-                    <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                    <Link
+                      to={l.to}
+                      className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors"
+                    >
                       {l.label}
                     </Link>
                   ) : (
-                    <a href={l.href} className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors">
+                    <a
+                      href={l.href}
+                      className="font-body text-sm text-gray-400 hover:text-sandal-300 transition-colors"
+                    >
                       {l.label}
                     </a>
                   )}
@@ -234,15 +324,21 @@ export default function Footer() {
 
           {/* Newsletter */}
           <div>
-            <h4 className="font-body text-sm font-bold text-white mb-1.5 tracking-wider uppercase">Stay Updated</h4>
+            <h4 className="font-body text-sm font-bold text-white mb-1.5 tracking-wider uppercase">
+              Stay Updated
+            </h4>
             <p className="font-body text-xs text-gray-400 mb-4 leading-relaxed">
-              Get deals, seasonal arrivals & fishing updates delivered straight to your inbox.
+              Get deals, seasonal arrivals & fishing updates delivered straight
+              to your inbox.
             </p>
             <form onSubmit={handleSub} className="flex flex-col gap-2">
               <input
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setSubMsg(""); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setSubMsg("");
+                }}
                 placeholder="your@email.com"
                 className="w-full bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
               />
@@ -254,14 +350,13 @@ export default function Footer() {
               </button>
             </form>
             {subMsg && (
-              <p className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}>
+              <p
+                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
+              >
                 {subMsg}
               </p>
             )}
-
-            
           </div>
-
         </div>
 
         {/* ── Mobile accordion (visible on mobile only) ──────────────── */}
@@ -272,8 +367,14 @@ export default function Footer() {
           </p>
           <div className="flex gap-2.5 mb-6">
             {socialLinks.map((s) => (
-              <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-gray-800 hover:bg-sandal-600 flex items-center justify-center text-sandal-300 hover:text-white transition-all">
+              <a
+                key={s.label}
+                href={s.href}
+                aria-label={s.label}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-gray-800 hover:bg-sandal-600 flex items-center justify-center text-sandal-300 hover:text-white transition-all"
+              >
                 {s.icon}
               </a>
             ))}
@@ -282,7 +383,14 @@ export default function Footer() {
           <AccordionSection title="Shop">
             <ul className="space-y-3 pl-2">
               {QUICK_LINKS.map((l) => (
-                <li key={l.to}><Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">{l.label}</Link></li>
+                <li key={l.to}>
+                  <Link
+                    to={l.to}
+                    className="font-body text-sm text-gray-400 hover:text-white"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
               ))}
             </ul>
           </AccordionSection>
@@ -290,7 +398,14 @@ export default function Footer() {
           <AccordionSection title="My Account">
             <ul className="space-y-3 pl-2">
               {ACCOUNT_LINKS.map((l) => (
-                <li key={l.label}><Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">{l.label}</Link></li>
+                <li key={l.label}>
+                  <Link
+                    to={l.to}
+                    className="font-body text-sm text-gray-400 hover:text-white"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
               ))}
             </ul>
           </AccordionSection>
@@ -300,11 +415,17 @@ export default function Footer() {
               {POLICY_LINKS.map((l) => (
                 <li key={l.label}>
                   {l.to ? (
-                    <Link to={l.to} className="font-body text-sm text-gray-400 hover:text-white">
+                    <Link
+                      to={l.to}
+                      className="font-body text-sm text-gray-400 hover:text-white"
+                    >
                       {l.label}
                     </Link>
                   ) : (
-                    <a href={l.href} className="font-body text-sm text-gray-400 hover:text-white">
+                    <a
+                      href={l.href}
+                      className="font-body text-sm text-gray-400 hover:text-white"
+                    >
                       {l.label}
                     </a>
                   )}
@@ -315,13 +436,20 @@ export default function Footer() {
 
           <AccordionSection title="Contact Us">
             <ul className="space-y-3 pl-2 text-sm text-gray-400">
-              <li className="flex items-center gap-2.5"><Phone size={13} className="text-sandal-400" />
-                <a href={`tel:${phone}`} className="hover:text-white">{phone}</a>
+              <li className="flex items-center gap-2.5">
+                <Phone size={13} className="text-sandal-400" />
+                <a href={`tel:${phone}`} className="hover:text-white">
+                  {phone}
+                </a>
               </li>
-              <li className="flex items-center gap-2.5"><Mail size={13} className="text-sandal-400" />
-                <a href={`mailto:${email_c}`} className="hover:text-white">{email_c}</a>
+              <li className="flex items-center gap-2.5">
+                <Mail size={13} className="text-sandal-400" />
+                <a href={`mailto:${email_c}`} className="hover:text-white">
+                  {email_c}
+                </a>
               </li>
-              <li className="flex items-start gap-2.5"><MapPin size={13} className="text-sandal-400 mt-0.5 shrink-0" />
+              <li className="flex items-start gap-2.5">
+                <MapPin size={13} className="text-sandal-400 mt-0.5 shrink-0" />
                 <span>{address}</span>
               </li>
             </ul>
@@ -329,22 +457,31 @@ export default function Footer() {
 
           {/* Mobile newsletter */}
           <div className="pt-2 -mb-4">
-            <p className="font-body text-sm font-bold text-white mb-2">Stay Updated</p>
+            <p className="font-body text-sm font-bold text-white mb-2">
+              Stay Updated
+            </p>
             <form onSubmit={handleSub} className="flex gap-2">
               <input
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setSubMsg(""); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setSubMsg("");
+                }}
                 placeholder="your@email.com"
                 className="flex-1 bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400"
               />
-              <button type="submit"
-                className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-4 py-2.5 rounded-xl text-sm transition-all shrink-0">
+              <button
+                type="submit"
+                className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-4 py-2.5 rounded-xl text-sm transition-all shrink-0"
+              >
                 Go
               </button>
             </form>
             {subMsg && (
-              <p className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}>
+              <p
+                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
+              >
                 {subMsg}
               </p>
             )}
@@ -354,12 +491,13 @@ export default function Footer() {
         {/* ── Copyright ──────────────────────────────────────── */}
         <div className="border-t border-gray-800 pt-1 text-center">
           <p className="font-body text-xs text-gray-500 leading-relaxed">
-            © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights reserved.<br className="sm:hidden" />
+            © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights
+            reserved.
+            <br className="sm:hidden" />
             <span className="sm:ml-1">Made with ❤️ in Tamil Nadu</span>
           </p>
         </div>
       </div>
-
     </footer>
   );
 }

@@ -47,6 +47,18 @@ export function useSimilarProducts(productId, options = {}) {
   });
 }
 
+export function useSimilarProductsMulti(productIds, options = {}) {
+  return useQuery({
+    queryKey: ["products", "similar-multi", productIds],
+    queryFn: async () => {
+      const res = await API.get("/products/similar-multi", { params: { productIds, limit: 8 } });
+      return res.data.products || [];
+    },
+    enabled: !!productIds,
+    ...options,
+  });
+}
+
 export function useProductDetail(slug) {
   return useQuery({
     queryKey: ["product", slug],
