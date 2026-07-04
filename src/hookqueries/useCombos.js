@@ -20,6 +20,7 @@ const mapComboToFrontend = (c) => {
     startDate: c.startDate ? new Date(c.startDate).toISOString().split("T")[0] : "",
     endDate: c.endDate ? new Date(c.endDate).toISOString().split("T")[0] : "",
     items: c.items || [],
+    inStock: c.inStock,
     individualTotal: c.individualTotal,
     savings: c.savings,
     createdAt: c.createdAt,
