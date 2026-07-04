@@ -4,8 +4,7 @@ import { Tag, ChevronRight, Home, MapPin, ArrowLeft, Lock, Truck, Minus, Plus, B
 import CouponBox from "./CouponBox";
 import StepBar from "./StepBar";
 
-import comboImg from "../../assets/products/combo.jpg";
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", {
@@ -122,12 +121,6 @@ export default function OrderSummaryStep({
             </h2>
           </div>
         </div>
-
-        {/* 100% Secure badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 font-body text-[11px] font-bold">
-          <Lock size={12} className="text-gray-400" />
-          <span>100% Secure</span>
-        </div>
       </div>
 
       {/* ── Scrollable page content ────────────────────────────── */}
@@ -221,7 +214,7 @@ export default function OrderSummaryStep({
         </div>{/* ── END LEFT COLUMN ──────────────────────────────── */}
 
         {/* ── RIGHT COLUMN — Price Details (sticky on desktop) ─── */}
-        <div className="mt-4 md:mt-0 md:w-120 md:shrink-0">
+        <div className="mt-4 md:mt-0 md:w-96 md:shrink-0">
           <div className="md:sticky md:top-[88px] space-y-4">
 
             {/* ── Price Details ────────────────────────────────────── */}

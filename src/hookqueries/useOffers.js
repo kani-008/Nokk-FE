@@ -1,55 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../ApiCall/Api.jsx";
 
-// ── Helpers for Coupon Mapping ────────────────────────────────────────
-
-const mapCouponToFrontend = (c) => {
-  if (!c) return null;
-  
-  let discountType = "flat";
-  if (c.discountPercent > 0) {
-    discountType = "percentage";
-  } else if (c.freeShipping && c.discountFlat === 0) {
-    discountType = "free_shipping";
-  }
-
-  return {
-    ...c,
-    discountType,
-    discountValue: discountType === "percentage" ? c.discountPercent : (discountType === "free_shipping" ? 0 : c.discountFlat),
-    minOrderValue: c.minOrder,
-    maxUsageCount: c.maxUses,
-    maxUsesPerUser: c.maxUsesPerUser !== null && c.maxUsesPerUser !== undefined ? Number(c.maxUsesPerUser) : null,
-    expiresAt: c.expiryDate
-  };
-};
-
-const mapCouponToBackend = (form) => {
-  const payload = {
-    code: form.code,
-    description: form.description || null,
-    isActive: form.isActive,
-    minOrder: Number(form.minOrderValue) || 0,
-    maxUses: form.maxUsageCount ? Number(form.maxUsageCount) : null,
-    maxUsesPerUser: form.maxUsesPerUser ? Number(form.maxUsesPerUser) : null,
-    expiryDate: form.expiresAt || null,
-    freeShipping: form.freeShipping || form.discountType === "free_shipping" || false
-  };
-
-  if (form.discountType === "percentage") {
-    payload.discountPercent = Number(form.discountValue) || 0;
-    payload.discountFlat = 0;
-  } else if (form.discountType === "free_shipping") {
-    payload.discountPercent = 0;
-    payload.discountFlat = 0;
-    payload.freeShipping = true;
-  } else {
-    payload.discountFlat = Number(form.discountValue) || 0;
-    payload.discountPercent = 0;
-  }
-  return payload;
-};
-
 // ── Helpers for Offer Mapping ──────────────────────────────────────────
 
 const mapOfferToFrontend = (o) => {
@@ -60,10 +11,10 @@ const mapOfferToFrontend = (o) => {
     title: o.name,
     name: o.name,
     description: o.description,
+    imageUrl: o.imageUrl || "",
     offerType: o.offerType || "percentage",
     value: o.discountValue,
     discountValue: o.discountValue,
-    code: o.code || "",
     appliesTo: o.appliesTo || "all",
     productId: o.productId || "",
     productName: o.productName || null,
@@ -86,7 +37,6 @@ const mapOfferToBackend = (form) => {
     description: form.description || null,
     discountValue: Number(form.value) || 0,
     offerType: form.offerType || "percentage",
-    code: form.code ? form.code.trim().toUpperCase() : null,
     appliesTo: form.appliesTo || "all",
     productId: form.appliesTo === "product" ? (form.productId || null) : null,
     categoryId: form.appliesTo === "category" ? (form.categoryId || null) : null,
@@ -120,6 +70,16 @@ export function useAdminOfferList() {
   });
 }
 
+export function useActiveStoreWideOffer() {
+  return useQuery({
+    queryKey: ["offers", "active-storewide"],
+    queryFn: async () => {
+      const res = await API.get("/offers/active-storewide");
+      return res.data.offer || null;
+    },
+  });
+}
+
 export function useAdminOfferDetail(id) {
   return useQuery({
     queryKey: ["offer", "admin", id],
@@ -132,16 +92,6 @@ export function useAdminOfferDetail(id) {
   });
 }
 
-export function useAdminCouponList() {
-  return useQuery({
-    queryKey: ["coupons", "admin"],
-    queryFn: async () => {
-      const res = await API.get("/coupons/get-all");
-      return (res.data.coupons || []).map(mapCouponToFrontend);
-    },
-  });
-}
-
 // ── MUTATIONS ───────────────────────────────────────────────────────
 
 export function useCreateOffer() {
@@ -149,11 +99,16 @@ export function useCreateOffer() {
   return useMutation({
     mutationFn: async (form) => {
       const payload = mapOfferToBackend(form);
-      const res = await API.post("/offers/create-offer", payload);
-      return {
-        ...res.data,
-        offer: mapOfferToFrontend(res.data.offer)
-      };
+      let res;
+      if (form.imageFile) {
+        const fd = new FormData();
+        Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
+        fd.append("imageFile", form.imageFile);
+        res = await API.post("/offers/create-offer", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      } else {
+        res = await API.post("/offers/create-offer", payload);
+      }
+      return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
@@ -166,11 +121,17 @@ export function useUpdateOffer() {
   return useMutation({
     mutationFn: async ({ id, form }) => {
       const payload = mapOfferToBackend(form);
-      const res = await API.put("/offers/update-offer", { id, ...payload });
-      return {
-        ...res.data,
-        offer: mapOfferToFrontend(res.data.offer)
-      };
+      let res;
+      if (form.imageFile) {
+        const fd = new FormData();
+        fd.append("id", id);
+        Object.entries(payload).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
+        fd.append("imageFile", form.imageFile);
+        res = await API.put("/offers/update-offer", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      } else {
+        res = await API.put("/offers/update-offer", { id, ...payload });
+      }
+      return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
@@ -187,53 +148,6 @@ export function useDeleteOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["offers"] });
-    },
-  });
-}
-
-export function useCreateCoupon() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (form) => {
-      const payload = mapCouponToBackend(form);
-      const res = await API.post("/coupons/create-coupon", payload);
-      return {
-        ...res.data,
-        coupon: mapCouponToFrontend(res.data.coupon)
-      };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-    },
-  });
-}
-
-export function useUpdateCoupon() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, form }) => {
-      const payload = mapCouponToBackend(form);
-      const res = await API.put("/coupons/update-coupon", { id, ...payload });
-      return {
-        ...res.data,
-        coupon: mapCouponToFrontend(res.data.coupon)
-      };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-    },
-  });
-}
-
-export function useDeleteCoupon() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id) => {
-      const res = await API.delete("/coupons/delete-coupon", { data: { id } });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
   });
 }

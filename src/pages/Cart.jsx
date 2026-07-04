@@ -1,15 +1,15 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2, Sparkles, X } from "lucide-react";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
 import { useDeliverySettings } from "../hookqueries/useHome";
+import { useActiveStoreWideOffer } from "../hookqueries/useOffers";
 import { useToast } from "../components/useToast";
 import API from "../ApiCall/Api";
 
-import comboImg from "../assets/products/combo.jpg";
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -29,14 +29,112 @@ const mapServerItems = (raw = []) =>
     quantity:     i.quantity,
     slug:         i.slug,
     inStock:      i.inStock,
+    comboId:      i.comboId,
+    comboName:    i.comboName,
+    comboImage:   i.comboImage,
+    comboPrice:   i.comboPrice,
+    comboBaseQty: i.comboBaseQty,
   }));
+
+// ══════════════════════════════════════════════════════════════════════
+// STORE-WIDE OFFER BANNER — dismissible, updates live as subtotal crosses
+// the offer's min order threshold.
+// ══════════════════════════════════════════════════════════════════════
+function StoreWideBanner({ subtotal }) {
+  const { data: offer } = useActiveStoreWideOffer();
+  const [dismissed, setDismissed] = useState(false);
+  if (!offer || dismissed) return null;
+
+  const met = subtotal >= offer.minOrderValue;
+  const valueLabel = offer.offerType === "percentage" ? `${offer.discountValue}%` : rupee(offer.discountValue);
+
+  return (
+    <div className="mb-4 flex items-start gap-2.5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+      <Sparkles size={16} className="text-green-600 shrink-0 mt-0.5" />
+      <p className="font-body text-xs text-green-700 flex-1">
+        {met
+          ? `You're getting ${valueLabel} off automatically for orders over ${rupee(offer.minOrderValue)} — no code needed!`
+          : `Spend ${rupee(offer.minOrderValue - subtotal)} more to get ${valueLabel} off automatically, no code needed.`}
+      </p>
+      <button onClick={() => setDismissed(true)} className="shrink-0 text-green-500 hover:text-green-700" aria-label="Dismiss">
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// COMBO GROUP CARD — cart lines sharing a combo_id render as one block:
+// one quantity control governs the whole group, one remove button removes
+// it entirely. Shows the combo's fixed price as the line total, never the
+// sum of what the members would cost individually.
+// ══════════════════════════════════════════════════════════════════════
+function ComboGroupCard({ comboId, comboName, comboImage, comboPrice, comboQty, members, onQty, onRemove }) {
+  return (
+    <div className="card p-4 flex gap-3 sm:gap-4">
+      <img
+        src={comboImage || PH}
+        alt={comboName}
+        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl bg-amber-50 shrink-0"
+        onError={(e) => { e.target.src = PH; }}
+      />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <span className="badge-amber mb-1 inline-block">Combo</span>
+            <h3 className="font-body text-sm font-semibold text-brand-900 leading-snug">{comboName}</h3>
+            <div className="mt-1 space-y-0.5">
+              {members.map((m) => (
+                <p key={m.variantId} className="font-body text-[11px] text-amber-500">
+                  {m.productName} {m.weight} × {m.quantity}
+                </p>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => onRemove(comboId)}
+            className="shrink-0 p-1.5 text-amber-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            aria-label="Remove combo"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
+          <span className="font-num text-base font-bold text-brand-900">{rupee(comboPrice * comboQty)}</span>
+
+          <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => onQty(comboId, comboQty - 1)}
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
+              aria-label="Decrease combo quantity"
+            >
+              <Minus size="clamp(12px,1.5vw,16px)" />
+            </button>
+            <span className="px-[clamp(0.5rem,2vw,0.75rem)] font-num text-[clamp(0.75rem,1.5vw,0.875rem)] font-semibold text-brand-900 min-w-[clamp(1.5rem,3vw,2rem)] text-center">
+              {comboQty}
+            </span>
+            <button
+              onClick={() => onQty(comboId, comboQty + 1)}
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
+              aria-label="Increase combo quantity"
+            >
+              <Plus size="clamp(12px,1.5vw,16px)" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // EMPTY STATE
 // ══════════════════════════════════════════════════════════════════════
 function EmptyCart() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 px-4 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36  md:py-12 px-4 text-center">
       <ShoppingBag size={56} className="text-amber-200 mb-4" />
       <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your cart is empty</h2>
       <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
@@ -55,7 +153,7 @@ function EmptyCart() {
 // This widget shows the coupon effect (discount line) if one is applied,
 // but does not provide an input to enter new coupon codes.
 // ══════════════════════════════════════════════════════════════════════
-function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout, loading, freeShippingThreshold }) {
+function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout, loading, freeShippingThreshold, minOrderValue, belowMinOrder }) {
   return (
     <div className="card p-5 sticky top-24">
       <h2 className="font-display text-base font-bold text-brand-900 mb-4">Order Summary</h2>
@@ -84,12 +182,23 @@ function OrderSummary({ subtotal, discount, shipping, total, coupon, onCheckout,
         )}
       </div>
 
-      <div className="border-t border-amber-100 pt-3 flex justify-between items-center mb-5">
+      <div className="border-t border-amber-100 pt-3 flex justify-between items-center mb-4">
         <span className="font-body text-base font-bold text-brand-900">Total</span>
         <span className="font-num text-lg font-extrabold text-brand-900">{rupee(total)}</span>
       </div>
 
-      <button onClick={onCheckout} disabled={loading} className="btn-lg btn-primary w-full">
+      {belowMinOrder && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
+          <p className="font-body text-xs text-amber-700 font-semibold">
+            Minimum order value is {rupee(minOrderValue)}
+          </p>
+          <p className="font-body text-[11px] text-amber-500 mt-0.5">
+            Add {rupee(minOrderValue - subtotal)} more to proceed
+          </p>
+        </div>
+      )}
+
+      <button onClick={onCheckout} disabled={loading || belowMinOrder} className="btn-lg btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
         {loading
           ? <><Loader2 size={16} className="animate-spin" /> Processing…</>
           : <>Proceed to Checkout <ArrowRight size={16} /></>
@@ -160,7 +269,7 @@ function CartItem({ item, onQty, onRemove, syncing }) {
             )}
           </div>
 
-          {/* qty stepper */}
+          {/* qty stepper — max 3 per variant */}
           <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden">
             <button
               onClick={() => onQty(item.variantId, item.quantity - 1)}
@@ -174,17 +283,17 @@ function CartItem({ item, onQty, onRemove, syncing }) {
             </span>
             <button
               onClick={() => onQty(item.variantId, item.quantity + 1)}
-              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100"
+              disabled={item.quantity >= 3}
+              className="px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.25rem,1vw,0.375rem)] text-brand-700 hover:bg-amber-50 transition-colors active:bg-amber-100 disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
             >
               <Plus size="clamp(12px,1.5vw,16px)" />
             </button>
           </div>
+          {/* {item.quantity >= 3 && (
+            <span className="font-body text-[10px] text-amber-500 ml-1">Max 3</span>
+          )} */}
         </div>
-
-        <p className="font-body text-xs text-amber-500 mt-1.5 text-right">
-          Line total: <span className="font-num font-semibold text-amber-700">{rupee(item.price * item.quantity)}</span>
-        </p>
       </div>
     </div>
   );
@@ -207,6 +316,8 @@ export default function Cart() {
     updateQtyLocal,
     removeItemLocal,
     addItemLocal,
+    updateComboQtyLocal,
+    removeComboLocal,
     setDeliveryConfig,
     freeShippingThreshold,
   } = useCartStore();
@@ -216,6 +327,7 @@ export default function Cart() {
 
   // Sync delivery config from backend into the cart store
   const { data: deliverySettings } = useDeliverySettings();
+  const minOrderValue = deliverySettings?.minOrderValue ?? 0;
   useEffect(() => {
     if (deliverySettings) {
       setDeliveryConfig(deliverySettings.freeShippingThreshold, deliverySettings.flatDeliveryCharge);
@@ -270,13 +382,15 @@ export default function Cart() {
       return;
     }
 
+    const capped = Math.min(3, quantity);
+
     // 1. Update UI immediately (zero perceived lag)
-    updateQtyLocal(variantId, quantity);
+    updateQtyLocal(variantId, capped);
 
     if (!isAuthenticated) return;
 
     // 2. Track latest desired qty across rapid taps
-    pendingQty.current[variantId] = quantity;
+    pendingQty.current[variantId] = capped;
 
     // 3. Debounce: only send API call 400ms after last tap
     clearTimeout(debounceRef.current[variantId]);
@@ -304,7 +418,85 @@ export default function Cart() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, updateQtyLocal, setItems, handleRemoveItem]);
 
+  // ── combo group: remove — optimistic, whole group at once ──────────
+  const comboDebounceRef = useRef({}); // comboId → timeoutId
+
+  const handleRemoveCombo = useCallback(async (comboId) => {
+    clearTimeout(comboDebounceRef.current[comboId]);
+    const snapshot = useCartStore.getState().items.filter((i) => i.comboId === comboId);
+
+    removeComboLocal(comboId);
+
+    if (!isAuthenticated) return;
+
+    try {
+      const res = await API.delete("/cart/remove-combo", { data: { comboId } });
+      setItems(mapServerItems(res.data.cart?.items));
+    } catch {
+      try {
+        const res = await API.get("/cart/get-cart");
+        setItems(mapServerItems(res.data.cart?.items));
+      } catch {
+        snapshot.forEach((s) => addItemLocal(s));
+      }
+    }
+  }, [isAuthenticated, removeComboLocal, addItemLocal, setItems]);
+
+  // ── combo group: quantity — scales every member row together ───────
+  const handleUpdateComboQty = useCallback((comboId, comboQty) => {
+    if (comboQty < 1) {
+      handleRemoveCombo(comboId);
+      return;
+    }
+
+    updateComboQtyLocal(comboId, comboQty);
+
+    if (!isAuthenticated) return;
+
+    clearTimeout(comboDebounceRef.current[comboId]);
+    comboDebounceRef.current[comboId] = setTimeout(async () => {
+      try {
+        const res = await API.put("/cart/update-combo-qty", { comboId, quantity: comboQty });
+        setItems(mapServerItems(res.data.cart?.items));
+      } catch (err) {
+        const msg = err?.response?.data?.message || "Could not update combo quantity";
+        setError(msg);
+        try {
+          const res = await API.get("/cart/get-cart");
+          setItems(mapServerItems(res.data.cart?.items));
+        } catch { /* silent */ }
+      }
+    }, 400);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, updateComboQtyLocal, setItems, handleRemoveCombo]);
+
+  // ── group cart lines sharing a combo_id into one block each ─────────
+  const { comboGroups, ungroupedItems } = useMemo(() => {
+    const groups = new Map();
+    const ungrouped = [];
+    items.forEach((item) => {
+      if (item.comboId) {
+        if (!groups.has(item.comboId)) {
+          groups.set(item.comboId, {
+            comboId: item.comboId,
+            comboName: item.comboName,
+            comboImage: item.comboImage,
+            comboPrice: item.comboPrice,
+            comboQty: item.comboBaseQty ? Math.round(item.quantity / item.comboBaseQty) : 1,
+            members: [],
+          });
+        }
+        groups.get(item.comboId).members.push(item);
+      } else {
+        ungrouped.push(item);
+      }
+    });
+    return { comboGroups: Array.from(groups.values()), ungroupedItems: ungrouped };
+  }, [items]);
+
   // ── checkout ───────────────────────────────────────────────────────
+  const belowMinOrder = minOrderValue > 0 && subtotal() < minOrderValue;
+
   const handleCheckout = () => {
     useBuyNowStore.getState().clearItem();
     if (!isAuthenticated) {
@@ -312,6 +504,7 @@ export default function Cart() {
       return;
     }
     if (items.every((i) => i.inStock === false)) return;
+    if (belowMinOrder) return;
     navigate("/checkout");
   };
 
@@ -341,10 +534,20 @@ export default function Cart() {
         )}
       </div>
 
+      <StoreWideBanner subtotal={sub} />
+
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── Cart items list ───────────────────────────────────── */}
         <div className="flex-1 space-y-3">
-          {items.map((item) => (
+          {comboGroups.map((g) => (
+            <ComboGroupCard
+              key={g.comboId}
+              {...g}
+              onQty={handleUpdateComboQty}
+              onRemove={handleRemoveCombo}
+            />
+          ))}
+          {ungroupedItems.map((item) => (
             <CartItem
               key={item.variantId}
               item={item}
@@ -358,7 +561,7 @@ export default function Cart() {
             <OrderSummary
               subtotal={sub} discount={disc} shipping={ship} total={tot}
               coupon={coupon}
-              onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
+              onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold} minOrderValue={minOrderValue} belowMinOrder={belowMinOrder}
             />
           </div>
         </div>
@@ -368,7 +571,7 @@ export default function Cart() {
           <OrderSummary
             subtotal={sub} discount={disc} shipping={ship} total={tot}
             coupon={coupon}
-            onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold}
+            onCheckout={handleCheckout} loading={false} freeShippingThreshold={freeShippingThreshold} minOrderValue={minOrderValue} belowMinOrder={belowMinOrder}
           />
         </div>
       </div>

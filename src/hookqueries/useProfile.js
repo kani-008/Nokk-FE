@@ -20,6 +20,17 @@ function mapAddr(addr) {
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
+export function useMyProfile() {
+  return useQuery({
+    queryKey: ["my-profile"],
+    queryFn: async () => {
+      const res = await API.get("/users/me");
+      return res.data.user;
+    },
+    staleTime: 2 * 60_000,
+  });
+}
+
 export function useAddresses() {
   return useQuery({
     queryKey: ["addresses"],
@@ -31,60 +42,79 @@ export function useAddresses() {
   });
 }
 
+// Helper for formatting state names (e.g. "TAMIL NADU" -> "Tamil Nadu")
+const formatState = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
+
+async function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ── Pincode lookup (not a query — called imperatively from forms) ────
 export async function lookupPincode(pincode) {
-  /*
-  const res = await API.get(`/pincode/get-by-pincode?pincode=${pincode}`);
-  return res.data.data; // { pincode, district, state, taluk, offices }
-  */
-
   const apiKey = import.meta.env.VITE_GOV_API_KEY;
   const resourceId = import.meta.env.VITE_GOV_PINCODE_RESOURCE_ID;
+  
+  if (!pincode || !/^\d{6}$/.test(pincode)) {
+    throw new Error("A valid 6-digit pincode is required");
+  }
+
   const url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[pincode]=${pincode}`;
-
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 6000);
-
+  
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
+    console.log(`[FE] Direct lookupPincode requesting India Gov API for pincode: ${pincode}`);
+    const response = await fetchWithTimeout(url, 6000);
+    console.log(`[FE] Direct lookupPincode Response Status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error("Failed to fetch pincode details from government API");
+      const err = new Error("Failed to fetch pincode details");
+      err.status = response.status;
+      throw err;
     }
+    
     const result = await response.json();
     const records = result.records || [];
+    console.log(`[FE] India Gov API Records Found: ${records.length}`);
+    
     if (records.length === 0) {
-      throw new Error("Pincode not found");
+      const err = new Error("Pincode not found");
+      err.status = 404;
+      throw err;
     }
 
-  let bestRecord = records.find(r => r.deliverystatus === "Delivery" && r.taluk && r.taluk !== "NA");
-  if (!bestRecord) {
-    bestRecord = records.find(r => r.taluk && r.taluk !== "NA");
-  }
-  if (!bestRecord) {
-    bestRecord = records.find(r => r.deliverystatus === "Delivery");
-  }
-  if (!bestRecord) {
-    bestRecord = records[0];
-  }
+    let bestRecord = records.find((r) => r.deliverystatus === "Delivery" && r.taluk && r.taluk !== "NA");
+    if (!bestRecord) bestRecord = records.find((r) => r.taluk && r.taluk !== "NA");
+    if (!bestRecord) bestRecord = records.find((r) => r.deliverystatus === "Delivery");
+    if (!bestRecord) bestRecord = records[0];
 
-  const formatState = (str) => {
-    if (!str) return "";
-    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-    return {
-      pincode: pincode,
+    const data = {
+      pincode,
       district: bestRecord.districtname || "",
       state: formatState(bestRecord.statename) || "",
       taluk: bestRecord.taluk && bestRecord.taluk !== "NA" ? bestRecord.taluk : "",
     };
+
+    return data;
   } catch (err) {
-    clearTimeout(id);
-    if (err.name === "AbortError") {
+    const timedOut = err.name === "AbortError";
+    const status = timedOut ? 504 : (err.status || 500);
+    console.error(`[FE] lookupPincode failed: status ${status}, message: ${err.message}`);
+    
+    if (timedOut) {
       throw new Error("Pincode request timed out. Please try again or fill fields manually.");
     }
-    throw err;
+    if (status === 404) {
+      throw new Error("Pincode not found");
+    }
+    throw new Error(err.message || "Failed to fetch pincode details");
   }
 }
 
@@ -163,53 +193,58 @@ export function useDeleteAddress() {
 
 // ── Geolocation Reverse Geocoding ──
 export async function reverseGeocode(lat, lng) {
-  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
-  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${apiKey}`;
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error("Valid lat and lng are required");
+  }
 
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 7000);
+  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${apiKey}`;
 
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
+    console.log(`[FE] Direct reverseGeocode requesting Geoapify API with coords: lat=${lat}, lng=${lng}`);
+    const response = await fetchWithTimeout(url, 7000);
+    console.log(`[FE] Direct reverseGeocode Response Status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error("Failed to detect location details");
+      const err = new Error("Failed to detect location details");
+      err.status = response.status;
+      throw err;
     }
-    const data = await response.json();
-    if (!data.features || data.features.length === 0) {
-      throw new Error("Location details not found");
+    
+    const geoData = await response.json();
+    const features = geoData.features || [];
+    console.log(`[FE] Geoapify Features Found: ${features.length}`);
+    
+    if (features.length === 0) {
+      const err = new Error("Location details not found");
+      err.status = 404;
+      throw err;
     }
 
-    const properties = data.features[0].properties || {};
-    return {
+    const properties = features[0].properties || {};
+    const data = {
       pincode: properties.postcode || "",
       city: properties.city || properties.county || "",
       taluk: properties.suburb || properties.district || "",
-      state: properties.state || ""
+      state: properties.state || "",
     };
+
+    return data;
   } catch (err) {
-    clearTimeout(id);
-    if (err.name === "AbortError") {
+    const timedOut = err.name === "AbortError";
+    const status = timedOut ? 504 : (err.status || 500);
+    console.error(`[FE] reverseGeocode failed: status ${status}, message: ${err.message}`);
+    
+    if (timedOut) {
       throw new Error("Location detection timed out. Please try again or fill fields manually.");
     }
-    throw err;
+    throw new Error(err.message || "Failed to detect location details");
   }
 }
 
 export async function detectAddressFromCoords(lat, lng) {
-  const geo = await reverseGeocode(lat, lng);
-  if (geo.pincode && /^\d{6}$/.test(geo.pincode)) {
-    try {
-      const gov = await lookupPincode(geo.pincode);
-      return {
-        pincode: geo.pincode,
-        city: gov.district || geo.city,
-        taluk: gov.taluk && gov.taluk !== "NA" ? gov.taluk : geo.taluk,
-        state: gov.state || geo.state
-      };
-    } catch {
-      // fallback to raw OSM values
-    }
-  }
-  return geo;
+  return reverseGeocode(lat, lng);
 }

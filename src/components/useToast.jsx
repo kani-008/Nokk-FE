@@ -17,9 +17,16 @@ export function useToast() {
                 setDisplayedToast(toast);
                 setToastVisible(true);
             }, 0);
+
+            const dismissTimer = setTimeout(() => {
+                if (!active) return;
+                setToast({ message: "", type: "error" });
+            }, 3500);
+
             return () => {
                 active = false;
                 clearTimeout(t);
+                clearTimeout(dismissTimer);
             };
         } else {
             const t1 = setTimeout(() => {

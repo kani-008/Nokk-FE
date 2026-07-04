@@ -22,7 +22,9 @@ export default function CustomerLayout() {
   const isNoFooterMobile = isAuthPage
     || isCheckoutPage
     || location.pathname === "/cart"
-    || location.pathname === "/wishlist";
+    || location.pathname === "/wishlist"
+    || location.pathname === "/my-orders"
+    || location.pathname === "/profile";
 
   const { token, isAuthenticated } = useAuthStore();
 
@@ -82,7 +84,11 @@ export default function CustomerLayout() {
 
       syncAndLoad();
     }
-  }, [isAuthenticated, token]);
+  // token is intentionally excluded: Api.jsx always reads the latest token from the store
+  // via the request interceptor, so we don't need to re-run the sync on every silent
+  // token refresh (which would cause a second redundant cart/wishlist fetch).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   return (
     <div className="min-h-screen flex flex-col bg-sandal-50">

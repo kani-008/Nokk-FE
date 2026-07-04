@@ -10,7 +10,7 @@ export function useNotificationsList() {
       const res = await API.get("/notifications/list", { params: { limit: 20, page: 1 } });
       return res.data.notifications || [];
     },
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: 2 * 60_000, // Poll every 2 minutes
   });
 }
 

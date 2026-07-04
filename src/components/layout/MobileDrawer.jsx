@@ -32,7 +32,7 @@ export default function MobileDrawer({
     <div className="md:hidden fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative ml-auto w-80 max-w-[85vw] h-full bg-white shadow-xl flex flex-col">
+      <div className="relative ml-auto w-55 max-w-[85vw] h-full bg-white shadow-xl flex flex-col">
 
         {/* drawer header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-sandal-100 shrink-0">
@@ -49,22 +49,7 @@ export default function MobileDrawer({
         {/* scrollable body */}
         <div className="flex-1 overflow-y-auto">
 
-          {/* user info if logged in */}
-          {isAuthenticated && (
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-sandal-100 bg-sandal-50">
-              <div className="w-10 h-10 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
-                {user?.fullName?.[0] ?? user?.name?.[0] ?? "U"}
-              </div>
-              <div className="min-w-0">
-                <p className="font-body text-sm font-bold text-gray-800 truncate">
-                  {user?.fullName ?? user?.name}
-                </p>
-                <p className="font-body text-xs text-gray-500 truncate">
-                  {user?.phone ?? user?.email}
-                </p>
-              </div>
-            </div>
-          )}
+
 
           <nav className="flex flex-col py-2">
 
@@ -125,9 +110,6 @@ export default function MobileDrawer({
             ))}
 
             <div className="border-t border-sandal-100 mt-1 pt-1">
-              <MobileNavLink to="/wishlist"  icon={<Heart size={16} />}   onClick={onClose}>
-                Wishlist {wishlistCount > 0 && <span className="ml-auto badge-red">{wishlistCount}</span>}
-              </MobileNavLink>
               {isAuthenticated ? (
                 <>
                   <MobileNavLink to="/profile"   icon={<User size={16} />}    onClick={onClose}>My Profile</MobileNavLink>

@@ -3,10 +3,8 @@ import { MapPin, CreditCard, Truck, ArrowLeft, Loader2, Check } from "lucide-rea
 import { PAYMENT_METHODS } from "./Payment";
 import { useSubmitUpiReference } from "../../hookqueries/useOrders";
 
-import comboImg from "../../assets/products/combo.jpg";
-
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", {

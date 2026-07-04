@@ -8,11 +8,15 @@ export function useDeliverySettings() {
       const res = await API.get("/settings/get-all");
       const s = res.data.settings || {};
       return {
-        flatDeliveryCharge:    Number(s.flatDeliveryCharge)    || 50,
+        // shippingCharge is the canonical key saved by Settings page;
+        // flatDeliveryCharge is the legacy key — support both
+        flatDeliveryCharge:    Number(s.shippingCharge || s.flatDeliveryCharge) || 60,
         freeShippingThreshold: Number(s.freeShippingThreshold) || 499,
+        minOrderValue:         Number(s.minOrderValue)         || 0,
+        maxCartItems:          Number(s.maxCartItems)          || 20,
       };
     },
-    staleTime: 5 * 60_000, // settings rarely change — cache 5 min
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -29,6 +33,7 @@ export function useHomeBanners() {
       }
       return banners;
     },
+    staleTime: 10 * 60_000,
     initialData: () => {
       try {
         const cached = localStorage.getItem("nokk_home_banners");
@@ -36,6 +41,13 @@ export function useHomeBanners() {
       } catch (err) {
         console.error("Failed to parse cached banners:", err);
         return undefined;
+      }
+    },
+    initialDataUpdatedAt: () => {
+      try {
+        return localStorage.getItem("nokk_home_banners") ? Date.now() : 0;
+      } catch {
+        return 0;
       }
     },
   });
@@ -48,6 +60,7 @@ export function useHomeCategories() {
       const res = await API.get("/categories/get-all");
       return res.data.categories || [];
     },
+    staleTime: 10 * 60_000,
   });
 }
 
@@ -58,6 +71,7 @@ export function useHomeBestsellers() {
       const res = await API.get("/products/get-all?isBestseller=true&limit=8");
       return res.data.products || [];
     },
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -68,5 +82,6 @@ export function useHomeNewArrivals() {
       const res = await API.get("/products/get-all?sort=newest&limit=8");
       return res.data.products || [];
     },
+    staleTime: 5 * 60_000,
   });
 }

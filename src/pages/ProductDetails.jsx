@@ -7,6 +7,7 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
+import { Helmet } from "react-helmet-async";
 import { useProductDetail, useSimilarProducts } from "../hookqueries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
@@ -18,15 +19,28 @@ import ProductDescription from "../components/Product/ProductDescription.jsx";
 import ProductReviews from "../components/Product/ProductReviews.jsx";
 import ProductCard from "../components/Product/ProductCard.jsx";
 
-import comboImg from "../assets/products/combo.jpg";
-
 // placeholder 
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-// Detail skeleton 
+// Mirrors the backend's applyOfferToPrice (orderController.js) so the
+// displayed discount always matches what checkout will actually charge.
+function applyActiveOffer(price, offer) {
+  if (!offer) return null;
+  if (offer.type === "percentage") {
+    const raw = (price * offer.discountValue) / 100;
+    const discount = offer.maxDiscount != null ? Math.min(raw, offer.maxDiscount) : raw;
+    return Math.max(price - discount, 0);
+  }
+  if (offer.type === "flat") {
+    return Math.max(price - offer.discountValue, 0);
+  }
+  return null;
+}
+
+// Detail skeleton
 function DetailSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-pulse">
@@ -204,7 +218,19 @@ export default function ProductDetails() {
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
-  if (loading) return <DetailSkeleton />;
+  const SITE_URL = "https://nammaoorkaruvattukadai.com";
+  const DEFAULT_TITLE = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
+  const DEFAULT_DESC = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai.";
+
+  if (loading) return (
+    <>
+      <Helmet>
+        <title>{DEFAULT_TITLE}</title>
+        <meta name="description" content={DEFAULT_DESC} />
+      </Helmet>
+      <DetailSkeleton />
+    </>
+  );
   if (notFound) return (
     <div className="flex flex-col items-center justify-center py-24 text-center px-4">
       <span className="text-5xl mb-4">🐟</span>
@@ -216,10 +242,17 @@ export default function ProductDetails() {
   if (!product) return null;
 
   const wishlisted = isWishlisted(product.id);
-  const price = activeVariant?.price ?? product.minPrice ?? 0;
-  const compare = (activeVariant?.comparePrice ?? product.minComparePrice) > price
+  const rawPrice = activeVariant?.price ?? product.minPrice ?? 0;
+  const rawCompare = (activeVariant?.comparePrice ?? product.minComparePrice) > rawPrice
     ? (activeVariant?.comparePrice ?? product.minComparePrice)
     : null;
+
+  // An active offer takes priority over the plain comparePrice discount —
+  // both are visually the same "was/now" pattern, so they share one slot.
+  const offer = product.activeOffer;
+  const offerPrice = offer ? applyActiveOffer(rawPrice, offer) : null;
+  const price = offerPrice != null ? offerPrice : rawPrice;
+  const compare = offerPrice != null ? rawPrice : rawCompare;
   const disc = compare ? Math.round(((compare - price) / compare) * 100) : 0;
   const inStock = activeVariant?.inStock ?? product.inStock ?? false;
 
@@ -405,8 +438,24 @@ export default function ProductDetails() {
     setShareModalOpen(false);
   };
 
+  const productTitle = `${product.nameEn} — Namma Oor Karuvattu Kadai`;
+  const productDesc = product.description
+    ? product.description.slice(0, 160).trimEnd()
+    : DEFAULT_DESC;
+  const productUrl = `${SITE_URL}/products/${product.slug}`;
+  const productImage = product.primaryImage || null;
+
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
+      <Helmet>
+        <title>{productTitle}</title>
+        <meta name="description" content={productDesc} />
+        <meta property="og:title" content={productTitle} />
+        <meta property="og:description" content={productDesc} />
+        {productImage && <meta property="og:image" content={productImage} />}
+        <meta property="og:url" content={productUrl} />
+        <meta property="og:type" content="product" />
+      </Helmet>
 
       {/* ── Toast (Red for Error, Green for Success) ── */}
       <div
@@ -465,6 +514,11 @@ export default function ProductDetails() {
             <div className="flex gap-2 flex-wrap">
               {product.isBestseller && <span className="badge-amber">🏆 Best Seller</span>}
               {product.isNew && <span className="badge-green">✨ New Arrival</span>}
+              {offer && (
+                <span className="badge-red">
+                  {offer.type === "percentage" ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                </span>
+              )}
               {!inStock && <span className="badge-red">Out of Stock</span>}
             </div>
 

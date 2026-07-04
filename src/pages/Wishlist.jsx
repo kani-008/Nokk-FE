@@ -5,10 +5,8 @@ import { useWishlistStore } from "../components/store/WishlistStore";
 import { useCartStore }     from "../components/store/CartStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import API from "../ApiCall/Api";
-import comboImg from "../assets/products/combo.jpg";
-
 // ─── placeholder ──────────────────────────────────────────────────────
-const PH = comboImg;
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -104,7 +102,7 @@ function WishCard({ product, onRemove }) {
     <Link to={`/products/${product.slug}`} className="group block">
       <div className="card-hover">
         {/* image */}
-        <div className="relative aspect-square overflow-hidden bg-brand-50 rounded-t-2xl">
+        <div className="relative aspect-square overflow-hidden bg-brand-50 rounded-t-md">
           <img
             src={image}
             alt={product.nameEn}
@@ -288,7 +286,7 @@ export default function Wishlist() {
   // ── Empty state ───────────────────────────────────────────────────
   if (!localIds.length && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 px-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
         <Heart size={56} className="text-amber-200 mb-4" />
         <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">

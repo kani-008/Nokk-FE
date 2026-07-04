@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   Users,
   Tag,
+  Ticket,
   Image,
   BarChart2,
   Settings,
@@ -17,6 +18,8 @@ import {
   Bell,
   ExternalLink,
   Search,
+  MessageSquare,
+  Grid3x3,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -27,11 +30,14 @@ import IconButton from "../../components/admin/IconButton.jsx";
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/products", label: "Products", icon: Package },
+  { to: "/admin/categories", label: "Categories", icon: Grid3x3 },
   { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/offers", label: "Offers", icon: Tag },
+  { to: "/admin/coupons", label: "Coupons", icon: Ticket },
   { to: "/admin/banners", label: "Banners", icon: Image },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -185,7 +191,7 @@ function Sidebar({ collapsed, onClose }) {
 // When no page has registered, the box still renders (desktop) / the icon
 // still renders (mobile) but typing is a no-op — purely cosmetic until a
 // page opts in via useOutletContext().registerSearch(...).
-function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
+function TopBar({ onMobileOpen, pathname, searchConfig }) {
   const { user } = useAuthStore();
   const [localSearchVal, setLocalSearchVal] = useState(""); // fallback when no page has registered
   const [notifOpen, setNotifOpen] = useState(false); // drives CSS transition
@@ -273,10 +279,6 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
         <Menu size={20} />
       </IconButton>
 
-      {/* Desktop: collapse sidebar */}
-      <IconButton onClick={onToggle} className="hidden md:inline-flex" aria-label="Collapse sidebar">
-        <Menu size={19} />
-      </IconButton>
 
       {/* Title — always visible on desktop; hidden on mobile while the search is expanded */}
       <h1
@@ -376,7 +378,6 @@ function TopBar({ onToggle, onMobileOpen, pathname, searchConfig }) {
 // ══════════════════════════════════════════════════════════════════════
 export default function AdminLayout() {
   const { pathname } = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // ── Page-aware topbar search ──
@@ -423,7 +424,7 @@ export default function AdminLayout() {
     <div className="flex h-screen bg-sandal-50 overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden md:flex shrink-0">
-        <Sidebar collapsed={collapsed} />
+        <Sidebar collapsed={false} />
       </div>
 
       {/* Mobile drawer — always mounted, slides via transform */}
@@ -449,7 +450,6 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar
-          onToggle={() => setCollapsed((s) => !s)}
           onMobileOpen={() => setMobileOpen(true)}
           pathname={pathname}
           searchConfig={searchConfig}

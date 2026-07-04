@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../ApiCall/Api.jsx";
+import { useAuthStore } from "../components/store/AuthStore";
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
@@ -90,11 +91,68 @@ export function useAddReview() {
       return res.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the specific product details query to load the new review list
       if (variables.slug) {
         queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
       }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
+      }
     },
+  });
+}
+
+export function useUpdateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.put("/products/update-review", payload);
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.slug) {
+        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
+      }
+    },
+  });
+}
+
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.delete("/products/delete-my-review", { data: payload });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.slug) {
+        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.productId && variables.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["my-review", variables.productId, variables.orderId] });
+      }
+    },
+  });
+}
+
+export function useMyReview(productId, orderId) {
+  const token = useAuthStore((s) => s.token);
+  return useQuery({
+    queryKey: ["my-review", productId, orderId],
+    queryFn: async () => {
+      if (!productId || !orderId) return null;
+      const res = await API.get(`/products/get-my-review?productId=${productId}&orderId=${orderId}`);
+      return res.data.review;
+    },
+    enabled: !!productId && !!orderId && !!token,
   });
 }
 
@@ -232,6 +290,20 @@ export function useUploadProductImage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;
+    },
+  });
+}
+
+export function useUploadReviewImage() {
+  return useMutation({
+    mutationFn: async (body) => {
+      // body must be a FormData containing `file` (binary) and `slug` (string).
+      // The caller must verify slug is non-empty before calling mutateAsync —
+      // the backend rejects the request without it.
+      const res = await API.post("/upload/review-image", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data; // expected: { url: "..." }
     },
   });
 }

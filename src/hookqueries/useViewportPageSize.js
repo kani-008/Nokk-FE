@@ -3,31 +3,42 @@ import { useState, useEffect } from "react";
 /**
  * Returns a page-size limit tuned for the current viewport.
  *
+ * For ultra-large viewports (e.g. 4K, 4480x2520), it dynamically computes
+ * a row limit to populate rows up to the full height of the display screen.
+ *
  * Target viewport: 1440x900 (iMac M1 admin display).
  * Match range chosen to tolerate real-world variation — scrollbars,
  * browser chrome, slight zoom drift, and macOS display scaling:
  *   width  : 1400 – 1520  (covers 1440; excludes 1280 below and 1536+ above)
  *   height : 840  – 960   (covers 900; excludes 800 below and 1080 above)
- *
- * Returns `largeLimit` only when inside that range; `defaultLimit` for
- * every other viewport (mobile, 1280 laptop, 1920+ widescreen, etc.).
- *
- * Resize listener is debounced at 150 ms so it does not fire excessively
- * during window dragging.
  */
 export default function useViewportPageSize(defaultLimit, largeLimit) {
-  const isTarget = () =>
-    window.innerWidth  >= 1400 && window.innerWidth  <= 1520 &&
-    window.innerHeight >= 840  && window.innerHeight <= 960;
+  const getDynamicLimit = () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-  const [limit, setLimit] = useState(() => (isTarget() ? largeLimit : defaultLimit));
+    // For ultra-large screens, scale rows up to fill the viewport height
+    if (height > 1080 || width > 1920) {
+      // Estimated header/padding height is ~280px, row height is ~56px
+      const calculatedRows = Math.floor((height - 280) / 56);
+      return Math.max(defaultLimit, calculatedRows);
+    }
+
+    const isTarget =
+      width  >= 1400 && width  <= 1520 &&
+      height >= 840  && height <= 960;
+
+    return isTarget ? largeLimit : defaultLimit;
+  };
+
+  const [limit, setLimit] = useState(getDynamicLimit);
 
   useEffect(() => {
     let timer;
     const handler = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        setLimit(isTarget() ? largeLimit : defaultLimit);
+        setLimit(getDynamicLimit());
       }, 150);
     };
     window.addEventListener("resize", handler);
@@ -35,7 +46,7 @@ export default function useViewportPageSize(defaultLimit, largeLimit) {
       window.removeEventListener("resize", handler);
       clearTimeout(timer);
     };
-  }, [defaultLimit, largeLimit]);
+  }, [defaultLimit, largeLimit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return limit;
 }

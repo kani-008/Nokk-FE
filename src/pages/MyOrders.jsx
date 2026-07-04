@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation }   from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Package, ChevronDown, ChevronUp, ShoppingBag,
-  MapPin, Clock, ArrowRight, X, RotateCcw, Loader2, Check, Star,
+  Package, ShoppingBag, ArrowRight, Star, ChevronRight, ClipboardList
 } from "lucide-react";
-import { useMyOrders, useCancelOrder, useRequestReplacement } from "../hookqueries/useOrders";
-import { useAddReview } from "../hookqueries/useProducts";
-import { useAuthStore } from "../components/store/AuthStore.jsx";
-import comboImg from "../assets/products/combo.jpg";
-
-const PH = comboImg;
+import { useMyOrders } from "../hookqueries/useOrders";
+import OrderDetail from "../components/orders/OrderDetail";
+const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -17,428 +13,112 @@ const rupee = (n) =>
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
-// ── Status pill ────────────────────────────────────────────────────────
-const STATUS_STYLE = {
-  pending:               "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed:             "bg-blue-50 text-blue-700 border-blue-200",
-  processing:            "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped:               "bg-purple-50 text-purple-700 border-purple-200",
-  out_for_delivery:      "bg-orange-50 text-orange-700 border-orange-200",
-  delivered:             "bg-green-50 text-green-700 border-green-200",
-  cancelled:             "bg-red-50 text-red-600 border-red-200",
-  replacement_requested: "bg-pink-50 text-pink-700 border-pink-200",
-  replacement_approved:  "bg-blue-50 text-blue-700 border-blue-200",
-  replacement_rejected:  "bg-red-50 text-red-600 border-red-200",
-  replacement_completed: "bg-teal-50 text-teal-700 border-teal-200",
+// ── Status helpers ──────────────────────────────────────────────────────
+const getStatusTitle = (status, date) => {
+  const formatted = date ? new Date(date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "";
+  switch (status) {
+    case "delivered":              return `Delivered on ${formatted}`;
+    case "cancelled":              return `Cancelled on ${formatted}`;
+    case "replacement_completed":  return "Replacement Completed";
+    case "replacement_requested":  return "Replacement Requested";
+    case "replacement_approved":   return "Replacement Approved";
+    case "replacement_rejected":   return "Replacement Rejected";
+    case "pending":                return `Ordered on ${formatted}`;
+    case "confirmed":              return `Confirmed on ${formatted}`;
+    case "processing":             return `Processing on ${formatted}`;
+    case "shipped":                return `Shipped on ${formatted}`;
+    case "out_for_delivery":       return "Out for Delivery";
+    default:
+      return String(status).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
 };
-function StatusPill({ status }) {
-  const cls = STATUS_STYLE[status] ?? "bg-gray-50 text-gray-600 border-gray-200";
-  return (
-    <span className={`inline-flex items-center font-num text-[11px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${cls}`}>
-      {String(status).replace(/_/g, " ")}
-    </span>
-  );
-}
 
-// ── Replacement request modal ────────────────────────────────────────────
-const REPLACEMENT_REASONS = [
-  "Item damaged on arrival",
-  "Wrong item delivered",
-  "Quality not as expected",
-  "Missing item(s) in package",
-  "Other",
-];
+// ── Order card ──────────────────────────────────────────────────────────
+function OrderCard({ order, isSelected, onClick, onWriteReviewClick }) {
+  const firstItem  = order.items?.[0] || {};
+  const itemImg    = firstItem.imageUrl || firstItem.image || PH;
+  const itemName   = firstItem.productName || "Order";
+  const hasMore    = order.items?.length > 1;
+  const moreCount  = order.items?.length - 1;
 
-function ReplacementModal({ orderId, onClose, onSuccess }) {
-  const [reason, setReason]   = useState("");
-  const [details, setDetails] = useState("");
-  const [error, setError]     = useState("");
-
-  const requestReplacementMutation = useRequestReplacement();
-  const submitting = requestReplacementMutation.isPending;
-
-  const handleSubmit = async () => {
-    if (!reason) { setError("Please select a reason."); return; }
-    setError("");
-    try {
-      await requestReplacementMutation.mutateAsync({ id: orderId, reason, details: details.trim() || undefined });
-      onSuccess();
-    } catch (e) {
-      setError(e.response?.data?.message || e.message || "Could not submit replacement request");
-    }
-  };
+  const statusTitle  = getStatusTitle(order.status, order.updatedAt || order.createdAt);
+  const subtitleText = itemName + (hasMore ? ` (+${moreCount} more)` : "");
+  const isDelivered  = order.status === "delivered";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-base font-bold text-brand-900">Request Replacement</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={16} /></button>
-        </div>
-
-        <div>
-          <label className="font-body text-xs font-semibold text-amber-700 mb-1.5 block">Reason</label>
-          <div className="space-y-1.5">
-            {REPLACEMENT_REASONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => { setReason(r); setError(""); }}
-                className={`w-full text-left font-body text-sm px-3 py-2 rounded-xl border transition-colors ${
-                  reason === r ? "border-brand-700 bg-brand-50 text-brand-900 font-semibold" : "border-amber-100 text-amber-700 hover:bg-amber-50"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="font-body text-xs font-semibold text-amber-700 mb-1.5 block">Additional details (optional)</label>
-          <textarea
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            rows={3}
-            placeholder="Tell us more so we can help faster…"
-            className="field-input resize-none"
-          />
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 font-body text-xs rounded-xl px-3 py-2.5">
-            {error}
-          </div>
-        )}
-
-        <button onClick={handleSubmit} disabled={submitting} className="btn-md btn-primary w-full">
-          {submitting ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : "Submit Request"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Write review modal ─────────────────────────────────────────────────
-function ReviewModal({ item, onClose, onReviewed }) {
-  const [form, setForm] = useState({ rating: 5, title: "", comment: "" });
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
-
-  const addReviewMutation = useAddReview();
-  const loading = addReviewMutation.isPending;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.comment.trim()) { setError("Please write your review comment"); return; }
-    setError("");
-    try {
-      await addReviewMutation.mutateAsync({ productId: item.productId, ...form });
-      setDone(true);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to submit review");
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-display text-base font-bold text-brand-900">Write a Review</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={16} /></button>
-        </div>
-
-        <p className="font-body text-sm text-amber-700 font-semibold line-clamp-1">{item.productName}</p>
-
-        {done ? (
-          <div className="py-6 text-center">
-            <p className="font-body text-sm text-green-700 font-bold flex items-center justify-center gap-2">
-              <Check size={16} /> Review submitted — thank you!
-            </p>
-            <button onClick={() => { onReviewed?.(); onClose(); }} className="btn-md btn-primary mt-4 w-full">Done</button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="field-label">Your Rating</label>
-              <div className="flex gap-1.5 mt-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, rating: s }))}
-                    className="cursor-pointer transition-transform active:scale-90"
-                  >
-                    <Star
-                      size={24}
-                      className={s <= form.rating ? "fill-amber-400 text-amber-400" : "fill-gray-200 text-gray-300"}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="field-label">Review Title (optional)</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder="Summarize your review…"
-                className="field-input"
-              />
-            </div>
-
-            <div>
-              <label className="field-label">Your Review</label>
-              <textarea
-                value={form.comment}
-                onChange={(e) => { setForm((f) => ({ ...f, comment: e.target.value })); setError(""); }}
-                placeholder="Share your experience with this product…"
-                rows={3}
-                className="field-input resize-none"
-              />
-              {error && <p className="font-body text-xs text-red-500 mt-1">{error}</p>}
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-md btn-primary w-full">
-              {loading ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : "Submit Review"}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Order card ─────────────────────────────────────────────────────────
-function OrderCard({ order }) {
-  const { token }   = useAuthStore();
-  const [open,      setOpen]      = useState(false);
-  const [cancelled, setCancelled] = useState(order.status === "cancelled");
-  const [status,    setStatus]    = useState(order.status);
-  const [showReplacementModal, setShowReplacementModal] = useState(false);
-  const [replacementRequested, setReplacementRequested] = useState(
-    ["replacement_requested","replacement_approved","replacement_rejected","replacement_completed"].includes(order.status)
-  );
-  const [reviewItem, setReviewItem] = useState(null);
-  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
-
-  const canCancel  = ["pending","confirmed"].includes(status);
-  const isDelivered = status === "delivered";
-  const canRequestReplacement = isDelivered && !replacementRequested;
-  const addr = order.address || {};
-
-  const cancelOrderMutation = useCancelOrder();
-  const cancelling = cancelOrderMutation.isPending;
-
-  const handleCancel = async () => {
-    if (!confirm("Cancel this order?")) return;
-    try {
-      await cancelOrderMutation.mutateAsync(order.id);
-      setStatus("cancelled");
-      setCancelled(true);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Could not cancel order");
-    }
-  };
-
-  return (
-    <div className="card overflow-hidden">
-      {/* header row */}
-      <div
-        className="flex items-center justify-between px-4 sm:px-5 py-4 cursor-pointer hover:bg-amber-50/50 transition-colors"
-        onClick={() => setOpen((s) => !s)}
-      >
+    <div
+      onClick={onClick}
+      className={`card flex flex-col px-4 lg:px-5 py-4 cursor-pointer transition-colors ${
+        isSelected
+          ? "bg-amber-50 border-l-4 border-l-sandal-600 ring-1 ring-sandal-200"
+          : "hover:bg-amber-50/50"
+      }`}
+    >
+      <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-            <Package size={16} className="text-brand-700" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-num text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg inline-block mb-1">
-              #{String(order.id).slice(0, 8).toUpperCase()}
-            </p>
-            <p className="font-body text-xs text-amber-500">{fmtDate(order.createdAt)}</p>
+          <img
+            src={itemImg}
+            alt={itemName}
+            className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+            onError={(e) => { e.target.src = PH; }}
+          />
+          <div className="min-w-0 flex-1">
+            {/* Mobile */}
+            <div className="block lg:hidden">
+              <h3 className="font-body text-xs font-bold text-gray-900 leading-snug">{statusTitle}</h3>
+              <p className="font-body text-[11px] text-gray-500 mt-1 line-clamp-1">{subtitleText}</p>
+            </div>
+            {/* Desktop */}
+            <div className="hidden lg:block">
+              <h3 className="font-body text-sm font-semibold text-brand-900 leading-snug line-clamp-1">{itemName}</h3>
+              {hasMore && (
+                <p className="font-body text-[10px] text-amber-500 font-medium mt-0.5">
+                  +{moreCount} more item{moreCount > 1 ? "s" : ""}
+                </p>
+              )}
+              <p className="font-body text-[10px] text-gray-400 mt-1">{fmtDate(order.createdAt)}</p>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 ml-2">
-          <div className="text-right hidden sm:block">
-            <p className="font-num text-base font-bold text-brand-900">{rupee(order.total)}</p>
-            <p className="font-body text-xs text-amber-500 capitalize">{order.paymentMethod}</p>
+          <div className="text-right mr-1 hidden lg:block">
+            <p className="font-num text-sm font-bold text-brand-900">{rupee(order.total)}</p>
+            <p className="font-body text-[10px] text-amber-500 capitalize">{order.paymentMethod}</p>
           </div>
-          <StatusPill status={status} />
-          {open ? <ChevronUp size={16} className="text-amber-400" /> : <ChevronDown size={16} className="text-amber-400" />}
+          <ChevronRight
+            size={16}
+            className={`transition-colors ${isSelected ? "text-sandal-600" : "text-amber-400"}`}
+          />
         </div>
       </div>
 
-      {/* expanded */}
-      {open && (
-        <div className="border-t border-amber-50 px-4 sm:px-5 py-4 space-y-5">
-
-          {/* items */}
-          <div className="space-y-3">
-            {(order.items || []).map((item, i) => (
-              <div key={i} className="flex gap-3 items-start">
-                <img
-                  src={item.imageUrl || item.image || PH} alt={item.productName}
-                  className="w-12 h-12 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-                  onError={(e) => { e.target.src = PH; }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm font-medium text-brand-900 line-clamp-1">{item.productName}</p>
-                  <p className="font-body text-xs text-amber-500">{item.weightLabel} · Qty {item.quantity}</p>
-                  {status === "delivered" && item.productId && (
-                    reviewedProductIds.has(item.productId) ? (
-                      <span className="font-body text-xs text-green-600 font-semibold flex items-center gap-1 mt-1">
-                        <Check size={11} /> Reviewed
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setReviewItem(item)}
-                        className="font-body text-xs text-brand-700 font-semibold hover:underline mt-1 flex items-center gap-1"
-                      >
-                        <Star size={11} className="fill-amber-400 text-amber-400" /> Write Review
-                      </button>
-                    )
-                  )}
-                </div>
-                <span className="font-num text-sm font-semibold text-brand-900 shrink-0">{rupee(item.price * item.quantity)}</span>
-              </div>
+      {isDelivered && firstItem.productId && !firstItem.isReviewed && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="border-t border-amber-100/30 pt-3 mt-3 flex flex-col items-center justify-center cursor-default"
+        >
+          <div className="flex gap-2.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onWriteReviewClick?.(firstItem, s); }}
+                className="cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                aria-label={`Rate ${s} star`}
+              >
+                <Star size={20} className="fill-amber-100 text-amber-200" />
+              </button>
             ))}
           </div>
-
-          {/* price breakdown */}
-          <div className="bg-amber-50 rounded-xl p-3 space-y-1.5 text-sm">
-            <div className="flex justify-between font-body text-amber-700">
-              <span>Subtotal</span><span className="font-num">{rupee(order.subtotal)}</span>
-            </div>
-            {Number(order.discount) > 0 && (
-              <div className="flex justify-between font-body text-green-600">
-                <span>Discount</span><span className="font-num">−{rupee(order.discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-body text-amber-700">
-              <span>Delivery</span>
-              <span className="font-num">{Number(order.deliveryCharge) === 0 ? "FREE" : rupee(order.deliveryCharge)}</span>
-            </div>
-            <div className="flex justify-between font-body font-bold text-brand-900 text-base border-t border-amber-100 pt-1.5">
-              <span>Total</span><span className="font-num">{rupee(order.total)}</span>
-            </div>
-          </div>
-
-          {/* address */}
-          <div className="flex gap-2.5 items-start">
-            <MapPin size={14} className="text-amber-400 mt-0.5 shrink-0" />
-            <p className="font-body text-xs text-amber-700 leading-relaxed">
-              <span className="font-semibold">{order.customerName}</span><br />
-              {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ""},&nbsp;
-              {addr.city}, {addr.state} – {addr.pincode}
-            </p>
-          </div>
-
-          {/* tracking */}
-          {order.trackingNumber && (
-            <div className="flex gap-2.5 items-start">
-              <Clock size={14} className="text-amber-400 mt-0.5 shrink-0" />
-              <p className="font-body text-xs text-amber-700">
-                {order.courierName && <span className="font-semibold">{order.courierName} · </span>}
-                {order.trackingNumber}
-                {order.trackingUrl && (
-                  <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 text-brand-700 hover:underline font-semibold">
-                    Track
-                  </a>
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* timeline — vertical connected line */}
-          {order.timeline?.length > 0 && (
-            <div>
-              <p className="font-body text-xs font-semibold text-amber-700 uppercase tracking-wider mb-3">Timeline</p>
-              <ol className="relative">
-                {order.timeline.map((t, i) => {
-                  const isLatest = i === order.timeline.length - 1;
-                  const isLast   = i === order.timeline.length - 1;
-                  return (
-                    <li key={i} className="flex gap-3 pb-4 last:pb-0 relative">
-                      {/* vertical connector line — runs through all but the last item */}
-                      {!isLast && (
-                        <div className="absolute left-[9px] top-[18px] bottom-0 w-0.5 bg-brand-200" aria-hidden="true" />
-                      )}
-                      {/* node */}
-                      <div className={`relative z-10 mt-0.5 shrink-0 flex items-center justify-center rounded-full transition-all
-                        ${isLatest
-                          ? "w-[18px] h-[18px] bg-brand-700 ring-2 ring-brand-300 ring-offset-1"
-                          : "w-[18px] h-[18px] bg-brand-600"
-                        }`}
-                      >
-                        <Check size={10} className="text-white" strokeWidth={3} />
-                      </div>
-                      {/* content */}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-body text-xs font-semibold text-brand-900 capitalize leading-snug">
-                          {String(t.status).replace(/_/g, " ")}
-                        </p>
-                        {t.note && <p className="font-body text-xs text-amber-500 mt-0.5">{t.note}</p>}
-                        <p className="font-body text-[10px] text-amber-400 mt-0.5">{fmtDate(t.createdAt)}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          )}
-
-          {/* actions */}
-          <div className="flex gap-2 flex-wrap border-t border-amber-50 pt-3">
-            {canCancel && !cancelled && (
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="btn-sm btn-danger"
-              >
-                <X size={13} /> {cancelling ? "Cancelling…" : "Cancel Order"}
-              </button>
-            )}
-            {canRequestReplacement && (
-              <button onClick={() => setShowReplacementModal(true)} className="btn-sm btn-outline">
-                <RotateCcw size={13} /> Request Replacement
-              </button>
-            )}
-            {replacementRequested && (
-              <span className="font-body text-xs text-amber-500 self-center flex items-center gap-1.5">
-                <Check size={13} className="text-green-600" /> Replacement requested
-              </span>
-            )}
-            <Link to="/products" className="btn-sm btn-ghost ml-auto">
-              Buy Again <ArrowRight size={13} />
-            </Link>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onWriteReviewClick?.(firstItem, 0); }}
+            className="font-body text-xs font-semibold text-sandal-700 hover:text-brand-800 mt-1.5 transition-colors cursor-pointer"
+          >
+            Rate this product
+          </button>
         </div>
-      )}
-
-      {showReplacementModal && (
-        <ReplacementModal
-          orderId={order.id}
-          onClose={() => setShowReplacementModal(false)}
-          onSuccess={() => {
-            setReplacementRequested(true);
-            setStatus("replacement_requested");
-            setShowReplacementModal(false);
-          }}
-        />
-      )}
-
-      {reviewItem && (
-        <ReviewModal
-          item={reviewItem}
-          onClose={() => setReviewItem(null)}
-          onReviewed={() => setReviewedProductIds((prev) => new Set([...prev, reviewItem.productId]))}
-        />
       )}
     </div>
   );
@@ -462,93 +142,126 @@ function OrderSkeleton() {
   );
 }
 
+// ── Empty detail placeholder (desktop) ─────────────────────────────────
+function DetailPlaceholder() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center px-8 py-16">
+      <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mb-4 border border-amber-100">
+        <ClipboardList size={28} className="text-amber-300" />
+      </div>
+      <p className="font-display text-base font-bold text-gray-700 mb-1">Select an order</p>
+      <p className="font-body text-sm text-gray-400 max-w-xs">
+        Click any order on the left to see its details here.
+      </p>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // MY ORDERS PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function MyOrders() {
-  const { token }  = useAuthStore();
-  const location   = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { data: orders = [], isLoading: loading } = useMyOrders();
-  const [filter,   setFilter]   = useState("all");
+
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const newOrderId = location.state?.newOrderId;
 
-  const FILTERS = [
-    { key: "all",      label: "All" },
-    { key: "active",   label: "Active" },
-    { key: "delivered",label: "Delivered" },
-    { key: "cancelled",label: "Cancelled" },
-  ];
+  const handleWriteReview = (item, rating, orderId) => {
+    navigate("/my-orders/review", {
+      state: { item: { ...item, orderId }, initialRating: rating },
+    });
+  };
 
-  const filtered = orders.filter((o) => {
-    if (filter === "all")       return true;
-    if (filter === "active")    return !["delivered","cancelled","replacement_completed"].includes(o.status);
-    if (filter === "delivered") return o.status === "delivered";
-    if (filter === "cancelled") return ["cancelled","replacement_completed"].includes(o.status);
-    return true;
-  });
+  // ── Mobile: full-page swap ───────────────────────────────────────────
+  // On mobile the detail takes over the whole page; on desktop it sits in the right panel.
+  const isMobileDetail = selectedOrder !== null;
 
   return (
-    <div className="page-wrap py-8">
-      <h1 className="font-display text-2xl font-bold text-brand-900 mb-6">My Orders</h1>
-
-      {/* success banner for new order */}
-      {newOrderId && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-3.5 mb-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-            <Package size={15} className="text-green-600" />
-          </div>
-          <div>
-            <p className="font-body text-sm font-semibold text-green-800">Order placed successfully!</p>
-            <p className="font-body text-xs text-green-600">Order #{String(newOrderId).slice(0, 8).toUpperCase()} confirmed.</p>
+    <>
+      {/* ── Mobile detail view (replaces list) ─────────────────────────── */}
+      {isMobileDetail && (
+        <div className="lg:hidden">
+          <div className="page-wrap py-2">
+            <OrderDetail
+              order={selectedOrder}
+              onBack={() => setSelectedOrder(null)}
+              onStatusUpdate={(newStatus) =>
+                setSelectedOrder((prev) => ({ ...prev, status: newStatus }))
+              }
+            />
           </div>
         </div>
       )}
 
-      {/* filter tabs */}
-      <div className="flex gap-1 bg-amber-50 p-1 rounded-xl mb-5 w-fit">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${
-              filter === f.key ? "bg-white text-brand-900 shadow-sm" : "text-amber-600 hover:text-brand-800"
-            }`}
-          >
-            {f.label}
-            {f.key !== "all" && (
-              <span className="ml-1 font-num">
-                ({orders.filter((o) => {
-                  if (f.key === "active")    return !["delivered","cancelled","replacement_completed"].includes(o.status);
-                  if (f.key === "delivered") return o.status === "delivered";
-                  if (f.key === "cancelled") return ["cancelled","replacement_completed"].includes(o.status);
-                  return false;
-                }).length})
-              </span>
-            )}
-          </button>
-        ))}
+      {/* ── Main layout (list always visible on desktop) ────────────────── */}
+      <div className={`${isMobileDetail ? "hidden lg:flex" : "flex"} flex-col lg:flex-row lg:items-start gap-0 lg:gap-6 page-wrap py-2 lg:py-6`}>
+
+        {/* LEFT: order list */}
+        <div className="w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col gap-4">
+          <h2 className="font-display text-2xl font-bold text-brand-900">My Orders</h2>
+
+          {newOrderId && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-3.5 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <Package size={15} className="text-green-600" />
+              </div>
+              <div>
+                <p className="font-body text-sm font-semibold text-green-800">Order placed successfully!</p>
+                <p className="font-body text-xs text-green-600">Order #{String(newOrderId).slice(0, 8).toUpperCase()} confirmed.</p>
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => <OrderSkeleton key={i} />)}
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <ShoppingBag size={48} className="text-amber-200 mb-4" />
+              <h2 className="font-display text-xl font-bold text-brand-900 mb-2">No orders yet</h2>
+              <p className="font-body text-amber-500 text-sm mb-6 max-w-xs">
+                You haven't placed any orders yet.
+              </p>
+              <Link to="/products" className="btn-lg btn-primary">
+                Browse Products <ArrowRight size={16} />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {orders.map((o) => (
+                <OrderCard
+                  key={o.id}
+                  order={o}
+                  isSelected={selectedOrder?.id === o.id}
+                  onClick={() => setSelectedOrder(o)}
+                  onWriteReviewClick={(item, rating) => handleWriteReview(item, rating, o.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: detail panel (desktop only) */}
+        <div className="hidden lg:block flex-1 min-w-0 border border-amber-100 rounded-2xl bg-white shadow-sm overflow-y-auto">
+          {selectedOrder ? (
+            <div className="p-6">
+              <OrderDetail
+                order={selectedOrder}
+                onBack={() => setSelectedOrder(null)}
+                onStatusUpdate={(newStatus) =>
+                  setSelectedOrder((prev) => ({ ...prev, status: newStatus }))
+                }
+              />
+            </div>
+          ) : (
+            <DetailPlaceholder />
+          )}
+        </div>
       </div>
-
-      {/* list */}
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <OrderSkeleton key={i} />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ShoppingBag size={48} className="text-amber-200 mb-4" />
-          <h2 className="font-display text-xl font-bold text-brand-900 mb-2">No orders yet</h2>
-          <p className="font-body text-amber-500 text-sm mb-6 max-w-xs">
-            {filter === "all" ? "You haven't placed any orders yet." : `No ${filter} orders.`}
-          </p>
-          <Link to="/products" className="btn-lg btn-primary">Browse Products <ArrowRight size={16} /></Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((o) => <OrderCard key={o.id} order={o} />)}
-        </div>
-      )}
-    </div>
+    </>
   );
 }

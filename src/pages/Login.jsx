@@ -32,7 +32,10 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
 
     // ── View States ──
-    const [view, setView] = useState("login"); // "login" | "forgot-phone" | "forgot-otp" | "forgot-reset"
+    const [view, setView] = useState("login"); // "login" | "deactivated" | "forgot-phone" | "forgot-otp" | "forgot-reset"
+
+    // ── Reactivation credentials (saved from login attempt) ──
+    const [reactivateCreds, setReactivateCreds] = useState(null);
 
     // ── Forgot Password Form State ──
     const [phone, setPhone] = useState("");
@@ -101,11 +104,19 @@ export default function Login() {
             const payload = isPhoneLike(trimmedId)
                 ? { identifier: trimmedId, password: form.password }
                 : { identifier: trimmedId.toLowerCase(), password: form.password };
+            console.log("[FE] POST /auth/user-login", { identifier: payload.identifier });
             const response = await API.post("/auth/user-login", payload);
+            console.log("[FE] POST /auth/user-login →", response.status, { userId: response.data.user?.id, role: response.data.user?.role });
             const res = response.data;
+            if (res.code === "DEACTIVATED") {
+                setReactivateCreds(payload);
+                setView("deactivated");
+                return;
+            }
             login(res.user, res.accessToken || res.token, res.refreshToken);
             navigate(res.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
         } catch (err) {
+            console.error("[FE] POST /auth/user-login →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Invalid credentials. Please try again.");
         } finally {
             setLoading(false);
@@ -116,22 +127,48 @@ export default function Login() {
         if (e.key === "Enter" && !loading) handleSubmit(e);
     };
 
+    // ── Reactivation Handler ──
+    const handleReactivate = async () => {
+        if (!reactivateCreds) return;
+        setLoading(true);
+        try {
+            const res = await API.post("/auth/reactivate", reactivateCreds);
+            login(res.data.user, res.data.accessToken, res.data.refreshToken);
+            navigate(res.data.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to reactivate account. Please try again.");
+            setView("login");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // ── Forgot Password Handlers ──
     const handleSendOtp = async (e) => {
         e.preventDefault();
         if (!isValidPhone(phone)) { setForgotErrors({ phone: "Enter a valid 10-digit mobile number" }); return; }
         setForgotErrors({});
 
+        // OTP step bypassed — WhatsApp OTP integration will replace SMS OTP.
+        // To re-enable: remove the next line and uncomment the otp-create block below.
+        setView("forgot-reset");
+        return;
+
+        /* --- restore when WhatsApp OTP is ready ---
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create", { phone });
+            const res = await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create →", res.status, res.data?.message);
             setView("forgot-otp");
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] POST /auth/otp-create →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
         }
+        --- */
     };
 
     const handlePhoneKeyDown = (e) => {
@@ -142,9 +179,12 @@ export default function Login() {
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
-            await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create (resend)", { phone });
+            const res = await API.post("/auth/otp-create", { phone, identifier: phone });
+            console.log("[FE] POST /auth/otp-create (resend) →", res.status, res.data?.message);
             setOtpExpiryTime(Date.now() + 180 * 1000);
         } catch (err) {
+            console.error("[FE] POST /auth/otp-create (resend) →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Could not resend OTP.");
         } finally {
             setLoading(false);
@@ -158,9 +198,12 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await API.post("/auth/otp-verify", { phone, identifier: phone, otp: otpValue });
+            console.log("[FE] POST /auth/otp-verify", { phone });
+            const res = await API.post("/auth/otp-verify", { phone, identifier: phone, otp: otpValue });
+            console.log("[FE] POST /auth/otp-verify →", res.status, res.data?.message);
             setView("forgot-reset");
         } catch (err) {
+            console.error("[FE] POST /auth/otp-verify →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Invalid or expired OTP.");
         } finally {
             setLoading(false);
@@ -215,16 +258,19 @@ export default function Login() {
 
         setLoading(true);
         try {
-            await API.post("/auth/reset-password", {
+            console.log("[FE] POST /auth/reset-password", { phone: phone.trim() });
+            const res = await API.post("/auth/reset-password", {
                 phone: phone.trim(),
                 identifier: phone.trim(),
                 password: newPw,
                 newPassword: newPw,
                 confirmPass: confirmPw,
             });
+            console.log("[FE] POST /auth/reset-password →", res.status, res.data?.message);
             setSuccess("Password reset successful.");
             resetForgotFlow(true);
         } catch (err) {
+            console.error("[FE] POST /auth/reset-password →", err.response?.status ?? "network error", err.response?.data?.message ?? err.message);
             setError(err.response?.data?.message || err.message || "Could not reset password. Please try again.");
         } finally {
             setLoading(false);
@@ -293,12 +339,14 @@ export default function Login() {
     ) : (
         <h2 className="font-display text-2xl md:text-3xl font-extrabold text-brand-900 mb-1">
             {view === "login" && "Welcome back"}
+            {view === "deactivated" && "Account Inactive"}
             {view === "forgot-phone" && "Forgot password?"}
             {view === "forgot-reset" && "Set new password"}
         </h2>
     );
 
     const subtitleNode =
+        view === "deactivated" ? "We found your account" :
         view === "login" ? "Sign in to continue shopping" :
         view === "forgot-otp" ? (
             <>Enter the 6-digit code sent to{" "}
@@ -407,6 +455,33 @@ export default function Login() {
                         </Link>
                     </p>
                 </form>
+            )}
+
+            {/* ── View: Account Deactivated ── */}
+            {view === "deactivated" && (
+                <div className="flex flex-col gap-5 text-center">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p className="font-body text-sm font-semibold text-amber-800 mb-1">Account Deactivated</p>
+                        <p className="font-body text-xs text-amber-700 leading-relaxed">
+                            Your account has been deactivated. Would you like to reactivate it and sign in?
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleReactivate}
+                        disabled={loading}
+                        className="btn-md btn-primary w-full"
+                    >
+                        {loading ? <><Loader2 size={16} className="animate-spin" /> Reactivating…</> : "Yes, Reactivate My Account"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setView("login"); setReactivateCreds(null); }}
+                        className="font-body text-xs text-amber-500 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                        ← Back to Login
+                    </button>
+                </div>
             )}
 
             {/* ── View: Forgot Phone ── */}

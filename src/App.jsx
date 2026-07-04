@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 
 /* Layouts & Guards */
@@ -53,13 +54,17 @@ import Profile from "./pages/profile";
 /* Catalog & Shopping Features */
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetails";
+import ComboDetails from "./pages/ComboDetails";
 import Wishlist from "./pages/Wishlist";
 import Offers from "./pages/Offers";
+import ReviewsOverview from "./pages/ReviewsOverview";
+import ProductReviewsPage from "./pages/ProductReviewsPage";
 
 /* Cart & Checkout Features */
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
+import ReviewPage from "./components/orders/ReviewPage";
 
 /* Lazy Loaded Admin Pages (reduces initial bundle size) */
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -68,13 +73,17 @@ const ProductManagement = lazy(() => import("./pages/admin/ProductManagement"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const OfferManagement = lazy(() => import("./pages/admin/OfferManagement"));
+const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
 const BannerManagement = lazy(() => import("./pages/admin/BannerManagement"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const ReportManagement = lazy(() => import("./pages/admin/ReportManagement"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
+const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
+const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
 
 export default function App() {
   return (
+    <HelmetProvider>
     <BrowserRouter>
       <Routes>
 
@@ -84,16 +93,20 @@ export default function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="/products/combo/:comboId" element={<ComboDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/reviews" element={<ReviewsOverview />} />
+          <Route path="/reviews/:slug" element={<ProductReviewsPage />} />
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout/:stepParam?" element={<Checkout />} />
             <Route path="/my-orders" element={<MyOrders />} />
+            <Route path="/my-orders/review" element={<ReviewPage />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
@@ -117,9 +130,13 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
             <Route path="orders" element={<OrderManagement />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="reviews" element={<ReviewManagement />} />
+            <Route path="reviews/:productId" element={<ReviewManagement />} />
             <Route path="offers" element={<OfferManagement />} />
+            <Route path="coupons" element={<CouponManagement />} />
             <Route path="banners" element={<BannerManagement />} />
             <Route path="inventory" element={<InventoryManagement />} />
             <Route path="reports" element={<ReportManagement />} />
@@ -130,5 +147,6 @@ export default function App() {
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
+    </HelmetProvider>
   );
 }

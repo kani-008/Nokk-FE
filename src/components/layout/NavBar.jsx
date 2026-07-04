@@ -13,7 +13,7 @@ import {
   LogOut,
   Settings,
   Tag,
-  Grid3x3,
+  TrendingUp,
 } from "lucide-react";
 import Logo from "./Logo";
 import MobileDrawer from "./MobileDrawer.jsx";
@@ -37,7 +37,6 @@ export default function NavBar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const navbarSearchDebounceRef = useRef(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false); // collapsible category list inside the drawer (currently unused — category section is commented out in MobileDrawer)
   // On /products, seed query from the current search URL param so the input stays in sync
   const [query, setQuery] = useState(() =>
@@ -47,7 +46,6 @@ export default function NavBar() {
 
   const profileRef = useRef(null);
   const searchRef = useRef(null);
-  const catDropdownRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -77,8 +75,6 @@ export default function NavBar() {
         setProfileOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target))
         setSearchOpen(false);
-      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target))
-        setCatDropdownOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -89,7 +85,6 @@ export default function NavBar() {
     const timer = setTimeout(() => {
       setMobileOpen(false);
       setProfileOpen(false);
-      setCatDropdownOpen(false);
       setMobileCatOpen(false);
     }, 0);
     return () => clearTimeout(timer);
@@ -168,15 +163,17 @@ export default function NavBar() {
       {/* ── Main bar — single unified gray bar (Amazon-style) ──────── */}
       <div className="bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          {/* thin strip — shows custom admin announcement when enabled, otherwise default shipping note */}
-          <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
-            {settings.announcementEnabled && settings.announcementText
-              ? settings.announcementText
-              : <>🐟 Free shipping above ₹499 &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
-                  <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
-                </>
-            }
-          </div>
+          {/* thin strip — only rendered when admin has enabled the announcement */}
+          {settings.announcementEnabled ? (
+            <div className="hidden sm:block text-center py-1 text-[11px] text-sandal-200/80 font-body font-medium tracking-wide border-b border-white/5">
+              {settings.announcementText && settings.announcementText.trim()
+                ? settings.announcementText
+                : <>🐟 Free shipping above ₹{settings.freeShippingThreshold || 499} &nbsp;·&nbsp; Sourced from coastal fishermen &nbsp;·&nbsp;
+                    <Link to="/offers" className="underline underline-offset-2 hover:text-sandal-100 transition-colors ml-1">Today's Deals</Link>
+                  </>
+              }
+            </div>
+          ) : null}
 
           <div className="flex items-center h-16 gap-3">
             {/* Back arrow — mobile /products only: lets user navigate back without the hamburger menu */}
@@ -233,7 +230,7 @@ export default function NavBar() {
             {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex flex-1 max-w-md mx-4"
+              className="hidden md:flex w-full max-w-2xl md:ml-10"
             >
               <div className="relative w-full">
                 <input
@@ -241,7 +238,7 @@ export default function NavBar() {
                   value={query}
                   onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
                   placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles, nethili…"}
-                  className="w-full rounded-full py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                  className="w-full rounded-4xl py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                 />
                 <button
                   type="submit"
@@ -252,79 +249,9 @@ export default function NavBar() {
               </div>
             </form>
 
-            {/* Desktop nav links */}
-            <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
-              {/* Categories Dropdown */}
-              <div
-                ref={catDropdownRef}
-                className="relative"
-                onMouseEnter={() => setCatDropdownOpen(true)}
-                onMouseLeave={() => setCatDropdownOpen(false)}
-              >
-                <button
-                  onClick={() => setCatDropdownOpen((prev) => !prev)}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
-                    catDropdownOpen
-                      ? "bg-white/10 text-white"
-                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <Grid3x3 size={14} />
-                  Categories
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-200 ${catDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {catDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-sandal-100 rounded-2xl shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <Link
-                      to="/products"
-                      onClick={() => setCatDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
-                    >
-                      <Grid3x3 size={14} className="text-sandal-500" />
-                      All Products
-                    </Link>
-                    <div className="border-t border-sandal-100/50 my-1.5" />
-                    {categories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        to={`/products?category=${cat.slug}`}
-                        onClick={() => setCatDropdownOpen(false)}
-                        className="flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-700 hover:bg-sandal-50 hover:text-sandal-700 transition-colors"
-                      >
-                        <span>{cat.nameEn}</span>
-                        {cat.nameTa && (
-                          <span className="font-tamil text-[10px] text-sandal-400 font-normal">
-                            {cat.nameTa}
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {navLinks.map((l) => (
-                <Link
-                  key={l.label}
-                  to={l.to}
-                  className={`font-body text-sm font-semibold px-4 py-2 rounded-xl transition-all ${
-                    isActive(l.to)
-                      ? "bg-white/10 text-white"
-                      : "text-sandal-100 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </nav>
-
             {/* Right icon group */}
             {/* On /products, icons always visible even though search is open (it's permanently open, not a toggle) */}
-            <div className={`flex items-center gap-1.5 ml-auto ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
+            <div className={`flex items-center gap-1.5 ml-auto md:ml-4 md:mr-auto md:gap-4 ${searchOpen && !isProductsPage ? "hidden md:flex" : ""}`}>
               {/* Mobile search toggle — hidden on /products since search is always-open there */}
               {!isProductsPage && (
                 <button
@@ -391,15 +318,6 @@ export default function NavBar() {
                   {/* Desktop dropdown */}
                   {profileOpen && (
                     <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
-                      {/* user info */}
-                      <div className="px-4 py-2.5 border-b border-sandal-100 mb-1">
-                        <p className="font-body text-xs font-bold text-gray-800 truncate">
-                          {user?.fullName ?? user?.name}
-                        </p>
-                        <p className="font-body text-[11px] text-gray-500 truncate">
-                          {user?.phone ?? user?.email}
-                        </p>
-                      </div>
                       <DropItem
                         to="/profile"
                         icon={<User size={14} />}
@@ -411,14 +329,14 @@ export default function NavBar() {
                         label="My Orders"
                       />
                       <DropItem
-                        to="/wishlist"
-                        icon={<Heart size={14} />}
-                        label="Wishlist"
-                      />
-                      <DropItem
                         to="/offers"
                         icon={<Tag size={14} />}
                         label="Offers"
+                      />
+                      <DropItem
+                        to="/products?isBestseller=true"
+                        icon={<TrendingUp size={14} />}
+                        label="Bestsellers"
                       />
                       {user?.role === "admin" && (
                         <>
@@ -476,13 +394,6 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Products page mobile logo row — appears below the topbar (back+search+cart) so the
-          logo stays visible without competing with the expanded search input */}
-      {isProductsPage && (
-        <div className="md:hidden bg-gray-800 border-t border-white/5 px-4 py-1.5">
-          <Logo inverse />
-        </div>
-      )}
 
       {/* Mobile drawer — extracted to components/layout/MobileDrawer.jsx */}
       <MobileDrawer

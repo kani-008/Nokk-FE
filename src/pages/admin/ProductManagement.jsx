@@ -3,16 +3,16 @@ import { useOutletContext } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
 import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hookqueries/useProducts";
+import { useAdminComboList, useDeleteCombo } from "../../hookqueries/useCombos";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import EditProduct from "../../components/admin/EditProduct.jsx";
+import ComboModal, { StatusPill } from "../../components/admin/ComboModal.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
-import comboImg from "../../assets/products/combo.jpg";
-
-const PH    = comboImg;
+const PH    = "";
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
 
 /**
@@ -91,11 +91,21 @@ export default function ProductManagement() {
   // cleanup + re-register within one commit, so there's no visible flicker.
   const { registerSearch, unregisterSearch } = useOutletContext();
 
+  const { data: catData = [] } = useProductCategories();
+  const categories = catData;
+
+  const combosCategory = useMemo(() => categories.find(c => c.nameEn === "Combos"), [categories]);
+  const isComboMode = !!(combosCategory && catFilter === combosCategory.slug);
+
   useEffect(() => {
-    registerSearch({ placeholder: "Search products…", value: search, onChange: setSearch });
+    registerSearch({
+      placeholder: isComboMode ? "Search combos…" : "Search products…",
+      value: search,
+      onChange: setSearch
+    });
     return () => unregisterSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, isComboMode]);
 
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
@@ -103,19 +113,27 @@ export default function ProductManagement() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const { data: catData = [] } = useProductCategories();
-  const categories = catData;
-
   const queryParams = useMemo(() => {
+    if (isComboMode) {
+      return { page: 1, limit: 1 }; // harmless params
+    }
     const p = { page, limit };
     if (debouncedSearch) p.search = debouncedSearch;
     if (catFilter)       p.category = catFilter;
     return p;
-  }, [debouncedSearch, catFilter, page, limit]);
+  }, [debouncedSearch, catFilter, page, limit, isComboMode]);
 
   const { data: productsData, isLoading: loading, error: queryError } = useAdminProductList(queryParams);
   const products = productsData?.products || [];
   const totalPages = productsData?.pagination?.totalPages || 1;
+
+  const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
+  const filteredCombos = useMemo(() => {
+    if (!isComboMode) return [];
+    if (!debouncedSearch) return combos;
+    const query = debouncedSearch.toLowerCase().trim();
+    return combos.filter(c => c.name.toLowerCase().includes(query));
+  }, [combos, debouncedSearch, isComboMode]);
 
   useEffect(() => {
     if (queryError) {
@@ -125,15 +143,20 @@ export default function ProductManagement() {
   }, [queryError]);
 
   const deleteProductMutation = useDeleteProduct();
-  const deleting = deleteProductMutation.isPending;
+  const deleteComboMutation = useDeleteCombo();
+  const deleting = isComboMode ? deleteComboMutation.isPending : deleteProductMutation.isPending;
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await deleteProductMutation.mutateAsync(deleteTarget.id);
+      if (isComboMode) {
+        await deleteComboMutation.mutateAsync(deleteTarget.id);
+      } else {
+        await deleteProductMutation.mutateAsync(deleteTarget.id);
+      }
       setDeleteTarget(null);
     } catch (e) {
-      setPageError(e.response?.data?.message || e.message || "Failed to delete product.");
+      setPageError(e.response?.data?.message || e.message || `Failed to delete ${isComboMode ? "combo" : "product"}.`);
       setDeleteTarget(null);
     }
   };
@@ -200,6 +223,42 @@ export default function ProductManagement() {
     },
   ];
 
+  const COMBO_COLS = [
+    {
+      key: "combo", label: "Combo",
+      render: (r) => (
+        <button
+          onClick={() => setModal(r)}
+          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity w-full min-w-0"
+        >
+          <img src={r.imageUrl || PH} alt={r.name} className="w-10 h-10 rounded-xl object-cover bg-amber-50 border border-amber-100 shrink-0" onError={(e) => { e.target.src = PH; }} />
+          <div className="min-w-0">
+            <p className="font-body text-sm font-semibold text-gray-900 line-clamp-1 hover:text-brand-700 transition-colors">{r.name}</p>
+          </div>
+        </button>
+      ),
+    },
+    { key: "comboPrice", label: "Combo Price", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{rupee(r.comboPrice)}</span> },
+    {
+      key: "summary", label: "Items",
+      render: (r) => (
+        <span className="font-body text-xs text-gray-500 line-clamp-1">
+          {(r.items || []).map((i) => `${i.productName} ${i.weightLabel} × ${i.quantity}`).join(", ") || "—"}
+        </span>
+      ),
+    },
+    { key: "status", label: "Status", render: (r) => <StatusPill isActive={r.isActive} startDate={r.startDate} endDate={r.endDate} /> },
+    {
+      key: "action", label: "Action", width: "80px",
+      render: (r) => (
+        <div className="flex gap-1">
+          <IconButton onClick={() => setModal(r)} variant="brand" aria-label={`Edit ${r.name}`}><Pencil size={15} /></IconButton>
+          <IconButton onClick={() => setDeleteTarget(r)} variant="danger" aria-label={`Delete ${r.name}`}><Trash2 size={15} /></IconButton>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <AdminPage className="space-y-3">
       {/* page-level error banner (replaces native alert) */}
@@ -240,12 +299,19 @@ export default function ProductManagement() {
           />
         </div>
 
-        <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0"><Plus size={15} /> Add Product</AdminButton>
+        <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0">
+          <Plus size={15} /> {isComboMode ? "Add Combo" : "Add Product"}
+        </AdminButton>
       </div>
 
-      <TableFormat columns={COLS} rows={products} loading={loading} emptyText="No products found." />
+      <TableFormat
+        columns={isComboMode ? COMBO_COLS : COLS}
+        rows={isComboMode ? filteredCombos : products}
+        loading={isComboMode ? combosLoading : loading}
+        emptyText={isComboMode ? "No combos yet." : "No products found."}
+      />
 
-      {totalPages > 1 && (
+      {!isComboMode && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <AdminButton variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</AdminButton>
           <span className="font-body text-sm text-gray-600">Page {page} of {totalPages}</span>
@@ -254,18 +320,30 @@ export default function ProductManagement() {
       )}
 
       {modal !== null && (
-        <EditProduct
-          product={modal === "new" ? null : modal}
-          categories={categories}
-          onClose={() => setModal(null)}
-          onSaved={handleSaved}
-        />
+        isComboMode ? (
+          <ComboModal
+            combo={modal === "new" ? null : modal}
+            onClose={() => setModal(null)}
+            onSaved={handleSaved}
+          />
+        ) : (
+          <EditProduct
+            product={modal === "new" ? null : modal}
+            categories={categories}
+            onClose={() => setModal(null)}
+            onSaved={handleSaved}
+          />
+        )
       )}
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete product?"
-        message={deleteTarget ? `"${deleteTarget.nameEn}" will be permanently removed. This can't be undone.` : ""}
+        title={isComboMode ? "Delete Combo?" : "Delete product?"}
+        message={
+          deleteTarget
+            ? `"${isComboMode ? deleteTarget.name : deleteTarget.nameEn}" will be permanently removed. This can't be undone.`
+            : ""
+        }
         loading={deleting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}

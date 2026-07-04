@@ -1,11 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../ApiCall/Api.jsx";
+import { useAuthStore } from "../components/store/AuthStore.jsx";
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
 export function useMyOrders() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ["orders", "my"],
+    enabled: isAuthenticated,
+    staleTime: 60_000,
     queryFn: async () => {
       const res = await API.get("/orders/get-my-orders");
       return (res.data.orders || []).map(o => ({
