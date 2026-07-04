@@ -1,8 +1,8 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 
 import {
   Plus, Pencil, Trash2, X, Eye, EyeOff, Video,
-  Image as ImageIcon, Loader2, Link as LinkIcon, Upload,
+  Image as ImageIcon, Loader2, Link as LinkIcon, Upload, Megaphone
 } from "lucide-react";
 import {
   useAdminBanners,
@@ -16,11 +16,16 @@ import {
   useDeleteBannerText
 } from "../../hookqueries/useBanners";
 import {
+  useAdminOfferList
+} from "../../hookqueries/useOffers";
+import {
   AdminPage, AdminButton, AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import TabToggle from "../../components/admin/TabToggle.jsx";
+import Toggle from "../../components/admin/Toggle.jsx";
+import API from "../../ApiCall/Api.jsx";
 const PH = "";
 
 const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", videoUrl: "", isActive: true };
@@ -296,6 +301,11 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
         }`}>
           {banner.isActive ? "Active" : "Inactive"}
         </div>
+        {banner.offerName && (
+          <div className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-sm">
+            <span>🔗 {banner.offerName}</span>
+          </div>
+        )}
       </div>
 
       {/* actions — stopPropagation so these don't trigger the card's edit */}
@@ -524,6 +534,64 @@ export default function BannerManagement() {
   const [selectedBannerId, setSelectedBannerId] = useState(null);
   const [overlayModal,    setOverlayModal]    = useState(null); // null | "new" | overlay object
 
+  const { data: offers = [] } = useAdminOfferList();
+
+  const [settings, setSettings] = useState({ announcementEnabled: false, announcementText: "", announcement_offer_owner: "" });
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [annText, setAnnText] = useState("");
+  const [annEnabled, setAnnEnabled] = useState(false);
+  const [annOwner, setAnnOwner] = useState("");
+
+  const fetchSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await API.get("/settings/get-all");
+      const s = res.data.settings || {};
+      setSettings(s);
+      setAnnText(s.announcementText || "");
+      setAnnEnabled(!!s.announcementEnabled);
+      setAnnOwner(s.announcement_offer_owner || "");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleSaveAnnouncement = async () => {
+    setSettingsSaving(true);
+    try {
+      const payload = {
+        announcementText: annText,
+        announcementEnabled: annEnabled,
+        announcement_offer_owner: annOwner
+      };
+      const res = await API.put("/settings/update", payload);
+      const s = res.data.settings || {};
+      setSettings(s);
+      setAnnText(s.announcementText || "");
+      setAnnEnabled(!!s.announcementEnabled);
+      setAnnOwner(s.announcement_offer_owner || "");
+      alert("Announcement settings updated successfully!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update announcement settings.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "announcement") {
+      fetchSettings();
+    }
+  }, [activeTab]);
+
+  const owningOffer = useMemo(() => {
+    return offers.find(o => String(o.id) === String(annOwner));
+  }, [offers, annOwner]);
+
   const { data: bannersData = [], isLoading: loading } = useAdminBanners();
   const banners = useMemo(() => {
     return [...bannersData].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
@@ -562,6 +630,7 @@ export default function BannerManagement() {
           tabs={[
             { key: "videos",   label: "Background Video" },
             { key: "overlays", label: "Slide Text Overlay" },
+            { key: "announcement", label: "Announcement" },
           ]}
           active={activeTab}
           onChange={setActiveTab}
@@ -575,7 +644,7 @@ export default function BannerManagement() {
               <Plus size={14} /> Add Video
             </AdminButton>
           </div>
-        ) : (
+        ) : activeTab === "overlays" ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
             <div className="w-full sm:w-64">
               <Dropdown
@@ -597,10 +666,10 @@ export default function BannerManagement() {
               <Plus size={14} /> Add Overlay
             </AdminButton>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {activeTab === "videos" ? (
+      {activeTab === "videos" && (
         <>
           {/* summary */}
           <div className="grid grid-cols-3 gap-4 mb-6">
@@ -650,7 +719,9 @@ export default function BannerManagement() {
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {activeTab === "overlays" && (
         <>
           {/* summary */}
           {selectedBannerId && (
@@ -705,6 +776,81 @@ export default function BannerManagement() {
             </div>
           )}
         </>
+      )}
+
+      {activeTab === "announcement" && (
+        <div className="space-y-6">
+          <AdminCard className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Megaphone size={18} className="text-brand-800" />
+              <h3 className="font-display text-base font-bold text-gray-900">Site Announcement Bar Settings</h3>
+            </div>
+            
+            {settingsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="animate-spin text-amber-500" size={32} />
+              </div>
+            ) : (
+              <div className="space-y-6 max-w-xl">
+                {/* Enabled Toggle */}
+                <div className="space-y-1.5">
+                  <label className="field-label block font-semibold">Announcement Status</label>
+                  <div className="flex items-center gap-3">
+                    <Toggle checked={annEnabled} onChange={() => setAnnEnabled(!annEnabled)} />
+                    <span className="font-body text-sm text-gray-700 font-semibold">{annEnabled ? "Enabled" : "Disabled"}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">Controls whether the top strip is visible to users on the site.</p>
+                </div>
+
+                {/* Announcement Text Input */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="field-label block font-semibold">Announcement Text</label>
+                    {owningOffer && (
+                      <div className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-sm">
+                        <span>🔗 Driven by: {owningOffer.title}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {owningOffer && (
+                    <p className="text-xs text-amber-600 font-body">
+                      ⚠️ Note: Editing this text manually will detach it from the offer, and future edits to that offer will not update this banner.
+                    </p>
+                  )}
+                  
+                  <textarea
+                    value={annText}
+                    onChange={(e) => {
+                      setAnnText(e.target.value);
+                      if (annOwner) {
+                        setAnnOwner("");
+                      }
+                    }}
+                    rows={2}
+                    className="field-input resize-none"
+                    placeholder="e.g. 🎉 Monsoon Sale — 20% off all products this weekend!"
+                  />
+                </div>
+
+                {/* Save button */}
+                <div>
+                  <AdminButton
+                    onClick={handleSaveAnnouncement}
+                    disabled={settingsSaving}
+                    className="w-full sm:w-auto"
+                  >
+                    {settingsSaving ? (
+                      <><Loader2 size={14} className="animate-spin" /> Saving…</>
+                    ) : (
+                      "Save Announcement"
+                    )}
+                  </AdminButton>
+                </div>
+              </div>
+            )}
+          </AdminCard>
+        </div>
       )}
 
       {/* modal for banners */}

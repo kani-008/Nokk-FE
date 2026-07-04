@@ -16,7 +16,7 @@ import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "" };
+const OFFER_EMPTY = { title: "", description: "", imageUrl: "", imageFile: null, offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showAsBanner: false, showInAnnouncement: false };
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -120,6 +120,37 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                   </label>
                   <p className="text-[10px] text-gray-400 mt-1">Recommended: 600×300. Max: 3MB.</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Banner & Announcement Options */}
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+              <div className="space-y-1">
+                <label className={`flex items-center gap-2 ${!previewUrl ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
+                  <Toggle
+                    checked={form.showAsBanner && !!previewUrl}
+                    onChange={() => {
+                      if (previewUrl) {
+                        set("showAsBanner", !form.showAsBanner);
+                      }
+                    }}
+                    disabled={!previewUrl}
+                  />
+                  <span className="font-body text-sm text-gray-700 font-semibold">Show as Banner Overlay</span>
+                </label>
+                <p className="text-[11px] text-gray-500 pl-8">
+                  {!previewUrl ? "Upload an image above to enable this" : "Adds this offer to the homepage banner as a rotating slide, using this image."}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Toggle checked={form.showInAnnouncement} onChange={() => set("showInAnnouncement", !form.showInAnnouncement)} />
+                  <span className="font-body text-sm text-gray-700 font-semibold">Show in Announcement Bar</span>
+                </label>
+                <p className="text-[11px] text-gray-500 pl-8">
+                  Displays this offer as the site-wide announcement strip in the navigation bar.
+                </p>
               </div>
             </div>
 

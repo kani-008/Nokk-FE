@@ -564,27 +564,6 @@ export default function Settings() {
           )}
         </SectionCard>
 
-        {/* ── Announcement Banner ── */}
-        <SectionCard icon={Megaphone} title="Announcement Banner" sub="Shown in the top strip of the NavBar (desktop only) when enabled in Store Controls">
-          <div className="space-y-4">
-            <Field
-              label="Announcement Text"
-              name="announcementText"
-              value={form.announcementText}
-              onChange={setE}
-              placeholder="e.g. 🎉 Monsoon Sale — 20% off all products this weekend!"
-              disabled={!form.announcementEnabled}
-            />
-            {form.announcementEnabled && form.announcementText && (
-              <div className="bg-gray-800 rounded-xl px-4 py-2 text-center">
-                <p className="font-body text-[11px] text-sandal-200/80 font-medium">{form.announcementText}</p>
-              </div>
-            )}
-            {!form.announcementEnabled && (
-              <p className="font-body text-xs text-gray-400">Enable the Announcement Banner toggle in Store Controls to activate this strip.</p>
-            )}
-          </div>
-        </SectionCard>
 
         {/* ── Notifications ── */}
         <SectionCard icon={Bell} title="Admin Event Notifications" sub="Controls which events create entries in the admin notification log">

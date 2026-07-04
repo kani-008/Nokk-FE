@@ -28,6 +28,8 @@ const mapOfferToFrontend = (o) => {
     isLive: o.isLive,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
+    showAsBanner: o.showAsBanner ?? false,
+    showInAnnouncement: o.showInAnnouncement ?? false,
   };
 };
 
@@ -44,7 +46,9 @@ const mapOfferToBackend = (form) => {
     maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : null,
     startDate: form.startDate || null,
     endDate: form.endDate || null,
-    isActive: form.isActive ?? true
+    isActive: form.isActive ?? true,
+    showAsBanner: form.showAsBanner ?? false,
+    showInAnnouncement: form.showInAnnouncement ?? false,
   };
 };
 
