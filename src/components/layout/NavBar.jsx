@@ -162,7 +162,7 @@ export default function NavBar() {
 
       {/* ── Announcement Bar — full-width strip, separate from nav ───── */}
       {settings.announcementEnabled && (
-        <div className="hidden sm:block w-full bg-gray-900 overflow-hidden">
+        <div className="w-full bg-gray-900 overflow-hidden">
           <AnnouncementBar settings={settings} />
         </div>
       )}

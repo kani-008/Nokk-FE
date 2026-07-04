@@ -115,8 +115,8 @@ export default function CustomerLayout() {
       */}
       <main className={`flex-1 ${
         isCheckoutPage
-          ? announcementOn ? "md:pt-[88px]" : "md:pt-16"
-          : announcementOn ? "pt-16 sm:pt-[88px]" : "pt-16"
+          ? announcementOn ? "md:pt-[86px]" : "md:pt-16"
+          : announcementOn ? "pt-[86px]" : "pt-16"
       }`}>
         <Outlet />
       </main>

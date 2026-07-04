@@ -28,7 +28,6 @@ const mapOfferToFrontend = (o) => {
     isLive: o.isLive,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
-    showAsBanner: o.showAsBanner ?? false,
     showInAnnouncement: o.showInAnnouncement ?? false,
   };
 };
