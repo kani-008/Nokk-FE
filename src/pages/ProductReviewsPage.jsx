@@ -8,7 +8,7 @@ import {
   Lightbox,
   ReviewRow,
 } from "../components/Product/ProductReviews.jsx";
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 const PAGE_SIZE = 10;
 
 // Helper to distribute total review counts realistically for progress bars

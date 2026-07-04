@@ -9,6 +9,7 @@ import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from 
 import { Helmet } from "react-helmet-async";
 import { useComboDetail } from "../hookqueries/useCombos";
 import { useSimilarProductsMulti } from "../hookqueries/useProducts";
+import { useDeliverySettings } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
@@ -67,6 +68,8 @@ export default function ComboDetails() {
 
   const productIds = (combo?.items || []).map(i => i.productId).join(",");
   const { data: similar = [] } = useSimilarProductsMulti(productIds);
+  const { data: delivery } = useDeliverySettings();
+  const threshold = delivery?.freeShippingThreshold || 499;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -377,7 +380,7 @@ export default function ComboDetails() {
             {/* Trust Badges */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-100">
               {[
-                { icon: <Truck size={16} />, text: "Free above ₹499" },
+                { icon: <Truck size={16} />, text: `Free above ₹${threshold}` },
                 { icon: <ShieldCheck size={16} />, text: "100% Safe & Natural" },
               ].map((t) => (
                 <div key={t.text} className="flex flex-col items-center gap-1 text-center">

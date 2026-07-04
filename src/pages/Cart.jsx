@@ -9,7 +9,7 @@ import { useActiveStoreWideOffer } from "../hookqueries/useOffers";
 import { useToast } from "../components/useToast";
 import API from "../ApiCall/Api";
 
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);

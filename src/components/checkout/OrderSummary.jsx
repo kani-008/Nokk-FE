@@ -322,8 +322,8 @@ export default function OrderSummaryStep({
             <div className="md:hidden mt-3 text-center px-4">
               <p className="font-body text-[10px] text-amber-600/90 leading-normal">
                 By continuing with the order, you confirm that you agree to Namma Oor Karuvattu Kadai's{" "}
-                <Link to="/terms" className="underline hover:text-brand-700 font-semibold">Terms of Use</Link> and{" "}
-                <Link to="/privacy" className="underline hover:text-brand-700 font-semibold">Privacy Policy</Link>.
+                <Link to="/terms-of-use" className="underline hover:text-brand-700 font-semibold">Terms of Use</Link> and{" "}
+                <Link to="/privacy-policy" className="underline hover:text-brand-700 font-semibold">Privacy Policy</Link>.
               </p>
             </div>
 
@@ -365,8 +365,8 @@ export default function OrderSummaryStep({
       <div className="hidden md:block mt-8 text-center border-amber-100 pt-4">
         <p className="font-body text-[12px] text-amber-500 leading-relaxed max-w-3xl mx-auto">
           By continuing with the order, you confirm that you agree to Namma Oor Karuvattu Kadai's{" "}
-          <Link to="/terms" className="underline hover:text-brand-700">Terms of Use</Link> and{" "}
-          <Link to="/privacy" className="underline hover:text-brand-700">Privacy Policy</Link>.
+          <Link to="/terms-of-use" className="underline hover:text-brand-700">Terms of Use</Link> and{" "}
+          <Link to="/privacy-policy" className="underline hover:text-brand-700">Privacy Policy</Link>.
         </p>
       </div>
 

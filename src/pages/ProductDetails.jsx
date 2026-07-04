@@ -9,6 +9,7 @@ import {
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 import { useProductDetail, useSimilarProducts } from "../hookqueries/useProducts";
+import { useDeliverySettings } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore.jsx";
@@ -20,7 +21,7 @@ import ProductReviews from "../components/Product/ProductReviews.jsx";
 import ProductCard from "../components/Product/ProductCard.jsx";
 
 // placeholder 
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -96,6 +97,8 @@ export default function ProductDetails() {
   const notFound = productError?.response?.status === 404;
 
   const { data: similar = [] } = useSimilarProducts(product?.id, { enabled: !!product?.id });
+  const { data: delivery } = useDeliverySettings();
+  const threshold = delivery?.freeShippingThreshold || 499;
 
   const loading = productLoading;
 
@@ -510,7 +513,7 @@ export default function ProductDetails() {
             {/* trust badges */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-100">
               {[
-                { icon: <Truck size={16} />, text: "Free above ₹499" },
+                { icon: <Truck size={16} />, text: `Free above ₹${threshold}` },
                 { icon: <ShieldCheck size={16} />, text: "100% Safe & Natural" },
                 // { icon: <RefreshCcw size={16} />,  text: "7-Day Returns" },
               ].map((t) => (

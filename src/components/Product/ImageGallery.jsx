@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Share2, ChevronLeft, ChevronRight } from "lucide-react";
 
-const PH = "";
+const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 export default function ImageGallery({ images, onShare }) {
   const [active, setActive] = useState(0);
