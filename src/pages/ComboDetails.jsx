@@ -8,7 +8,7 @@ import {
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 import { useComboDetail } from "../hookqueries/useCombos";
-import { useSimilarProducts } from "../hookqueries/useProducts";
+import { useSimilarProductsMulti } from "../hookqueries/useProducts";
 import API from "../ApiCall/Api";
 import { useCartStore } from "../components/store/CartStore.jsx";
 import { useAuthStore } from "../components/store/AuthStore.jsx";
@@ -65,8 +65,8 @@ export default function ComboDetails() {
 
   const { data: combo, isLoading } = useComboDetail(comboId);
 
-  const firstProductId = combo?.items?.[0]?.productId;
-  const { data: similar = [] } = useSimilarProducts(firstProductId);
+  const productIds = (combo?.items || []).map(i => i.productId).join(",");
+  const { data: similar = [] } = useSimilarProductsMulti(productIds);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -279,7 +279,14 @@ export default function ComboDetails() {
 
         {/* Left: Image Gallery */}
         <div className="max-w-xl w-full mx-auto md:sticky md:top-[104px] self-start">
-          <ImageGallery images={[{ imageUrl: combo.imageUrl, isPrimary: true }]} onShare={handleShare} />
+          <ImageGallery
+            images={
+              combo.images && combo.images.length > 0
+                ? combo.images.map((img) => ({ imageUrl: img.imageUrl, isPrimary: img.isPrimary }))
+                : [{ imageUrl: combo.imageUrl, isPrimary: true }]
+            }
+            onShare={handleShare}
+          />
         </div>
 
         {/* Right Column */}
@@ -339,7 +346,7 @@ export default function ComboDetails() {
                       disabled
                       className="font-body text-sm px-4 py-2 rounded-xl border-2 border-brand-700 bg-brand-700 text-white font-semibold opacity-90 cursor-default"
                     >
-                      {item.productName} × {item.quantity}
+                      {item.productName} ({item.weightLabel}) × {item.quantity}
                     </button>
                   ))}
                 </div>
@@ -370,7 +377,7 @@ export default function ComboDetails() {
             {/* Trust Badges */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-amber-100">
               {[
-                { icon: <Truck size={16} />, text: "Free shipping above threshold" },
+                { icon: <Truck size={16} />, text: "Free above ₹499" },
                 { icon: <ShieldCheck size={16} />, text: "100% Safe & Natural" },
               ].map((t) => (
                 <div key={t.text} className="flex flex-col items-center gap-1 text-center">

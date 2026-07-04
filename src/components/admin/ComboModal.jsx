@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
-import { X, Loader2, Image as ImageIcon } from "lucide-react";
+import { X, Loader2, Image as ImageIcon, Plus } from "lucide-react";
 import {
   useCreateCombo,
   useUpdateCombo
@@ -10,7 +10,18 @@ import IconButton from "./IconButton.jsx";
 import ComboItemPicker from "./ComboItemPicker.jsx";
 import Toggle from "./Toggle.jsx";
 
-export const COMBO_EMPTY = { name: "", description: "", imageUrl: "", imageFile: null, comboPrice: "", isActive: true, startDate: "", endDate: "", items: [] };
+export const COMBO_EMPTY = {
+  name: "",
+  description: "",
+  imageUrl: "",
+  imageFiles: [],
+  removeImageIds: [],
+  comboPrice: "",
+  isActive: true,
+  startDate: "",
+  endDate: "",
+  items: []
+};
 
 export function computeStatus({ isActive, startDate, endDate }) {
   if (!isActive) return "Inactive";
@@ -33,20 +44,43 @@ export function StatusPill({ isActive, startDate, endDate }) {
 
 export default function ComboModal({ combo, onClose, onSaved }) {
   const isEdit = !!combo?.id;
+  
   const [form, setForm] = useState(
     combo
-      ? { ...combo, imageFile: null, items: (combo.items || []).map((i) => ({ ...i })) }
+      ? { 
+          ...combo, 
+          imageFiles: [], 
+          removeImageIds: [], 
+          items: (combo.items || []).map((i) => ({ ...i })) 
+        }
       : { ...COMBO_EMPTY }
   );
-  const [previewUrl, setPreviewUrl] = useState(combo?.imageUrl || "");
+  
+  const [stagedFiles, setStagedFiles] = useState([]); // Array of { file, previewUrl }
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const MAX_IMAGES = 5;
+  const displayedSavedImages = (combo?.images || []).filter(img => !(form.removeImageIds || []).includes(img.id));
+  const totalImageCount = displayedSavedImages.length + stagedFiles.length;
+
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    set("imageFile", file);
-    setPreviewUrl(URL.createObjectURL(file));
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    const availableSlots = MAX_IMAGES - totalImageCount;
+    const filesToStage = selectedFiles.slice(0, availableSlots);
+
+    const nextStaged = [
+      ...stagedFiles,
+      ...filesToStage.map(file => ({
+        file,
+        previewUrl: URL.createObjectURL(file)
+      }))
+    ];
+
+    setStagedFiles(nextStaged);
+    set("imageFiles", nextStaged.map(item => item.file));
   };
 
   const createComboMutation = useCreateCombo();
@@ -76,7 +110,7 @@ export default function ComboModal({ combo, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-modal-slide-up">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Combo" : "Add Combo"}</h3>
           <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
@@ -86,24 +120,79 @@ export default function ComboModal({ combo, onClose, onSaved }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="field-label">Name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Dry Fish Duo" className="field-input" /></div>
             <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short combo description" /></div>
+            
+            {/* Multi image section */}
             <div>
-              <label className="field-label">Combo Image</label>
-              <div className="flex items-start gap-4">
-                <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                  {previewUrl ? (
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon size={24} className="text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="combo-file-input" />
-                  <label htmlFor="combo-file-input" className="inline-flex items-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors">
-                    Choose Image
-                  </label>
-                  <p className="text-[10px] text-gray-400 mt-1">Recommended: 600×300. Max: 3MB.</p>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="field-label mb-0">Combo Images</label>
+                <span className="font-body text-xs text-gray-400">{totalImageCount}/{MAX_IMAGES}</span>
               </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                {/* existing saved images */}
+                {displayedSavedImages.map((img) => (
+                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-gray-200 group">
+                    <img src={img.imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                    {img.isPrimary && (
+                      <span className="absolute bottom-1 left-1 font-body text-[9px] font-bold bg-brand-600 text-white px-1.5 py-0.5 rounded-md">Primary</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set("removeImageIds", [...(form.removeImageIds || []), img.id]);
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors"
+                      aria-label="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* staged new images */}
+                {stagedFiles.map((s, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-dashed border-brand-300 group">
+                    <img src={s.previewUrl} alt="" className="w-full h-full object-cover" />
+                    {displayedSavedImages.length === 0 && idx === 0 && (
+                      <span className="absolute bottom-1 left-1 font-body text-[9px] font-bold bg-brand-600 text-white px-1.5 py-0.5 rounded-md">Primary</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextStaged = stagedFiles.filter((_, i) => i !== idx);
+                        setStagedFiles(nextStaged);
+                        set("imageFiles", nextStaged.map(item => item.file));
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors"
+                      aria-label="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* upload button thumbnail */}
+                {totalImageCount < MAX_IMAGES && (
+                  <label
+                    htmlFor="combo-file-input"
+                    className="aspect-square border-2 border-dashed border-gray-200 hover:border-brand-400 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors bg-gray-50 hover:bg-amber-50/20 group"
+                  >
+                    <Plus size={18} className="text-gray-400 group-hover:text-brand-600 transition-colors" />
+                    <span className="font-body text-[10px] text-gray-400 group-hover:text-brand-600 transition-colors font-medium">Add Image</span>
+                  </label>
+                )}
+              </div>
+
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                id="combo-file-input"
+                disabled={totalImageCount >= MAX_IMAGES}
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Up to 5 images total. Max 3MB per file.</p>
             </div>
 
             <ComboItemPicker items={form.items} onChange={(items) => set("items", items)} />

@@ -12,6 +12,7 @@ import EditProduct from "../../components/admin/EditProduct.jsx";
 import ComboModal, { StatusPill } from "../../components/admin/ComboModal.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
+import TabToggle from "../../components/admin/TabToggle.jsx";
 const PH    = "";
 const rupee = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
 
@@ -94,8 +95,8 @@ export default function ProductManagement() {
   const { data: catData = [] } = useProductCategories();
   const categories = catData;
 
-  const combosCategory = useMemo(() => categories.find(c => c.nameEn === "Combos"), [categories]);
-  const isComboMode = !!(combosCategory && catFilter === combosCategory.slug);
+  const [activeTab, setActiveTab] = useState("products");
+  const isComboMode = activeTab === "combos";
 
   useEffect(() => {
     registerSearch({
@@ -261,6 +262,21 @@ export default function ProductManagement() {
 
   return (
     <AdminPage className="space-y-3">
+      {/* Tab toggle */}
+      <TabToggle
+        active={activeTab}
+        onChange={(tab) => {
+          setActiveTab(tab);
+          setPage(1);
+          setSearch("");
+          setCatFilter("");
+        }}
+        tabs={[
+          { key: "products", label: "Products" },
+          { key: "combos", label: "Combos" }
+        ]}
+      />
+
       {/* page-level error banner (replaces native alert) */}
       {pageError && (
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-md px-4 py-3">
@@ -270,14 +286,7 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* Clear -> Filter -> Add Product — single cluster, right-aligned, both above
-          the table, always on one line. Search now lives in the topbar (see
-          AdminLayout). On mobile, the dropdown width, Clear button, and Add
-          Product button all shrink smoothly via clamp() (see
-          MOBILE_FLUID_STYLES) instead of jumping at a breakpoint or wrapping —
-          sizing was verified against the longest realistic category label
-          down to 320px viewport width. Desktop sizing (w-40/sm:w-44,
-          AdminButton's default padding) is completely untouched. */}
+      {/* Clear -> Filter -> Add Product */}
       <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full">
         {(search || catFilter) && (
           <button
@@ -288,16 +297,18 @@ export default function ProductManagement() {
           </button>
         )}
 
-        <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
-          <Dropdown
-            value={catFilter}
-            onChange={(v) => { setCatFilter(v); setPage(1); }}
-            placeholder="All categories"
-            options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
-            className="pm-filter-fluid"
-            optionClassName="pm-filter-fluid"
-          />
-        </div>
+        {!isComboMode && (
+          <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+            <Dropdown
+              value={catFilter}
+              onChange={(v) => { setCatFilter(v); setPage(1); }}
+              placeholder="All categories"
+              options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+              className="pm-filter-fluid"
+              optionClassName="pm-filter-fluid"
+            />
+          </div>
+        )}
 
         <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0">
           <Plus size={15} /> {isComboMode ? "Add Combo" : "Add Product"}
