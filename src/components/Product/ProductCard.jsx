@@ -95,7 +95,6 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
       cardWeightLabel = "Combo Pack";
     }
   }
-
   const cartItem = isCombo
     ? items.find((i) => i.comboId === combo.id)
     : (firstV ? items.find((i) => i.variantId === firstV.id) : null);
@@ -291,24 +290,42 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
 
         {/* ── Info ──────────────────────────────────────────────── */}
         <div className="p-4.5">
-          <p className="font-body text-[10px] text-sandal-600 uppercase tracking-widest font-extrabold mb-1">
-            {isCombo ? "Dry Fish" : product.categoryName}
-          </p>
+          {!isCombo && product.categoryName && (
+            <p className="font-body text-[10px] text-sandal-600 uppercase tracking-widest font-extrabold mb-1">
+              {product.categoryName}
+            </p>
+          )}
 
           <h3 className="font-body text-[15px] font-bold text-gray-800 leading-snug line-clamp-2 mb-1 group-hover:text-sandal-700 transition-colors prod-card-title-fluid">
             {isCombo ? combo.name : product.nameEn}
           </h3>
 
-          {isCombo ? (
-            <p className="font-body text-xs text-sandal-500 font-semibold mb-2 line-clamp-1 leading-normal">
-              {combo.items ? combo.items.map(it => `${it.quantity} × ${it.productName}`).join(" + ") : ""}
+          {!isCombo && product.nameTa && (
+            <p className="font-tamil text-xs text-sandal-500 font-semibold mb-2 line-clamp-1">
+              {product.nameTa}
             </p>
-          ) : (
-            product.nameTa && (
-              <p className="font-tamil text-xs text-sandal-500 font-semibold mb-2 line-clamp-1">
-                {product.nameTa}
+          )}
+
+          {isCombo && combo.items && combo.items.length > 0 && (
+            <div className="mt-2 mb-1 bg-gray-50/70 p-2.5 rounded-lg border border-gray-100">
+              <p className="font-body text-[9px] text-sandal-700 font-extrabold uppercase tracking-wider mb-1">
+                Products Included:
               </p>
-            )
+              <ul className="text-[11px] text-gray-600 space-y-1 font-body">
+                {combo.items.map((it, idx) => (
+                  <li key={idx} className="flex justify-between items-center gap-1.5 leading-tight">
+                    <span className="truncate text-gray-700 font-medium">
+                      {it.quantity} × {it.productName} ({it.weightLabel})
+                    </span>
+                    {!it.inStock && (
+                      <span className="text-[8px] bg-red-50 text-red-600 border border-red-100 px-1 py-0.5 rounded font-extrabold shrink-0 uppercase tracking-wide">
+                        Out of Stock
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {/* stars */}
@@ -415,9 +432,9 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
 
   if (isCombo) {
     return (
-      <Link to={`/products/combo/${combo.id}`} className="group block h-full">
+      <div className="group block h-full">
         {cardContent}
-      </Link>
+      </div>
     );
   }
 
