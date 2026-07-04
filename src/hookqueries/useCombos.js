@@ -34,7 +34,6 @@ const mapComboToFrontend = (c) => {
 const mapComboToBackend = (form) => {
   return {
     name: form.name,
-    description: form.description || null,
     comboPrice: Number(form.comboPrice) || 0,
     isActive: form.isActive ?? true,
     startDate: form.startDate || null,

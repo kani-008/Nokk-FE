@@ -12,7 +12,6 @@ import Toggle from "./Toggle.jsx";
 
 export const COMBO_EMPTY = {
   name: "",
-  description: "",
   imageUrl: "",
   imageFiles: [],
   removeImageIds: [],
@@ -119,7 +118,6 @@ export default function ComboModal({ combo, onClose, onSaved }) {
           {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="field-label">Name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Dry Fish Duo" className="field-input" /></div>
-            <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short combo description" /></div>
             
             {/* Multi image section */}
             <div>

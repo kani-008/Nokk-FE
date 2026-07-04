@@ -60,19 +60,17 @@ function CategoryModal({ category, onClose, onSaved }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Auto-generate slug from English name for new categories
+  // Auto-generate slug from English name for categories
   const handleNameEnChange = (e) => {
     const val = e.target.value;
     set("nameEn", val);
-    if (!isEdit) {
-      const generatedSlug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") // remove special chars
-        .replace(/\s+/g, "-") // replace spaces with hyphens
-        .replace(/-+/g, "-") // collapse multiple hyphens
-        .trim();
-      set("slug", generatedSlug);
-    }
+    const generatedSlug = val
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+      .replace(/\s+/g, "-") // replace spaces with hyphens
+      .replace(/-+/g, "-") // collapse multiple hyphens
+      .trim();
+    set("slug", generatedSlug);
   };
 
   const handleFileChange = (e) => {

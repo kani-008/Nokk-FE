@@ -317,7 +317,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
 
   const handleNameChange = (val) => {
     setF("nameEn", val);
-    if (!isEdit) setF("slug", slugify(val));
+    setF("slug", slugify(val));
   };
 
   const handleSubmit = async (e) => {
@@ -398,7 +398,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
         const coreForm = { ...form };
         delete coreForm.variants;
         delete coreForm.images;
-        const response = await updateProductMutation.mutateAsync({ id: product.id, ...coreForm, slug: product.slug });
+        const response = await updateProductMutation.mutateAsync({ id: product.id, ...coreForm, slug: form.slug.trim().toLowerCase() });
         uploadedDbImagesRef.current = []; // save succeeded, clear tracked images
         console.log(response);
         onSaved(response.product || { ...form, id: product.id });

@@ -1326,3 +1326,10 @@ body {
     }
   }
 }
+
+/* ── Announcement Bar continuous marquee ─────────────────────────── */
+/* 8 identical copies inline; -12.5% = exactly one copy width → seamless */
+@keyframes announcement-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-12.5%); }
+}
