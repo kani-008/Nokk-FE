@@ -168,8 +168,8 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
       productName: product.nameEn,
       nameTa: product.nameTa,
       image,
-      price: firstV.price,
-      comparePrice: firstV.comparePrice,
+      price: price,
+      comparePrice: compare,
       weight: firstV.weightLabel,
       quantity: 1,
     };
