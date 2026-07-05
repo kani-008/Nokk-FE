@@ -18,15 +18,17 @@ const rupee = (n) =>
 // displayed discount always matches what checkout will actually charge.
 function applyActiveOffer(price, offer) {
   if (!offer) return null;
+  let finalPrice = price;
   if (offer.type === "percentage") {
     const raw = (price * offer.discountValue) / 100;
     const discount = offer.maxDiscount != null ? Math.min(raw, offer.maxDiscount) : raw;
-    return Math.max(price - discount, 0);
+    finalPrice = Math.max(price - discount, 0);
+  } else if (offer.type === "flat") {
+    finalPrice = Math.max(price - offer.discountValue, 0);
+  } else {
+    return null;
   }
-  if (offer.type === "flat") {
-    return Math.max(price - offer.discountValue, 0);
-  }
-  return null;
+  return Math.round(finalPrice);
 }
 
 /*
