@@ -328,3 +328,17 @@ export function useDeleteUploadedFile() {
     },
   });
 }
+
+export function useProductSuggestions(query, options = {}) {
+  return useQuery({
+    queryKey: ["products", "suggestions", query],
+    queryFn: async () => {
+      if (!query || query.trim().length < 2) return [];
+      const res = await API.get("/products/search-suggestions", { params: { q: query.trim() } });
+      return res.data.suggestions || [];
+    },
+    enabled: !!query && query.trim().length >= 2,
+    staleTime: 30 * 1000,
+    ...options,
+  });
+}
