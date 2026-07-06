@@ -33,7 +33,8 @@ function SuggestionsDropdown({
   loading,
   visible,
   highlightedIdx,
-  onSelect
+  onSelect,
+  emptyText = "No products found",
 }) {
   if (!visible) return null;
 
@@ -45,7 +46,7 @@ function SuggestionsDropdown({
           <span>Searching...</span>
         </div>
       ) : suggestions.length === 0 ? (
-        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">No products found</div>
+        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">{emptyText}</div>
       ) : (
         suggestions.map((s, idx) => (
           <div
@@ -275,7 +276,10 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   const mobileSearchContainerRef = useRef(null);
   const desktopSearchContainerRef = useRef(null);
 
-  const isProductSearch = searchConfig?.domain === "products";
+  const searchDomain = searchConfig?.domain; // "products" | "combos" | undefined
+  const isProductSearch = searchDomain === "products";
+  const isComboSearch = searchDomain === "combos";
+  const hasSuggestionDomain = isProductSearch || isComboSearch;
   const [searchFocused, setSearchFocused] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
@@ -288,10 +292,14 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
     return () => clearTimeout(timer);
   }, [searchValue, isProductSearch]);
 
-  const { data: suggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
+  const { data: productSuggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
 
-  const showSuggestions = isProductSearch && searchFocused && searchValue.trim().length >= 2;
-  const isTypingOrLoading = suggestionsLoading || searchValue !== debouncedQuery;
+  const suggestions = isComboSearch ? (searchConfig?.suggestions || []) : productSuggestions;
+
+  const showSuggestions = hasSuggestionDomain && searchFocused && searchValue.trim().length >= 2;
+  const isTypingOrLoading = isProductSearch
+    ? (suggestionsLoading || searchValue !== debouncedQuery)
+    : false;
 
   useEffect(() => {
     setHighlightedIdx(-1);
@@ -317,7 +325,11 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   };
 
   const handleSelectSuggestion = (s) => {
-    navigate(`/admin/products?editProductSlug=${s.slug}`);
+    if (isComboSearch) {
+      navigate(`/admin/products?tab=combos&editComboId=${s.id}`);
+    } else {
+      navigate(`/admin/products?editProductSlug=${s.slug}`);
+    }
     setSearchFocused(false);
     setMobileSearchOpen(false);
   };
@@ -434,6 +446,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
               visible={showSuggestions}
               highlightedIdx={highlightedIdx}
               onSelect={handleSelectSuggestion}
+              emptyText={isComboSearch ? "No combos found" : "No products found"}
             />
           </div>
           <IconButton onClick={closeMobileSearch} className="shrink-0" aria-label="Close search">

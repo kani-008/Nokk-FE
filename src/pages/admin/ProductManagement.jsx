@@ -86,6 +86,8 @@ export default function ProductManagement() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const editProductSlug = searchParams.get("editProductSlug");
+  const editComboId = searchParams.get("editComboId");
+  const tabParam = searchParams.get("tab");
   const { data: detailProd } = useAdminProductDetail(editProductSlug);
 
   useEffect(() => {
@@ -98,6 +100,28 @@ export default function ProductManagement() {
       }, { replace: true });
     }
   }, [detailProd, setSearchParams]);
+
+  useEffect(() => {
+    if (tabParam === "combos") {
+      setActiveTab("combos");
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
+    if (!editComboId || combosLoading) return;
+    const combo = combos.find(c => String(c.id) === editComboId);
+    if (combo) {
+      setModal(combo);
+    } else {
+      setPageError("The combo could not be found — it may have been deleted.");
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("editComboId");
+      next.delete("tab");
+      return next;
+    }, { replace: true });
+  }, [editComboId, combos, combosLoading, setSearchParams]);
 
   // ── Hand this page's search state to AdminLayout's shared topbar search.
   // Typing in the topbar box now filters this table directly; no separate
@@ -113,16 +137,26 @@ export default function ProductManagement() {
   const [activeTab, setActiveTab] = useState("products");
   const isComboMode = activeTab === "combos";
 
+  const comboSuggestions = useMemo(() => {
+    if (!isComboMode || !search || search.trim().length < 2) return [];
+    const q = search.toLowerCase().trim();
+    return combos
+      .filter(c => c.name.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(c => ({ id: c.id, name: c.name, primaryImage: c.imageUrl || null, minPrice: c.comboPrice }));
+  }, [combos, search, isComboMode]);
+
   useEffect(() => {
     registerSearch({
       placeholder: isComboMode ? "Search combos…" : "Search products…",
       value: search,
       onChange: setSearch,
-      domain: "products"
+      domain: isComboMode ? "combos" : "products",
+      suggestions: isComboMode ? comboSuggestions : undefined,
     });
     return () => unregisterSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, isComboMode]);
+  }, [search, isComboMode, comboSuggestions]);
 
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
