@@ -204,7 +204,7 @@ function Section({ label, children, className = "" }) {
   return (
     <div className={`card p-4 lg:p-5 space-y-3 ${className}`}>
       {label && (
-        <p className="font-body text-xs font-semibold text-amber-800 uppercase tracking-wider border-b border-amber-100/30 pb-3">
+        <p className="font-body text-[16px] font-semibold text-amber-800  tracking-wider border-b border-amber-100/30 pb-3">
           {label}
         </p>
       )}
@@ -378,12 +378,16 @@ export default function OrderDetail({ order, onBack, onStatusUpdate }) {
         </div>
 
         {/* ── Products ── */}
-        <Section label="Product Details">
-          <div className="flex justify-end -mt-1 mb-2">
-            <p className="font-num text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">
-              Order ID: #{String(order.id).toUpperCase()}
-            </p>
-          </div>
+        <Section
+          label={
+            <div className="flex items-center justify-between">
+              <span>Product Details</span>
+              <span className="font-num text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg normal-case tracking-normal font-normal">
+                Order ID: #{String(order.id).toUpperCase()}
+              </span>
+            </div>
+          }
+        >
           <div className="space-y-4">
             {displayItems.map((item, i) => (
               <div

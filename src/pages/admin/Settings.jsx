@@ -431,22 +431,43 @@ export default function Settings() {
         ? 0
         : Number(out[k]);
     });
-    // Clamp to respective minimums
-    out.shippingCharge = Math.max(out.shippingCharge, 1);
-    out.maxCartItems = Math.max(out.maxCartItems, 1);
-    out.freeShippingThreshold = Math.max(out.freeShippingThreshold, 0);
-    out.minOrderValue = Math.max(out.minOrderValue, 0);
     return out;
   };
 
   const handleSave = async () => {
     setSaving(true); setSaved(false); setError("");
+    const coercedForm = coerceNumbers(form);
+
+    if (coercedForm.shippingCharge <= 0) {
+      setError("Standard Delivery Fee (shippingCharge) must be greater than 0");
+      setSaving(false);
+      return;
+    }
+    if (!Number.isInteger(coercedForm.maxCartItems) || coercedForm.maxCartItems < 1) {
+      setError("Max Items per Cart (maxCartItems) must be an integer greater than or equal to 1");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.freeShippingThreshold < 0) {
+      setError("Free Shipping Above (freeShippingThreshold) cannot be negative");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.minOrderValue < 0) {
+      setError("Minimum Order Value (minOrderValue) cannot be negative");
+      setSaving(false);
+      return;
+    }
+
     try {
-      await settingsApi.update(coerceNumbers(form));
+      await settingsApi.update(coercedForm);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) { setError(e.message || "Failed to save"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
