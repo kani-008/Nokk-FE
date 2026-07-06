@@ -1,7 +1,71 @@
+import { useRef, useEffect } from "react";
 import { AlertCircle, ShieldCheck } from "lucide-react";
 
 // ─── Logo URL — replace with real cloud URL when available ────────────
 const LOGO_URL = null;
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GSI_SCRIPT_URL = "https://accounts.google.com/gsi/client";
+
+/**
+ * ── GoogleAuthButton ───────────────────────────────────────────────
+ * Loads Google Identity Services once and renders Google's own branded
+ * button via renderButton. Shared by Login.jsx and Register.jsx.
+ *
+ * Props:
+ *  - onCredential(credential: string)  — called with the ID token
+ *  - disabled: boolean — hides the button while the parent is loading
+ */
+export function GoogleAuthButton({ onCredential, disabled = false }) {
+    const btnRef = useRef(null);
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        const render = () => {
+            if (initialized.current || !btnRef.current) return;
+            initialized.current = true;
+
+            window.google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: (response) => onCredential(response.credential),
+            });
+            window.google.accounts.id.renderButton(btnRef.current, {
+                type: "standard",
+                theme: "outline",
+                size: "large",
+                width: btnRef.current.offsetWidth || 320,
+                text: "continue_with",
+            });
+        };
+
+        if (window.google?.accounts?.id) {
+            render();
+            return;
+        }
+
+        if (!document.getElementById("gsi-script")) {
+            const script = document.createElement("script");
+            script.id = "gsi-script";
+            script.src = GSI_SCRIPT_URL;
+            script.async = true;
+            script.defer = true;
+            script.onload = render;
+            document.head.appendChild(script);
+        } else {
+            const existing = document.getElementById("gsi-script");
+            const handleLoad = () => render();
+            existing.addEventListener("load", handleLoad);
+            return () => existing.removeEventListener("load", handleLoad);
+        }
+    }, [onCredential]);
+
+    return (
+        <div
+            ref={btnRef}
+            className={`flex justify-center w-full ${disabled ? "opacity-40 pointer-events-none" : ""}`}
+        />
+    );
+}
 
 /**
  * ── StepDots ────────────────────────────────────────────────────────

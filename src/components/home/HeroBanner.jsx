@@ -119,13 +119,10 @@ export default function HeroBanner({ banners }) {
   const logicalIdx = count > 1 ? (domIdx - 1 + count) % count : 0;
 
   // ── derive the background video + poster ──
-  const activeVideoBanner =
-    banners?.find((b) => b.videoUrl && b.isActive) ||
-    banners?.find((b) => b.videoUrl) ||
-    banners?.[0];
-  const videoUrl = activeVideoBanner?.videoUrl || null;
+  const currentSlide = slides[logicalIdx];
+  const videoUrl = currentSlide?.videoUrl || null;
   const posterUrl =
-    activeVideoBanner?.imageUrl ||
+    currentSlide?.imageUrl ||
     banners?.find((b) => b.imageUrl)?.imageUrl ||
     null;
 
@@ -301,12 +298,13 @@ export default function HeroBanner({ banners }) {
       {videoUrl && (
         <video
           ref={videoRef}
+          key={videoUrl}
           autoPlay
           loop
           muted
           playsInline
           webkit-playsinline="true"
-          preload="auto"
+          preload="metadata"
           src={videoUrl}
           poster={posterUrl || undefined}
           onPlaying={() => setVideoReady(true)}
