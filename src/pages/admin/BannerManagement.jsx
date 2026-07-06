@@ -366,12 +366,17 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
       let res;
       if (overlay?.id) {
         res = await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId, ...form });
+        console.log("[Banner Overlay Text] Update successful. Status: 200", res);
       } else {
         res = await createBtextMutation.mutateAsync({ bannerId, ...form });
+        console.log("[Banner Overlay Text] Creation successful. Status: 201", res);
       }
       onSaved(res.btext || form);
       onClose();
-    } catch (e) { setError(e.response?.data?.message || e.message || "Failed to save"); }
+    } catch (e) {
+      console.log("[Banner Overlay Text] Save failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
+      setError(e.response?.data?.message || e.message || "Failed to save");
+    }
   };
 
   return (
@@ -454,17 +459,25 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
 
   const handleToggle = async () => {
     try {
-      await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId, isActive: !overlay.isActive });
+      const res = await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId, isActive: !overlay.isActive });
+      console.log("[Banner Overlay Text] Toggle successful. Status: 200", { id: overlay.id, isActive: !overlay.isActive, response: res });
       onToggled(overlay.id, !overlay.isActive);
-    } catch (e) { alert(e.response?.data?.message || e.message || "Failed"); }
+    } catch (e) {
+      console.log("[Banner Overlay Text] Toggle failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
+      alert(e.response?.data?.message || e.message || "Failed");
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this text overlay?")) return;
     try {
-      await deleteBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId });
+      const res = await deleteBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId });
+      console.log("[Banner Overlay Text] Delete successful. Status: 200", { id: overlay.id, response: res });
       onDelete(overlay.id);
-    } catch (e) { alert(e.response?.data?.message || e.message || "Failed to delete"); }
+    } catch (e) {
+      console.log("[Banner Overlay Text] Delete failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed to delete");
+      alert(e.response?.data?.message || e.message || "Failed to delete");
+    }
   };
 
   // tapping the card body opens the editor

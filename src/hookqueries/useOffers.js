@@ -30,6 +30,7 @@ const mapOfferToFrontend = (o) => {
     updatedAt: o.updatedAt,
     showInAnnouncement: o.showInAnnouncement ?? false,
     showAsBanner: o.showAsBanner ?? false,
+    bannerId: o.bannerId || null,
   };
 };
 
@@ -49,20 +50,11 @@ const mapOfferToBackend = (form) => {
     isActive: form.isActive ?? true,
     showInAnnouncement: form.showInAnnouncement ?? false,
     showAsBanner: form.showAsBanner ?? false,
+    bannerId: form.bannerId || null,
   };
 };
 
-// Builds a multipart FormData from a mapped offer payload, converting
-// null/undefined to "" so falsy-coalescing on the backend (`x || null`)
-// still clears the field the same way it did when this was sent as JSON.
-const buildOfferFormData = (payload, imageFile) => {
-  const fd = new FormData();
-  Object.entries(payload).forEach(([key, value]) => {
-    fd.append(key, value === null || value === undefined ? "" : value);
-  });
-  if (imageFile) fd.append("imageFile", imageFile);
-  return fd;
-};
+
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
@@ -113,18 +105,9 @@ export function useAdminOfferDetail(id) {
 export function useCreateOffer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ form, imageFile }) => {
+    mutationFn: async ({ form }) => {
       const payload = mapOfferToBackend(form);
-      const fd = buildOfferFormData(payload, imageFile);
-      // Content-Type must be null (not a literal "multipart/form-data" string,
-      // and not simply omitted) — the API instance defaults to
-      // "application/json" (Api.jsx), and axios's transformRequest JSON-encodes
-      // any FormData body whenever the active Content-Type contains
-      // "application/json". Setting it to null here overrides that instance
-      // default so the browser computes the real header (with boundary) itself.
-      const res = await API.post("/offers/create-offer", fd, {
-        headers: { "Content-Type": null },
-      });
+      const res = await API.post("/offers/create-offer", payload);
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
@@ -136,15 +119,9 @@ export function useCreateOffer() {
 export function useUpdateOffer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, form, imageFile }) => {
+    mutationFn: async ({ id, form }) => {
       const payload = mapOfferToBackend(form);
-      const fd = buildOfferFormData(payload, imageFile);
-      fd.append("id", id);
-      // See useCreateOffer for why this must be null rather than a literal
-      // "multipart/form-data" string or an omitted header.
-      const res = await API.put("/offers/update-offer", fd, {
-        headers: { "Content-Type": null },
-      });
+      const res = await API.put("/offers/update-offer", { ...payload, id });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {

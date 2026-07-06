@@ -7,6 +7,7 @@ import {
   useDeleteOffer
 } from "../../hookqueries/useOffers";
 import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
+import { useAdminBanners } from "../../hookqueries/useBanners";
 import {
   AdminPage, AdminButton,
 } from "../../components/admin/AdminUI.jsx";
@@ -16,7 +17,7 @@ import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false, showAsBanner: false, imageUrl: "" };
+const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false, showAsBanner: false, imageUrl: "", bannerId: "" };
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -58,20 +59,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(offer?.imageUrl || "");
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size must be less than 5MB");
-      return;
-    }
-    setError("");
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
+  const { data: banners = [] } = useAdminBanners();
 
   const createOfferMutation = useCreateOffer();
   const updateOfferMutation = useUpdateOffer();
@@ -82,18 +70,21 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
     if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
     if (form.appliesTo === "product" && !form.productId) { setError("Please select a product"); return; }
     if (form.appliesTo === "category" && !form.categoryId) { setError("Please select a category"); return; }
+    if (form.showAsBanner && !form.bannerId) { setError("Please select a banner"); return; }
     setError("");
     try {
       let res;
       if (isEdit) {
-        res = await updateOfferMutation.mutateAsync({ id: offer.id, form, imageFile: selectedFile });
+        res = await updateOfferMutation.mutateAsync({ id: offer.id, form });
+        console.log("[Offer Page] Update successful. Status: 200", res);
       } else {
-        res = await createOfferMutation.mutateAsync({ form, imageFile: selectedFile });
+        res = await createOfferMutation.mutateAsync({ form });
+        console.log("[Offer Page] Creation successful. Status: 201", res);
       }
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
-      console.error("[Offer Page] Action failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
+      console.log("[Offer Page] Action failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
       setError(e.response?.data?.message || e.message || "Failed");
     }
   };
@@ -128,35 +119,41 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
             <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
               <div className="space-y-1">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <Toggle checked={form.showAsBanner} onChange={() => set("showAsBanner", !form.showAsBanner)} />
+                  <Toggle checked={form.showAsBanner} onChange={() => {
+                    const nextVal = !form.showAsBanner;
+                    set("showAsBanner", nextVal);
+                    if (!nextVal) set("bannerId", "");
+                  }} />
                   <span className="font-body text-sm text-gray-700 font-semibold">Show as Homepage Banner</span>
                 </label>
                 <p className="text-[11px] text-gray-500 pl-8">
                   Displays this offer as a hero banner slide on the homepage.
                 </p>
-                {form.showAsBanner && !previewUrl && (
-                  <p className="text-[11px] text-amber-600 pl-8">
-                    ⚠️ A banner image is required below for this to take effect.
-                  </p>
-                )}
               </div>
 
               {form.showAsBanner && (
-                <div className="pl-8">
-                  <label className="field-label">Banner Image</label>
-                  <div className="flex items-start gap-4">
-                    <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                      {previewUrl ? (
-                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <ImageIcon size={24} className="text-gray-300" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} className="field-input text-xs" />
-                      <p className="text-[11px] text-gray-400 mt-1">JPEG, PNG or WebP. Max 5MB.</p>
-                    </div>
-                  </div>
+                <div className="pl-8 space-y-1.5">
+                  <label className="field-label">Select Homepage Banner *</label>
+                  <Dropdown
+                    value={form.bannerId || ""}
+                    onChange={(val) => set("bannerId", val)}
+                    placeholder="Choose banner…"
+                    options={banners.map((b) => ({
+                      value: b.id,
+                      label: (
+                        <div className="flex items-center gap-2">
+                          {b.imageUrl && (
+                            <img
+                              src={b.imageUrl}
+                              alt=""
+                              className="w-6 h-6 rounded object-cover border border-gray-200 shrink-0"
+                            />
+                          )}
+                          <span>{b.title || `Banner #${b.id}`}</span>
+                        </div>
+                      )
+                    }))}
+                  />
                 </div>
               )}
             </div>
@@ -263,10 +260,11 @@ export default function OfferManagement() {
   const handleConfirmDeleteOffer = async () => {
     if (!deleteOfferTarget) return;
     try {
-      await deleteOfferMutation.mutateAsync(deleteOfferTarget.id);
+      const res = await deleteOfferMutation.mutateAsync(deleteOfferTarget.id);
+      console.log("[Offer Page] Delete successful. Status: 200", { id: deleteOfferTarget.id, response: res });
       setDeleteOfferTarget(null);
     } catch (err) {
-      console.error("Failed to delete offer:", err);
+      console.log("[Offer Page] Delete failed. Status:", err.response?.status || 500, err.response?.data?.message || err.message || "Failed");
       setDeleteOfferTarget(null);
     }
   };

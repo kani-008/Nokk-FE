@@ -65,6 +65,7 @@ export default function HeroBanner({ banners }) {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log("[HeroBanner] Loaded cached banner slides:", parsed);
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setSlides(parsed);
           setDomIdx(parsed.length > 1 ? 1 : 0);
@@ -98,6 +99,8 @@ export default function HeroBanner({ banners }) {
             }
           });
         });
+
+        console.log("[HeroBanner] Fetched active banner slides/offer content:", allSlides);
 
         if (allSlides.length > 0) {
           setSlides(allSlides);
