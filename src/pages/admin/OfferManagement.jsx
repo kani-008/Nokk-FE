@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import {
   useAdminOfferList,
   useCreateOffer,
@@ -16,7 +16,7 @@ import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false };
+const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false, showAsBanner: false, imageUrl: "" };
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
@@ -58,6 +58,21 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(offer?.imageUrl || "");
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size must be less than 5MB");
+      return;
+    }
+    setError("");
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
   const createOfferMutation = useCreateOffer();
   const updateOfferMutation = useUpdateOffer();
   const saving = createOfferMutation.isPending || updateOfferMutation.isPending;
@@ -71,9 +86,9 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
     try {
       let res;
       if (isEdit) {
-        res = await updateOfferMutation.mutateAsync({ id: offer.id, form });
+        res = await updateOfferMutation.mutateAsync({ id: offer.id, form, imageFile: selectedFile });
       } else {
-        res = await createOfferMutation.mutateAsync(form);
+        res = await createOfferMutation.mutateAsync({ form, imageFile: selectedFile });
       }
       onSaved(res.offer || form);
       onClose();
@@ -107,6 +122,43 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                   Displays this offer as the site-wide announcement strip in the navigation bar.
                 </p>
               </div>
+            </div>
+
+            {/* Banner Options */}
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Toggle checked={form.showAsBanner} onChange={() => set("showAsBanner", !form.showAsBanner)} />
+                  <span className="font-body text-sm text-gray-700 font-semibold">Show as Homepage Banner</span>
+                </label>
+                <p className="text-[11px] text-gray-500 pl-8">
+                  Displays this offer as a hero banner slide on the homepage.
+                </p>
+                {form.showAsBanner && !previewUrl && (
+                  <p className="text-[11px] text-amber-600 pl-8">
+                    ⚠️ A banner image is required below for this to take effect.
+                  </p>
+                )}
+              </div>
+
+              {form.showAsBanner && (
+                <div className="pl-8">
+                  <label className="field-label">Banner Image</label>
+                  <div className="flex items-start gap-4">
+                    <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+                      {previewUrl ? (
+                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon size={24} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} className="field-input text-xs" />
+                      <p className="text-[11px] text-gray-400 mt-1">JPEG, PNG or WebP. Max 5MB.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

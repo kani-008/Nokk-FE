@@ -29,6 +29,7 @@ const mapOfferToFrontend = (o) => {
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
     showInAnnouncement: o.showInAnnouncement ?? false,
+    showAsBanner: o.showAsBanner ?? false,
   };
 };
 
@@ -47,7 +48,20 @@ const mapOfferToBackend = (form) => {
     endDate: form.endDate || null,
     isActive: form.isActive ?? true,
     showInAnnouncement: form.showInAnnouncement ?? false,
+    showAsBanner: form.showAsBanner ?? false,
   };
+};
+
+// Builds a multipart FormData from a mapped offer payload, converting
+// null/undefined to "" so falsy-coalescing on the backend (`x || null`)
+// still clears the field the same way it did when this was sent as JSON.
+const buildOfferFormData = (payload, imageFile) => {
+  const fd = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    fd.append(key, value === null || value === undefined ? "" : value);
+  });
+  if (imageFile) fd.append("imageFile", imageFile);
+  return fd;
 };
 
 // ── QUERIES ─────────────────────────────────────────────────────────
@@ -99,9 +113,12 @@ export function useAdminOfferDetail(id) {
 export function useCreateOffer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (form) => {
+    mutationFn: async ({ form, imageFile }) => {
       const payload = mapOfferToBackend(form);
-      const res = await API.post("/offers/create-offer", payload);
+      const fd = buildOfferFormData(payload, imageFile);
+      const res = await API.post("/offers/create-offer", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
@@ -113,9 +130,13 @@ export function useCreateOffer() {
 export function useUpdateOffer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, form }) => {
+    mutationFn: async ({ id, form, imageFile }) => {
       const payload = mapOfferToBackend(form);
-      const res = await API.put("/offers/update-offer", { id, ...payload });
+      const fd = buildOfferFormData(payload, imageFile);
+      fd.append("id", id);
+      const res = await API.put("/offers/update-offer", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
