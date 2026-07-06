@@ -116,8 +116,14 @@ export function useCreateOffer() {
     mutationFn: async ({ form, imageFile }) => {
       const payload = mapOfferToBackend(form);
       const fd = buildOfferFormData(payload, imageFile);
+      // Content-Type must be null (not a literal "multipart/form-data" string,
+      // and not simply omitted) — the API instance defaults to
+      // "application/json" (Api.jsx), and axios's transformRequest JSON-encodes
+      // any FormData body whenever the active Content-Type contains
+      // "application/json". Setting it to null here overrides that instance
+      // default so the browser computes the real header (with boundary) itself.
       const res = await API.post("/offers/create-offer", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": null },
       });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
@@ -134,8 +140,10 @@ export function useUpdateOffer() {
       const payload = mapOfferToBackend(form);
       const fd = buildOfferFormData(payload, imageFile);
       fd.append("id", id);
+      // See useCreateOffer for why this must be null rather than a literal
+      // "multipart/form-data" string or an omitted header.
       const res = await API.put("/offers/update-offer", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": null },
       });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
