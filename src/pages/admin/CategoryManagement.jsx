@@ -55,6 +55,7 @@ function CategoryModal({ category, onClose, onSaved }) {
   const [form, setForm] = useState(category ? { ...category } : { ...CATEGORY_EMPTY });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(category?.imageUrl || "");
+  const [removeImage, setRemoveImage] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -83,6 +84,15 @@ function CategoryModal({ category, onClose, onSaved }) {
     setError("");
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+    setRemoveImage(false);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setRemoveImage(true);
+    const fileInput = document.getElementById("category-file-input");
+    if (fileInput) fileInput.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -99,6 +109,7 @@ function CategoryModal({ category, onClose, onSaved }) {
       formData.append("slug", form.slug.trim().toLowerCase());
       formData.append("sortOrder", String(form.sortOrder || 0));
       formData.append("isActive", String(form.isActive));
+      formData.append("removeImage", String(removeImage));
 
       if (isEdit) {
         formData.append("id", category.id);
@@ -171,9 +182,19 @@ function CategoryModal({ category, onClose, onSaved }) {
           <div>
             <label className="field-label">Category Thumbnail</label>
             <div className="flex items-start gap-4">
-              <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+              <div className="relative w-20 h-20 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
                 {previewUrl ? (
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <>
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors"
+                      aria-label="Remove image"
+                    >
+                      <X size={10} />
+                    </button>
+                  </>
                 ) : (
                   <ImageIcon size={24} className="text-gray-300" />
                 )}
