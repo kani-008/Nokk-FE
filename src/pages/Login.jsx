@@ -6,7 +6,8 @@ import {
 import API from "../ApiCall/Api";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
-import AuthLayout, { StepDots, OtpBoxes, fieldClass } from "../components/layout/AuthLayout";
+import AuthLayout, { StepDots, OtpBoxes, fieldClass, GoogleAuthButton } from "../components/layout/AuthLayout";
+import { useGoogleAuth } from "../hookqueries/useGoogleAuth";
 
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
@@ -36,6 +37,42 @@ export default function Login() {
 
     // ── Reactivation credentials (saved from login attempt) ──
     const [reactivateCreds, setReactivateCreds] = useState(null);
+
+    // ── Google Sign-In ──
+    const {
+        handleGoogleCredential,
+        needsPasswordConfirm,
+        pendingCredential,
+        handlePasswordConfirm,
+        clearConfirm,
+        googleLoading,
+    } = useGoogleAuth({ redirectTo, setError, setLoading, page: "login" });
+
+    const [confirmPwGoogle, setConfirmPwGoogle] = useState("");
+    const [showConfirmPwGoogle, setShowConfirmPwGoogle] = useState(false);
+
+    // Handle incoming redirect from Register.jsx for a Google-originated deactivated account.
+    useEffect(() => {
+        if (location.state?.googleDeactivated && location.state?.credential) {
+            (async () => {
+                const data = await handleGoogleCredential(location.state.credential);
+                if (data?.code === "DEACTIVATED") {
+                    setReactivateCreds({ credential: location.state.credential, viaGoogle: true });
+                    setView("deactivated");
+                }
+            })();
+            // Clear the state so a page refresh doesn't re-trigger.
+            window.history.replaceState({}, "");
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const onGoogleCredential = useCallback(async (credential) => {
+        const data = await handleGoogleCredential(credential);
+        if (data?.code === "DEACTIVATED") {
+            setReactivateCreds({ credential, viaGoogle: true });
+            setView("deactivated");
+        }
+    }, [handleGoogleCredential]);
 
     // ── Forgot Password Form State ──
     const [phone, setPhone] = useState("");
@@ -132,9 +169,26 @@ export default function Login() {
         if (!reactivateCreds) return;
         setLoading(true);
         try {
-            const res = await API.post("/auth/reactivate", reactivateCreds);
-            login(res.data.user, res.data.accessToken, res.data.refreshToken);
-            navigate(res.data.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+            if (reactivateCreds.viaGoogle) {
+                // Google-originated deactivated account (email/password):
+                // Prompt for password, then send through google-link-confirm
+                // which now also reactivates on successful password match.
+                if (!confirmPwGoogle.trim()) {
+                    setError("Please enter your password to reactivate.");
+                    setLoading(false);
+                    return;
+                }
+                const res = await API.post("/auth/google-link-confirm", {
+                    credential: reactivateCreds.credential,
+                    password: confirmPwGoogle,
+                });
+                login(res.data.user, res.data.accessToken, res.data.refreshToken);
+                navigate(res.data.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+            } else {
+                const res = await API.post("/auth/reactivate", reactivateCreds);
+                login(res.data.user, res.data.accessToken, res.data.refreshToken);
+                navigate(res.data.user?.role === "admin" ? "/admin" : redirectTo, { replace: true });
+            }
         } catch (err) {
             setError(err.response?.data?.message || "Failed to reactivate account. Please try again.");
             setView("login");
@@ -175,7 +229,10 @@ export default function Login() {
         if (e.key === "Enter" && !loading) handleSendOtp(e);
     };
 
+    // PAUSED — Meta not ready. Unreachable while forgot-password OTP step is
+    // bypassed above. Restore alongside the backend OTP endpoints.
     const handleResend = async () => {
+        /* --- paused: calls /auth/otp-create which is disabled ---
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
@@ -189,10 +246,14 @@ export default function Login() {
         } finally {
             setLoading(false);
         }
+        --- */
     };
 
+    // PAUSED — Meta not ready. Unreachable while forgot-password OTP step is
+    // bypassed above. Restore alongside the backend OTP endpoints.
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
+        /* --- paused: calls /auth/otp-verify which is disabled ---
         const otpValue = otp.join("");
         if (otp.some((d) => d === "")) { setForgotErrors({ otp: "Enter the 6-digit OTP" }); return; }
 
@@ -208,6 +269,7 @@ export default function Login() {
         } finally {
             setLoading(false);
         }
+        --- */
     };
 
     const handleOtpChange = (index, value) => {
@@ -376,6 +438,66 @@ export default function Login() {
         >
             {/* ── View: Login ── */}
             {view === "login" && (
+                <>
+                <GoogleAuthButton onCredential={onGoogleCredential} disabled={loading || googleLoading} />
+
+                {needsPasswordConfirm && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3">
+                        <p className="font-body text-sm font-semibold text-amber-800 mb-2">
+                            Confirm your password to link this Google account
+                        </p>
+                        <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                <Lock size={18} />
+                            </span>
+                            <input
+                                type={showConfirmPwGoogle ? "text" : "password"}
+                                value={confirmPwGoogle}
+                                onChange={(e) => { setConfirmPwGoogle(e.target.value); setError(""); }}
+                                placeholder="Your existing password"
+                                className="field-input pl-10 pr-10 w-full"
+                                autoComplete="current-password"
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handlePasswordConfirm(confirmPwGoogle);
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPwGoogle((s) => !s)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5"
+                            >
+                                {showConfirmPwGoogle ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </button>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                            <button
+                                type="button"
+                                onClick={() => handlePasswordConfirm(confirmPwGoogle)}
+                                disabled={googleLoading || !confirmPwGoogle.trim()}
+                                className="btn-md btn-primary flex-1"
+                            >
+                                {googleLoading ? <><Loader2 size={16} className="animate-spin" /> Confirming…</> : "Confirm & Sign In"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { clearConfirm(); setConfirmPwGoogle(""); setShowConfirmPwGoogle(false); }}
+                                className="font-body text-xs text-amber-500 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer px-2"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3 my-1">
+                    <div className="flex-1 h-px bg-sandal-200" />
+                    <span className="font-body text-xs text-amber-500 uppercase tracking-wider">or</span>
+                    <div className="flex-1 h-px bg-sandal-200" />
+                </div>
+
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div>
                         <label className="field-label">Phone Number or Email</label>
@@ -455,6 +577,7 @@ export default function Login() {
                         </Link>
                     </p>
                 </form>
+                </>
             )}
 
             {/* ── View: Account Deactivated ── */}
@@ -463,9 +586,27 @@ export default function Login() {
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                         <p className="font-body text-sm font-semibold text-amber-800 mb-1">Account Deactivated</p>
                         <p className="font-body text-xs text-amber-700 leading-relaxed">
-                            Your account has been deactivated. Would you like to reactivate it and sign in?
+                            Your account has been deactivated. {reactivateCreds?.viaGoogle
+                                ? "Enter your password to reactivate and sign in."
+                                : "Would you like to reactivate it and sign in?"}
                         </p>
                     </div>
+                    {reactivateCreds?.viaGoogle && (
+                        <div className="relative text-left">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                <Lock size={18} />
+                            </span>
+                            <input
+                                type="password"
+                                value={confirmPwGoogle}
+                                onChange={(e) => { setConfirmPwGoogle(e.target.value); setError(""); }}
+                                placeholder="Your existing password"
+                                className="field-input pl-10 w-full"
+                                autoComplete="current-password"
+                                onKeyDown={(e) => { if (e.key === "Enter") handleReactivate(); }}
+                            />
+                        </div>
+                    )}
                     <button
                         type="button"
                         onClick={handleReactivate}
@@ -476,7 +617,7 @@ export default function Login() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setView("login"); setReactivateCreds(null); }}
+                        onClick={() => { setView("login"); setReactivateCreds(null); setConfirmPwGoogle(""); clearConfirm(); }}
                         className="font-body text-xs text-amber-500 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer"
                     >
                         ← Back to Login

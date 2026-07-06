@@ -65,6 +65,7 @@ export default function HeroBanner({ banners }) {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log("[HeroBanner] Loaded cached banner slides:", parsed);
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setSlides(parsed);
           setDomIdx(parsed.length > 1 ? 1 : 0);
@@ -99,6 +100,8 @@ export default function HeroBanner({ banners }) {
           });
         });
 
+        console.log("[HeroBanner] Fetched active banner slides/offer content:", allSlides);
+
         if (allSlides.length > 0) {
           setSlides(allSlides);
           setDomIdx(allSlides.length > 1 ? 1 : 0);
@@ -116,13 +119,10 @@ export default function HeroBanner({ banners }) {
   const logicalIdx = count > 1 ? (domIdx - 1 + count) % count : 0;
 
   // ── derive the background video + poster ──
-  const activeVideoBanner =
-    banners?.find((b) => b.videoUrl && b.isActive) ||
-    banners?.find((b) => b.videoUrl) ||
-    banners?.[0];
-  const videoUrl = activeVideoBanner?.videoUrl || null;
+  const currentSlide = slides[logicalIdx];
+  const videoUrl = currentSlide?.videoUrl || null;
   const posterUrl =
-    activeVideoBanner?.imageUrl ||
+    currentSlide?.imageUrl ||
     banners?.find((b) => b.imageUrl)?.imageUrl ||
     null;
 
@@ -298,12 +298,13 @@ export default function HeroBanner({ banners }) {
       {videoUrl && (
         <video
           ref={videoRef}
+          key={videoUrl}
           autoPlay
           loop
           muted
           playsInline
           webkit-playsinline="true"
-          preload="auto"
+          preload="metadata"
           src={videoUrl}
           poster={posterUrl || undefined}
           onPlaying={() => setVideoReady(true)}

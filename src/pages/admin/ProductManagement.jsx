@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { Plus, Pencil, Trash2, X, Loader2, Star, AlertTriangle } from "lucide-react";
-import { useProductCategories, useAdminProductList, useDeleteProduct } from "../../hookqueries/useProducts";
+import { useProductCategories, useAdminProductList, useDeleteProduct, useAdminProductDetail } from "../../hookqueries/useProducts";
 import { useAdminComboList, useDeleteCombo } from "../../hookqueries/useCombos";
 import {
   AdminPage, AdminButton,
@@ -84,6 +84,21 @@ export default function ProductManagement() {
   const [pageError,       setPageError]       = useState("");
   const [deleteTarget,    setDeleteTarget]    = useState(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editProductSlug = searchParams.get("editProductSlug");
+  const { data: detailProd } = useAdminProductDetail(editProductSlug);
+
+  useEffect(() => {
+    if (detailProd) {
+      setModal(detailProd);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("editProductSlug");
+        return next;
+      }, { replace: true });
+    }
+  }, [detailProd, setSearchParams]);
+
   // ── Hand this page's search state to AdminLayout's shared topbar search.
   // Typing in the topbar box now filters this table directly; no separate
   // search input is rendered in the page body anymore. Re-registers whenever
@@ -102,7 +117,8 @@ export default function ProductManagement() {
     registerSearch({
       placeholder: isComboMode ? "Search combos…" : "Search products…",
       value: search,
-      onChange: setSearch
+      onChange: setSearch,
+      domain: "products"
     });
     return () => unregisterSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps

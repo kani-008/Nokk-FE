@@ -20,11 +20,69 @@ import {
   Search,
   MessageSquare,
   Grid3x3,
+  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
 import NotificationPanel from "./Notification.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
+import { useProductSuggestions } from "../../hookqueries/useProducts";
+
+function SuggestionsDropdown({
+  suggestions,
+  loading,
+  visible,
+  highlightedIdx,
+  onSelect
+}) {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1.5 max-h-72 overflow-y-auto w-64 md:w-80">
+      {loading ? (
+        <div className="flex items-center justify-center py-4 text-xs text-gray-400 gap-2">
+          <Loader2 size={14} className="animate-spin text-amber-500" />
+          <span>Searching...</span>
+        </div>
+      ) : suggestions.length === 0 ? (
+        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">No products found</div>
+      ) : (
+        suggestions.map((s, idx) => (
+          <div
+            key={s.id}
+            onMouseDown={(e) => {
+              e.preventDefault(); // Prevent input blur before onClick fires
+            }}
+            onClick={() => onSelect(s)}
+            className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors ${
+              idx === highlightedIdx ? "bg-amber-50 text-amber-900" : "hover:bg-gray-50"
+            }`}
+          >
+            {s.primaryImage ? (
+              <img
+                src={s.primaryImage}
+                alt=""
+                className="w-8 h-8 rounded-lg object-cover border border-gray-100 shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                <Search size={14} className="text-gray-300" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-gray-700 truncate font-body">
+                {s.name}
+              </div>
+            </div>
+            <div className="text-[11px] text-gray-400 font-num font-bold shrink-0">
+              ₹{s.minPrice}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
 // ── Nav items — single flat list, no section grouping/labels ───────────
 const NAV_ITEMS = [
@@ -214,6 +272,68 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
     else setLocalSearchVal(val);
   };
 
+  const mobileSearchContainerRef = useRef(null);
+  const desktopSearchContainerRef = useRef(null);
+
+  const isProductSearch = searchConfig?.domain === "products";
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(isProductSearch ? searchValue : "");
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchValue, isProductSearch]);
+
+  const { data: suggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
+
+  const showSuggestions = isProductSearch && searchFocused && searchValue.trim().length >= 2;
+  const isTypingOrLoading = suggestionsLoading || searchValue !== debouncedQuery;
+
+  useEffect(() => {
+    setHighlightedIdx(-1);
+  }, [suggestions]);
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === "Enter") {
+      if (highlightedIdx >= 0 && highlightedIdx < suggestions.length) {
+        e.preventDefault();
+        handleSelectSuggestion(suggestions[highlightedIdx]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setSearchFocused(false);
+    }
+  };
+
+  const handleSelectSuggestion = (s) => {
+    navigate(`/admin/products?editProductSlug=${s.slug}`);
+    setSearchFocused(false);
+    setMobileSearchOpen(false);
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      const outsideMobile = !mobileSearchContainerRef.current || !mobileSearchContainerRef.current.contains(e.target);
+      const outsideDesktop = !desktopSearchContainerRef.current || !desktopSearchContainerRef.current.contains(e.target);
+      if (outsideMobile && outsideDesktop) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const openNotif = () => {
     clearTimeout(closeTimerRef.current);
     setNotifMounted(true);
@@ -293,7 +413,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
           were somehow true there. */}
       {mobileSearchOpen && (
         <div className="md:hidden flex-1 flex items-center gap-2 min-w-0">
-          <div className="relative flex-1 min-w-0 topbar-search-fluid-container">
+          <div className="relative flex-1 min-w-0 topbar-search-fluid-container" ref={mobileSearchContainerRef}>
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -303,8 +423,17 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
               type="text"
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onKeyDown={handleKeyDown}
               placeholder={placeholder}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400 topbar-search-fluid"
+            />
+            <SuggestionsDropdown
+              suggestions={suggestions}
+              loading={isTypingOrLoading}
+              visible={showSuggestions}
+              highlightedIdx={highlightedIdx}
+              onSelect={handleSelectSuggestion}
             />
           </div>
           <IconButton onClick={closeMobileSearch} className="shrink-0" aria-label="Close search">
@@ -317,7 +446,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
       <div className={`flex-1 ${mobileSearchOpen ? "hidden md:block" : ""}`} />
 
       {/* Desktop search box — always visible, page-aware via searchConfig */}
-      <div className="relative hidden md:block">
+      <div className="relative hidden md:block" ref={desktopSearchContainerRef}>
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -326,8 +455,17 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
           type="text"
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="w-52 bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-1.5 text-sm font-body text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 placeholder:text-gray-400"
+        />
+        <SuggestionsDropdown
+          suggestions={suggestions}
+          loading={isTypingOrLoading}
+          visible={showSuggestions}
+          highlightedIdx={highlightedIdx}
+          onSelect={handleSelectSuggestion}
         />
       </div>
 

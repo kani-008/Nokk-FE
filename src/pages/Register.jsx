@@ -6,8 +6,9 @@ import {
 } from "lucide-react";
 import API from "../ApiCall/Api.jsx";
 import { useToast } from "../components/useToast";
-import AuthLayout, { StepDots, OtpBoxes, fieldClass } from "../components/layout/AuthLayout";
+import AuthLayout, { StepDots, OtpBoxes, fieldClass, GoogleAuthButton } from "../components/layout/AuthLayout";
 import { usePublicSettings } from "../hookqueries/useSettings";
+import { useGoogleAuth } from "../hookqueries/useGoogleAuth";
 
 const OTP_LENGTH = 6;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
@@ -68,6 +69,17 @@ export default function Register() {
         displayedError: displayedApiErr,
         toastVisible,
     } = useToast();
+
+    const {
+        handleGoogleCredential,
+        needsPasswordConfirm,
+        handlePasswordConfirm,
+        clearConfirm,
+        googleLoading,
+    } = useGoogleAuth({ redirectTo: "/", setError: setApiErr, setLoading, page: "register" });
+
+    const [confirmPwGoogle, setConfirmPwGoogle] = useState("");
+    const [showConfirmPwGoogle, setShowConfirmPwGoogle] = useState(false);
 
     // ── OTP Expiration background check (3 minutes) ──
     useEffect(() => {
@@ -142,7 +154,10 @@ export default function Register() {
         }
     };
 
+    // PAUSED — Meta not ready. Unreachable while registration OTP step is
+    // bypassed above. Restore alongside the backend OTP endpoints.
     const handleResend = async () => {
+        /* --- paused: calls /auth/register-otp which is disabled ---
         setOtp(EMPTY_OTP);
         setLoading(true);
         try {
@@ -156,6 +171,7 @@ export default function Register() {
         } finally {
             setLoading(false);
         }
+        --- */
     };
 
     const handleVerifyOtp = (e) => {
@@ -336,6 +352,65 @@ export default function Register() {
             {/* ── STEP 1 — Name + Phone + Email only ────────────────── */}
             {view === "register" && (
                 <>
+                    <GoogleAuthButton onCredential={handleGoogleCredential} disabled={loading || googleLoading} />
+
+                    {needsPasswordConfirm && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3">
+                            <p className="font-body text-sm font-semibold text-amber-800 mb-2">
+                                Confirm your password to link this Google account
+                            </p>
+                            <div className="relative">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-400">
+                                    <Lock size={18} />
+                                </span>
+                                <input
+                                    type={showConfirmPwGoogle ? "text" : "password"}
+                                    value={confirmPwGoogle}
+                                    onChange={(e) => { setConfirmPwGoogle(e.target.value); setApiErr(""); }}
+                                    placeholder="Your existing password"
+                                    className="field-input pl-10 pr-10 w-full"
+                                    autoComplete="current-password"
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handlePasswordConfirm(confirmPwGoogle);
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPwGoogle((s) => !s)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-amber-400 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5"
+                                >
+                                    {showConfirmPwGoogle ? <Eye size={18} /> : <EyeOff size={18} />}
+                                </button>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => handlePasswordConfirm(confirmPwGoogle)}
+                                    disabled={googleLoading || !confirmPwGoogle.trim()}
+                                    className="btn-md btn-primary flex-1"
+                                >
+                                    {googleLoading ? <><Loader2 size={16} className="animate-spin" /> Confirming…</> : "Confirm & Sign In"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { clearConfirm(); setConfirmPwGoogle(""); setShowConfirmPwGoogle(false); }}
+                                    className="font-body text-xs text-amber-500 hover:text-brand-700 transition-colors bg-transparent border-none cursor-pointer px-2"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 my-1">
+                        <div className="flex-1 h-px bg-sandal-200" />
+                        <span className="font-body text-xs text-amber-500 uppercase tracking-wider">or</span>
+                        <div className="flex-1 h-px bg-sandal-200" />
+                    </div>
+
                     <form onSubmit={handleSendOtp} className="reg-step1-gap-fluid flex flex-col md:gap-4">
                         <div>
                             <label className="field-label">Full Name</label>
@@ -553,10 +628,10 @@ export default function Register() {
 
                     <button
                         type="button"
-                        onClick={() => { setView("otp"); setApiErr(""); setErrors({}); }}
+                        onClick={() => { setView("register"); setApiErr(""); setErrors({}); }}
                         className="font-body text-xs text-amber-500 hover:text-brand-700 text-center transition-colors bg-transparent border-none cursor-pointer"
                     >
-                        ← Back to OTP
+                        ← Back
                     </button>
                 </form>
             )}

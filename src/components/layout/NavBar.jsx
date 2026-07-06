@@ -14,6 +14,7 @@ import {
   Settings,
   Tag,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 import Logo from "./Logo";
 import MobileDrawer from "./MobileDrawer.jsx";
@@ -23,7 +24,63 @@ import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 import API from "../../ApiCall/Api.jsx";
 import { usePublicSettings } from "../../hookqueries/useSettings";
+import { useProductSuggestions } from "../../hookqueries/useProducts";
 
+function SuggestionsDropdown({
+  suggestions,
+  loading,
+  visible,
+  highlightedIdx,
+  onSelect
+}) {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden py-1.5 max-h-72 overflow-y-auto">
+      {loading ? (
+        <div className="flex items-center justify-center py-4 text-xs text-gray-400 gap-2">
+          <Loader2 size={14} className="animate-spin text-sandal-500" />
+          <span>Searching...</span>
+        </div>
+      ) : suggestions.length === 0 ? (
+        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">No products found</div>
+      ) : (
+        suggestions.map((s, idx) => (
+          <div
+            key={s.id}
+            onMouseDown={(e) => {
+              e.preventDefault(); // Prevent input blur before onClick fires
+            }}
+            onClick={() => onSelect(s)}
+            className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+              idx === highlightedIdx ? "bg-sandal-50" : "hover:bg-sandal-50/50"
+            }`}
+          >
+            {s.primaryImage ? (
+              <img
+                src={s.primaryImage}
+                alt=""
+                className="w-10 h-10 rounded-lg object-cover border border-gray-100 shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                <Package size={18} className="text-gray-300" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-800 truncate font-body">
+                {s.name}
+              </div>
+            </div>
+            <div className="text-xs text-sandal-600 font-num font-bold shrink-0">
+              ₹{s.minPrice}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -47,7 +104,55 @@ export default function NavBar() {
 
   const profileRef = useRef(null);
   const searchRef = useRef(null);
+  const desktopSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
+
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const { data: suggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
+
+  const showSuggestions = searchFocused && query.trim().length >= 2;
+  const isTypingOrLoading = suggestionsLoading || query !== debouncedQuery;
+
+  useEffect(() => {
+    setHighlightedIdx(-1);
+  }, [suggestions]);
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === "Enter") {
+      if (highlightedIdx >= 0 && highlightedIdx < suggestions.length) {
+        e.preventDefault();
+        handleSelectSuggestion(suggestions[highlightedIdx]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setSearchFocused(false);
+    }
+  };
+
+  const handleSelectSuggestion = (s) => {
+    navigate(`/products/${s.slug}`);
+    setQuery("");
+    setSearchOpen(false);
+    setMobileOpen(false);
+    setSearchFocused(false);
+  };
 
   const { isAuthenticated, user, logout } = useAuthStore();
   const cartCount = useCartStore((s) =>
@@ -74,8 +179,14 @@ export default function NavBar() {
     const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target))
         setProfileOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target))
+      
+      const outsideMobileSearch = !searchRef.current || !searchRef.current.contains(e.target);
+      const outsideDesktopSearch = !desktopSearchRef.current || !desktopSearchRef.current.contains(e.target);
+      
+      if (outsideMobileSearch && outsideDesktopSearch) {
         setSearchOpen(false);
+        setSearchFocused(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -203,9 +314,18 @@ export default function NavBar() {
                     type="text"
                     value={query}
                     onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onKeyDown={handleKeyDown}
                     placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles…"}
                     className="w-full rounded-full py-2 pl-10 pr-4 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                     autoFocus={!isProductsPage}
+                  />
+                  <SuggestionsDropdown
+                    suggestions={suggestions}
+                    loading={isTypingOrLoading}
+                    visible={showSuggestions}
+                    highlightedIdx={highlightedIdx}
+                    onSelect={handleSelectSuggestion}
                   />
                 </div>
                 {/* Only show close button on non-products pages (products search is permanently open) */}
@@ -225,13 +345,16 @@ export default function NavBar() {
             {/* Desktop search — always shown; on /products drives live URL filter, elsewhere navigates */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex w-full max-w-2xl md:ml-10"
+              className="hidden md:flex w-full max-w-2xl md:ml-10 relative"
+              ref={desktopSearchRef}
             >
               <div className="relative w-full">
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => isProductsPage ? handleProductsQueryChange(e.target.value) : setQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onKeyDown={handleKeyDown}
                   placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles, nethili…"}
                   className="w-full rounded-4xl py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                 />
@@ -241,6 +364,13 @@ export default function NavBar() {
                 >
                   <Search size={16} />
                 </button>
+                <SuggestionsDropdown
+                  suggestions={suggestions}
+                  loading={isTypingOrLoading}
+                  visible={showSuggestions}
+                  highlightedIdx={highlightedIdx}
+                  onSelect={handleSelectSuggestion}
+                />
               </div>
             </form>
 

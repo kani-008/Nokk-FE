@@ -60,7 +60,7 @@ function OrderModal({ order, onClose, onStatusChange }) {
   };
 
   const addr = order.address || {};
-  const PH = comboImg;
+  const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">

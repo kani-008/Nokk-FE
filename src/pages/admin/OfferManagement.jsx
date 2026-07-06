@@ -1,47 +1,91 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  Loader2,
+  AlertTriangle,
+  Image as ImageIcon,
+} from "lucide-react";
 import {
   useAdminOfferList,
   useCreateOffer,
   useUpdateOffer,
-  useDeleteOffer
+  useDeleteOffer,
 } from "../../hookqueries/useOffers";
-import { useProductCategories, useAdminProductList } from "../../hookqueries/useProducts";
 import {
-  AdminPage, AdminButton,
-} from "../../components/admin/AdminUI.jsx";
+  useProductCategories,
+  useAdminProductList,
+} from "../../hookqueries/useProducts";
+import { useAdminBanners } from "../../hookqueries/useBanners";
+import { AdminPage, AdminButton } from "../../components/admin/AdminUI.jsx";
 import DataTable from "../../components/admin/TableFormat.jsx";
 import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { StatusPill } from "../../components/admin/ComboModal.jsx";
 
-const OFFER_EMPTY = { title: "", description: "", offerType: "percentage", value: "", minOrderValue: "", isActive: true, startDate: "", endDate: "", appliesTo: "all", productId: "", categoryId: "", showInAnnouncement: false };
+const OFFER_EMPTY = {
+  title: "",
+  description: "",
+  offerType: "percentage",
+  value: "",
+  minOrderValue: "",
+  isActive: true,
+  startDate: "",
+  endDate: "",
+  appliesTo: "all",
+  productId: "",
+  categoryId: "",
+  showInAnnouncement: false,
+  showAsBanner: false,
+  imageUrl: "",
+  bannerId: "",
+};
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
 function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onCancel} />
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={loading ? undefined : onCancel}
+      />
       <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-red-50 shrink-0">
             <AlertTriangle size={18} className="text-red-500" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-display text-base font-bold text-gray-900">{title}</h3>
+            <h3 className="font-display text-base font-bold text-gray-900">
+              {title}
+            </h3>
             <p className="font-body text-sm text-gray-500 mt-1">{message}</p>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <AdminButton variant="outline" onClick={onCancel} disabled={loading} type="button">Cancel</AdminButton>
+          <AdminButton
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+            type="button"
+          >
+            Cancel
+          </AdminButton>
           <button
             onClick={onConfirm}
             disabled={loading}
             className="inline-flex items-center gap-1.5 font-body text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl px-4 py-2 transition-colors disabled:opacity-60"
           >
-            {loading ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : "Delete"}
+            {loading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" /> Deleting…
+              </>
+            ) : (
+              "Delete"
+            )}
           </button>
         </div>
       </div>
@@ -58,27 +102,46 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
   const [error, setError] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const { data: banners = [] } = useAdminBanners();
+
   const createOfferMutation = useCreateOffer();
   const updateOfferMutation = useUpdateOffer();
   const saving = createOfferMutation.isPending || updateOfferMutation.isPending;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.value) { setError("Title and value required"); return; }
-    if (form.appliesTo === "product" && !form.productId) { setError("Please select a product"); return; }
-    if (form.appliesTo === "category" && !form.categoryId) { setError("Please select a category"); return; }
+    if (!form.title.trim() || !form.value) {
+      setError("Title and value required");
+      return;
+    }
+    if (form.appliesTo === "product" && !form.productId) {
+      setError("Please select a product");
+      return;
+    }
+    if (form.appliesTo === "category" && !form.categoryId) {
+      setError("Please select a category");
+      return;
+    }
+    if (form.showAsBanner && !form.bannerId) {
+      setError("Please select a banner");
+      return;
+    }
     setError("");
     try {
       let res;
       if (isEdit) {
         res = await updateOfferMutation.mutateAsync({ id: offer.id, form });
       } else {
-        res = await createOfferMutation.mutateAsync(form);
+        res = await createOfferMutation.mutateAsync({ form });
       }
       onSaved(res.offer || form);
       onClose();
     } catch (e) {
-      console.error("[Offer Page] Action failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
+      console.error(
+        "[Offer Page] Action failed. Status:",
+        e.response?.status || 500,
+        e.response?.data?.message || e.message || "Failed",
+      );
       setError(e.response?.data?.message || e.message || "Failed");
     }
   };
@@ -88,25 +151,108 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Offer" : "Add Offer"}</h3>
-          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
+          <h3 className="font-display text-base font-bold text-gray-900">
+            {isEdit ? "Edit Offer" : "Add Offer"}
+          </h3>
+          <IconButton onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </IconButton>
         </div>
         <div className="overflow-y-auto p-6 space-y-4 flex-1">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-2.5">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div><label className="field-label">Title *</label><input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Monsoon Sale" className="field-input" /></div>
-            <div><label className="field-label">Description</label><textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={2} className="field-input resize-none" placeholder="Short offer description" /></div>
+            <div>
+              <label className="field-label">Title *</label>
+              <input
+                value={form.title}
+                onChange={(e) => set("title", e.target.value)}
+                placeholder="Monsoon Sale"
+                className="field-input"
+              />
+            </div>
+            <div>
+              <label className="field-label">Description</label>
+              <textarea
+                value={form.description || ""}
+                onChange={(e) => set("description", e.target.value)}
+                rows={2}
+                className="field-input resize-none"
+                placeholder="Short offer description"
+              />
+            </div>
             {/* Announcement Options */}
             <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
               <div className="space-y-1">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <Toggle checked={form.showInAnnouncement} onChange={() => set("showInAnnouncement", !form.showInAnnouncement)} />
-                  <span className="font-body text-sm text-gray-700 font-semibold">Show in Announcement Bar</span>
+                  <Toggle
+                    checked={form.showInAnnouncement}
+                    onChange={() =>
+                      set("showInAnnouncement", !form.showInAnnouncement)
+                    }
+                  />
+                  <span className="font-body text-sm text-gray-700 font-semibold">
+                    Show in Announcement Bar
+                  </span>
                 </label>
                 <p className="text-[11px] text-gray-500 pl-8">
-                  Displays this offer as the site-wide announcement strip in the navigation bar.
+                  Displays this offer as the site-wide announcement strip in the
+                  navigation bar.
                 </p>
               </div>
+            </div>
+
+            {/* Banner Options */}
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Toggle
+                    checked={form.showAsBanner}
+                    onChange={() => {
+                      const nextVal = !form.showAsBanner;
+                      set("showAsBanner", nextVal);
+                      if (!nextVal) set("bannerId", "");
+                    }}
+                  />
+                  <span className="font-body text-sm text-gray-700 font-semibold">
+                    Show as Homepage Banner
+                  </span>
+                </label>
+                <p className="text-[11px] text-gray-500 pl-8">
+                  Displays this offer as a hero banner slide on the homepage.
+                </p>
+              </div>
+
+              {form.showAsBanner && (
+                <div className="pl-8 space-y-1.5">
+                  <label className="field-label">
+                    Select Homepage Banner *
+                  </label>
+                  <Dropdown
+                    value={form.bannerId || ""}
+                    onChange={(val) => set("bannerId", val)}
+                    placeholder="Choose banner…"
+                    options={banners.map((b) => ({
+                      value: b.id,
+                      label: (
+                        <div className="flex items-center gap-2">
+                          {b.imageUrl && (
+                            <img
+                              src={b.imageUrl}
+                              alt=""
+                              className="w-6 h-6 rounded object-cover border border-gray-200 shrink-0"
+                            />
+                          )}
+                          <span>{b.title || `Banner #${b.id}`}</span>
+                        </div>
+                      ),
+                    }))}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -130,7 +276,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                   options={[
                     { value: "all", label: "Store-wide (all)" },
                     { value: "product", label: "Specific Product" },
-                    { value: "category", label: "Specific Category" }
+                    { value: "category", label: "Specific Category" },
                   ]}
                 />
               </div>
@@ -142,7 +288,10 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                     value={form.productId || ""}
                     onChange={(val) => set("productId", val)}
                     placeholder="Select product"
-                    options={products.map((p) => ({ value: p.id, label: p.nameEn }))}
+                    options={products.map((p) => ({
+                      value: p.id,
+                      label: p.nameEn,
+                    }))}
                   />
                 </div>
               )}
@@ -154,7 +303,10 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                     value={form.categoryId || ""}
                     onChange={(val) => set("categoryId", val)}
                     placeholder="Select category"
-                    options={categories.map((c) => ({ value: c.id, label: c.nameEn }))}
+                    options={categories.map((c) => ({
+                      value: c.id,
+                      label: c.nameEn,
+                    }))}
                   />
                 </div>
               )}
@@ -166,28 +318,77 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
                   onChange={(val) => set("offerType", val)}
                   options={[
                     { value: "percentage", label: "Percentage (%)" },
-                    { value: "flat", label: "Flat (₹)" }
+                    { value: "flat", label: "Flat (₹)" },
                   ]}
                 />
               </div>
-              <div><label className="field-label">Value *</label><input type="number" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder={form.offerType === "percentage" ? "10" : "100"} className="field-input" /></div>
+              <div>
+                <label className="field-label">Value *</label>
+                <input
+                  type="number"
+                  value={form.value}
+                  onChange={(e) => set("value", e.target.value)}
+                  placeholder={form.offerType === "percentage" ? "10" : "100"}
+                  className="field-input"
+                />
+              </div>
               {/* Min Order is only meaningful for store-wide offers — a per-product
                   or per-category price reduction never depends on cart value, and
                   the backend rejects a nonzero value for those scopes. */}
               {form.appliesTo === "all" && (
-                <div><label className="field-label">Min Order (₹)</label><input type="number" value={form.minOrderValue || ""} onChange={(e) => set("minOrderValue", e.target.value)} placeholder="0" className="field-input" /></div>
+                <div>
+                  <label className="field-label">Min Order (₹)</label>
+                  <input
+                    type="number"
+                    value={form.minOrderValue || ""}
+                    onChange={(e) => set("minOrderValue", e.target.value)}
+                    placeholder="0"
+                    className="field-input"
+                  />
+                </div>
               )}
-              <div><label className="field-label">Start Date</label><input type="date" value={form.startDate || ""} onChange={(e) => set("startDate", e.target.value)} className="field-input" /></div>
-              <div><label className="field-label">End Date</label><input type="date" value={form.endDate || ""} onChange={(e) => set("endDate", e.target.value)} className="field-input" /></div>
+              <div>
+                <label className="field-label">Start Date</label>
+                <input
+                  type="date"
+                  value={form.startDate || ""}
+                  onChange={(e) => set("startDate", e.target.value)}
+                  className="field-input"
+                />
+              </div>
+              <div>
+                <label className="field-label">End Date</label>
+                <input
+                  type="date"
+                  value={form.endDate || ""}
+                  onChange={(e) => set("endDate", e.target.value)}
+                  className="field-input"
+                />
+              </div>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
-              <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
+              <Toggle
+                checked={form.isActive}
+                onChange={() => set("isActive", !form.isActive)}
+              />
+              <span className="font-body text-sm text-gray-700">
+                {form.isActive ? "Active" : "Inactive"}
+              </span>
             </label>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
+              <AdminButton variant="outline" onClick={onClose} type="button">
+                Cancel
+              </AdminButton>
               <AdminButton type="submit" disabled={saving}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : isEdit ? "Update" : "Add Offer"}
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Saving…
+                  </>
+                ) : isEdit ? (
+                  "Update"
+                ) : (
+                  "Add Offer"
+                )}
               </AdminButton>
             </div>
           </form>
@@ -220,31 +421,72 @@ export default function OfferManagement() {
   };
 
   const OFFER_COLS = [
-    { key: "title", label: "Name", render: (r) => <span className="font-body text-sm font-semibold text-gray-900">{r.title}</span> },
     {
-      key: "scope", label: "Scope", render: (r) => (
+      key: "title",
+      label: "Name",
+      render: (r) => (
+        <span className="font-body text-sm font-semibold text-gray-900">
+          {r.title}
+        </span>
+      ),
+    },
+    {
+      key: "scope",
+      label: "Scope",
+      render: (r) => (
         <span className="badge-gray">
-          {r.appliesTo === "product" ? `Product: ${r.productName || "—"}`
-            : r.appliesTo === "category" ? `Category: ${r.categoryName || "—"}`
+          {r.appliesTo === "product"
+            ? `Product: ${r.productName || "—"}`
+            : r.appliesTo === "category"
+              ? `Category: ${r.categoryName || "—"}`
               : "Store-wide"}
         </span>
-      )
+      ),
     },
     {
-      key: "value", label: "Type & Value", render: (r) => (
+      key: "value",
+      label: "Type & Value",
+      render: (r) => (
         <span className="font-num text-sm font-bold text-gray-900">
-          {r.offerType === "percentage" ? `${r.value}% off${r.maxDiscount ? `, max ₹${r.maxDiscount}` : ""}` : `₹${r.value} off`}
+          {r.offerType === "percentage"
+            ? `${r.value}% off${r.maxDiscount ? `, max ₹${r.maxDiscount}` : ""}`
+            : `₹${r.value} off`}
         </span>
-      )
+      ),
     },
-    { key: "status", label: "Status", render: (r) => <StatusPill isActive={r.isActive} startDate={r.startDate} endDate={r.endDate} /> },
     {
-      key: "action", label: "", width: "80px", render: (r) => (
+      key: "status",
+      label: "Status",
+      render: (r) => (
+        <StatusPill
+          isActive={r.isActive}
+          startDate={r.startDate}
+          endDate={r.endDate}
+        />
+      ),
+    },
+    {
+      key: "action",
+      label: "",
+      width: "80px",
+      render: (r) => (
         <div className="flex gap-1">
-          <IconButton onClick={() => setOfferModal({ data: r })} variant="brand" aria-label="Edit offer"><Pencil size={15} /></IconButton>
-          <IconButton onClick={() => setDeleteOfferTarget({ id: r.id, name: r.title })} variant="danger" aria-label="Delete offer"><Trash2 size={15} /></IconButton>
+          <IconButton
+            onClick={() => setOfferModal({ data: r })}
+            variant="brand"
+            aria-label="Edit offer"
+          >
+            <Pencil size={15} />
+          </IconButton>
+          <IconButton
+            onClick={() => setDeleteOfferTarget({ id: r.id, name: r.title })}
+            variant="danger"
+            aria-label="Delete offer"
+          >
+            <Trash2 size={15} />
+          </IconButton>
         </div>
-      )
+      ),
     },
   ];
 
@@ -252,9 +494,18 @@ export default function OfferManagement() {
     <div className="space-y-8">
       <AdminPage
         title="Price-Reduction Offers"
-        action={<AdminButton onClick={() => setOfferModal({ data: null })}><Plus size={14} /> Add Offer</AdminButton>}
+        action={
+          <AdminButton onClick={() => setOfferModal({ data: null })}>
+            <Plus size={14} /> Add Offer
+          </AdminButton>
+        }
       >
-        <DataTable columns={OFFER_COLS} rows={offers} loading={offersLoading} emptyText="No offers yet." />
+        <DataTable
+          columns={OFFER_COLS}
+          rows={offers}
+          loading={offersLoading}
+          emptyText="No offers yet."
+        />
       </AdminPage>
 
       {offerModal && (

@@ -78,7 +78,7 @@ function SectionCard({ icon: Icon, title, sub, children, className = "" }) {
   );
 }
 
-function Field({ label, name, type = "text", value, onChange, placeholder, unit, disabled, rows }) {
+function Field({ label, name, type = "text", value, onChange, placeholder, unit, disabled, rows, ...rest }) {
   return (
     <div>
       <label className="field-label">{label}</label>
@@ -88,6 +88,7 @@ function Field({ label, name, type = "text", value, onChange, placeholder, unit,
           <textarea name={name} value={value ?? ""} onChange={onChange} rows={rows}
             placeholder={placeholder} disabled={disabled}
             className={`field-input resize-none ${disabled ? "bg-gray-50 cursor-not-allowed opacity-60" : ""}`}
+            {...rest}
           />
         ) : (
           <input
@@ -96,6 +97,7 @@ function Field({ label, name, type = "text", value, onChange, placeholder, unit,
             placeholder={placeholder} disabled={disabled}
             inputMode={type === "number" ? "numeric" : undefined}
             className={`field-input no-spinner ${unit ? "pl-7" : ""} ${disabled ? "bg-gray-50 cursor-not-allowed opacity-60" : ""}`}
+            {...rest}
           />
         )}
       </div>
@@ -434,12 +436,38 @@ export default function Settings() {
 
   const handleSave = async () => {
     setSaving(true); setSaved(false); setError("");
+    const coercedForm = coerceNumbers(form);
+
+    if (coercedForm.shippingCharge <= 0) {
+      setError("Standard Delivery Fee (shippingCharge) must be greater than 0");
+      setSaving(false);
+      return;
+    }
+    if (!Number.isInteger(coercedForm.maxCartItems) || coercedForm.maxCartItems < 1) {
+      setError("Max Items per Cart (maxCartItems) must be an integer greater than or equal to 1");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.freeShippingThreshold < 0) {
+      setError("Free Shipping Above (freeShippingThreshold) cannot be negative");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.minOrderValue < 0) {
+      setError("Minimum Order Value (minOrderValue) cannot be negative");
+      setSaving(false);
+      return;
+    }
+
     try {
-      await settingsApi.update(coerceNumbers(form));
+      await settingsApi.update(coercedForm);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) { setError(e.message || "Failed to save"); }
-    finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -498,16 +526,16 @@ export default function Settings() {
         {/* ── Shipping & Tax ── */}
         <SectionCard icon={Truck} title="Shipping & Tax" sub="Delivery fees — enforced at checkout">
           <div className="space-y-4">
-            <Field label="Free Shipping Above"   name="freeShippingThreshold" type="number" value={form.freeShippingThreshold} onChange={setE} unit="₹" placeholder="499" />
-            <Field label="Standard Delivery Fee" name="shippingCharge"        type="number" value={form.shippingCharge}        onChange={setE} unit="₹" placeholder="60" />
+            <Field label="Free Shipping Above"   name="freeShippingThreshold" type="number" value={form.freeShippingThreshold} onChange={setE} unit="₹" placeholder="499" min={0} />
+            <Field label="Standard Delivery Fee" name="shippingCharge"        type="number" value={form.shippingCharge}        onChange={setE} unit="₹" placeholder="60" min={1} />
           </div>
         </SectionCard>
 
         {/* ── Cart & Order Rules ── */}
         <SectionCard icon={ShoppingBag} title="Cart & Order Rules" sub="Limits enforced at checkout and cart add">
           <div className="space-y-4">
-            <Field label="Minimum Order Value" name="minOrderValue" type="number" value={form.minOrderValue} onChange={setE} unit="₹" placeholder="0" />
-            <Field label="Max Items per Cart"  name="maxCartItems"  type="number" value={form.maxCartItems}  onChange={setE} placeholder="20" />
+            <Field label="Minimum Order Value" name="minOrderValue" type="number" value={form.minOrderValue} onChange={setE} unit="₹" placeholder="0" min={0} />
+            <Field label="Max Items per Cart"  name="maxCartItems"  type="number" value={form.maxCartItems}  onChange={setE} placeholder="20" min={1} />
             <div className="pt-1 border-t border-gray-100">
               <p className="font-body text-xs text-gray-400">
                 Set to 0 to disable the minimum order value. Max items is enforced server-side when adding to cart.

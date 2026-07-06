@@ -29,6 +29,8 @@ const mapOfferToFrontend = (o) => {
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
     showInAnnouncement: o.showInAnnouncement ?? false,
+    showAsBanner: o.showAsBanner ?? false,
+    bannerId: o.bannerId || null,
   };
 };
 
@@ -47,8 +49,12 @@ const mapOfferToBackend = (form) => {
     endDate: form.endDate || null,
     isActive: form.isActive ?? true,
     showInAnnouncement: form.showInAnnouncement ?? false,
+    showAsBanner: form.showAsBanner ?? false,
+    bannerId: form.bannerId || null,
   };
 };
+
+
 
 // ── QUERIES ─────────────────────────────────────────────────────────
 
@@ -99,7 +105,7 @@ export function useAdminOfferDetail(id) {
 export function useCreateOffer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (form) => {
+    mutationFn: async ({ form }) => {
       const payload = mapOfferToBackend(form);
       const res = await API.post("/offers/create-offer", payload);
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
@@ -115,7 +121,7 @@ export function useUpdateOffer() {
   return useMutation({
     mutationFn: async ({ id, form }) => {
       const payload = mapOfferToBackend(form);
-      const res = await API.put("/offers/update-offer", { id, ...payload });
+      const res = await API.put("/offers/update-offer", { ...payload, id });
       return { ...res.data, offer: mapOfferToFrontend(res.data.offer) };
     },
     onSuccess: () => {
