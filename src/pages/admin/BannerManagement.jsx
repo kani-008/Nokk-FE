@@ -1,8 +1,18 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 
 import {
-  Plus, Pencil, Trash2, X, Eye, EyeOff, Video,
-  Image as ImageIcon, Loader2, Link as LinkIcon, Upload, Megaphone
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  Eye,
+  EyeOff,
+  Video,
+  Image as ImageIcon,
+  Loader2,
+  Link as LinkIcon,
+  Upload,
+  Megaphone,
 } from "lucide-react";
 import {
   useAdminBanners,
@@ -13,13 +23,13 @@ import {
   useDeleteBanner,
   useCreateBannerText,
   useUpdateBannerText,
-  useDeleteBannerText
+  useDeleteBannerText,
 } from "../../hookqueries/useBanners";
+import { useAdminOfferList } from "../../hookqueries/useOffers";
 import {
-  useAdminOfferList
-} from "../../hookqueries/useOffers";
-import {
-  AdminPage, AdminButton, AdminCard,
+  AdminPage,
+  AdminButton,
+  AdminCard,
 } from "../../components/admin/AdminUI.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
@@ -28,15 +38,29 @@ import Toggle from "../../components/admin/Toggle.jsx";
 import API from "../../ApiCall/Api.jsx";
 const PH = "";
 
-const EMPTY_FORM = { title: "", subtitle: "", imageUrl: "", videoUrl: "", isActive: true };
-
+const EMPTY_FORM = {
+  title: "",
+  subtitle: "",
+  imageUrl: "",
+  videoUrl: "",
+  isActive: true,
+};
 
 // responsive icon size: bigger on mobile, compact on desktop — used inside IconButton size="lg"
 const ICON_CLS = "w-5 h-5 sm:w-[15px] sm:h-[15px]";
 
 // ── File upload + URL field ────────────────────────────────────────────
 // Kept outside BannerModal so React never remounts it mid-render.
-function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrlChange }) {
+function FileField({
+  kind,
+  label,
+  accept,
+  inputRef,
+  url,
+  status,
+  onUpload,
+  onUrlChange,
+}) {
   return (
     <div className="space-y-1.5">
       <label className="field-label block">{label}</label>
@@ -51,12 +75,19 @@ function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrl
               : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
           }`}
         >
-          {status === "uploading"
-            ? <><Loader2 size={14} className="animate-spin" /> Uploading…</>
-            : status === "done"
-            ? <><Upload size={14} /> Uploaded ✓</>
-            : <><Upload size={14} /> Upload {kind === "video" ? "Video" : "Image"}</>
-          }
+          {status === "uploading" ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Uploading…
+            </>
+          ) : status === "done" ? (
+            <>
+              <Upload size={14} /> Uploaded ✓
+            </>
+          ) : (
+            <>
+              <Upload size={14} /> Upload {kind === "video" ? "Video" : "Image"}
+            </>
+          )}
         </button>
         <input
           ref={inputRef}
@@ -67,7 +98,10 @@ function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrl
         />
       </div>
       <div className="relative">
-        <LinkIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <LinkIcon
+          size={13}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+        />
         <input
           type="url"
           value={url}
@@ -82,7 +116,7 @@ function FileField({ kind, label, accept, inputRef, url, status, onUpload, onUrl
 
 // ── Banner form modal ──────────────────────────────────────────────────
 function BannerModal({ banner, onClose, onSaved }) {
-  const [form,     setForm]     = useState(banner ? { ...banner } : { ...EMPTY_FORM });
+  const [form, setForm] = useState(banner ? { ...banner } : { ...EMPTY_FORM });
   const [uploading, setUploading] = useState({ video: null, image: null });
 
   const videoInputRef = useRef(null);
@@ -92,7 +126,8 @@ function BannerModal({ banner, onClose, onSaved }) {
   const createBannerMutation = useCreateBanner();
   const updateBannerMutation = useUpdateBanner();
 
-  const saving = createBannerMutation.isPending || updateBannerMutation.isPending;
+  const saving =
+    createBannerMutation.isPending || updateBannerMutation.isPending;
   const [error, setError] = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -119,48 +154,76 @@ function BannerModal({ banner, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) { setError("Title is required"); return; }
-    if (!form.imageUrl)     { setError("Poster image is required — upload a file or paste a URL"); return; }
+    if (!form.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!form.imageUrl) {
+      setError("Poster image is required — upload a file or paste a URL");
+      return;
+    }
     setError("");
     try {
       let res;
       if (banner?.id) {
-        res = await updateBannerMutation.mutateAsync({ id: banner.id, ...form });
+        res = await updateBannerMutation.mutateAsync({
+          id: banner.id,
+          ...form,
+        });
       } else {
         res = await createBannerMutation.mutateAsync(form);
       }
       onSaved(res.banner || form);
       onClose();
-    } catch (err) { setError(err.response?.data?.message || err.message || "Failed to save"); }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to save");
+    }
   };
 
-  const isUploading = uploading.video === "uploading" || uploading.image === "uploading";
+  const isUploading =
+    uploading.video === "uploading" || uploading.image === "uploading";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">
             {banner ? "Edit Banner" : "Add Banner"}
           </h3>
-          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
+          <IconButton onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </IconButton>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
           {/* live preview */}
           <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 mb-5 border border-gray-200">
             {form.videoUrl ? (
-              <video src={form.videoUrl} className="w-full h-full object-cover"
-                muted autoPlay loop playsInline poster={form.imageUrl || undefined} />
+              <video
+                src={form.videoUrl}
+                className="w-full h-full object-cover"
+                muted
+                autoPlay
+                loop
+                playsInline
+                poster={form.imageUrl || undefined}
+              />
             ) : form.imageUrl ? (
-              <img src={form.imageUrl} alt="preview" className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = PH; }} />
+              <img
+                src={form.imageUrl}
+                alt="preview"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = PH;
+                }}
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                 <ImageIcon size={28} className="text-gray-300" />
-                <p className="font-body text-xs text-gray-400">Preview appears here</p>
+                <p className="font-body text-xs text-gray-400">
+                  Preview appears here
+                </p>
               </div>
             )}
           </div>
@@ -174,41 +237,71 @@ function BannerModal({ banner, onClose, onSaved }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="field-label">Title *</label>
-              <input type="text" value={form.title}
+              <input
+                type="text"
+                value={form.title}
                 onChange={(e) => set("title", e.target.value)}
-                placeholder="Banner headline" className="field-input" />
+                placeholder="Banner headline"
+                className="field-input"
+              />
             </div>
             <div>
               <label className="field-label">Subtitle</label>
-              <input type="text" value={form.subtitle}
+              <input
+                type="text"
+                value={form.subtitle}
                 onChange={(e) => set("subtitle", e.target.value)}
-                placeholder="Supporting text" className="field-input" />
+                placeholder="Supporting text"
+                className="field-input"
+              />
             </div>
 
             <FileField
               kind="video"
-              label={<>Video <span className="text-gray-400 font-normal text-xs">(mp4 — background loop)</span></>}
+              label={
+                <>
+                  Video{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (mp4 — background loop)
+                  </span>
+                </>
+              }
               accept="video/mp4,video/*"
               inputRef={videoInputRef}
               url={form.videoUrl}
               status={uploading.video}
               onUpload={(e) => handleFileUpload(e, "video")}
-              onUrlChange={(e) => { set("videoUrl", e.target.value); setUploading((u) => ({ ...u, video: null })); }}
+              onUrlChange={(e) => {
+                set("videoUrl", e.target.value);
+                setUploading((u) => ({ ...u, video: null }));
+              }}
             />
 
             <FileField
               kind="image"
-              label={<>Poster Image * <span className="text-gray-400 font-normal text-xs">(shown instantly while video loads)</span></>}
+              label={
+                <>
+                  Poster Image *{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (shown instantly while video loads)
+                  </span>
+                </>
+              }
               accept="image/jpeg,image/png,image/webp,image/*"
               inputRef={imageInputRef}
               url={form.imageUrl}
               status={uploading.image}
               onUpload={(e) => handleFileUpload(e, "image")}
-              onUrlChange={(e) => { set("imageUrl", e.target.value); setUploading((u) => ({ ...u, image: null })); }}
+              onUrlChange={(e) => {
+                set("imageUrl", e.target.value);
+                setUploading((u) => ({ ...u, image: null }));
+              }}
             />
 
             <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200">
-              <span className="font-body text-sm font-semibold text-gray-700">Active Status</span>
+              <span className="font-body text-sm font-semibold text-gray-700">
+                Active Status
+              </span>
               <button
                 type="button"
                 onClick={() => set("isActive", !form.isActive)}
@@ -217,16 +310,26 @@ function BannerModal({ banner, onClose, onSaved }) {
                   form.isActive ? "bg-brand-700" : "bg-gray-200"
                 }`}
               >
-                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  form.isActive ? "translate-x-5" : "translate-x-0"
-                }`} />
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    form.isActive ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
               </button>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
+              <AdminButton variant="outline" onClick={onClose} type="button">
+                Cancel
+              </AdminButton>
               <AdminButton type="submit" disabled={saving || isUploading}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : "Save Banner"}
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Saving…
+                  </>
+                ) : (
+                  "Save Banner"
+                )}
               </AdminButton>
             </div>
           </form>
@@ -246,9 +349,14 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
 
   const handleToggle = async () => {
     try {
-      await toggleBannerMutation.mutateAsync({ id: banner.id, isActive: !banner.isActive });
+      await toggleBannerMutation.mutateAsync({
+        id: banner.id,
+        isActive: !banner.isActive,
+      });
       onToggle(banner.id, !banner.isActive);
-    } catch (e) { alert(e.response?.data?.message || e.message || "Failed"); }
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed");
+    }
   };
 
   const handleDelete = async () => {
@@ -256,7 +364,9 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
     try {
       await deleteBannerMutation.mutateAsync(banner.id);
       onDelete(banner.id);
-    } catch (e) { alert(e.response?.data?.message || e.message || "Failed to delete"); }
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to delete");
+    }
   };
 
   // tapping the card body opens the editor
@@ -267,7 +377,12 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
       onClick={openEdit}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEdit(); } }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openEdit();
+        }
+      }}
       className={`bg-white border rounded-2xl overflow-hidden transition-opacity cursor-pointer ${banner.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
     >
       {/* thumbnail */}
@@ -277,13 +392,19 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
             src={banner.videoUrl}
             poster={banner.imageUrl || undefined}
             className="w-full h-full object-cover"
-            muted autoPlay loop playsInline
+            muted
+            autoPlay
+            loop
+            playsInline
           />
         ) : banner.imageUrl ? (
           <img
-            src={banner.imageUrl} alt={banner.title}
+            src={banner.imageUrl}
+            alt={banner.title}
             className="w-full h-full object-cover"
-            onError={(e) => { e.target.src = PH; }}
+            onError={(e) => {
+              e.target.src = PH;
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -292,13 +413,23 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="absolute bottom-3 left-3 right-3">
-          <p className="font-display text-white text-sm font-bold leading-snug line-clamp-1">{banner.title}</p>
-          {banner.subtitle && <p className="font-body text-white/80 text-xs mt-0.5 line-clamp-1">{banner.subtitle}</p>}
+          <p className="font-display text-white text-sm font-bold leading-snug line-clamp-1">
+            {banner.title}
+          </p>
+          {banner.subtitle && (
+            <p className="font-body text-white/80 text-xs mt-0.5 line-clamp-1">
+              {banner.subtitle}
+            </p>
+          )}
         </div>
         {/* status pill */}
-        <div className={`absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full font-num ${
-          banner.isActive ? "bg-green-500 text-white" : "bg-gray-400 text-white"
-        }`}>
+        <div
+          className={`absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full font-num ${
+            banner.isActive
+              ? "bg-green-500 text-white"
+              : "bg-gray-400 text-white"
+          }`}
+        >
           {banner.isActive ? "Active" : "Inactive"}
         </div>
         {banner.offerName && (
@@ -312,16 +443,28 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
       <div className="px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 shrink-0">
           <IconButton
-            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggle();
+            }}
             disabled={toggling}
             variant="amber"
             size="lg"
             title={banner.isActive ? "Deactivate" : "Activate"}
           >
-            {toggling ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : banner.isActive ? <EyeOff className={ICON_CLS} /> : <Eye className={ICON_CLS} />}
+            {toggling ? (
+              <Loader2 className={`${ICON_CLS} animate-spin`} />
+            ) : banner.isActive ? (
+              <EyeOff className={ICON_CLS} />
+            ) : (
+              <Eye className={ICON_CLS} />
+            )}
           </IconButton>
           <IconButton
-            onClick={(e) => { e.stopPropagation(); onEdit(banner); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(banner);
+            }}
             variant="brand"
             size="lg"
             title="Edit"
@@ -329,13 +472,20 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
             <Pencil className={ICON_CLS} />
           </IconButton>
           <IconButton
-            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
             disabled={deleting}
             variant="danger"
             size="lg"
             title="Delete"
           >
-            {deleting ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : <Trash2 className={ICON_CLS} />}
+            {deleting ? (
+              <Loader2 className={`${ICON_CLS} animate-spin`} />
+            ) : (
+              <Trash2 className={ICON_CLS} />
+            )}
           </IconButton>
         </div>
       </div>
@@ -346,35 +496,44 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
 // ── Overlay form modal ──────────────────────────────────────────────────
 function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
   const [form, setForm] = useState(
-    overlay ? { heading: overlay.heading, subtext: overlay.subtext || "", isActive: overlay.isActive }
-            : { heading: "", subtext: "", isActive: true }
+    overlay
+      ? {
+          heading: overlay.heading,
+          subtext: overlay.subtext || "",
+          isActive: overlay.isActive,
+        }
+      : { heading: "", subtext: "", isActive: true },
   );
 
   const createBtextMutation = useCreateBannerText();
   const updateBtextMutation = useUpdateBannerText();
 
   const saving = createBtextMutation.isPending || updateBtextMutation.isPending;
-  const [error,  setError]  = useState("");
+  const [error, setError] = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.heading.trim()) { setError("Heading is required"); return; }
+    if (!form.heading.trim()) {
+      setError("Heading is required");
+      return;
+    }
     setError("");
     try {
       let res;
       if (overlay?.id) {
-        res = await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId, ...form });
-        console.log("[Banner Overlay Text] Update successful. Status: 200", res);
+        res = await updateBtextMutation.mutateAsync({
+          id: overlay.id,
+          bannerId,
+          ...form,
+        });
       } else {
         res = await createBtextMutation.mutateAsync({ bannerId, ...form });
-        console.log("[Banner Overlay Text] Creation successful. Status: 201", res);
       }
       onSaved(res.btext || form);
       onClose();
     } catch (e) {
-      console.log("[Banner Overlay Text] Save failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
       setError(e.response?.data?.message || e.message || "Failed to save");
     }
   };
@@ -383,12 +542,13 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-modal-slide-up">
-
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">
             {overlay ? "Edit Text Overlay" : "Add Text Overlay"}
           </h3>
-          <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
+          <IconButton onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </IconButton>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
@@ -420,7 +580,9 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
               />
             </div>
             <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200 mt-2">
-              <span className="font-body text-sm font-semibold text-gray-700">Active Status</span>
+              <span className="font-body text-sm font-semibold text-gray-700">
+                Active Status
+              </span>
               <button
                 type="button"
                 onClick={() => set("isActive", !form.isActive)}
@@ -437,9 +599,17 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
+              <AdminButton variant="outline" onClick={onClose} type="button">
+                Cancel
+              </AdminButton>
               <AdminButton type="submit" disabled={saving}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : "Save Overlay"}
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Saving…
+                  </>
+                ) : (
+                  "Save Overlay"
+                )}
               </AdminButton>
             </div>
           </form>
@@ -459,11 +629,13 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
 
   const handleToggle = async () => {
     try {
-      const res = await updateBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId, isActive: !overlay.isActive });
-      console.log("[Banner Overlay Text] Toggle successful. Status: 200", { id: overlay.id, isActive: !overlay.isActive, response: res });
+      await updateBtextMutation.mutateAsync({
+        id: overlay.id,
+        bannerId: overlay.bannerId,
+        isActive: !overlay.isActive,
+      });
       onToggled(overlay.id, !overlay.isActive);
     } catch (e) {
-      console.log("[Banner Overlay Text] Toggle failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed");
       alert(e.response?.data?.message || e.message || "Failed");
     }
   };
@@ -471,11 +643,12 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
   const handleDelete = async () => {
     if (!confirm("Delete this text overlay?")) return;
     try {
-      const res = await deleteBtextMutation.mutateAsync({ id: overlay.id, bannerId: overlay.bannerId });
-      console.log("[Banner Overlay Text] Delete successful. Status: 200", { id: overlay.id, response: res });
+      await deleteBtextMutation.mutateAsync({
+        id: overlay.id,
+        bannerId: overlay.bannerId,
+      });
       onDelete(overlay.id);
     } catch (e) {
-      console.log("[Banner Overlay Text] Delete failed. Status:", e.response?.status || 500, e.response?.data?.message || e.message || "Failed to delete");
       alert(e.response?.data?.message || e.message || "Failed to delete");
     }
   };
@@ -488,35 +661,64 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
       onClick={openEdit}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEdit(); } }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openEdit();
+        }
+      }}
       className={`bg-white border rounded-2xl p-5 flex flex-col justify-between transition-opacity cursor-pointer ${overlay.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
     >
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <span className="font-num text-[10px] uppercase font-bold text-sandal-600 bg-sandal-100 px-2 py-0.5 rounded">text overlay</span>
-          <div className={`text-[10px] font-semibold px-2 py-0.5 rounded-full font-num ${
-            overlay.isActive ? "bg-green-500 text-white" : "bg-gray-400 text-white"
-          }`}>
+          <span className="font-num text-[10px] uppercase font-bold text-sandal-600 bg-sandal-100 px-2 py-0.5 rounded">
+            text overlay
+          </span>
+          <div
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full font-num ${
+              overlay.isActive
+                ? "bg-green-500 text-white"
+                : "bg-gray-400 text-white"
+            }`}
+          >
             {overlay.isActive ? "Active" : "Inactive"}
           </div>
         </div>
-        <h4 className="font-display text-gray-900 text-base font-bold leading-snug line-clamp-2">{overlay.heading}</h4>
-        {overlay.subtext && <p className="font-body text-gray-500 text-xs leading-relaxed line-clamp-3">{overlay.subtext}</p>}
+        <h4 className="font-display text-gray-900 text-base font-bold leading-snug line-clamp-2">
+          {overlay.heading}
+        </h4>
+        {overlay.subtext && (
+          <p className="font-body text-gray-500 text-xs leading-relaxed line-clamp-3">
+            {overlay.subtext}
+          </p>
+        )}
       </div>
 
       {/* actions — stopPropagation so these don't trigger the card's edit */}
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-1.5">
         <IconButton
-          onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggle();
+          }}
           disabled={toggling}
           variant="amber"
           size="lg"
           title={overlay.isActive ? "Deactivate" : "Activate"}
         >
-          {toggling ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : overlay.isActive ? <EyeOff className={ICON_CLS} /> : <Eye className={ICON_CLS} />}
+          {toggling ? (
+            <Loader2 className={`${ICON_CLS} animate-spin`} />
+          ) : overlay.isActive ? (
+            <EyeOff className={ICON_CLS} />
+          ) : (
+            <Eye className={ICON_CLS} />
+          )}
         </IconButton>
         <IconButton
-          onClick={(e) => { e.stopPropagation(); onEdit(overlay); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(overlay);
+          }}
           variant="brand"
           size="lg"
           title="Edit"
@@ -524,13 +726,20 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
           <Pencil className={ICON_CLS} />
         </IconButton>
         <IconButton
-          onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
           disabled={deleting}
           variant="danger"
           size="lg"
           title="Delete"
         >
-          {deleting ? <Loader2 className={`${ICON_CLS} animate-spin`} /> : <Trash2 className={ICON_CLS} />}
+          {deleting ? (
+            <Loader2 className={`${ICON_CLS} animate-spin`} />
+          ) : (
+            <Trash2 className={ICON_CLS} />
+          )}
         </IconButton>
       </div>
     </div>
@@ -541,15 +750,19 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
 // BANNERS PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function BannerManagement() {
-  const [modal,   setModal]   = useState(null); // null | "new" | banner object
+  const [modal, setModal] = useState(null); // null | "new" | banner object
 
-  const [activeTab,       setActiveTab]       = useState("videos");
+  const [activeTab, setActiveTab] = useState("videos");
   const [selectedBannerId, setSelectedBannerId] = useState(null);
-  const [overlayModal,    setOverlayModal]    = useState(null); // null | "new" | overlay object
+  const [overlayModal, setOverlayModal] = useState(null); // null | "new" | overlay object
 
   const { data: offers = [] } = useAdminOfferList();
 
-  const [settings, setSettings] = useState({ announcementEnabled: false, announcementText: "", announcement_offer_owner: "" });
+  const [settings, setSettings] = useState({
+    announcementEnabled: false,
+    announcementText: "",
+    announcement_offer_owner: "",
+  });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [annText, setAnnText] = useState("");
@@ -578,7 +791,7 @@ export default function BannerManagement() {
       const payload = {
         announcementText: annText,
         announcementEnabled: annEnabled,
-        announcement_offer_owner: annOwner
+        announcement_offer_owner: annOwner,
       };
       const res = await API.put("/settings/update", payload);
       const s = res.data.settings || {};
@@ -602,7 +815,7 @@ export default function BannerManagement() {
   }, [activeTab]);
 
   const owningOffer = useMemo(() => {
-    return offers.find(o => String(o.id) === String(annOwner));
+    return offers.find((o) => String(o.id) === String(annOwner));
   }, [offers, annOwner]);
 
   const { data: bannersData = [], isLoading: loading } = useAdminBanners();
@@ -610,7 +823,8 @@ export default function BannerManagement() {
     return [...bannersData].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
   }, [bannersData]);
 
-  const { data: overlaysData = [], isLoading: overlaysLoading } = useBannerTextOverlays(selectedBannerId);
+  const { data: overlaysData = [], isLoading: overlaysLoading } =
+    useBannerTextOverlays(selectedBannerId);
   console.log("BannerManagement browser log [overlaysData]:", overlaysData);
   const overlays = overlaysData;
 
@@ -627,21 +841,20 @@ export default function BannerManagement() {
   // called after btextApi.update (toggle) succeeds inside OverlayCard
   const handleOverlayToggled = () => {};
 
-  const active   = banners.filter((b) => b.isActive).length;
+  const active = banners.filter((b) => b.isActive).length;
   const inactive = banners.filter((b) => !b.isActive).length;
 
-  const activeOverlays   = overlays.filter((o) => o.isActive).length;
+  const activeOverlays = overlays.filter((o) => o.isActive).length;
   const inactiveOverlays = overlays.filter((o) => !o.isActive).length;
 
   return (
     <AdminPage className="space-y-3">
-
       {/* Unified Header Row — Tabs on the left, Actions on the right on desktop; stacked on mobile */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 mb-6">
         {/* Tabs */}
         <TabToggle
           tabs={[
-            { key: "videos",   label: "Background Video" },
+            { key: "videos", label: "Background Video" },
             { key: "overlays", label: "Slide Text Overlay" },
             { key: "announcement", label: "Announcement" },
           ]}
@@ -653,7 +866,10 @@ export default function BannerManagement() {
         {/* Actions (tab-dependent) */}
         {activeTab === "videos" ? (
           <div className="flex items-center justify-center sm:justify-end w-full sm:w-auto">
-            <AdminButton onClick={() => setModal("new")} className="bm-btn-fluid w-full sm:w-auto">
+            <AdminButton
+              onClick={() => setModal("new")}
+              className="bm-btn-fluid w-full sm:w-auto"
+            >
               <Plus size={14} /> Add Video
             </AdminButton>
           </div>
@@ -662,11 +878,16 @@ export default function BannerManagement() {
             <div className="w-full sm:w-64">
               <Dropdown
                 value={selectedBannerId ? String(selectedBannerId) : ""}
-                onChange={(val) => setSelectedBannerId(val ? Number(val) : null)}
+                onChange={(val) =>
+                  setSelectedBannerId(val ? Number(val) : null)
+                }
                 placeholder="— choose a banner —"
                 options={[
                   { value: "", label: "— choose a banner —" },
-                  ...banners.map((b) => ({ value: String(b.id), label: b.title || `Banner #${b.id}` })),
+                  ...banners.map((b) => ({
+                    value: String(b.id),
+                    label: b.title || `Banner #${b.id}`,
+                  })),
                 ]}
                 className="w-full"
               />
@@ -687,15 +908,23 @@ export default function BannerManagement() {
           {/* summary */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <AdminCard className="text-center py-4">
-              <p className="font-num text-2xl font-bold text-gray-900">{banners.length}</p>
-              <p className="font-body text-xs text-gray-500 mt-1">Total Videos</p>
+              <p className="font-num text-2xl font-bold text-gray-900">
+                {banners.length}
+              </p>
+              <p className="font-body text-xs text-gray-500 mt-1">
+                Total Videos
+              </p>
             </AdminCard>
             <AdminCard className="text-center py-4">
-              <p className="font-num text-2xl font-bold text-green-600">{active}</p>
+              <p className="font-num text-2xl font-bold text-green-600">
+                {active}
+              </p>
               <p className="font-body text-xs text-gray-500 mt-1">Active</p>
             </AdminCard>
             <AdminCard className="text-center py-4">
-              <p className="font-num text-2xl font-bold text-gray-400">{inactive}</p>
+              <p className="font-num text-2xl font-bold text-gray-400">
+                {inactive}
+              </p>
               <p className="font-body text-xs text-gray-500 mt-1">Inactive</p>
             </AdminCard>
           </div>
@@ -704,7 +933,10 @@ export default function BannerManagement() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
+                <div
+                  key={i}
+                  className="rounded-2xl overflow-hidden border border-gray-100 animate-pulse"
+                >
                   <div className="h-36 skeleton" />
                   <div className="p-4 space-y-2">
                     <div className="h-3 skeleton w-3/4" />
@@ -716,7 +948,9 @@ export default function BannerManagement() {
           ) : banners.length === 0 ? (
             <AdminCard className="text-center py-16">
               <ImageIcon size={40} className="text-gray-200 mx-auto mb-3" />
-              <p className="font-body text-gray-400 text-sm">No banners yet. Add your first banner.</p>
+              <p className="font-body text-gray-400 text-sm">
+                No banners yet. Add your first banner.
+              </p>
             </AdminCard>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -740,15 +974,23 @@ export default function BannerManagement() {
           {selectedBannerId && (
             <div className="grid grid-cols-3 gap-4 mb-6">
               <AdminCard className="text-center py-4">
-                <p className="font-num text-2xl font-bold text-gray-900">{overlays.length}</p>
-                <p className="font-body text-xs text-gray-500 mt-1">Total Overlays</p>
+                <p className="font-num text-2xl font-bold text-gray-900">
+                  {overlays.length}
+                </p>
+                <p className="font-body text-xs text-gray-500 mt-1">
+                  Total Overlays
+                </p>
               </AdminCard>
               <AdminCard className="text-center py-4">
-                <p className="font-num text-2xl font-bold text-green-600">{activeOverlays}</p>
+                <p className="font-num text-2xl font-bold text-green-600">
+                  {activeOverlays}
+                </p>
                 <p className="font-body text-xs text-gray-500 mt-1">Active</p>
               </AdminCard>
               <AdminCard className="text-center py-4">
-                <p className="font-num text-2xl font-bold text-gray-400">{inactiveOverlays}</p>
+                <p className="font-num text-2xl font-bold text-gray-400">
+                  {inactiveOverlays}
+                </p>
                 <p className="font-body text-xs text-gray-500 mt-1">Inactive</p>
               </AdminCard>
             </div>
@@ -758,12 +1000,17 @@ export default function BannerManagement() {
           {!selectedBannerId ? (
             <AdminCard className="text-center py-16">
               <ImageIcon size={40} className="text-gray-200 mx-auto mb-3" />
-              <p className="font-body text-gray-400 text-sm">Select a banner above to manage its text overlays.</p>
+              <p className="font-body text-gray-400 text-sm">
+                Select a banner above to manage its text overlays.
+              </p>
             </AdminCard>
           ) : overlaysLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="rounded-2xl border border-gray-100 p-5 animate-pulse space-y-3">
+                <div
+                  key={i}
+                  className="rounded-2xl border border-gray-100 p-5 animate-pulse space-y-3"
+                >
                   <div className="h-3 skeleton w-1/3" />
                   <div className="h-4 skeleton w-3/4" />
                   <div className="h-3 skeleton w-full" />
@@ -773,7 +1020,9 @@ export default function BannerManagement() {
           ) : overlays.length === 0 ? (
             <AdminCard className="text-center py-16">
               <ImageIcon size={40} className="text-gray-200 mx-auto mb-3" />
-              <p className="font-body text-gray-400 text-sm">No text overlays for this banner. Add one.</p>
+              <p className="font-body text-gray-400 text-sm">
+                No text overlays for this banner. Add one.
+              </p>
             </AdminCard>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -796,9 +1045,11 @@ export default function BannerManagement() {
           <AdminCard className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Megaphone size={18} className="text-brand-800" />
-              <h3 className="font-display text-base font-bold text-gray-900">Site Announcement Bar Settings</h3>
+              <h3 className="font-display text-base font-bold text-gray-900">
+                Site Announcement Bar Settings
+              </h3>
             </div>
-            
+
             {settingsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="animate-spin text-amber-500" size={32} />
@@ -807,31 +1058,45 @@ export default function BannerManagement() {
               <div className="space-y-6 max-w-xl">
                 {/* Enabled Toggle */}
                 <div className="space-y-1.5">
-                  <label className="field-label block font-semibold">Announcement Status</label>
+                  <label className="field-label block font-semibold">
+                    Announcement Status
+                  </label>
                   <div className="flex items-center gap-3">
-                    <Toggle checked={annEnabled} onChange={() => setAnnEnabled(!annEnabled)} />
-                    <span className="font-body text-sm text-gray-700 font-semibold">{annEnabled ? "Enabled" : "Disabled"}</span>
+                    <Toggle
+                      checked={annEnabled}
+                      onChange={() => setAnnEnabled(!annEnabled)}
+                    />
+                    <span className="font-body text-sm text-gray-700 font-semibold">
+                      {annEnabled ? "Enabled" : "Disabled"}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-400">Controls whether the top strip is visible to users on the site.</p>
+                  <p className="text-xs text-gray-400">
+                    Controls whether the top strip is visible to users on the
+                    site.
+                  </p>
                 </div>
 
                 {/* Announcement Text Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="field-label block font-semibold">Announcement Text</label>
+                    <label className="field-label block font-semibold">
+                      Announcement Text
+                    </label>
                     {owningOffer && (
                       <div className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-sm">
                         <span>🔗 Driven by: {owningOffer.title}</span>
                       </div>
                     )}
                   </div>
-                  
+
                   {owningOffer && (
                     <p className="text-xs text-amber-600 font-body">
-                      ⚠️ Note: Editing this text manually will detach it from the offer, and future edits to that offer will not update this banner.
+                      ⚠️ Note: Editing this text manually will detach it from
+                      the offer, and future edits to that offer will not update
+                      this banner.
                     </p>
                   )}
-                  
+
                   <textarea
                     value={annText}
                     onChange={(e) => {
@@ -854,7 +1119,9 @@ export default function BannerManagement() {
                     className="w-full sm:w-auto"
                   >
                     {settingsSaving ? (
-                      <><Loader2 size={14} className="animate-spin" /> Saving…</>
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Saving…
+                      </>
                     ) : (
                       "Save Announcement"
                     )}
