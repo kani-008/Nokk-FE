@@ -122,6 +122,7 @@
 }
 
 /* Base styles */
+html,
 body {
   font-family: var(--font-body);
   background-color: var(--color-sandal-50);
@@ -132,19 +133,8 @@ body {
   0% {
     background-position: 200% 0;
   }
-
   100% {
     background-position: -200% 0;
-  }
-}
-
-@layer base {
-  :root {
-    --bg-page: #f5eedf; /* matches sandal-50 default */
-  }
-
-  html, body {
-    background-color: var(--bg-page);
   }
 }
 

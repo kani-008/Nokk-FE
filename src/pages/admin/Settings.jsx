@@ -244,6 +244,7 @@ function ThemeSection({ themeColor, bgColor, onChange }) {
   useEffect(() => { setHexInput(themeColor || ""); }, [themeColor]);
 
   const chooseBrand = (hex) => {
+    console.log("[FE] Changing brand color setting to:", hex);
     onChange("themeColor", hex);
     applyTheme(hex);
   };
@@ -254,14 +255,21 @@ function ThemeSection({ themeColor, bgColor, onChange }) {
     if (isValidHex(v)) chooseBrand(v);
   };
 
-  const resetBrand = () => { onChange("themeColor", ""); setHexInput(""); resetTheme(); };
+  const resetBrand = () => {
+    console.log("[FE] Resetting brand color setting to default");
+    onChange("themeColor", "");
+    setHexInput("");
+    resetTheme();
+  };
 
   const applyBg = (hex) => {
+    console.log("[FE] Changing background color setting to:", hex);
     onChange("bgColor", hex);
     document.documentElement.style.setProperty("--bg-page", hex);
   };
 
   const resetBg = () => {
+    console.log("[FE] Resetting background color setting to default");
     onChange("bgColor", "");
     document.documentElement.style.removeProperty("--bg-page");
   };
@@ -455,6 +463,16 @@ export default function Settings() {
     }
     if (coercedForm.minOrderValue < 0) {
       setError("Minimum Order Value (minOrderValue) cannot be negative");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.themeColor && !isValidHex(coercedForm.themeColor)) {
+      setError("Brand / Accent Colour must be a valid hex color");
+      setSaving(false);
+      return;
+    }
+    if (coercedForm.bgColor && !isValidHex(coercedForm.bgColor)) {
+      setError("Page Background Colour must be a valid hex color");
       setSaving(false);
       return;
     }
