@@ -282,7 +282,7 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
             <button
               onClick={handleWishlist}
               aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-              className="absolute top-1.5 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all"
+              className="absolute top-1.5 right-2 w-7 h-7 bg-surface rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all"
             >
               <svg
                 viewBox="0 0 24 24"

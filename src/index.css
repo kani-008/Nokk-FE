@@ -65,6 +65,7 @@
              = 2.6875rem = 43px at 16px root font size.
      Consuming: AdminButton md → h-[var(--admin-control-h)]
                 Dropdown trigger → h-[var(--admin-control-h)]              */
+  --color-surface: #ffffff;
   --admin-control-h: 2.6875rem;
 }
 
@@ -177,11 +178,11 @@ body {
 
   /* Cards  */
   .card {
-    @apply bg-white rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300;
+    @apply bg-surface rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300;
   }
 
   .card-hover {
-    @apply bg-white rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-sandal-300 hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
+    @apply bg-surface rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-sandal-300 hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
   }
 
   /* Badges  */

@@ -58,7 +58,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
         <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-        <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl p-8 flex flex-col items-center justify-center min-h-[300px] animate-modal-slide-up">
+        <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl p-8 flex flex-col items-center justify-center min-h-[300px] animate-modal-slide-up">
           <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3" />
           <p className="text-sm font-body text-gray-500">Loading user profile...</p>
         </div>
@@ -70,7 +70,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
         <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-        <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl p-6 flex flex-col min-h-[250px] animate-modal-slide-up">
+        <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl p-6 flex flex-col min-h-[250px] animate-modal-slide-up">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
             <h3 className="font-display text-base font-bold text-gray-900">Error</h3>
             <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>
@@ -94,7 +94,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-display text-base font-bold text-gray-900">User Details</h3>

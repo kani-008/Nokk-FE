@@ -19,12 +19,6 @@ const SHADE_LIGHTNESS = {
   50: 96, 100: 92, 200: 84, 300: 73, 400: 60,
   500: 50, 600: 43, 700: 36, 800: 28, 900: 20,
 };
-
-const SANDAL_LIGHTNESS = {
-  50: 97, 100: 93, 200: 86, 300: 78, 400: 68,
-  500: 56, 600: 46, 700: 36, 800: 25, 900: 15,
-};
-
 const SHADES = Object.keys(SHADE_LIGHTNESS);
 
 function hexToHsl(hex) {
@@ -72,14 +66,11 @@ export function applyTheme(baseHex) {
   if (!isValidHex(baseHex)) return;
   const { h, s } = hexToHsl(baseHex);
   const brandSat = Math.max(s, 25);
-  const sandalSat = Math.max(Math.min(s * 0.3, 16), 8);
 
   const root = document.documentElement;
   for (const shade of SHADES) {
     const brandHex = hslToHex(h, brandSat, SHADE_LIGHTNESS[shade]);
-    const sandalHex = hslToHex(h, sandalSat, SANDAL_LIGHTNESS[shade]);
     root.style.setProperty(`--color-brand-${shade}`, brandHex);
-    root.style.setProperty(`--color-sandal-${shade}`, sandalHex);
   }
 }
 
@@ -89,8 +80,40 @@ export function resetTheme() {
   const root = document.documentElement;
   for (const shade of SHADES) {
     root.style.removeProperty(`--color-brand-${shade}`);
-    root.style.removeProperty(`--color-sandal-${shade}`);
   }
+}
+
+export function applyBackgroundColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--bg-page", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetBackgroundColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--bg-page");
+}
+
+export function applySurfaceColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--color-surface", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetSurfaceColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--color-surface");
+}
+
+export function applyTextColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--color-gray-800", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetTextColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--color-gray-800");
 }
 
 export { isValidHex };

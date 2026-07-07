@@ -118,7 +118,7 @@ function WishCard({ product, onRemove }) {
           {/* remove from wishlist */}
           <button
             onClick={handleRemove}
-            className="absolute top-2 right-2 bg-white rounded-full w-7 h-7 flex items-center justify-center shadow hover:scale-110 transition-transform"
+            className="absolute top-2 right-2 bg-surface rounded-full w-7 h-7 flex items-center justify-center shadow hover:scale-110 transition-transform"
             aria-label="Remove from wishlist"
           >
             <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />

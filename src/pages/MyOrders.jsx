@@ -250,7 +250,7 @@ export default function MyOrders() {
         </div>
 
         {/* RIGHT: detail panel (desktop only) */}
-        <div className="hidden lg:block flex-1 min-w-0 border border-amber-100 rounded-2xl bg-white shadow-sm overflow-y-auto">
+        <div className="hidden lg:block flex-1 min-w-0 border border-amber-100 rounded-2xl bg-surface shadow-sm overflow-y-auto">
           {selectedOrder ? (
             <div className="p-6">
               <OrderDetail

@@ -18,7 +18,7 @@ export function TrustStrip() {
     { icon: <ShieldCheck size={18} />, label: "Secure Payment Checkout" },
   ];
   return (
-    <div className="bg-white border-b border-sandal-100">
+    <div className="bg-surface border-b border-sandal-100">
       <div className="page-wrap py-4.5 grid grid-cols-3 gap-2 sm:gap-6">
         {items.map((item) => (
           <div

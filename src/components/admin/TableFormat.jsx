@@ -2,7 +2,7 @@
 export default function TableFormat({ columns, rows, emptyText = "No data found.", loading, onRowClick }) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+      <div className="bg-surface border border-gray-100 rounded-2xl overflow-hidden">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex gap-4 px-4 py-3.5 border-b border-gray-50 last:border-0">
             {columns.map((c) => (
@@ -15,7 +15,7 @@ export default function TableFormat({ columns, rows, emptyText = "No data found.
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+    <div className="bg-surface border border-gray-100 rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">

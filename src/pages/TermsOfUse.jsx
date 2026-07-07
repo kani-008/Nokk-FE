@@ -8,7 +8,7 @@ export default function TermsOfUse() {
         <meta name="description" content="Terms of Use for Namma Oor Karuvattu Kadai. Read our terms and conditions for orders, payments, and shipping." />
       </Helmet>
 
-      <div className="bg-white rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
+      <div className="bg-surface rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-2">
           Terms & Conditions
         </h1>

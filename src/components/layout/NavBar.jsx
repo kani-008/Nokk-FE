@@ -36,7 +36,7 @@ function SuggestionsDropdown({
   if (!visible) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden py-1.5 max-h-72 overflow-y-auto">
+    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface border border-gray-100 rounded-2xl shadow-xl overflow-hidden py-1.5 max-h-72 overflow-y-auto">
       {loading ? (
         <div className="flex items-center justify-center py-4 text-xs text-gray-400 gap-2">
           <Loader2 size={14} className="animate-spin text-sandal-500" />
@@ -317,7 +317,7 @@ export default function NavBar() {
                     onFocus={() => setSearchFocused(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles…"}
-                    className="w-full rounded-full py-2 pl-10 pr-4 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                    className="w-full rounded-full py-2 pl-10 pr-4 text-sm bg-surface text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                     autoFocus={!isProductsPage}
                   />
                   <SuggestionsDropdown
@@ -356,7 +356,7 @@ export default function NavBar() {
                   onFocus={() => setSearchFocused(true)}
                   onKeyDown={handleKeyDown}
                   placeholder={isProductsPage ? "Search products…" : "Search dry fish, pickles, nethili…"}
-                  className="w-full rounded-4xl py-2 pl-4 pr-10 text-sm bg-white text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
+                  className="w-full rounded-4xl py-2 pl-4 pr-10 text-sm bg-surface text-gray-800 placeholder:text-gray-400 outline-none focus:ring-3 focus:ring-sandal-400/30"
                 />
                 <button
                   type="submit"
@@ -442,7 +442,7 @@ export default function NavBar() {
 
                   {/* Desktop dropdown */}
                   {profileOpen && (
-                    <div className="absolute right-0 top-full mt-2 bg-white border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
+                    <div className="absolute right-0 top-full mt-2 bg-surface border border-sandal-100 rounded-2xl shadow-xl py-2 w-52 z-50">
                       <DropItem
                         to="/profile"
                         icon={<User size={14} />}

@@ -228,7 +228,7 @@ export default function InventoryManagement() {
       </div>
 
       {/* Master-detail expandable table */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+      <div className="bg-surface border border-gray-100 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
             <div>

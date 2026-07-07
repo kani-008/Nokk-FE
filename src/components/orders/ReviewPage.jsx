@@ -125,7 +125,7 @@ function WebcamModal({ onUsePhoto, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+      <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
         {/* Modal header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <span className="font-display text-sm font-bold text-gray-800">Take a Photo</span>
@@ -208,7 +208,7 @@ function WebcamModal({ onUsePhoto, onClose }) {
                 type="button"
                 onClick={handleCapture}
                 disabled={!!camError}
-                className="w-14 h-14 rounded-full border-4 border-gray-800 bg-white hover:bg-gray-100 disabled:opacity-40 transition-colors cursor-pointer flex items-center justify-center shadow-md"
+                className="w-14 h-14 rounded-full border-4 border-gray-800 bg-surface hover:bg-gray-100 disabled:opacity-40 transition-colors cursor-pointer flex items-center justify-center shadow-md"
                 aria-label="Capture photo"
               >
                 <div className="w-10 h-10 rounded-full bg-gray-800" />
@@ -530,7 +530,7 @@ export default function ReviewPage({ inlineItem, inlineInitialRating, onClose } 
         {/* ── Toast ── */}
         <div className={`fixed top-4 right-4 z-[60] max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"}`}>
           {displayedError && (
-            <div className={`flex items-start gap-3 bg-white shadow-2xl border rounded-2xl px-4 py-3.5 text-sm ${displayedType === "success" ? "border-green-200 text-green-700" : "border-red-200 text-red-700"}`}>
+            <div className={`flex items-start gap-3 bg-surface shadow-2xl border rounded-2xl px-4 py-3.5 text-sm ${displayedType === "success" ? "border-green-200 text-green-700" : "border-red-200 text-red-700"}`}>
               {displayedType === "success" ? <Check size={16} className="shrink-0 mt-0.5" /> : <X size={16} className="shrink-0 mt-0.5" />}
               <span className="leading-snug">{displayedError}</span>
             </div>

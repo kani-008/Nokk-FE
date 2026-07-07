@@ -176,7 +176,7 @@ export default function AuthLayout({
             >
                 {toast?.message && (
                     <div
-                        className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${
+                        className={`flex items-start gap-2.5 bg-surface border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${
                             toast.type === "success"
                                 ? "border-green-200 shadow-green-900/5 text-green-700"
                                 : "border-red-200 shadow-red-900/5 text-red-700"
@@ -199,7 +199,7 @@ export default function AuthLayout({
             </div>
 
             <div
-                className={`relative z-10 w-full max-w-md lg:max-w-4xl bg-white rounded-3xl lg:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col lg:flex-row shadow-xl shadow-brand-900/5 ${cardClassName}`}
+                className={`relative z-10 w-full max-w-md lg:max-w-4xl bg-surface rounded-3xl lg:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col lg:flex-row shadow-xl shadow-brand-900/5 ${cardClassName}`}
             >
                 {/* LEFT — Brand panel (desktop only) */}
                 <div className="hidden lg:flex relative lg:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-6 overflow-hidden">
@@ -233,7 +233,7 @@ export default function AuthLayout({
 
                 {/* RIGHT — form panel */}
                 <div
-                    className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-6 py-6 lg:px-12 lg:py-12 bg-white ${formPanelClassName}`}
+                    className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-6 py-6 lg:px-12 lg:py-12 bg-surface ${formPanelClassName}`}
                 >
                     {/* Mobile brand badge + wordmark — visible only on mobile */}
                     <div className="flex flex-col items-center mb-5 lg:hidden">

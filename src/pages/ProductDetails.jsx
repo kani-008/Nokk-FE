@@ -360,7 +360,7 @@ export default function ProductDetails() {
       >
         {displayedError && (
           <div
-            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
+            className={`flex items-start gap-2.5 bg-surface border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
               ? "border-green-200 shadow-green-900/5 text-green-700"
               : "border-red-200 shadow-red-900/5 text-red-700"
               }`}
@@ -466,7 +466,7 @@ export default function ProductDetails() {
                       disabled={!v.inStock}
                       className={`font-body text-sm px-4 py-2 rounded-xl border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${activeVariant?.id === v.id
                         ? "border-brand-700 bg-brand-700 text-white font-semibold"
-                        : "border-amber-200 text-amber-800 hover:border-brand-600 bg-white"
+                        : "border-amber-200 text-amber-800 hover:border-brand-600 bg-surface"
                         }`}
                     >
                       {v.weightLabel}
@@ -555,7 +555,7 @@ export default function ProductDetails() {
           Compact height, tight padding, single-line button labels.
           Wishlist is a borderless heart (no box) at a slightly larger size.
           Add to Cart flips to "Go to Cart" after the item is added. */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <button
           onClick={handleWishlist}
           className="shrink-0 p-1.5 transition-colors"
@@ -587,7 +587,7 @@ export default function ProductDetails() {
       {/* ── Share Modal Fallback ── */}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-modal-fade-in animate-none">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 animate-modal-slide-up relative">
+          <div className="bg-surface w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 animate-modal-slide-up relative">
             <button
               onClick={() => setShareModalOpen(false)}
               className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-800 transition-colors"

@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
         <meta name="description" content="Privacy Policy for Namma Oor Karuvattu Kadai. Learn how we collect, use, and safeguard your data." />
       </Helmet>
 
-      <div className="bg-white rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
+      <div className="bg-surface rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-2">
           Privacy Policy
         </h1>

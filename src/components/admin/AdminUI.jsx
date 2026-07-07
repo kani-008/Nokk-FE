@@ -86,7 +86,7 @@ export function StatCard({
 
   return (
     <div
-      className={`bg-white border ${p.border} rounded-2xl p-5 admin-padding-fluid flex flex-col gap-3`}
+      className={`bg-surface border ${p.border} rounded-2xl p-5 admin-padding-fluid flex flex-col gap-3`}
     >
       <div className="flex items-center justify-between">
         <div className={`p-2.5 rounded-xl ${p.bg}`}>
@@ -139,7 +139,7 @@ export { DataTable };
 export function AdminCard({ children, className = "" }) {
   return (
     <div
-      className={`bg-white border border-gray-100 rounded-2xl p-5 admin-padding-fluid ${className}`}
+      className={`bg-surface border border-gray-100 rounded-2xl p-5 admin-padding-fluid ${className}`}
     >
       {children}
     </div>

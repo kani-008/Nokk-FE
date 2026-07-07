@@ -41,7 +41,7 @@ function Popup({ title, onClose, children, maxWidth = "max-w-md" }) {
         onClick={onClose}
       />
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidth} flex flex-col max-h-[90vh]`}
+        className={`relative bg-surface rounded-2xl shadow-2xl w-full ${maxWidth} flex flex-col max-h-[90vh]`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">

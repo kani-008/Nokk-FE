@@ -23,7 +23,7 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onCancel} />
-      <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+      <div className="relative bg-surface w-full max-w-sm rounded-2xl shadow-2xl p-6">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-red-50 shrink-0">
             <AlertTriangle size={18} className="text-red-500" />
@@ -87,7 +87,7 @@ function CouponModal({ coupon, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">{isEdit ? "Edit Coupon" : "Add Coupon"}</h3>
           <IconButton onClick={onClose} aria-label="Close"><X size={18} /></IconButton>

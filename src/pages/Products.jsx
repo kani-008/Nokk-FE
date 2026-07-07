@@ -546,7 +546,7 @@ export default function Products() {
         {filterOpen && (
           <div className="md:hidden fixed inset-0 z-50 flex">
             <div className="absolute inset-0 bg-black/40" onClick={() => setFilterOpen(false)} />
-            <div className="relative ml-auto w-72 bg-white h-full overflow-y-auto p-4 shadow-xl">
+            <div className="relative ml-auto w-72 bg-surface h-full overflow-y-auto p-4 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-body font-bold text-brand-900">Filters</span>
                 <button onClick={() => setFilterOpen(false)} className="text-amber-500 hover:text-brand-900">

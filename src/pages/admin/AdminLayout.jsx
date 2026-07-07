@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Grid3x3,
   Loader2,
+  Palette,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -39,7 +40,7 @@ function SuggestionsDropdown({
   if (!visible) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1.5 max-h-72 overflow-y-auto w-64 md:w-80">
+    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1.5 max-h-72 overflow-y-auto w-64 md:w-80">
       {loading ? (
         <div className="flex items-center justify-center py-4 text-xs text-gray-400 gap-2">
           <Loader2 size={14} className="animate-spin text-amber-500" />
@@ -98,6 +99,7 @@ const NAV_ITEMS = [
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
+  { to: "/admin/appearance", label: "Appearance", icon: Palette },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -154,7 +156,7 @@ function Sidebar({ collapsed, onClose }) {
 
   return (
     <div
-      className={`flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
+      className={`flex flex-col h-full bg-surface border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
     >
       {/* Logo + mobile close */}
       <div
@@ -404,7 +406,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   }, [notifOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
+    <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-surface border-b border-gray-100 shrink-0">
 
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <IconButton onClick={onMobileOpen} className="md:hidden shrink-0" aria-label="Open menu">

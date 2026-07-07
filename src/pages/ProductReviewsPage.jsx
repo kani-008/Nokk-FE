@@ -254,7 +254,7 @@ export default function ProductReviewsPage() {
               {/* LEFT COLUMN: Summary Card & Rating Breakdown */}
               <div className="lg:col-span-5 lg:sticky lg:top-[104px] self-start space-y-6">
                 
-                <div className="bg-white border border-sandal-100 rounded-2xl p-5 shadow-sm space-y-5">
+                <div className="bg-surface border border-sandal-100 rounded-2xl p-5 shadow-sm space-y-5">
                   <div className="flex items-start gap-4">
                     <button
                       onClick={() => navigate(-1)}
@@ -347,7 +347,7 @@ export default function ProductReviewsPage() {
 
               {/* RIGHT COLUMN: Reviews List */}
               <div className="lg:col-span-7 space-y-4">
-                <div className="border border-sandal-100 bg-white rounded-2xl p-4 sm:p-6 space-y-6 shadow-sm">
+                <div className="border border-sandal-100 bg-surface rounded-2xl p-4 sm:p-6 space-y-6 shadow-sm">
                   <div className="border-b border-sandal-50/50 pb-3 flex items-center justify-between">
                     <h2 className="font-display text-sm sm:text-base font-bold text-gray-800 uppercase tracking-wide">
                       Customer Reviews ({reviewCount})

@@ -145,7 +145,7 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
           className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         />
         <div
-          className={`fixed inset-y-0 right-0 z-50 w-3/4 flex flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
+          className={`fixed inset-y-0 right-0 z-50 w-3/4 flex flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
         >
           {panelHeader}
           {panelList}
@@ -154,7 +154,7 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
       </div>
 
       {/* ── Desktop: absolute dropdown ── */}
-      <div className="hidden md:block absolute right-0 top-full mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
+      <div className="hidden md:block absolute right-0 top-full mt-2 w-80 bg-surface border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
         <div className="flex flex-col">
           {panelHeader}
           {panelList}
