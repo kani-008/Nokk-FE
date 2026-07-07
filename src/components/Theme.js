@@ -86,12 +86,12 @@ export function resetTheme() {
 export function applyBackgroundColor(hex) {
   if (!isValidHex(hex)) return;
   const root = document.documentElement;
-  root.style.setProperty("--bg-page", hex.startsWith("#") ? hex : `#${hex}`);
+  root.style.setProperty("--color-page-bg", hex.startsWith("#") ? hex : `#${hex}`);
 }
 
 export function resetBackgroundColor() {
   const root = document.documentElement;
-  root.style.removeProperty("--bg-page");
+  root.style.removeProperty("--color-page-bg");
 }
 
 export function applySurfaceColor(hex) {

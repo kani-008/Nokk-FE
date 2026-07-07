@@ -115,7 +115,7 @@ function ToggleRow({ label, sub, checked, onChange }) {
         {sub && <p className="font-body text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
       <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ml-4 ${checked ? "bg-brand-700" : "bg-gray-200"}`}>
-        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
+        <span className={`absolute top-0.5 w-4 h-4 bg-surface rounded-full shadow-sm transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
       </span>
     </button>
   );
@@ -358,7 +358,7 @@ export default function Settings() {
       </div>
 
       {/* ── Bottom save bar ── */}
-      <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl px-5 py-3.5">
+      <div className="flex items-center justify-between bg-surface border border-gray-100 rounded-2xl px-5 py-3.5">
         <p className="font-body text-sm text-gray-500">
           {saved
             ? <span className="text-green-600 font-semibold flex items-center gap-1.5"><Check size={14} /> All changes saved</span>

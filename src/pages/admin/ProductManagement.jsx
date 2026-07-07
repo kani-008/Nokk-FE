@@ -101,28 +101,6 @@ export default function ProductManagement() {
     }
   }, [detailProd, setSearchParams]);
 
-  useEffect(() => {
-    if (tabParam === "combos") {
-      setActiveTab("combos");
-    }
-  }, [tabParam]);
-
-  useEffect(() => {
-    if (!editComboId || combosLoading) return;
-    const combo = combos.find(c => String(c.id) === editComboId);
-    if (combo) {
-      setModal(combo);
-    } else {
-      setPageError("The combo could not be found — it may have been deleted.");
-    }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("editComboId");
-      next.delete("tab");
-      return next;
-    }, { replace: true });
-  }, [editComboId, combos, combosLoading, setSearchParams]);
-
   // ── Hand this page's search state to AdminLayout's shared topbar search.
   // Typing in the topbar box now filters this table directly; no separate
   // search input is rendered in the page body anymore. Re-registers whenever
@@ -179,6 +157,29 @@ export default function ProductManagement() {
   const totalPages = productsData?.pagination?.totalPages || 1;
 
   const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
+
+  useEffect(() => {
+    if (tabParam === "combos") {
+      setActiveTab("combos");
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
+    if (!editComboId || combosLoading) return;
+    const combo = combos.find(c => String(c.id) === editComboId);
+    if (combo) {
+      setModal(combo);
+    } else {
+      setPageError("The combo could not be found — it may have been deleted.");
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("editComboId");
+      next.delete("tab");
+      return next;
+    }, { replace: true });
+  }, [editComboId, combos, combosLoading, setSearchParams]);
+
   const filteredCombos = useMemo(() => {
     if (!isComboMode) return [];
     if (!debouncedSearch) return combos;
