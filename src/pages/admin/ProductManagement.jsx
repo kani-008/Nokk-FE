@@ -115,27 +115,6 @@ export default function ProductManagement() {
   const [activeTab, setActiveTab] = useState("products");
   const isComboMode = activeTab === "combos";
 
-  const comboSuggestions = useMemo(() => {
-    if (!isComboMode || !search || search.trim().length < 2) return [];
-    const q = search.toLowerCase().trim();
-    return combos
-      .filter(c => c.name.toLowerCase().includes(q))
-      .slice(0, 8)
-      .map(c => ({ id: c.id, name: c.name, primaryImage: c.imageUrl || null, minPrice: c.comboPrice }));
-  }, [combos, search, isComboMode]);
-
-  useEffect(() => {
-    registerSearch({
-      placeholder: isComboMode ? "Search combos…" : "Search products…",
-      value: search,
-      onChange: setSearch,
-      domain: isComboMode ? "combos" : "products",
-      suggestions: isComboMode ? comboSuggestions : undefined,
-    });
-    return () => unregisterSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, isComboMode, comboSuggestions]);
-
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
@@ -157,6 +136,27 @@ export default function ProductManagement() {
   const totalPages = productsData?.pagination?.totalPages || 1;
 
   const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
+
+  const comboSuggestions = useMemo(() => {
+    if (!isComboMode || !search || search.trim().length < 2) return [];
+    const q = search.toLowerCase().trim();
+    return combos
+      .filter(c => c.name.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(c => ({ id: c.id, name: c.name, primaryImage: c.imageUrl || null, minPrice: c.comboPrice }));
+  }, [combos, search, isComboMode]);
+
+  useEffect(() => {
+    registerSearch({
+      placeholder: isComboMode ? "Search combos…" : "Search products…",
+      value: search,
+      onChange: setSearch,
+      domain: isComboMode ? "combos" : "products",
+      suggestions: isComboMode ? comboSuggestions : undefined,
+    });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, isComboMode, comboSuggestions]);
 
   useEffect(() => {
     if (tabParam === "combos") {

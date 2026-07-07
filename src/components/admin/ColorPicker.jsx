@@ -1,4 +1,3 @@
-import { useState } from "react";
 
 // ── Color helpers ─────────────────────────────────────────────────────
 export const hexToRgb = (hex = "") => {
