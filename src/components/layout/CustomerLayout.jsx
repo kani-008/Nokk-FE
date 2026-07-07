@@ -7,6 +7,7 @@ import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 import { usePublicSettings } from "../../hookqueries/useSettings";
 import API from "../../ApiCall/Api.jsx";
+import { applyTheme } from "../Theme.js";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,6 +29,14 @@ export default function CustomerLayout() {
 
   const { token, isAuthenticated } = useAuthStore();
   const { data: settings } = usePublicSettings();
+
+  // Dynamically apply dynamic storefront color configured in settings
+  useEffect(() => {
+    if (settings?.themeColor) {
+      applyTheme(settings.themeColor);
+    }
+  }, [settings?.themeColor]);
+
   // Announcement strip adds ~24px on sm+ → offset changes when it is on/off
   const announcementOn = !!settings?.announcementEnabled;
 
