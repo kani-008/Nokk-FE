@@ -14,6 +14,7 @@ import {
   useHomeNewArrivals,
 } from "../hookqueries/useHome";
 import { usePublicSettings } from "../hookqueries/useSettings";
+import { useActiveCustomerVideos } from "../hookqueries/useActiveCustomerVideos";
 
 // ══════════════════════════════════════════════════════════════════════
 // HOME PAGE — fetch + compose
@@ -28,6 +29,11 @@ export default function Home() {
   const { data: newest = [], isLoading: newestLoading } = useHomeNewArrivals();
 
   const { data: settings = {} } = usePublicSettings();
+  const { data: activeVideos = [] } = useActiveCustomerVideos();
+
+  console.log("[Home] Public settings:", settings);
+  console.log("[Home] Testimonials enabled setting:", settings.testimonialsEnabled);
+  console.log("[Home] Active customer videos loaded:", activeVideos);
 
   const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 

@@ -301,52 +301,56 @@ function VideoCard({ video }) {
 
   return (
     <div
-      className="relative flex-shrink-0 w-64 aspect-[9/16] rounded-2xl overflow-hidden bg-gray-900 border border-sandal-100 shadow-md group cursor-pointer"
+      className="flex-shrink-0 w-64 rounded-2xl overflow-hidden bg-surface border border-sandal-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer flex flex-col snap-start"
       onMouseEnter={startPlaying}
       onMouseLeave={stopPlaying}
       onClick={handleCardTap}
     >
-      <video
-        ref={videoRef}
-        className="customer-video-player w-full h-full object-cover pointer-events-none"
-        src={video.videoUrl}
-        poster={video.posterUrl || ""}
-        preload="metadata"
-        loop
-        playsInline
-        muted={isMuted}
-      />
+      {/* 9:16 Video Container */}
+      <div className="relative w-full aspect-[9/16] bg-gray-950 overflow-hidden shrink-0">
+        <video
+          ref={videoRef}
+          className="customer-video-player w-full h-full object-cover pointer-events-none animate-fade-in"
+          src={video.videoUrl}
+          poster={video.posterUrl || ""}
+          preload="metadata"
+          loop
+          playsInline
+          muted={isMuted}
+        />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none flex flex-col justify-end p-4">
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10 group-hover:bg-black/20 transition-all duration-200">
+            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-transform">
+              <Play className="w-5 h-5 fill-white ml-0.5" />
+            </div>
+          </div>
+        )}
+
+        {isPlaying && (
+          <button
+            onClick={handleMuteToggle}
+            className="mute-btn absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors shadow"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+
+      {/* Info/Caption Card Footer (similar to Product Card details) */}
+      <div className="p-4 bg-surface flex-1 flex flex-col justify-start border-t border-sandal-100/50">
         {video.customerName && (
-          <h4 className="font-display text-sm font-bold text-white mb-0.5">
+          <h4 className="font-display text-sm font-bold text-gray-800 line-clamp-1 mb-1">
             {video.customerName}
           </h4>
         )}
         {video.caption && (
-          <p className="font-body text-xs text-gray-200 line-clamp-2 leading-snug">
-            {video.caption}
+          <p className="font-body text-xs text-gray-500 line-clamp-3 leading-relaxed">
+            "{video.caption}"
           </p>
         )}
       </div>
-
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20 group-hover:bg-black/30 transition-all duration-200">
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-transform">
-            <Play className="w-5 h-5 fill-white ml-0.5" />
-          </div>
-        </div>
-      )}
-
-      {isPlaying && (
-        <button
-          onClick={handleMuteToggle}
-          className="mute-btn absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors shadow"
-          title={isMuted ? "Unmute" : "Mute"}
-        >
-          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </button>
-      )}
     </div>
   );
 }
@@ -370,11 +374,9 @@ export function Testimonials() {
           </p>
         </div>
 
-        <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-sandal-200 snap-x snap-mandatory">
+        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {videos.map((v) => (
-            <div key={v.id} className="snap-start flex-shrink-0">
-              <VideoCard video={v} />
-            </div>
+            <VideoCard key={v.id} video={v} />
           ))}
         </div>
       </div>
