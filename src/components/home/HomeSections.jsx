@@ -141,9 +141,10 @@ export function PromoBanner() {
   const { data: coupons = [], isLoading } = usePublicCoupons();
 
   if (isLoading) return null;
-  if (!coupons.length) return null;
+  const homepageCoupons = coupons.filter(c => c.showOnHomepage === true);
+  if (!homepageCoupons.length) return null;
 
-  const featured = coupons[0];
+  const featured = homepageCoupons[0];
 
   let discountText = "";
   if (featured.discountType === "percentage") {

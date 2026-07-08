@@ -20,15 +20,18 @@ const mapCouponToFrontend = (c) => {
     minOrderValue: c.minOrder,
     maxUsageCount: c.maxUses,
     maxUsesPerUser: c.maxUsesPerUser !== null && c.maxUsesPerUser !== undefined ? Number(c.maxUsesPerUser) : null,
-    expiresAt: c.expiryDate
+    expiresAt: c.expiryDate,
+    showOnHomepage: c.showOnHomepage ?? false
   };
 };
 
 const mapCouponToBackend = (form) => {
   const payload = {
+    id: form.id,
     code: form.code,
     description: form.description || null,
     isActive: form.isActive,
+    showOnHomepage: form.showOnHomepage || false,
     minOrder: Number(form.minOrderValue) || 0,
     maxUses: form.maxUsageCount ? Number(form.maxUsageCount) : null,
     maxUsesPerUser: form.maxUsesPerUser ? Number(form.maxUsesPerUser) : null,

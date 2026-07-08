@@ -14,7 +14,7 @@ import Toggle from "../../components/admin/Toggle.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 
-const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", maxUsesPerUser: "", isActive: true, expiresAt: "" };
+const COUPON_EMPTY = { code: "", discountType: "percentage", discountValue: "", minOrderValue: "", maxUsageCount: "", maxUsesPerUser: "", isActive: true, expiresAt: "", showOnHomepage: false };
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 // ── Confirm dialog ──────────────────────────────────────────────────────
@@ -120,10 +120,21 @@ function CouponModal({ coupon, onClose, onSaved }) {
               <div><label className="field-label">Max Uses Per User</label><input type="number" value={form.maxUsesPerUser || ""} onChange={(e) => set("maxUsesPerUser", e.target.value)} placeholder="Unlimited" className="field-input" /></div>
               <div className="col-span-2"><label className="field-label">Expires At</label><input type="date" value={form.expiresAt || ""} onChange={(e) => set("expiresAt", e.target.value)} className="field-input" /></div>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
-              <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
-            </label>
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Toggle checked={form.isActive} onChange={() => set("isActive", !form.isActive)} />
+                <span className="font-body text-sm text-gray-700">{form.isActive ? "Active" : "Inactive"}</span>
+              </label>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Toggle checked={form.showOnHomepage} onChange={() => set("showOnHomepage", !form.showOnHomepage)} />
+                  <span className="font-body text-sm text-gray-700">Show on Homepage Banner</span>
+                </label>
+                <p className="font-body text-[11px] text-gray-400 pl-8 leading-tight">
+                  Toggles this coupon in the homepage promo section. If multiple coupons are selected, the most recently created one takes priority.
+                </p>
+              </div>
+            </div>
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
               <AdminButton variant="outline" onClick={onClose} type="button">Cancel</AdminButton>
               <AdminButton type="submit" disabled={saving}>
