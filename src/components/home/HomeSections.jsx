@@ -367,10 +367,10 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold text-gray-800 mb-2 home-sec-title-fluid">
-            Customer Testimonials
+            What Our Customers Say
           </h2>
           <p className="font-body text-sm font-semibold text-sandal-600 home-sec-subtitle-fluid">
-            Watch real video reels shared by our customers
+            Hear directly from our happy customers
           </p>
         </div>
 
