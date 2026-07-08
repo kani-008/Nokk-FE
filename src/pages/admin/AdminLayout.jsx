@@ -22,6 +22,7 @@ import {
   Grid3x3,
   Loader2,
   Palette,
+  Video,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -100,6 +101,7 @@ const NAV_ITEMS = [
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/appearance", label: "Appearance", icon: Palette },
+  { to: "/admin/customer-videos", label: "Customer Videos", icon: Video },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -145,15 +147,6 @@ function NavLink({ item, collapsed, onClick }) {
 
 // ── Sidebar ────────────────────────────────────────────────────────────
 function Sidebar({ collapsed, onClose }) {
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-    if (onClose) onClose();
-  };
-
   return (
     <div
       className={`flex flex-col h-full bg-surface border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
@@ -198,48 +191,21 @@ function Sidebar({ collapsed, onClose }) {
         ))}
       </nav>
 
-      {/* User + logout */}
+      {/* Footer / View Store */}
       <div
-        className={`border-t border-gray-100 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}
+        className={`border-t border-gray-100 shrink-0 ${collapsed ? "p-1.5" : "p-2"}`}
       >
         <Link
           to="/"
           onClick={onClose}
-          className={`flex items-center gap-3 rounded-xl py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
+          className={`flex items-center gap-3 rounded-xl py-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
           title={collapsed ? "View Store" : undefined}
         >
           <ExternalLink size={16} className="shrink-0" />
           {!collapsed && (
-            <span className="font-body text-[13px]">View Store</span>
+            <span className="font-body text-[13px] font-medium leading-none">View Store</span>
           )}
         </Link>
-
-        {!collapsed && (
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50 mx-0">
-            <div className="w-7 h-7 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">
-              {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-body text-[12px] font-semibold text-gray-900 truncate leading-none">
-                {(user?.fullName ?? user?.name ?? "Admin").split(" ")[0]}
-              </p>
-              <p className="font-body text-[10px] text-gray-400 truncate mt-0.5 leading-none">
-                {user?.email ?? "admin"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={handleLogout}
-          className={`w-full flex items-center gap-3 rounded-xl py-2 text-red-500 hover:bg-red-50 transition-colors ${collapsed ? "justify-center px-0" : "px-3"}`}
-          title={collapsed ? "Logout" : undefined}
-        >
-          <LogOut size={16} className="shrink-0" />
-          {!collapsed && (
-            <span className="font-body text-[13px] font-medium">Logout</span>
-          )}
-        </button>
       </div>
     </div>
   );
@@ -252,10 +218,28 @@ function Sidebar({ collapsed, onClose }) {
 // still renders (mobile) but typing is a no-op — purely cosmetic until a
 // page opts in via useOutletContext().registerSearch(...).
 function TopBar({ onMobileOpen, pathname, searchConfig }) {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
   const [localSearchVal, setLocalSearchVal] = useState(""); // fallback when no page has registered
   const [notifOpen, setNotifOpen] = useState(false); // drives CSS transition
   const [notifMounted, setNotifMounted] = useState(false); // drives DOM presence
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // mobile expand/collapse state
   const notifRef = useRef(null);
@@ -516,9 +500,46 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
       </div>
 
       <div
-        className={`w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0 ${mobileSearchOpen ? "hidden md:flex" : ""}`}
+        ref={profileRef}
+        className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`}
       >
-        {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
+        <button
+          onClick={() => setProfileOpen(!profileOpen)}
+          className="w-8 h-8 rounded-full bg-brand-700 hover:bg-brand-800 flex items-center justify-center text-white font-num text-xs font-bold shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all cursor-pointer"
+          aria-label="User menu"
+        >
+          {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
+        </button>
+
+        {profileOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-surface border border-gray-100 rounded-xl shadow-lg py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* User Profile Card */}
+            <div className="flex items-center gap-2.5 px-4 py-2 border-b border-gray-50 pb-3">
+              <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">
+                {user?.fullName?.[0] ?? user?.name?.[0] ?? "A"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-body text-[12px] font-semibold text-gray-900 truncate leading-none">
+                  {user?.fullName ?? user?.name ?? "Admin"}
+                </p>
+                <p className="font-body text-[10px] text-gray-400 truncate mt-1.5 leading-none">
+                  {user?.email ?? "admin"}
+                </p>
+              </div>
+            </div>
+
+            {/* Logout Action */}
+            <div className="px-1 pt-1.5">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-red-500 hover:bg-red-50 transition-colors text-left cursor-pointer"
+              >
+                <LogOut size={16} className="shrink-0" />
+                <span className="font-body text-[13px] font-medium leading-none">Logout</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

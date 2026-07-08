@@ -82,6 +82,7 @@ const Settings = lazy(() => import("./pages/admin/Settings"));
 const Appearance = lazy(() => import("./pages/admin/Appearance"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
+const CustomerVideoManagement = lazy(() => import("./pages/admin/CustomerVideoManagement"));
 
 export default function App() {
   return (
@@ -145,6 +146,7 @@ export default function App() {
             <Route path="reports" element={<ReportManagement />} />
             <Route path="settings" element={<Settings />} />
             <Route path="appearance" element={<Appearance />} />
+            <Route path="customer-videos" element={<CustomerVideoManagement />} />
           </Route>
         </Route>
         {/* Catch-all */}

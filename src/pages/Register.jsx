@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import API from "../ApiCall/Api.jsx";
 import { useToast } from "../components/useToast";
+import { useAuthStore } from "../components/store/AuthStore";
 import AuthLayout, { StepDots, OtpBoxes, fieldClass, GoogleAuthButton } from "../components/layout/AuthLayout";
 import { usePublicSettings } from "../hookqueries/useSettings";
 import { useGoogleAuth } from "../hookqueries/useGoogleAuth";
@@ -43,7 +44,14 @@ const STEP_COPY = {
 
 export default function Register() {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuthStore();
     const { data: settings = {}, isLoading: settingsLoading } = usePublicSettings();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate("/", { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     // view state drives the step: "register" | "otp" | "password"
     const [view, setView] = useState("register");
