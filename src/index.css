@@ -65,6 +65,8 @@
              = 2.6875rem = 43px at 16px root font size.
      Consuming: AdminButton md → h-[var(--admin-control-h)]
                 Dropdown trigger → h-[var(--admin-control-h)]              */
+  --color-surface: #ffffff;
+  --color-page-bg: var(--color-sandal-50);
   --admin-control-h: 2.6875rem;
 }
 
@@ -122,9 +124,10 @@
 }
 
 /* Base styles */
+html,
 body {
   font-family: var(--font-body);
-  background-color: var(--color-sandal-50);
+  background-color: var(--color-page-bg);
   color: var(--color-gray-800);
 }
 
@@ -132,19 +135,8 @@ body {
   0% {
     background-position: 200% 0;
   }
-
   100% {
     background-position: -200% 0;
-  }
-}
-
-@layer base {
-  :root {
-    --bg-page: #f5eedf; /* matches sandal-50 default */
-  }
-
-  html, body {
-    background-color: var(--bg-page);
   }
 }
 
@@ -187,11 +179,11 @@ body {
 
   /* Cards  */
   .card {
-    @apply bg-white rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300;
+    @apply bg-surface rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300;
   }
 
   .card-hover {
-    @apply bg-white rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-sandal-300 hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
+    @apply bg-surface rounded-md border border-sandal-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-sandal-300 hover:shadow-[0_12px_20px_-8px_rgba(140,118,92,0.12),0_4px_12px_-2px_rgba(140,118,92,0.04)];
   }
 
   /* Badges  */
@@ -245,7 +237,7 @@ body {
 
   /* ── Sort bar (Products listing page) ───────────────────────────── */
   .sort-bar {
-    @apply flex items-center gap-1 overflow-x-auto bg-white border border-sandal-100 rounded-2xl p-1.5 shadow-sm;
+    @apply flex items-center gap-1 overflow-x-auto bg-surface border border-sandal-100 rounded-2xl p-1.5 shadow-sm;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }

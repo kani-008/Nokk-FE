@@ -12,7 +12,7 @@ export default function TabToggle({ tabs, active, onChange, tabClassName = "", c
           type="button"
           onClick={() => onChange(key)}
           className={`flex-1 sm:flex-none font-body text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-            active === key ? "bg-white text-gray-900 shadow-sm" : "text-sandal-300 hover:text-sandal-200"
+            active === key ? "bg-surface text-gray-900 shadow-sm" : "text-sandal-300 hover:text-sandal-200"
           } ${tabClassName}`}
         >
           {Icon && <Icon size={13} />}

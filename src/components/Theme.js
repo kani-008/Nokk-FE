@@ -19,7 +19,6 @@ const SHADE_LIGHTNESS = {
   50: 96, 100: 92, 200: 84, 300: 73, 400: 60,
   500: 50, 600: 43, 700: 36, 800: 28, 900: 20,
 };
-
 const SHADES = Object.keys(SHADE_LIGHTNESS);
 
 function hexToHsl(hex) {
@@ -65,10 +64,13 @@ export function generatePalette(baseHex) {
 
 export function applyTheme(baseHex) {
   if (!isValidHex(baseHex)) return;
-  const palette = generatePalette(baseHex);
+  const { h, s } = hexToHsl(baseHex);
+  const brandSat = Math.max(s, 25);
+
   const root = document.documentElement;
   for (const shade of SHADES) {
-    root.style.setProperty(`--color-brand-${shade}`, palette[shade]);
+    const brandHex = hslToHex(h, brandSat, SHADE_LIGHTNESS[shade]);
+    root.style.setProperty(`--color-brand-${shade}`, brandHex);
   }
 }
 
@@ -76,7 +78,42 @@ export function applyTheme(baseHex) {
 // defined in index.css.
 export function resetTheme() {
   const root = document.documentElement;
-  for (const shade of SHADES) root.style.removeProperty(`--color-brand-${shade}`);
+  for (const shade of SHADES) {
+    root.style.removeProperty(`--color-brand-${shade}`);
+  }
+}
+
+export function applyBackgroundColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--color-page-bg", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetBackgroundColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--color-page-bg");
+}
+
+export function applySurfaceColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--color-surface", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetSurfaceColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--color-surface");
+}
+
+export function applyTextColor(hex) {
+  if (!isValidHex(hex)) return;
+  const root = document.documentElement;
+  root.style.setProperty("--color-gray-800", hex.startsWith("#") ? hex : `#${hex}`);
+}
+
+export function resetTextColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--color-gray-800");
 }
 
 export { isValidHex };

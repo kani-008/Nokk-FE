@@ -62,7 +62,7 @@ function AddressRow({ address, isSelected, onSelect, onEdit, onDelete }) {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1 overflow-hidden">
+          <div className="absolute right-0 top-full mt-1 w-32 bg-surface border border-gray-100 rounded-xl shadow-lg z-10 py-1 overflow-hidden">
             <button
               onClick={() => { setMenuOpen(false); onEdit(); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm font-body text-gray-700 hover:bg-gray-50 transition-colors"
@@ -320,7 +320,7 @@ export default function AddressPickerSheet({ open, onClose, selectedId, onSelect
       />
 
       {/* sheet panel */}
-      <div className={`relative w-full ${sheetHeightClass} sm:max-w-md max-h-[90vh] sm:max-h-none flex flex-col bg-white rounded-t-3xl sm:rounded-none overflow-hidden shadow-2xl`}>
+      <div className={`relative w-full ${sheetHeightClass} sm:max-w-md max-h-[90vh] sm:max-h-none flex flex-col bg-surface rounded-t-3xl sm:rounded-none overflow-hidden shadow-2xl`}>
 
         {/* drag pill (mobile) */}
         <div className="sm:hidden w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />

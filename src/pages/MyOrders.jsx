@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { useMyOrders } from "../hookqueries/useOrders";
 import OrderDetail from "../components/orders/OrderDetail";
-const PH = "";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -36,7 +35,7 @@ const getStatusTitle = (status, date) => {
 // ── Order card ──────────────────────────────────────────────────────────
 function OrderCard({ order, isSelected, onClick, onWriteReviewClick }) {
   const firstItem  = order.items?.[0] || {};
-  const itemImg    = firstItem.imageUrl || firstItem.image || PH;
+  const itemImg    = firstItem.imageUrl || firstItem.image || null;
   const itemName   = firstItem.productName || "Order";
   const hasMore    = order.items?.length > 1;
   const moreCount  = order.items?.length - 1;
@@ -56,12 +55,17 @@ function OrderCard({ order, isSelected, onClick, onWriteReviewClick }) {
     >
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3 min-w-0">
-          <img
-            src={itemImg}
-            alt={itemName}
-            className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
-            onError={(e) => { e.target.src = PH; }}
-          />
+          {itemImg ? (
+            <img
+              src={itemImg}
+              alt={itemName}
+              className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-100"
+            />
+          ) : (
+            <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-sandal-50 text-brand-850 flex items-center justify-center shrink-0 border border-sandal-100 text-xl font-bold">
+              📦
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             {/* Mobile */}
             <div className="block lg:hidden">
@@ -246,7 +250,7 @@ export default function MyOrders() {
         </div>
 
         {/* RIGHT: detail panel (desktop only) */}
-        <div className="hidden lg:block flex-1 min-w-0 border border-amber-100 rounded-2xl bg-white shadow-sm overflow-y-auto">
+        <div className="hidden lg:block flex-1 min-w-0 border border-amber-100 rounded-2xl bg-surface shadow-sm overflow-y-auto">
           {selectedOrder ? (
             <div className="p-6">
               <OrderDetail

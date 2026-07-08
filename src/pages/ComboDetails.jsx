@@ -245,7 +245,7 @@ export default function ComboDetails() {
       >
         {displayedError && (
           <div
-            className={`flex items-start gap-2.5 bg-white border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
+            className={`flex items-start gap-2.5 bg-surface border shadow-lg font-body text-sm rounded-xl px-4 py-3.5 ${displayedType === "success"
               ? "border-green-200 shadow-green-900/5 text-green-700"
               : "border-red-200 shadow-red-900/5 text-red-700"
               }`}
@@ -417,7 +417,7 @@ export default function ComboDetails() {
       <ProductReviews product={combo} />
 
       {/* Mobile sticky bottom CTA bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-amber-100 px-4 py-2 flex items-center gap-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <button
           onClick={handleCartClick}
           disabled={!inStock}
@@ -438,7 +438,7 @@ export default function ComboDetails() {
       {/* Share Modal Fallback */}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 relative">
+          <div className="bg-surface w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl overflow-hidden border border-amber-100 flex flex-col p-6 relative">
             <button
               onClick={() => setShareModalOpen(false)}
               className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-800 transition-colors"
@@ -576,7 +576,7 @@ function ComboProductsDescription({ items }) {
             className={`shrink-0 font-body text-xs sm:text-sm font-bold px-4.5 py-2 rounded-xl border-2 transition-all cursor-pointer ${
               activeItemIndex === idx
                 ? "border-brand-700 bg-brand-700 text-white"
-                : "border-sandal-150 text-amber-800 bg-white hover:border-sandal-300"
+                : "border-sandal-150 text-amber-800 bg-surface hover:border-sandal-300"
             }`}
           >
             {item.productName}

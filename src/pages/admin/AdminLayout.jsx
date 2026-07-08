@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Grid3x3,
   Loader2,
+  Palette,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -33,19 +34,20 @@ function SuggestionsDropdown({
   loading,
   visible,
   highlightedIdx,
-  onSelect
+  onSelect,
+  emptyText = "No products found",
 }) {
   if (!visible) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1.5 max-h-72 overflow-y-auto w-64 md:w-80">
+    <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1.5 max-h-72 overflow-y-auto w-64 md:w-80">
       {loading ? (
         <div className="flex items-center justify-center py-4 text-xs text-gray-400 gap-2">
           <Loader2 size={14} className="animate-spin text-amber-500" />
           <span>Searching...</span>
         </div>
       ) : suggestions.length === 0 ? (
-        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">No products found</div>
+        <div className="px-4 py-3 text-sm text-gray-500 text-center font-body">{emptyText}</div>
       ) : (
         suggestions.map((s, idx) => (
           <div
@@ -97,6 +99,7 @@ const NAV_ITEMS = [
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
+  { to: "/admin/appearance", label: "Appearance", icon: Palette },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -153,7 +156,7 @@ function Sidebar({ collapsed, onClose }) {
 
   return (
     <div
-      className={`flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
+      className={`flex flex-col h-full bg-surface border-r border-gray-100 transition-all duration-300 ${collapsed ? "w-16" : "w-64"}`}
     >
       {/* Logo + mobile close */}
       <div
@@ -275,7 +278,10 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   const mobileSearchContainerRef = useRef(null);
   const desktopSearchContainerRef = useRef(null);
 
-  const isProductSearch = searchConfig?.domain === "products";
+  const searchDomain = searchConfig?.domain; // "products" | "combos" | undefined
+  const isProductSearch = searchDomain === "products";
+  const isComboSearch = searchDomain === "combos";
+  const hasSuggestionDomain = isProductSearch || isComboSearch;
   const [searchFocused, setSearchFocused] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
@@ -288,10 +294,14 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
     return () => clearTimeout(timer);
   }, [searchValue, isProductSearch]);
 
-  const { data: suggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
+  const { data: productSuggestions = [], isPending: suggestionsLoading } = useProductSuggestions(debouncedQuery);
 
-  const showSuggestions = isProductSearch && searchFocused && searchValue.trim().length >= 2;
-  const isTypingOrLoading = suggestionsLoading || searchValue !== debouncedQuery;
+  const suggestions = isComboSearch ? (searchConfig?.suggestions || []) : productSuggestions;
+
+  const showSuggestions = hasSuggestionDomain && searchFocused && searchValue.trim().length >= 2;
+  const isTypingOrLoading = isProductSearch
+    ? (suggestionsLoading || searchValue !== debouncedQuery)
+    : false;
 
   useEffect(() => {
     setHighlightedIdx(-1);
@@ -317,7 +327,11 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   };
 
   const handleSelectSuggestion = (s) => {
-    navigate(`/admin/products?editProductSlug=${s.slug}`);
+    if (isComboSearch) {
+      navigate(`/admin/products?tab=combos&editComboId=${s.id}`);
+    } else {
+      navigate(`/admin/products?editProductSlug=${s.slug}`);
+    }
     setSearchFocused(false);
     setMobileSearchOpen(false);
   };
@@ -392,7 +406,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   }, [notifOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-white border-b border-gray-100 shrink-0">
+    <header className="flex items-center gap-3 h-14 px-4 sm:px-6 bg-surface border-b border-gray-100 shrink-0">
 
       {/* Mobile: opens sidebar drawer — stays visible even while mobile search is expanded */}
       <IconButton onClick={onMobileOpen} className="md:hidden shrink-0" aria-label="Open menu">
@@ -434,6 +448,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
               visible={showSuggestions}
               highlightedIdx={highlightedIdx}
               onSelect={handleSelectSuggestion}
+              emptyText={isComboSearch ? "No combos found" : "No products found"}
             />
           </div>
           <IconButton onClick={closeMobileSearch} className="shrink-0" aria-label="Close search">

@@ -34,7 +34,7 @@ function SummaryItem({ item, onUpdateQty }) {
           <span className="font-body text-xs text-amber-500">{item.weight}</span>
 
           {onUpdateQty && (
-            <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden bg-white shrink-0">
+            <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden bg-surface shrink-0">
               <button
                 type="button"
                 onClick={() => onUpdateQty(item.variantId, item.quantity - 1)}
@@ -328,7 +328,7 @@ export default function OrderSummaryStep({
             </div>
 
             {/* ── Continue Action Box (hidden on mobile, visible on desktop/tablet md+) ── */}
-            <div className="hidden md:flex items-center justify-between bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
+            <div className="hidden md:flex items-center justify-between bg-surface border border-amber-100 rounded-2xl p-4 shadow-sm">
               <div>
                 {totalSavings > 0 && (
                   <p className="font-num text-xs text-amber-400 line-through leading-none mb-1">
@@ -371,7 +371,7 @@ export default function OrderSummaryStep({
       </div>
 
       {/* ── Mobile fixed bottom bar ───────────────────────────── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-amber-100 px-4 py-3 safe-bottom flex items-center justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-surface border-t border-amber-100 px-4 py-3 safe-bottom flex items-center justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <div>
           {totalSavings > 0 && (
             <p className="font-num text-xs text-amber-400 line-through leading-none">{rupee(totalMrp + ship)}</p>

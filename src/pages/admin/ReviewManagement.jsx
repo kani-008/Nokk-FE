@@ -41,7 +41,7 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
         {/* header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-display text-base font-bold text-gray-900">Review Details</h3>

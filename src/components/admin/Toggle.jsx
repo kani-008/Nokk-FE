@@ -29,7 +29,7 @@ export default function Toggle({ checked, onChange, disabled = false }) {
     >
       <span
         className={`
-          absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm 
+          absolute top-0.5 left-0.5 w-4 h-4 bg-surface rounded-full shadow-sm 
           transition-transform duration-200 ease-out
           ${checked ? "translate-x-4" : "translate-x-0"}
         `}

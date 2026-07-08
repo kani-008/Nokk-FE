@@ -70,7 +70,7 @@ export default function ImageGallery({ images, onShare }) {
         <button
           onClick={onShare}
           aria-label="Share product"
-          className="absolute top-3 right-3 w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
+          className="absolute top-3 right-3 w-9 h-9 bg-white/90 hover:bg-surface rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
         >
           <Share2 size={16} className="text-gray-800" />
         </button>
@@ -79,13 +79,13 @@ export default function ImageGallery({ images, onShare }) {
           <>
             <button
               onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
             >
               <ChevronRight size={16} />
             </button>

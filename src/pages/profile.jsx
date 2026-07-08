@@ -48,7 +48,7 @@ function Avatar({ name, size = "md" }) {
 function ConfirmModal({ title, body, extra, onConfirm, onCancel, confirmLabel, danger = false, loading }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3 mb-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${danger ? "bg-red-100" : "bg-amber-100"}`}>
             <AlertTriangle size={20} className={danger ? "text-red-600" : "text-amber-600"} />
@@ -99,7 +99,7 @@ function AddressCard({ addr, onEdit, setError, setSuccess }) {
   }, [menuOpen]);
 
   return (
-    <div className="relative flex flex-col gap-2 py-2.5 px-3.5 rounded-2xl bg-white border-2 border-gray-100 hover:border-sandal-200 hover:shadow-md transition-all duration-200">
+    <div className="relative flex flex-col gap-2 py-2.5 px-3.5 rounded-2xl bg-surface border-2 border-gray-100 hover:border-sandal-200 hover:shadow-md transition-all duration-200">
       {/* 3-dot Menu */}
       <div className="absolute top-3 right-3">
         <button
@@ -115,7 +115,7 @@ function AddressCard({ addr, onEdit, setError, setSuccess }) {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-10 animate-in fade-in slide-in-from-top-1 duration-100">
+          <div className="absolute right-0 mt-1 w-28 bg-surface border border-gray-100 rounded-xl shadow-lg py-1 z-10 animate-in fade-in slide-in-from-top-1 duration-100">
             <button
               type="button"
               onClick={() => {
@@ -587,7 +587,7 @@ export default function Profile() {
       {/* ── Toast ── */}
       <div className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"}`}>
         {displayedError && (
-          <div className={`flex items-start gap-3 bg-white shadow-2xl border rounded-2xl px-4 py-3.5 text-sm ${displayedType === "success" ? "border-green-200 text-green-700" : "border-red-200 text-red-700"}`}>
+          <div className={`flex items-start gap-3 bg-surface shadow-2xl border rounded-2xl px-4 py-3.5 text-sm ${displayedType === "success" ? "border-green-200 text-green-700" : "border-red-200 text-red-700"}`}>
             {displayedType === "success" ? <Check size={16} className="shrink-0 mt-0.5" /> : <X size={16} className="shrink-0 mt-0.5" />}
             <span className="leading-snug">{displayedError}</span>
           </div>
@@ -639,7 +639,7 @@ export default function Profile() {
             <aside className="w-full md:w-[260px] shrink-0 flex flex-col gap-3">
 
             {/* User card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+            <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
               <Avatar name={displayName} size="md" />
               <div className="min-w-0">
                 <p className="text-[11px] text-gray-400 font-medium leading-none mb-1">Hello,</p>
@@ -648,7 +648,7 @@ export default function Profile() {
             </div>
 
             {/* My Orders */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <Link
                 to="/my-orders"
                 className="flex items-center gap-3 px-5 py-4 text-sm font-medium text-gray-700 hover:bg-sandal-50 hover:text-sandal-800 transition-colors"
@@ -661,7 +661,7 @@ export default function Profile() {
 
             {/* Nav groups */}
             {NAV.map((group) => (
-              <div key={group.group} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={group.group} className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <p className="px-5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   {group.group}
                 </p>
@@ -678,7 +678,7 @@ export default function Profile() {
             ))}
 
             {/* Logout */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-5 py-4 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
@@ -699,7 +699,7 @@ export default function Profile() {
 
             {/* ── Profile Information ─────────────────────────────────── */}
             {section === "profile-info" && (
-              <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
+              <div className="bg-surface rounded-2xl md:border md:border-gray-100 md:shadow-sm">
                 {/* header */}
                 <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4">
                   <div className="flex items-center gap-2.5">
@@ -868,7 +868,7 @@ export default function Profile() {
 
             {/* ── Manage Addresses ────────────────────────────────────── */}
             {section === "addresses" && (
-              <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
+              <div className="bg-surface rounded-2xl md:border md:border-gray-100 md:shadow-sm">
                 {showAddForm || editAddr ? (
                   <div className="p-4 sm:p-6">
                     <AddressForm
@@ -954,7 +954,7 @@ export default function Profile() {
 
             {/* ── My Coupons ──────────────────────────────────────────── */}
             {section === "coupons" && (
-              <div className="bg-white rounded-2xl md:border md:border-gray-100 md:shadow-sm">
+              <div className="bg-surface rounded-2xl md:border md:border-gray-100 md:shadow-sm">
                 {/* header */}
                 <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 border-b border-gray-100">
                   <div className="flex items-center gap-2.5">
@@ -998,7 +998,7 @@ export default function Profile() {
                           <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-sandal-50 border-l-2 border-dashed border-sandal-200" />
 
                           <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex items-center justify-between gap-2 bg-white border border-sandal-200 rounded-xl px-3 py-2 flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 bg-surface border border-sandal-200 rounded-xl px-3 py-2 flex-1 min-w-0">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <Tag size={13} className="text-sandal-600 shrink-0" />
                                 <span className="font-mono font-bold text-sandal-800 text-sm tracking-wider truncate select-all">{c.code}</span>
@@ -1054,7 +1054,7 @@ export default function Profile() {
             {section === "wishlist" && (
               <div className="flex flex-col gap-3">
                 {/* header */}
-                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between px-4 py-4 md:px-6 md:py-4 bg-surface rounded-2xl border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2.5">
                     {isMobile && (
                       <button
@@ -1076,7 +1076,7 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6">
+                <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6">
                   {!wishIds?.length ? (
                     <div className="text-center py-14">
                       <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-3">

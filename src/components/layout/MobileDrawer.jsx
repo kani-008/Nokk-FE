@@ -32,7 +32,7 @@ export default function MobileDrawer({
     <div className="md:hidden fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative ml-auto w-55 max-w-[85vw] h-full bg-white shadow-xl flex flex-col">
+      <div className="relative ml-auto w-55 max-w-[85vw] h-full bg-surface shadow-xl flex flex-col">
 
         {/* drawer header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-sandal-100 shrink-0">

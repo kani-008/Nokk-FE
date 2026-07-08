@@ -151,7 +151,7 @@ export default function ReviewsOverview() {
               placeholder="Search products…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-sandal-200 bg-white font-body text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sandal-300"
+              className="w-full px-4 py-2.5 rounded-xl border border-sandal-200 bg-surface font-body text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sandal-300"
             />
           </div>
         )}

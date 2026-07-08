@@ -48,7 +48,7 @@ function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onCancel} />
-      <div className="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+      <div className="relative bg-surface w-full max-w-sm rounded-2xl shadow-2xl p-6">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-red-50 shrink-0">
             <AlertTriangle size={18} className="text-red-500" />
@@ -86,6 +86,8 @@ export default function ProductManagement() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const editProductSlug = searchParams.get("editProductSlug");
+  const editComboId = searchParams.get("editComboId");
+  const tabParam = searchParams.get("tab");
   const { data: detailProd } = useAdminProductDetail(editProductSlug);
 
   useEffect(() => {
@@ -113,17 +115,6 @@ export default function ProductManagement() {
   const [activeTab, setActiveTab] = useState("products");
   const isComboMode = activeTab === "combos";
 
-  useEffect(() => {
-    registerSearch({
-      placeholder: isComboMode ? "Search combos…" : "Search products…",
-      value: search,
-      onChange: setSearch,
-      domain: "products"
-    });
-    return () => unregisterSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, isComboMode]);
-
   // debounce the search input so we don't fire a request per keystroke
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
@@ -145,6 +136,50 @@ export default function ProductManagement() {
   const totalPages = productsData?.pagination?.totalPages || 1;
 
   const { data: combos = [], isLoading: combosLoading } = useAdminComboList();
+
+  const comboSuggestions = useMemo(() => {
+    if (!isComboMode || !search || search.trim().length < 2) return [];
+    const q = search.toLowerCase().trim();
+    return combos
+      .filter(c => c.name.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(c => ({ id: c.id, name: c.name, primaryImage: c.imageUrl || null, minPrice: c.comboPrice }));
+  }, [combos, search, isComboMode]);
+
+  useEffect(() => {
+    registerSearch({
+      placeholder: isComboMode ? "Search combos…" : "Search products…",
+      value: search,
+      onChange: setSearch,
+      domain: isComboMode ? "combos" : "products",
+      suggestions: isComboMode ? comboSuggestions : undefined,
+    });
+    return () => unregisterSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, isComboMode, comboSuggestions]);
+
+  useEffect(() => {
+    if (tabParam === "combos") {
+      setActiveTab("combos");
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
+    if (!editComboId || combosLoading) return;
+    const combo = combos.find(c => String(c.id) === editComboId);
+    if (combo) {
+      setModal(combo);
+    } else {
+      setPageError("The combo could not be found — it may have been deleted.");
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("editComboId");
+      next.delete("tab");
+      return next;
+    }, { replace: true });
+  }, [editComboId, combos, combosLoading, setSearchParams]);
+
   const filteredCombos = useMemo(() => {
     if (!isComboMode) return [];
     if (!debouncedSearch) return combos;

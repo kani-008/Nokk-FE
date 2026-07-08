@@ -7,6 +7,12 @@ import { useCartStore } from "../store/CartStore";
 import { useWishlistStore } from "../store/WishlistStore";
 import { usePublicSettings } from "../../hookqueries/useSettings";
 import API from "../../ApiCall/Api.jsx";
+import {
+  applyTheme,
+  applyBackgroundColor,
+  applySurfaceColor,
+  applyTextColor
+} from "../Theme.js";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,6 +34,33 @@ export default function CustomerLayout() {
 
   const { token, isAuthenticated } = useAuthStore();
   const { data: settings } = usePublicSettings();
+
+  // Dynamically apply dynamic storefront color configured in settings
+  useEffect(() => {
+    const pColor = settings?.primaryColor || settings?.themeColor;
+    if (pColor) {
+      applyTheme(pColor);
+    }
+  }, [settings?.primaryColor, settings?.themeColor]);
+
+  useEffect(() => {
+    if (settings?.backgroundColor) {
+      applyBackgroundColor(settings.backgroundColor);
+    }
+  }, [settings?.backgroundColor]);
+
+  useEffect(() => {
+    if (settings?.surfaceColor) {
+      applySurfaceColor(settings.surfaceColor);
+    }
+  }, [settings?.surfaceColor]);
+
+  useEffect(() => {
+    if (settings?.textColor) {
+      applyTextColor(settings.textColor);
+    }
+  }, [settings?.textColor]);
+
   // Announcement strip adds ~24px on sm+ → offset changes when it is on/off
   const announcementOn = !!settings?.announcementEnabled;
 

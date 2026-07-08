@@ -528,7 +528,7 @@ export default function Cart() {
       {/* Toast notification */}
       <div className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"}`}>
         {displayedError && (
-          <div className={`px-4 py-2.5 rounded-xl shadow-lg border text-sm font-body font-medium ${displayedType === "success" ? "border-green-200 bg-white text-green-700 shadow-green-900/5" : "border-red-200 bg-white text-red-700 shadow-red-900/5"}`}>
+          <div className={`px-4 py-2.5 rounded-xl shadow-lg border text-sm font-body font-medium ${displayedType === "success" ? "border-green-200 bg-surface text-green-700 shadow-green-900/5" : "border-red-200 bg-surface text-red-700 shadow-red-900/5"}`}>
             {displayedError}
           </div>
         )}

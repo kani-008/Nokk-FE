@@ -65,7 +65,7 @@ function OrderModal({ order, onClose, onStatusChange }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-modal-slide-up">
 
         {/* header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
@@ -267,7 +267,7 @@ function ReplacementsPanel() {
             key={f.key || "all"}
             onClick={() => setFilter(f.key)}
             className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${
-              filter === f.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+              filter === f.key ? "bg-surface text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
             }`}
           >
             {f.label}

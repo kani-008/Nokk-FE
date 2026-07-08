@@ -186,7 +186,7 @@ function BannerModal({ banner, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">
             {banner ? "Edit Banner" : "Add Banner"}
@@ -311,7 +311,7 @@ function BannerModal({ banner, onClose, onSaved }) {
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${
                     form.isActive ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -383,7 +383,7 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
           openEdit();
         }
       }}
-      className={`bg-white border rounded-2xl overflow-hidden transition-opacity cursor-pointer ${banner.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
+      className={`bg-surface border rounded-2xl overflow-hidden transition-opacity cursor-pointer ${banner.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
     >
       {/* thumbnail */}
       <div className="relative h-36 bg-gray-100">
@@ -541,7 +541,7 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-modal-slide-up">
+      <div className="relative bg-surface admin-modal-bg rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-modal-slide-up">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-display text-base font-bold text-gray-900">
             {overlay ? "Edit Text Overlay" : "Add Text Overlay"}
@@ -591,7 +591,7 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ease-in-out ${
                     form.isActive ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -667,7 +667,7 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
           openEdit();
         }
       }}
-      className={`bg-white border rounded-2xl p-5 flex flex-col justify-between transition-opacity cursor-pointer ${overlay.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
+      className={`bg-surface border rounded-2xl p-5 flex flex-col justify-between transition-opacity cursor-pointer ${overlay.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
     >
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">

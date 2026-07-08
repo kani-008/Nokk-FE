@@ -220,7 +220,7 @@ export default function Payment({
                     onClick={() => onSelect(m.key)}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-2xl text-left transition-colors ${selected === m.key
                         ? "border-brand-700 bg-brand-50"
-                        : "border-amber-100 hover:border-amber-300 bg-white"
+                        : "border-amber-100 hover:border-amber-300 bg-surface"
                       }`}
                   >
                     {/* radio dot */}
@@ -231,7 +231,7 @@ export default function Payment({
                         }`}
                     >
                       {selected === m.key && (
-                        <div className="w-2 h-2 rounded-full bg-white" />
+                        <div className="w-2 h-2 rounded-full bg-surface" />
                       )}
                     </div>
 
@@ -311,7 +311,7 @@ export default function Payment({
             </div>
 
             {/* ── Place Order Action Box (hidden on mobile, visible on desktop/tablet md+) ── */}
-            <div className="hidden md:flex items-center justify-between bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
+            <div className="hidden md:flex items-center justify-between bg-surface border border-amber-100 rounded-2xl p-4 shadow-sm">
               <div>
                 {discount > 0 && (
                   <p className="font-num text-xs text-amber-400 line-through leading-none mb-1">
@@ -344,7 +344,7 @@ export default function Payment({
       </div>
 
       {/* ── Mobile fixed bottom bar ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-amber-100 px-4 py-3 safe-bottom flex items-center justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-surface border-t border-amber-100 px-4 py-3 safe-bottom flex items-center justify-between gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <div>
           {discount > 0 && (
             <p className="font-num text-xs text-amber-400 line-through leading-none">
