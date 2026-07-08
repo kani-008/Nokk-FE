@@ -493,7 +493,6 @@ export default function OfferManagement() {
   return (
     <div className="space-y-8">
       <AdminPage
-        title="Price-Reduction Offers"
         action={
           <AdminButton onClick={() => setOfferModal({ data: null })}>
             <Plus size={14} /> Add Offer

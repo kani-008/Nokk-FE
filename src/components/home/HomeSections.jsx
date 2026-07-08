@@ -3,6 +3,7 @@ import { ArrowRight, Star, ShieldCheck, Truck } from "lucide-react";
 import { useState } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
+import { usePublicCoupons } from "../../hookqueries/useCoupons";
 
 const PH_CAT = "";
 
@@ -137,6 +138,26 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
 // PROMO BANNER
 // ══════════════════════════════════════════════════════════════════════
 export function PromoBanner() {
+  const { data: coupons = [], isLoading } = usePublicCoupons();
+
+  if (isLoading) return null;
+  if (!coupons.length) return null;
+
+  const featured = coupons[0];
+
+  let discountText = "";
+  if (featured.discountType === "percentage") {
+    discountText = `Get ${featured.discountValue}% off`;
+  } else if (featured.discountType === "flat") {
+    discountText = `Get ₹${featured.discountValue} off`;
+  } else if (featured.discountType === "free_shipping") {
+    discountText = "Get Free Shipping";
+  }
+
+  if (featured.minOrderValue > 0) {
+    discountText += ` on orders above ₹${featured.minOrderValue}`;
+  }
+
   return (
     <div className="page-wrap py-6">
       <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 home-promo-pad-fluid flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
@@ -145,12 +166,14 @@ export function PromoBanner() {
             Limited Time Deal
           </p>
           <h3 className="font-display text-white font-extrabold text-xl leading-tight home-promo-title-fluid">
-            Get 10% off on orders above ₹499
+            {discountText}
           </h3>
           <p className="font-body text-sandal-100/90 text-sm mt-1">
             Use code{" "}
-            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">NAMMA10</span>
-            {" "}at checkout
+            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">
+              {featured.code}
+            </span>{" "}
+            at checkout
           </p>
         </div>
         <Link

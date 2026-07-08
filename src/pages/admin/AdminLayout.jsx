@@ -187,7 +187,7 @@ function Sidebar({ collapsed, onClose }) {
       </div>
 
       {/* Nav — single continuous list, no group labels or dividers */}
-      <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto space-y-0.5">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
@@ -200,7 +200,7 @@ function Sidebar({ collapsed, onClose }) {
 
       {/* User + logout */}
       <div
-        className={`border-t border-gray-100 py-3 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}
+        className={`border-t border-gray-100 shrink-0 ${collapsed ? "px-1 space-y-1" : "px-2 space-y-1"}`}
       >
         <Link
           to="/"
@@ -246,7 +246,6 @@ function Sidebar({ collapsed, onClose }) {
 }
 
 
-
 // `searchConfig` — { placeholder, value, onChange } registered by whichever
 // child admin page wants the topbar's search box to drive its own filtering.
 // When no page has registered, the box still renders (desktop) / the icon
@@ -277,7 +276,6 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
 
   const mobileSearchContainerRef = useRef(null);
   const desktopSearchContainerRef = useRef(null);
-
   const searchDomain = searchConfig?.domain; // "products" | "combos" | undefined
   const isProductSearch = searchDomain === "products";
   const isComboSearch = searchDomain === "combos";
@@ -525,7 +523,6 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
     </header>
   );
 }
-
 // ══════════════════════════════════════════════════════════════════════
 // ADMIN LAYOUT
 // ══════════════════════════════════════════════════════════════════════
