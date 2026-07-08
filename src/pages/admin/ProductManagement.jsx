@@ -313,20 +313,51 @@ export default function ProductManagement() {
 
   return (
     <AdminPage className="space-y-3">
-      {/* Tab toggle */}
-      <TabToggle
-        active={activeTab}
-        onChange={(tab) => {
-          setActiveTab(tab);
-          setPage(1);
-          setSearch("");
-          setCatFilter("");
-        }}
-        tabs={[
-          { key: "products", label: "Products" },
-          { key: "combos", label: "Combos" }
-        ]}
-      />
+      {/* Top bar row: Tabs and Action buttons */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <TabToggle
+          active={activeTab}
+          onChange={(tab) => {
+            setActiveTab(tab);
+            setPage(1);
+            setSearch("");
+            setCatFilter("");
+          }}
+          tabs={[
+            { key: "products", label: "Products" },
+            { key: "combos", label: "Combos" }
+          ]}
+        />
+
+        {/* Clear -> Filter -> Add Product */}
+        <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full md:w-auto">
+          {(search || catFilter) && (
+            <button
+              onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }}
+              className="pm-clear-fluid flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1"
+            >
+              <X size={14} /> <span>Clear</span>
+            </button>
+          )}
+
+          {!isComboMode && (
+            <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
+              <Dropdown
+                value={catFilter}
+                onChange={(v) => { setCatFilter(v); setPage(1); }}
+                placeholder="All categories"
+                options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
+                className="pm-filter-fluid"
+                optionClassName="pm-filter-fluid"
+              />
+            </div>
+          )}
+
+          <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0">
+            <Plus size={15} /> {isComboMode ? "Add Combo" : "Add Product"}
+          </AdminButton>
+        </div>
+      </div>
 
       {/* page-level error banner (replaces native alert) */}
       {pageError && (
@@ -336,35 +367,6 @@ export default function ProductManagement() {
           <IconButton onClick={() => setPageError("")} variant="danger" className="shrink-0" aria-label="Dismiss"><X size={15} /></IconButton>
         </div>
       )}
-
-      {/* Clear -> Filter -> Add Product */}
-      <div className="pm-cluster-fluid flex items-center justify-end gap-3 w-full">
-        {(search || catFilter) && (
-          <button
-            onClick={() => { setSearch(""); setCatFilter(""); setPage(1); }}
-            className="pm-clear-fluid flex items-center gap-1 font-body text-xs text-gray-500 hover:text-red-500 shrink-0 px-1"
-          >
-            <X size={14} /> <span>Clear</span>
-          </button>
-        )}
-
-        {!isComboMode && (
-          <div className="pm-filter-wrap-fluid w-40 sm:w-44 shrink-0">
-            <Dropdown
-              value={catFilter}
-              onChange={(v) => { setCatFilter(v); setPage(1); }}
-              placeholder="All categories"
-              options={[{ value: "", label: "All categories" }, ...categories.map((c) => ({ value: c.slug, label: c.nameEn }))]}
-              className="pm-filter-fluid"
-              optionClassName="pm-filter-fluid"
-            />
-          </div>
-        )}
-
-        <AdminButton onClick={() => setModal("new")} className="pm-add-btn-fluid shrink-0">
-          <Plus size={15} /> {isComboMode ? "Add Combo" : "Add Product"}
-        </AdminButton>
-      </div>
 
       <TableFormat
         columns={isComboMode ? COMBO_COLS : COLS}

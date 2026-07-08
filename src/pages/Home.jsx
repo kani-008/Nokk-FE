@@ -6,7 +6,6 @@ import {
   PromoBanner,
   WhyUs,
   Testimonials,
-  NewsletterCTA,
 } from "../components/home/HomeSections.jsx";
 import {
   useHomeBanners,
@@ -84,9 +83,6 @@ export default function Home() {
 
       {/* Testimonials */}
       {(settings.testimonialsEnabled ?? true) && <Testimonials />}
-
-      {/* Newsletter */}
-      <NewsletterCTA />
 
     </div>
   );

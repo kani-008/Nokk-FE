@@ -21,8 +21,14 @@ const isValidPhone = (v) => /^[6-9]\d{9}$/.test(v.trim());
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuthStore();
+    const { login, isAuthenticated } = useAuthStore();
     const redirectTo = location.state?.from || "/";
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate(redirectTo, { replace: true });
+        }
+    }, [isAuthenticated, navigate, redirectTo]);
 
     // ── Custom Toast Hook (supports error & success) ──
     const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();

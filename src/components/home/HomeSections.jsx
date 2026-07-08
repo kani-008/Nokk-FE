@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Star, ShieldCheck, Truck } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Star, ShieldCheck, Truck, Volume2, VolumeX, Play } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
+import { usePublicCoupons } from "../../hookqueries/useCoupons";
+import { useSubscribeNewsletter } from "../../hookqueries/useNewsletter";
+import { useActiveCustomerVideos } from "../../hookqueries/useActiveCustomerVideos";
 
 const PH_CAT = "";
 
@@ -137,6 +140,27 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
 // PROMO BANNER
 // ══════════════════════════════════════════════════════════════════════
 export function PromoBanner() {
+  const { data: coupons = [], isLoading } = usePublicCoupons();
+
+  if (isLoading) return null;
+  const homepageCoupons = coupons.filter(c => c.showOnHomepage === true);
+  if (!homepageCoupons.length) return null;
+
+  const featured = homepageCoupons[0];
+
+  let discountText = "";
+  if (featured.discountType === "percentage") {
+    discountText = `Get ${featured.discountValue}% off`;
+  } else if (featured.discountType === "flat") {
+    discountText = `Get ₹${featured.discountValue} off`;
+  } else if (featured.discountType === "free_shipping") {
+    discountText = "Get Free Shipping";
+  }
+
+  if (featured.minOrderValue > 0) {
+    discountText += ` on orders above ₹${featured.minOrderValue}`;
+  }
+
   return (
     <div className="page-wrap py-6">
       <div className="bg-gradient-to-r from-gray-900 via-gray-850 to-gray-800 border border-sandal-200/20 rounded-2xl p-6 sm:p-8 home-promo-pad-fluid flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
@@ -145,12 +169,14 @@ export function PromoBanner() {
             Limited Time Deal
           </p>
           <h3 className="font-display text-white font-extrabold text-xl leading-tight home-promo-title-fluid">
-            Get 10% off on orders above ₹499
+            {discountText}
           </h3>
           <p className="font-body text-sandal-100/90 text-sm mt-1">
             Use code{" "}
-            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">NAMMA10</span>
-            {" "}at checkout
+            <span className="font-num font-bold text-sandal-300 tracking-widest bg-gray-850 px-2 py-0.5 rounded border border-gray-700">
+              {featured.code}
+            </span>{" "}
+            at checkout
           </p>
         </div>
         <Link
@@ -211,69 +237,143 @@ export function WhyUs() {
 // ══════════════════════════════════════════════════════════════════════
 // TESTIMONIALS
 // ══════════════════════════════════════════════════════════════════════
+function VideoCard({ video }) {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const startPlaying = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = isMuted;
+    v.play().then(() => {
+      setIsPlaying(true);
+    }).catch((err) => {
+      console.warn("Autoplay failed:", err.message);
+    });
+  };
+
+  const stopPlaying = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    v.currentTime = 0;
+    setIsPlaying(false);
+  };
+
+  const handleMuteToggle = (e) => {
+    e.stopPropagation();
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setIsMuted(v.muted);
+  };
+
+  const handleCardTap = (e) => {
+    if (e.target.closest(".mute-btn")) return;
+
+    if (isPlaying) {
+      stopPlaying();
+    } else {
+      const allVideos = document.querySelectorAll(".customer-video-player");
+      allVideos.forEach((vid) => {
+        if (vid !== videoRef.current) {
+          vid.pause();
+          vid.currentTime = 0;
+          vid.dispatchEvent(new Event("stop-sibling-videos"));
+        }
+      });
+      startPlaying();
+    }
+  };
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const handleStop = () => {
+      setIsPlaying(false);
+    };
+    v.addEventListener("stop-sibling-videos", handleStop);
+    return () => {
+      v.removeEventListener("stop-sibling-videos", handleStop);
+    };
+  }, []);
+
+  return (
+    <div
+      className="relative flex-shrink-0 w-64 aspect-[9/16] rounded-2xl overflow-hidden bg-gray-900 border border-sandal-100 shadow-md group cursor-pointer"
+      onMouseEnter={startPlaying}
+      onMouseLeave={stopPlaying}
+      onClick={handleCardTap}
+    >
+      <video
+        ref={videoRef}
+        className="customer-video-player w-full h-full object-cover pointer-events-none"
+        src={video.videoUrl}
+        poster={video.posterUrl || ""}
+        preload="metadata"
+        loop
+        playsInline
+        muted={isMuted}
+      />
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none flex flex-col justify-end p-4">
+        {video.customerName && (
+          <h4 className="font-display text-sm font-bold text-white mb-0.5">
+            {video.customerName}
+          </h4>
+        )}
+        {video.caption && (
+          <p className="font-body text-xs text-gray-200 line-clamp-2 leading-snug">
+            {video.caption}
+          </p>
+        )}
+      </div>
+
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20 group-hover:bg-black/30 transition-all duration-200">
+          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-transform">
+            <Play className="w-5 h-5 fill-white ml-0.5" />
+          </div>
+        </div>
+      )}
+
+      {isPlaying && (
+        <button
+          onClick={handleMuteToggle}
+          className="mute-btn absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors shadow"
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Testimonials() {
-  const reviews = [
-    {
-      name: "Meena Sundaram",
-      location: "Chennai",
-      text: "The nethili is exactly like what my paati used to buy from the coast. Freshness and quality is unmatched. Ordering for 6 months now.",
-      rating: 5,
-    },
-    {
-      name: "Rajan Pillai",
-      location: "Coimbatore",
-      text: "Packaging is excellent — no smell leakage, arrived sealed and dry. The sura karuvadu is perfectly dried, not too salty. Will reorder.",
-      rating: 5,
-    },
-    {
-      name: "Divya Krishnamurthy",
-      location: "Bengaluru",
-      text: "Living away used to mean missing authentic dry fish. Found NammaOor and now I order every month. The pickle combo is outstanding!",
-      rating: 5,
-    },
-  ];
+  const { data: videos, isLoading } = useActiveCustomerVideos();
+
+  if (isLoading || !videos || videos.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-sandal-50/50 py-16 px-4 home-section-pad-fluid">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl font-bold text-gray-800 mb-2 home-sec-title-fluid">
-            What Our Customers Say
+            Customer Testimonials
           </h2>
           <p className="font-body text-sm font-semibold text-sandal-600 home-sec-subtitle-fluid">
-            Real reviews from real karuvadu lovers
+            Watch real video reels shared by our customers
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {reviews.map((r) => (
-            <div key={r.name} className="card p-6 home-card-pad-fluid flex flex-col gap-3.5 shadow-sm border border-sandal-100">
-              {/* stars */}
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    size={14}
-                    className={s <= r.rating ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-200"}
-                  />
-                ))}
-              </div>
-              {/* text */}
-              <p className="font-body text-sm text-gray-700 leading-relaxed flex-1 italic">
-                "{r.text}"
-              </p>
-              {/* author */}
-              <div className="flex items-center gap-3 pt-3 border-t border-sandal-100/50">
-                <div className="w-9 h-9 rounded-full bg-gray-800 text-sandal-100 flex items-center justify-center font-num text-sm font-bold shrink-0">
-                  {r.name[0]}
-                </div>
-                <div>
-                  <p className="font-body text-sm font-bold text-gray-800 leading-none">
-                    {r.name}
-                  </p>
-                  <p className="font-body text-xs text-sandal-500 font-semibold mt-1">{r.location}</p>
-                </div>
-              </div>
+        <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-sandal-200 snap-x snap-mandatory">
+          {videos.map((v) => (
+            <div key={v.id} className="snap-start flex-shrink-0">
+              <VideoCard video={v} />
             </div>
           ))}
         </div>
@@ -288,12 +388,28 @@ export function Testimonials() {
 export function NewsletterCTA() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | success | error
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const subscribeMutation = useSubscribeNewsletter();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !email.includes("@")) { setStatus("error"); return; }
-    setStatus("success");
-    setEmail("");
+    if (!email.trim() || !email.includes("@")) {
+      setStatus("error");
+      setErrorMessage("Please enter a valid email.");
+      return;
+    }
+    setErrorMessage("");
+    setStatus("idle");
+
+    try {
+      await subscribeMutation.mutateAsync(email);
+      setStatus("success");
+      setEmail("");
+    } catch (err) {
+      setStatus("error");
+      setErrorMessage(err.response?.data?.message || "Something went wrong, please try again.");
+    }
   };
 
   return (
@@ -319,16 +435,17 @@ export function NewsletterCTA() {
             />
             <button
               type="submit"
-              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
+              disabled={subscribeMutation.isPending}
+              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer disabled:opacity-50"
             >
-              Subscribe
+              {subscribeMutation.isPending ? "Subscribing..." : "Subscribe"}
             </button>
           </form>
           {status === "success" && (
             <p className="font-body text-sandal-300 text-xs mt-2 text-center">✓ You're subscribed!</p>
           )}
           {status === "error" && (
-            <p className="font-body text-red-400 text-xs mt-2 text-center">Please enter a valid email.</p>
+            <p className="font-body text-red-400 text-xs mt-2 text-center">{errorMessage}</p>
           )}
         </div>
       </div>

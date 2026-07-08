@@ -73,9 +73,21 @@ export default function ReportManagement() {
   ];
 
   return (
-    <AdminPage
-      action={
-        <div className="flex gap-2">
+    <AdminPage>
+      {/* Top bar row: Period selector and Action buttons */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {/* period selector */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+          {PERIODS.map((p) => (
+            <button key={p.key} type="button" onClick={() => setPeriod(p.key)}
+              className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${period === p.key ? "bg-surface text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2 justify-end w-full md:w-auto">
           <AdminButton variant="outline" size="sm" onClick={() => refetch()} disabled={refreshing}>
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
           </AdminButton>
@@ -83,16 +95,6 @@ export default function ReportManagement() {
             <Download size={14} /> Export
           </AdminButton>
         </div>
-      }
-    >
-      {/* period selector */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-        {PERIODS.map((p) => (
-          <button key={p.key} type="button" onClick={() => setPeriod(p.key)}
-            className={`font-body text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors ${period === p.key ? "bg-surface text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-            {p.label}
-          </button>
-        ))}
       </div>
 
       {loading ? (

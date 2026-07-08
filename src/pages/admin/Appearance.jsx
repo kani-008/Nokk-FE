@@ -154,7 +154,6 @@ export default function Appearance() {
 
   return (
     <AdminPage
-      title="Appearance"
       action={
         <AdminButton onClick={handleSave} disabled={saving}>
           {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> :
