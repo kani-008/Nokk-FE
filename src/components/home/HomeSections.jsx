@@ -4,6 +4,7 @@ import { useState } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
 import { usePublicCoupons } from "../../hookqueries/useCoupons";
+import { useSubscribeNewsletter } from "../../hookqueries/useNewsletter";
 
 const PH_CAT = "";
 
@@ -312,12 +313,28 @@ export function Testimonials() {
 export function NewsletterCTA() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | success | error
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const subscribeMutation = useSubscribeNewsletter();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !email.includes("@")) { setStatus("error"); return; }
-    setStatus("success");
-    setEmail("");
+    if (!email.trim() || !email.includes("@")) {
+      setStatus("error");
+      setErrorMessage("Please enter a valid email.");
+      return;
+    }
+    setErrorMessage("");
+    setStatus("idle");
+
+    try {
+      await subscribeMutation.mutateAsync(email);
+      setStatus("success");
+      setEmail("");
+    } catch (err) {
+      setStatus("error");
+      setErrorMessage(err.response?.data?.message || "Something went wrong, please try again.");
+    }
   };
 
   return (
@@ -343,16 +360,17 @@ export function NewsletterCTA() {
             />
             <button
               type="submit"
-              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer"
+              disabled={subscribeMutation.isPending}
+              className="w-full sm:w-auto bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-6 py-3 rounded-xl text-sm transition-all shrink-0 shadow-md cursor-pointer disabled:opacity-50"
             >
-              Subscribe
+              {subscribeMutation.isPending ? "Subscribing..." : "Subscribe"}
             </button>
           </form>
           {status === "success" && (
             <p className="font-body text-sandal-300 text-xs mt-2 text-center">✓ You're subscribed!</p>
           )}
           {status === "error" && (
-            <p className="font-body text-red-400 text-xs mt-2 text-center">Please enter a valid email.</p>
+            <p className="font-body text-red-400 text-xs mt-2 text-center">{errorMessage}</p>
           )}
         </div>
       </div>
