@@ -262,11 +262,11 @@ function BannerModal({ banner, onClose, onSaved }) {
                 <>
                   Video{" "}
                   <span className="text-gray-400 font-normal text-xs">
-                    (mp4 — background loop)
+                    (mp4 / webm — background loop)
                   </span>
                 </>
               }
-              accept="video/mp4,video/*"
+              accept="video/mp4,video/webm,video/*"
               inputRef={videoInputRef}
               url={form.videoUrl}
               status={uploading.video}
