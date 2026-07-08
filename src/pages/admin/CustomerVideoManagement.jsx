@@ -235,8 +235,8 @@ function VideoModal({ video, onClose }) {
                 {/* Video File Upload */}
                 <FileField
                   kind="video"
-                  label="VIDEO (MP4 - BACKGROUND LOOP) *"
-                  accept="video/*"
+                  label="VIDEO (MP4 / WEBM — BACKGROUND LOOP) *"
+                  accept="video/mp4,video/webm,video/*"
                   inputRef={videoInputRef}
                   url={form.videoUrl}
                   status={uploading.video}
