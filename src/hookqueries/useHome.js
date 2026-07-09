@@ -27,7 +27,8 @@ export function useHomeBanners() {
       const res = await API.get("/banners/get-banners");
       const banners = res.data.banners || [];
       try {
-        localStorage.setItem("nokk_home_banners", JSON.stringify(banners));
+        const payload = { data: banners, cachedAt: Date.now() };
+        localStorage.setItem("nokk_home_banners", JSON.stringify(payload));
       } catch (err) {
         console.error("Failed to save banners to localStorage:", err);
       }
@@ -37,7 +38,16 @@ export function useHomeBanners() {
     initialData: () => {
       try {
         const cached = localStorage.getItem("nokk_home_banners");
-        return cached ? JSON.parse(cached) : undefined;
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === "object") {
+            if (Array.isArray(parsed)) {
+              return parsed;
+            }
+            return parsed.data;
+          }
+        }
+        return undefined;
       } catch (err) {
         console.error("Failed to parse cached banners:", err);
         return undefined;
@@ -45,7 +55,17 @@ export function useHomeBanners() {
     },
     initialDataUpdatedAt: () => {
       try {
-        return localStorage.getItem("nokk_home_banners") ? Date.now() : 0;
+        const cached = localStorage.getItem("nokk_home_banners");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === "object") {
+            if (Array.isArray(parsed)) {
+              return 0;
+            }
+            return parsed.cachedAt || 0;
+          }
+        }
+        return 0;
       } catch {
         return 0;
       }

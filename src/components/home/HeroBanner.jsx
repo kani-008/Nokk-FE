@@ -42,7 +42,8 @@ export default function HeroBanner({ banners }) {
   const count = slides.length;
 
   // Clones front and back enable seamless looping.
-  const slidesWithClones = count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
+  const slidesWithClones =
+    count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
   const trackLength = slidesWithClones.length || 1;
 
   const [domIdx, setDomIdx] = useState(count > 1 ? 1 : 0);
@@ -77,11 +78,13 @@ export default function HeroBanner({ banners }) {
 
     const fetchBtexts = async () => {
       try {
-        const activeBanners = banners.filter(b => b.isActive);
+        const activeBanners = banners.filter((b) => b.isActive);
         if (activeBanners.length === 0) return;
 
         const promises = activeBanners.map((b) =>
-          API.get(`/btext/get-by-banner?bannerId=${b.id}`).catch(() => ({ data: { btexts: [] } }))
+          API.get(`/btext/get-by-banner?bannerId=${b.id}`).catch(() => ({
+            data: { btexts: [] },
+          })),
         );
         const responses = await Promise.all(promises);
 
@@ -89,23 +92,41 @@ export default function HeroBanner({ banners }) {
         responses.forEach((res, index) => {
           const banner = activeBanners[index];
           const btexts = res.data.btexts || [];
-          btexts.forEach((bt) => {
-            if (bt.isActive) {
+          const activeBtexts = btexts.filter((bt) => bt.isActive);
+
+          if (activeBtexts.length === 0) {
+            allSlides.push({
+              id: `banner-default-${banner.id}`,
+              bannerId: banner.id,
+              heading: "",
+              subtext: "",
+              imageUrl: banner.imageUrl,
+              videoUrl: banner.videoUrl,
+              isActive: true,
+            });
+          } else {
+            activeBtexts.forEach((bt) => {
               allSlides.push({
                 ...bt,
                 imageUrl: banner.imageUrl,
                 videoUrl: banner.videoUrl,
               });
-            }
-          });
+            });
+          }
         });
 
-        console.log("[HeroBanner] Fetched active banner slides/offer content:", allSlides);
+        console.log(
+          "[HeroBanner] Fetched active banner slides/offer content:",
+          allSlides,
+        );
 
         if (allSlides.length > 0) {
           setSlides(allSlides);
           setDomIdx(allSlides.length > 1 ? 1 : 0);
-          localStorage.setItem("nokk_all_banner_slides", JSON.stringify(allSlides));
+          localStorage.setItem(
+            "nokk_all_banner_slides",
+            JSON.stringify(allSlides),
+          );
         }
       } catch (err) {
         console.error("Failed to load banner texts:", err);
@@ -126,6 +147,12 @@ export default function HeroBanner({ banners }) {
     banners?.find((b) => b.imageUrl)?.imageUrl ||
     null;
 
+  // ── DIAGNOSTIC LOGS ──
+  console.log("[HeroBanner] banners prop:", banners);
+  console.log("[HeroBanner] slides state:", slides);
+  console.log("[HeroBanner] currentSlide:", currentSlide);
+  console.log("[HeroBanner] videoUrl:", videoUrl, "| posterUrl:", posterUrl);
+
   // ── advance forward by exactly one slide ──
   const stepForward = useCallback(() => {
     if (count <= 1 || isResetting.current) return;
@@ -139,16 +166,19 @@ export default function HeroBanner({ banners }) {
     setDomIdx((d) => d - 1);
   }, [count, setAnimate, setDomIdx]);
 
-  const goToLogical = useCallback((targetLogical) => {
-    if (count <= 1 || isResetting.current) return;
-    setAnimate(true);
-    setDomIdx((d) => {
-      const currentLogical = (d - 1 + count) % count;
-      let forwardSteps = targetLogical - currentLogical;
-      if (forwardSteps <= 0) forwardSteps += count;
-      return d + forwardSteps;
-    });
-  }, [count, setAnimate, setDomIdx]);
+  const goToLogical = useCallback(
+    (targetLogical) => {
+      if (count <= 1 || isResetting.current) return;
+      setAnimate(true);
+      setDomIdx((d) => {
+        const currentLogical = (d - 1 + count) % count;
+        let forwardSteps = targetLogical - currentLogical;
+        if (forwardSteps <= 0) forwardSteps += count;
+        return d + forwardSteps;
+      });
+    },
+    [count, setAnimate, setDomIdx],
+  );
 
   const handleTransitionEnd = () => {
     if (count <= 1) return;
@@ -194,25 +224,59 @@ export default function HeroBanner({ banners }) {
     v.defaultMuted = true;
     v.setAttribute("muted", "");
 
+    console.log(
+      "[HeroBanner] Video src:",
+      v.src,
+      "| muted:",
+      v.muted,
+      "| readyState:",
+      v.readyState,
+    );
+
     const tryPlay = () => {
+      console.log(
+        "[HeroBanner] tryPlay() called — readyState:",
+        v.readyState,
+        "| paused:",
+        v.paused,
+      );
       const p = v.play();
       if (p && typeof p.catch === "function") {
-        p.catch(() => { /* blocked by saver mode — poster stays visible */ });
+        p.then(() =>
+          console.log("[HeroBanner] play() resolved — video is playing"),
+        ).catch((err) =>
+          console.warn("[HeroBanner] play() blocked:", err.message),
+        );
       }
     };
+
+    v.addEventListener("playing", () =>
+      console.log("[HeroBanner] VIDEO EVENT: playing"),
+    );
+    v.addEventListener("stalled", () =>
+      console.warn("[HeroBanner] VIDEO EVENT: stalled"),
+    );
+    v.addEventListener("error", (e) =>
+      console.error("[HeroBanner] VIDEO EVENT: error", v.error?.message, e),
+    );
 
     tryPlay();
     v.addEventListener("loadeddata", tryPlay);
     v.addEventListener("canplay", tryPlay);
 
     // Android pauses backgrounded video; retry when the tab is visible again.
-    const onVisible = () => { if (!document.hidden) tryPlay(); };
+    const onVisible = () => {
+      if (!document.hidden) tryPlay();
+    };
     document.addEventListener("visibilitychange", onVisible);
 
     // Last resort: the FIRST user gesture anywhere unblocks playback that a
     // data/battery saver refused to autoplay. Fires once, then cleans up.
     const onFirstGesture = () => tryPlay();
-    document.addEventListener("touchstart", onFirstGesture, { once: true, passive: true });
+    document.addEventListener("touchstart", onFirstGesture, {
+      once: true,
+      passive: true,
+    });
     document.addEventListener("pointerdown", onFirstGesture, { once: true });
 
     return () => {
@@ -235,7 +299,8 @@ export default function HeroBanner({ banners }) {
   };
 
   const onTouchMove = (e) => {
-    if (count <= 1 || isResetting.current || touchStartRef.current === null) return;
+    if (count <= 1 || isResetting.current || touchStartRef.current === null)
+      return;
     const currentX = e.targetTouches[0].clientX;
     touchEndRef.current = currentX;
     const diffX = currentX - touchStartRef.current;
@@ -315,7 +380,7 @@ export default function HeroBanner({ banners }) {
       )}
 
       {/* dark vignette overlay — sits above the video, below the text */}
-      <div className="absolute inset-0 z-[5] bg-black/45" />
+      <div className="absolute inset-0 z-[5] bg-black/25" />
 
       {/* slide track */}
       <div className="relative z-10 w-full overflow-hidden">
@@ -335,23 +400,29 @@ export default function HeroBanner({ banners }) {
               style={{ width: `${100 / trackLength}%` }}
             >
               <div className="max-w-4xl w-full mx-auto">
-                <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
-                  Namma Oor Karuvattu Kadai
-                </p>
-                <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md hero-heading-fluid">
-                  {slide.heading}
-                </h1>
+                {slide.heading && (
+                  <>
+                    <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
+                      Namma Oor Karuvattu Kadai
+                    </p>
+                    <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md hero-heading-fluid">
+                      {slide.heading}
+                    </h1>
+                  </>
+                )}
                 {slide.subtext && (
                   <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed drop-shadow hero-subtext-fluid">
                     {slide.subtext}
                   </p>
                 )}
-                <Link
-                  to="/products"
-                  className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2"
-                >
-                  Shop Now <ArrowRight size={16} />
-                </Link>
+                {slide.heading && (
+                  <Link
+                    to="/products"
+                    className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2"
+                  >
+                    Shop Now <ArrowRight size={16} />
+                  </Link>
+                )}
               </div>
             </div>
           ))}

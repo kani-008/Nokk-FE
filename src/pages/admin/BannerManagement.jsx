@@ -13,6 +13,7 @@ import {
   Link as LinkIcon,
   Upload,
   Megaphone,
+  AlertTriangle,
 } from "lucide-react";
 import {
   useAdminBanners,
@@ -114,9 +115,52 @@ function FileField({
   );
 }
 
+// ── Confirm dialog ──────────────────────────────────────────────────────
+function ConfirmDialog({ open, title, message, loading, onCancel, onConfirm }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={loading ? undefined : onCancel} />
+      <div className="relative bg-surface w-full max-w-sm rounded-2xl shadow-2xl p-6 z-[61]">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-red-50 shrink-0">
+            <AlertTriangle size={18} className="text-red-500" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-bold text-gray-900">{title}</h3>
+            <p className="font-body text-sm text-gray-500 mt-1">{message}</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <AdminButton variant="outline" onClick={onCancel} disabled={loading} type="button">Cancel</AdminButton>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 font-body text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl px-4 py-2 transition-colors disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Banner form modal ──────────────────────────────────────────────────
 function BannerModal({ banner, onClose, onSaved }) {
-  const [form, setForm] = useState(banner ? { ...banner } : { ...EMPTY_FORM });
+  const [form, setForm] = useState(
+    banner
+      ? {
+          ...EMPTY_FORM,
+          ...banner,
+          // DB rows can have null for optional fields; controlled inputs require "" not null
+          title:    banner.title    ?? "",
+          subtitle: banner.subtitle ?? "",
+          imageUrl: banner.imageUrl ?? "",
+          videoUrl: banner.videoUrl ?? "",
+        }
+      : { ...EMPTY_FORM }
+  );
   const [uploading, setUploading] = useState({ video: null, image: null });
 
   const videoInputRef = useRef(null);
@@ -342,10 +386,8 @@ function BannerModal({ banner, onClose, onSaved }) {
 // ── Banner card ────────────────────────────────────────────────────────
 function BannerCard({ banner, onEdit, onDelete, onToggle }) {
   const toggleBannerMutation = useUpdateBanner();
-  const deleteBannerMutation = useDeleteBanner();
 
   const toggling = toggleBannerMutation.isPending;
-  const deleting = deleteBannerMutation.isPending;
 
   const handleToggle = async () => {
     try {
@@ -359,14 +401,8 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Delete banner "${banner.title}"?`)) return;
-    try {
-      await deleteBannerMutation.mutateAsync(banner.id);
-      onDelete(banner.id);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Failed to delete");
-    }
+  const handleDelete = () => {
+    onDelete(banner.id, banner.title);
   };
 
   // tapping the card body opens the editor
@@ -476,16 +512,11 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
               e.stopPropagation();
               handleDelete();
             }}
-            disabled={deleting}
             variant="danger"
             size="lg"
             title="Delete"
           >
-            {deleting ? (
-              <Loader2 className={`${ICON_CLS} animate-spin`} />
-            ) : (
-              <Trash2 className={ICON_CLS} />
-            )}
+            <Trash2 className={ICON_CLS} />
           </IconButton>
         </div>
       </div>
@@ -622,10 +653,8 @@ function OverlayModal({ overlay, bannerId, onClose, onSaved }) {
 // ── Overlay card ────────────────────────────────────────────────────────
 function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
   const updateBtextMutation = useUpdateBannerText();
-  const deleteBtextMutation = useDeleteBannerText();
 
   const toggling = updateBtextMutation.isPending;
-  const deleting = deleteBtextMutation.isPending;
 
   const handleToggle = async () => {
     try {
@@ -640,17 +669,8 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this text overlay?")) return;
-    try {
-      await deleteBtextMutation.mutateAsync({
-        id: overlay.id,
-        bannerId: overlay.bannerId,
-      });
-      onDelete(overlay.id);
-    } catch (e) {
-      alert(e.response?.data?.message || e.message || "Failed to delete");
-    }
+  const handleDelete = () => {
+    onDelete(overlay.id, overlay.heading || "overlay text", overlay.bannerId);
   };
 
   // tapping the card body opens the editor
@@ -730,16 +750,11 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
             e.stopPropagation();
             handleDelete();
           }}
-          disabled={deleting}
           variant="danger"
           size="lg"
           title="Delete"
         >
-          {deleting ? (
-            <Loader2 className={`${ICON_CLS} animate-spin`} />
-          ) : (
-            <Trash2 className={ICON_CLS} />
-          )}
+          <Trash2 className={ICON_CLS} />
         </IconButton>
       </div>
     </div>
@@ -755,6 +770,7 @@ export default function BannerManagement() {
   const [activeTab, setActiveTab] = useState("videos");
   const [selectedBannerId, setSelectedBannerId] = useState(null);
   const [overlayModal, setOverlayModal] = useState(null); // null | "new" | overlay object
+  const [deleteTarget, setDeleteTarget] = useState(null); // null | { type: "banner" | "btext", id, title, bannerId }
 
   const { data: offers = [] } = useAdminOfferList();
 
@@ -828,15 +844,40 @@ export default function BannerManagement() {
   console.log("BannerManagement browser log [overlaysData]:", overlaysData);
   const overlays = overlaysData;
 
+  const deleteBannerMutation = useDeleteBanner();
+  const deleteTextMutation = useDeleteBannerText();
+  const deleting = deleteBannerMutation.isPending || deleteTextMutation.isPending;
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === "banner") {
+        await deleteBannerMutation.mutateAsync(deleteTarget.id);
+      } else if (deleteTarget.type === "btext") {
+        await deleteTextMutation.mutateAsync({
+          id: deleteTarget.id,
+          bannerId: deleteTarget.bannerId
+        });
+      }
+      setDeleteTarget(null);
+    } catch (e) {
+      alert(e.response?.data?.message || e.message || "Failed to delete");
+    }
+  };
+
   const handleSaved = () => {};
-  const handleDelete = () => {};
+  const handleDelete = (id, title) => {
+    setDeleteTarget({ type: "banner", id, title });
+  };
   const handleToggle = () => {};
 
   // called after btextApi.create or btextApi.update succeeds inside OverlayModal
   const handleOverlaySaved = () => {};
 
   // called after btextApi.remove succeeds inside OverlayCard
-  const handleOverlayDelete = () => {};
+  const handleOverlayDelete = (id, heading, bannerId) => {
+    setDeleteTarget({ type: "btext", id, title: heading, bannerId });
+  };
 
   // called after btextApi.update (toggle) succeeds inside OverlayCard
   const handleOverlayToggled = () => {};
@@ -1151,6 +1192,19 @@ export default function BannerManagement() {
           onSaved={handleOverlaySaved}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={deleteTarget?.type === "banner" ? "Delete Banner?" : "Delete Text Overlay?"}
+        message={
+          deleteTarget?.type === "banner"
+            ? `Are you sure you want to delete banner "${deleteTarget?.title}"? This will also remove any caption texts associated with it.`
+            : `Are you sure you want to delete this text overlay?`
+        }
+        loading={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </AdminPage>
   );
 }
