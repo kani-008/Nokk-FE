@@ -92,15 +92,27 @@ export default function HeroBanner({ banners }) {
         responses.forEach((res, index) => {
           const banner = activeBanners[index];
           const btexts = res.data.btexts || [];
-          btexts.forEach((bt) => {
-            if (bt.isActive) {
+          const activeBtexts = btexts.filter((bt) => bt.isActive);
+
+          if (activeBtexts.length === 0) {
+            allSlides.push({
+              id: `banner-default-${banner.id}`,
+              bannerId: banner.id,
+              heading: "",
+              subtext: "",
+              imageUrl: banner.imageUrl,
+              videoUrl: banner.videoUrl,
+              isActive: true,
+            });
+          } else {
+            activeBtexts.forEach((bt) => {
               allSlides.push({
                 ...bt,
                 imageUrl: banner.imageUrl,
                 videoUrl: banner.videoUrl,
               });
-            }
-          });
+            });
+          }
         });
 
         console.log(
@@ -388,12 +400,16 @@ export default function HeroBanner({ banners }) {
               style={{ width: `${100 / trackLength}%` }}
             >
               <div className="max-w-4xl w-full mx-auto">
-                <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
-                  Namma Oor Karuvattu Kadai
-                </p>
-                <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md hero-heading-fluid">
-                  {slide.heading}
-                </h1>
+                {slide.heading && (
+                  <>
+                    <p className="font-num text-sandal-400 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3.5">
+                      Namma Oor Karuvattu Kadai
+                    </p>
+                    <h1 className="font-display text-white text-3xl sm:text-5xl font-extrabold leading-tight mb-5 drop-shadow-md hero-heading-fluid">
+                      {slide.heading}
+                    </h1>
+                  </>
+                )}
                 {slide.subtext && (
                   <p className="font-body text-sandal-100 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed drop-shadow hero-subtext-fluid">
                     {slide.subtext}
