@@ -380,7 +380,7 @@ export default function HeroBanner({ banners }) {
       )}
 
       {/* dark vignette overlay — sits above the video, below the text */}
-      <div className="absolute inset-0 z-[5] bg-black/45" />
+      <div className="absolute inset-0 z-[5] bg-black/25" />
 
       {/* slide track */}
       <div className="relative z-10 w-full overflow-hidden">
@@ -415,12 +415,14 @@ export default function HeroBanner({ banners }) {
                     {slide.subtext}
                   </p>
                 )}
-                <Link
-                  to="/products"
-                  className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2"
-                >
-                  Shop Now <ArrowRight size={16} />
-                </Link>
+                {slide.heading && (
+                  <Link
+                    to="/products"
+                    className="btn-lg btn-primary bg-sandal-500 text-gray-950 hover:bg-sandal-400 border-none shadow-lg inline-flex items-center gap-2"
+                  >
+                    Shop Now <ArrowRight size={16} />
+                  </Link>
+                )}
               </div>
             </div>
           ))}
