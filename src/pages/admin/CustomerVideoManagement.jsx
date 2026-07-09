@@ -100,7 +100,19 @@ function FileField({
 }
 
 function VideoModal({ video, onClose }) {
-  const [form, setForm] = useState(video ? { ...video } : { ...EMPTY_FORM });
+  const [form, setForm] = useState(
+    video
+      ? {
+          ...EMPTY_FORM,
+          ...video,
+          // DB rows can return null for optional fields; controlled inputs require "" not null
+          customerName: video.customerName ?? "",
+          caption:      video.caption      ?? "",
+          videoUrl:     video.videoUrl     ?? "",
+          posterUrl:    video.posterUrl    ?? "",
+        }
+      : { ...EMPTY_FORM }
+  );
   const [uploading, setUploading] = useState({ video: null, poster: null });
   const [error, setError] = useState("");
 

@@ -116,7 +116,19 @@ function FileField({
 
 // ── Banner form modal ──────────────────────────────────────────────────
 function BannerModal({ banner, onClose, onSaved }) {
-  const [form, setForm] = useState(banner ? { ...banner } : { ...EMPTY_FORM });
+  const [form, setForm] = useState(
+    banner
+      ? {
+          ...EMPTY_FORM,
+          ...banner,
+          // DB rows can have null for optional fields; controlled inputs require "" not null
+          title:    banner.title    ?? "",
+          subtitle: banner.subtitle ?? "",
+          imageUrl: banner.imageUrl ?? "",
+          videoUrl: banner.videoUrl ?? "",
+        }
+      : { ...EMPTY_FORM }
+  );
   const [uploading, setUploading] = useState({ video: null, image: null });
 
   const videoInputRef = useRef(null);
