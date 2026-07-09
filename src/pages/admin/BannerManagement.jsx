@@ -61,6 +61,7 @@ function FileField({
   status,
   onUpload,
   onUrlChange,
+  onClear,
 }) {
   return (
     <div className="space-y-1.5">
@@ -70,9 +71,9 @@ function FileField({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={status === "uploading"}
-          className={`inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 ${
+          className={`inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 cursor-pointer ${
             status === "done"
-              ? "border-green-200 bg-green-50 text-green-700"
+              ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
               : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
           }`}
         >
@@ -90,6 +91,16 @@ function FileField({
             </>
           )}
         </button>
+        {url && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex items-center justify-center p-2 rounded-xl   text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+            title="Remove media"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
         <input
           ref={inputRef}
           type="file"
@@ -319,6 +330,10 @@ function BannerModal({ banner, onClose, onSaved }) {
                 set("videoUrl", e.target.value);
                 setUploading((u) => ({ ...u, video: null }));
               }}
+              onClear={() => {
+                set("videoUrl", "");
+                setUploading((u) => ({ ...u, video: null }));
+              }}
             />
 
             <FileField
@@ -338,6 +353,10 @@ function BannerModal({ banner, onClose, onSaved }) {
               onUpload={(e) => handleFileUpload(e, "image")}
               onUrlChange={(e) => {
                 set("imageUrl", e.target.value);
+                setUploading((u) => ({ ...u, image: null }));
+              }}
+              onClear={() => {
+                set("imageUrl", "");
                 setUploading((u) => ({ ...u, image: null }));
               }}
             />

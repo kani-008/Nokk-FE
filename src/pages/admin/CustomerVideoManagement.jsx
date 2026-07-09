@@ -45,6 +45,7 @@ function FileField({
   status,
   onUpload,
   onUrlChange,
+  onClear,
 }) {
   return (
     <div className="space-y-1.5">
@@ -56,7 +57,7 @@ function FileField({
           disabled={status === "uploading"}
           className={`inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 cursor-pointer ${
             status === "done"
-              ? "border-green-200 bg-green-50 text-green-700"
+              ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
               : "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
           }`}
         >
@@ -74,6 +75,16 @@ function FileField({
             </>
           )}
         </button>
+        {url && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex items-center justify-center p-2 rounded-xl border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+            title="Remove media"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
         <input
           ref={inputRef}
           type="file"
@@ -254,6 +265,10 @@ function VideoModal({ video, onClose }) {
                   status={uploading.video}
                   onUpload={(e) => handleFileUpload(e, "video")}
                   onUrlChange={(e) => set("videoUrl", e.target.value)}
+                  onClear={() => {
+                    set("videoUrl", "");
+                    setUploading((u) => ({ ...u, video: null }));
+                  }}
                 />
 
                 {/* Poster File Upload */}
@@ -266,6 +281,10 @@ function VideoModal({ video, onClose }) {
                   status={uploading.poster}
                   onUpload={(e) => handleFileUpload(e, "poster")}
                   onUrlChange={(e) => set("posterUrl", e.target.value)}
+                  onClear={() => {
+                    set("posterUrl", "");
+                    setUploading((u) => ({ ...u, poster: null }));
+                  }}
                 />
               </div>
 
