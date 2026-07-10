@@ -1,65 +1,32 @@
 # Nokk-FE
 
-Frontend for Namma Oor Karuvattu Kadai — a dry fish, pickle and seafood store for Tamil Nadu. This repo is the storefront customers shop on and the admin panel I run the business from. Live at https://nammaoorkaruvattukadai.com.
+Nokk-FE is the frontend for Namma Oor Karuvattu Kadai, a Tamil Nadu based dry fish, pickle and seafood store.
+It covers both the customer facing storefront and the internal admin panel in one codebase.
+Built with React 19, Vite and Tailwind v4, and talks to the Nokk-BE API for everything server side.
 
-Built with React 19 on Vite, Tailwind v4, TanStack Query for anything that comes from the API, and Zustand for the small bits of state that live purely on the client (auth session, cart, wishlist, buy-now flow).
 
-## Stack
+🔗 [https://nammaoorkaruvattukadai.com](https://nammaoorkaruvattukadai.com)
 
-- React 19 + Vite
-- Tailwind CSS v4 (using `@theme`, not the old config-file approach)
-- TanStack Query v5 for server state
-- Zustand v5 for client state
+## Tech Stack
+
+- React 19
+- Vite
+- Tailwind CSS v4 (`@theme` tokens)
+- TanStack Query v5
+- Zustand v5
 - React Router v7
 - Axios
-- react-helmet-async for per-page SEO tags
-- Razorpay Checkout.js on the client side
-- Google Identity Services loaded via script tag (didn't use the npm wrapper)
-- Deployed on Vercel
+- react-helmet-async
+- Razorpay Checkout.js
+- Google Identity Services
+- lucide-react / react-icons
+- qrcode.react
 
-## Running it locally
-
-You need Node 18+.
-
-```bash
-git clone https://github.com/kani-008/Nokk-FE.git
-cd Nokk-FE
-git checkout develop
-npm install
-npm run dev
-```
-
-Dev server runs on localhost:5173 by default.
-
-Other scripts:
-```bash
-npm run build     # production build, outputs to dist/
-npm run preview   # serve the production build locally
-npm run lint
-```
-
-## Environment variables
-
-There's no `.env.example` in this repo — just make a `.env` in the root with these:
-
-```
-VITE_LHOST_API_URL=            # backend base URL, point this at your local Nokk-BE
-VITE_GOOGLE_CLIENT_ID=         # Google Identity Services client ID
-VITE_GEOAPIFY_API_KEY=         # Geoapify, for GPS location / address autocomplete
-VITE_GOV_API_KEY=              # data.gov.in key, used for the PIN code dataset
-VITE_GOV_PINCODE_RESOURCE_ID=  # data.gov.in resource ID for that dataset
-```
-
-Don't commit this file. We've had two `.env` leaks already on this project (one in June, one in July), so treat every key above as something that would need rotating if it ever showed up in a commit, a screenshot, a chat log, anywhere.
-
-## Folder structure
-
-Full tree, pulled straight from `develop`, node_modules stripped out:
+## Folder Structure
 
 ```
 Nokk-FE/
-├── .claude/
-│   └── launch.json
+├── .env.example
 ├── .gitignore
 ├── README.md
 ├── eslint.config.js
@@ -75,12 +42,12 @@ Nokk-FE/
 └── src/
     ├── main.jsx
     ├── App.jsx
-    ├── index.css                          # Tailwind v4 @theme tokens + clamp()-based fluid scale
+    ├── index.css
     │
     ├── ApiCall/
-    │   └── Api.jsx                        # single Axios instance, interceptors live here
+    │   └── Api.jsx
     │
-    ├── hookqueries/                        # one file per domain, all TanStack Query
+    ├── hookqueries/
     │   ├── useActiveCustomerVideos.js
     │   ├── useAdminDashboard.js
     │   ├── useBanners.js
@@ -114,8 +81,8 @@ Nokk-FE/
     │   │   ├── ColorPicker.jsx
     │   │   ├── ComboItemPicker.jsx
     │   │   ├── ComboModal.jsx
-    │   │   ├── Dropdown.jsx                # replaces native <select> everywhere in admin
-    │   │   ├── EditProduct.jsx             # combo management lives inside this now, no separate modal
+    │   │   ├── Dropdown.jsx
+    │   │   ├── EditProduct.jsx
     │   │   ├── IconButton.jsx
     │   │   ├── TabToggle.jsx
     │   │   ├── TableFormat.jsx
@@ -147,11 +114,11 @@ Nokk-FE/
     │   │   └── TrackingTimeline.jsx
     │   ├── route/
     │   │   └── ProtectedRoute.jsx
-    │   └── store/                          # Zustand
-    │       ├── AuthStore.jsx               # nok-auth
+    │   └── store/
+    │       ├── AuthStore.jsx
     │       ├── BuyNowStore.js
     │       ├── CartStore.jsx
-    │       └── WishlistStore.jsx           # nok-wishlist — stores product IDs only, not full objects
+    │       └── WishlistStore.jsx
     │
     └── pages/
         ├── Cart.jsx
@@ -171,8 +138,8 @@ Nokk-FE/
         ├── Wishlist.jsx
         ├── profile.jsx
         └── admin/
-            ├── AdminLayout.jsx              # topbar search is page-aware via <Outlet context>
-            ├── Appearance.jsx               # CSS-variable color controls, no rebuild needed to retheme
+            ├── AdminLayout.jsx
+            ├── Appearance.jsx
             ├── BannerManagement.jsx
             ├── CategoryManagement.jsx
             ├── CouponManagement.jsx
@@ -189,37 +156,39 @@ Nokk-FE/
             └── UserManagement.jsx
 ```
 
-## A few things worth knowing before you touch this codebase
+## Environment Variables
 
-**Server state and client state don't mix.** Anything coming from the API goes through a `hookqueries` file with TanStack Query. Zustand only holds things that are genuinely client-only — session, cart, wishlist IDs, the buy-now flow. If you're tempted to put API data in a Zustand store, don't.
+```
+# Backend API base URL
+VITE_LHOST_API_URL=
 
-**The backend uses action-named routes, not REST-style paths.** So you'll see things like `/get-by-id` and `/update-offer` instead of `/products/:id`. IDs go in the request body for writes and the query string for single-item GETs. Keep that in mind when wiring up a new hook.
+# Location/Pincode APIs
+VITE_GEOAPIFY_API_KEY=
+VITE_GOV_API_KEY=
+VITE_GOV_PINCODE_RESOURCE_ID=
 
-**New admin features go into existing screens where possible.** When combo management was added, it went inside the `EditProduct` modal instead of getting its own page. Try to follow that pattern rather than spinning up new admin routes for every feature.
+# Google OAuth Client ID
+VITE_GOOGLE_CLIENT_ID=
+```
 
-**Stock is binary.** In stock or out of stock, 1 or 0. There's no quantity, no "low stock" badge, nothing decrementing on order. If you see UI implying otherwise, it's wrong and should be flagged.
+## APIs Used
 
-**Sizing is fluid, not breakpoint-based.** Spacing and type scale use `clamp()` starting from a 320px floor. Admin panel itself is really only tuned for 1440×900 desktop use since that's the only place it's used day to day.
+- **Nokk-BE** — internal backend API, powers products, cart, orders, auth, and everything else
+- **Google Identity Services** — Google Sign-In
+- **Geoapify** — GPS-based location detection and address autocomplete
+- **data.gov.in (India Post PIN code dataset)** — pincode lookup during address entry
+- **Razorpay Checkout.js** — payment gateway on the client side
 
-**Dropdown and inline banners over native browser dialogs.** No `alert()`, no `confirm()`, no native `<select>` in the admin UI — use the shared components.
+## About the Project
 
-## Third-party bits
+**Customer storefront** — The public side is where customers actually shop. They browse the product catalog, look through combos and running offers, add items to a cart or wishlist, and move through a multi-step checkout with coupon support and Razorpay payments. Once an order is placed, they can track its status, download an invoice, and leave a review once it's delivered. The whole experience is built mobile-first, since most customers land here from a phone.
 
-- **Razorpay** — Checkout.js on the client, loaded through `useRazorpayScript`.
-- **Google Sign-In** — via the GIS script tag. If someone already has an email/password account and signs in with Google using the same email, there's a one-time password-confirm step to link the accounts rather than silently merging them.
-- **Geoapify** — GPS location + address autocomplete. Scoped but not fully wired in yet — still deciding whether this lives in checkout, in the admin panel, or both.
-- **India Post PIN codes** — resolved against the backend's own `pincode_directory` table now instead of hitting Nominatim.
+**Admin panel** — The admin side is where the business is actually run day to day. Products, categories, combos, offers, and coupons are all managed here, along with inventory status, homepage banners, customer reviews, and video testimonials. There's a dashboard for keeping an eye on orders and performance, a reporting section, and an appearance editor that lets the site's color scheme be changed live through CSS variables without a rebuild. It's built for a desktop screen, since that's where it's actually used.
 
 ## Deploying
 
-Vercel, deployed off `develop`. Domain is on Spaceship, frontend DNS records point at Vercel, the `api.` subdomain points at Render where the backend lives.
+Hosted on Vercel. The domain is purchased and managed through Spaceship, with DNS pointed at Vercel.
 
-If a feature touches both repos (new SEO routes, newsletter, anything the frontend calls that's new on the backend), deploy the backend first. Deploying frontend first means it's calling routes that don't exist yet.
+## Related Repository
 
-## Not doing (on purpose)
-
-No i18n, no newsletter sending (we capture subscribers, we don't email them — yet), no analytics, no PWA. These have come up and been turned down, not just left undone.
-
-## Related repo
-
-Backend lives at [kani-008/Nokk-BE](https://github.com/kani-008/Nokk-BE).
+Backend API: [kani-008/Nokk-BE](https://github.com/kani-008/Nokk-BE)
