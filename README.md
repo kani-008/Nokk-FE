@@ -1,6 +1,6 @@
 # Nokk-FE
 
-Frontend for Namma Oor Karuvattu Kadai — a dry fish, pickle and seafood store for Tamil Nadu. This repo is the storefront customers shop on and the admin panel I run the business from. Live at nammaoorkaruvattukadai.com.
+Frontend for Namma Oor Karuvattu Kadai — a dry fish, pickle and seafood store for Tamil Nadu. This repo is the storefront customers shop on and the admin panel I run the business from. Live at https://nammaoorkaruvattukadai.com.
 
 Built with React 19 on Vite, Tailwind v4, TanStack Query for anything that comes from the API, and Zustand for the small bits of state that live purely on the client (auth session, cart, wishlist, buy-now flow).
 
