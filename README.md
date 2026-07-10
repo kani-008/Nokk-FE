@@ -20,7 +20,7 @@ Built with React 19, Vite and Tailwind v4, and talks to the Nokk-BE API for ever
 - Razorpay Checkout.js
 - Google Identity Services
 - lucide-react / react-icons
-- qrcode.react
+
 
 ## Folder Structure
 
