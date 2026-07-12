@@ -369,8 +369,7 @@ export default function Settings() {
 
   return (
     <AdminPage
-      title="Settings"
-    >
+    className="pt-4">
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3 mb-5">{error}</div>
       )}

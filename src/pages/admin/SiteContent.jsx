@@ -196,7 +196,6 @@ export default function SiteContent() {
   return (
     <AdminPage
       title="Site Content"
-      sub="Manage legal pages and dynamic text sections of the website."
       action={
         <div className="flex items-center gap-3">
           {saved && (
@@ -228,14 +227,14 @@ export default function SiteContent() {
         </div>
       }
     >
-      <div className="flex flex-col gap-5 pt-2">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-150 pb-3">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between ">
           <TabToggle tabs={tabs} active={activeTab} onChange={setActiveTab} />
         </div>
 
         {/* ── Tab Content: Terms & Conditions ── */}
         {activeTab === "terms" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdminCard className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="field-label block font-semibold text-gray-700">Markdown Editor</span>
@@ -244,19 +243,19 @@ export default function SiteContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
-                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs.
+                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs. You can write text here directly, or copy-paste content from Word, Google Docs, or Notepad.
               </p>
               <textarea
                 value={termsContent}
                 onChange={(e) => setTermsContent(e.target.value)}
-                className="field-input min-h-[450px] font-mono text-sm leading-relaxed p-4 bg-gray-50 border-gray-200 focus:bg-surface focus:border-brand-500 rounded-xl"
+                className="field-input h-[500px] font-mono text-sm leading-relaxed p-4 bg-gray-50 border-gray-200 focus:bg-surface focus:border-brand-500 rounded-xl resize-none"
                 placeholder="Enter Terms & Conditions content in Markdown..."
               />
             </AdminCard>
-
+ 
             <AdminCard className="flex flex-col gap-3">
               <span className="field-label block font-semibold text-gray-700 border-b border-gray-100 pb-2">Live Preview</span>
-              <div className="min-h-[492px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 max-h-[550px] overflow-y-auto">
+              <div className="h-[500px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 overflow-y-auto">
                 <h1 className="font-display text-2xl font-bold text-brand-900 mb-2">Terms & Conditions</h1>
                 <p className="font-body text-xs text-amber-600 mb-6 uppercase tracking-wider">Last updated: (Dynamic)</p>
                 <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
@@ -271,7 +270,7 @@ export default function SiteContent() {
 
         {/* ── Tab Content: Privacy Policy ── */}
         {activeTab === "privacy" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdminCard className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="field-label block font-semibold text-gray-700">Markdown Editor</span>
@@ -280,19 +279,19 @@ export default function SiteContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
-                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs.
+                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs. You can write text here directly, or copy-paste content from Word, Google Docs, or Notepad.
               </p>
               <textarea
                 value={privacyContent}
                 onChange={(e) => setPrivacyContent(e.target.value)}
-                className="field-input min-h-[450px] font-mono text-sm leading-relaxed p-4 bg-gray-50 border-gray-200 focus:bg-surface focus:border-brand-500 rounded-xl"
+                className="field-input h-[500px] font-mono text-sm leading-relaxed p-4 bg-gray-50 border-gray-200 focus:bg-surface focus:border-brand-500 rounded-xl resize-none"
                 placeholder="Enter Privacy Policy content in Markdown..."
               />
             </AdminCard>
-
+ 
             <AdminCard className="flex flex-col gap-3">
               <span className="field-label block font-semibold text-gray-700 border-b border-gray-100 pb-2">Live Preview</span>
-              <div className="min-h-[492px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 max-h-[550px] overflow-y-auto">
+              <div className="h-[500px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 overflow-y-auto">
                 <h1 className="font-display text-2xl font-bold text-brand-900 mb-2">Privacy Policy</h1>
                 <p className="font-body text-xs text-amber-600 mb-6 uppercase tracking-wider">Last updated: (Dynamic)</p>
                 <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
