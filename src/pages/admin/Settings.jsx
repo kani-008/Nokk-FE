@@ -43,14 +43,14 @@ const DEFAULTS = {
 };
 
 const CATEGORIES = [
-  { key: "store-info", icon: Store, title: "Store Information", sub: "Public-facing details shown to customers", type: "panel" },
-  { key: "social-links", icon: Globe, title: "Social & Contact Links", sub: "Displayed in footer and contact page", type: "panel" },
-  { key: "shipping", icon: Truck, title: "Shipping & Tax", sub: "Delivery fees — enforced at checkout", type: "panel" },
-  { key: "cart-rules", icon: ShoppingBag, title: "Cart & Order Rules", sub: "Limits enforced at checkout and cart add", type: "panel" },
-  { key: "payments", icon: IndianRupee, title: "Payment Methods", sub: "Enable or disable checkout payment options", type: "panel" },
-  { key: "store-controls", icon: ShieldAlert, title: "Store Controls", sub: "Live switches that immediately affect the storefront", type: "panel" },
-  { key: "notifications", icon: Bell, title: "Admin Event Notifications", sub: "Controls which events create entries in the admin notification log", type: "panel" },
-  { key: "site-content", icon: FileText, title: "Site Content", sub: "Edit Terms & Conditions, Privacy Policy, and homepage content", type: "link" },
+  { key: "store-info", icon: Store, title: "Store Information", type: "panel" },
+  { key: "social-links", icon: Globe, title: "Social & Contact Links", type: "panel" },
+  { key: "shipping", icon: Truck, title: "Shipping & Tax", type: "panel" },
+  { key: "cart-rules", icon: ShoppingBag, title: "Cart & Order Rules", type: "panel" },
+  { key: "payments", icon: IndianRupee, title: "Payment Methods", type: "panel" },
+  { key: "store-controls", icon: ShieldAlert, title: "Store Controls", type: "panel" },
+  { key: "notifications", icon: Bell, title: "Admin Event Notifications", type: "panel" },
+  { key: "site-content", icon: FileText, title: "Site Content", type: "link" },
 ];
 
 const settingsApi = {
