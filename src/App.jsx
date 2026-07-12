@@ -58,7 +58,7 @@ import ComboDetails from "./pages/ComboDetails";
 import Wishlist from "./pages/Wishlist";
 import ReviewsOverview from "./pages/ReviewsOverview";
 import ProductReviewsPage from "./pages/ProductReviewsPage";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
+import LegalPrivacy from "./pages/LegalPrivacy";
 import TermsOfUse from "./pages/TermsOfUse";
 
 /* Cart & Checkout Features */
@@ -103,7 +103,7 @@ export default function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/reviews" element={<ReviewsOverview />} />
           <Route path="/reviews/:slug" element={<ProductReviewsPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<LegalPrivacy />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
 
           {/* Protected Customer Routes */}

@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
-export default function PrivacyPolicy() {
+export default function LegalPrivacy() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
       <Helmet>
