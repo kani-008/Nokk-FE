@@ -65,6 +65,31 @@ export function useAdminReplacements(params) {
   });
 }
 
+export function useAdminOrderDetail(id) {
+  return useQuery({
+    queryKey: ["orders", "admin", "detail", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await API.get(`/orders/admin/get-order?id=${id}`);
+      const o = res.data.order;
+      if (!o) return null;
+      return {
+        ...o,
+        items: (o.items || []).map(item => ({
+          ...item,
+          productName: item.name,
+          weightLabel: item.weight
+        })),
+        timeline: (o.timeline || []).map(t => ({
+          ...t,
+          note: t.notes,
+          createdAt: t.date
+        }))
+      };
+    },
+  });
+}
+
 // ── MUTATIONS ───────────────────────────────────────────────────────
 
 export function useCheckout() {
