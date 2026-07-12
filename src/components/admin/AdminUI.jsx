@@ -113,7 +113,7 @@ export function StatCard({
 export function AdminPage({ title, sub, action, children }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-row items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold text-gray-900 leading-snug admin-h1-fluid">
             {title}

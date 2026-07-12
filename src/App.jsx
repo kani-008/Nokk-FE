@@ -58,7 +58,7 @@ import ComboDetails from "./pages/ComboDetails";
 import Wishlist from "./pages/Wishlist";
 import ReviewsOverview from "./pages/ReviewsOverview";
 import ProductReviewsPage from "./pages/ProductReviewsPage";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
+import LegalPrivacy from "./pages/LegalPrivacy";
 import TermsOfUse from "./pages/TermsOfUse";
 
 /* Cart & Checkout Features */
@@ -83,6 +83,7 @@ const Appearance = lazy(() => import("./pages/admin/Appearance"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
 const CustomerVideoManagement = lazy(() => import("./pages/admin/CustomerVideoManagement"));
+const SiteContent = lazy(() => import("./pages/admin/SiteContent"));
 
 export default function App() {
   return (
@@ -103,7 +104,7 @@ export default function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/reviews" element={<ReviewsOverview />} />
           <Route path="/reviews/:slug" element={<ProductReviewsPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<LegalPrivacy />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
 
           {/* Protected Customer Routes */}
@@ -146,6 +147,7 @@ export default function App() {
             <Route path="reports" element={<ReportManagement />} />
             <Route path="settings" element={<Settings />} />
             <Route path="appearance" element={<Appearance />} />
+            <Route path="content" element={<SiteContent />} />
             <Route path="customer-videos" element={<CustomerVideoManagement />} />
           </Route>
         </Route>

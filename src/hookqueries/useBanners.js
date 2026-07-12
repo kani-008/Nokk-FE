@@ -67,7 +67,9 @@ export function useUpdateBanner() {
       return res.data;
     },
     onSuccess: () => {
-      console.log("[useUpdateBanner] onSuccess — invalidating and refetching banners cache");
+      console.log("[useUpdateBanner] onSuccess — clearing localStorage, invalidating and refetching banners cache");
+      localStorage.removeItem("nokk_home_banners");
+      localStorage.removeItem("nokk_all_banner_slides");
       queryClient.invalidateQueries({ queryKey: ["banners"] });
       queryClient.invalidateQueries({ queryKey: ["banners", "all"] });
       queryClient.refetchQueries({ queryKey: ["banners"] });
@@ -85,7 +87,9 @@ export function useDeleteBanner() {
       return res.data;
     },
     onSuccess: () => {
-      console.log("[useDeleteBanner] onSuccess — invalidating and refetching banners cache");
+      console.log("[useDeleteBanner] onSuccess — clearing localStorage, invalidating and refetching banners cache");
+      localStorage.removeItem("nokk_home_banners");
+      localStorage.removeItem("nokk_all_banner_slides");
       queryClient.invalidateQueries({ queryKey: ["banners"] });
       queryClient.invalidateQueries({ queryKey: ["banners", "all"] });
       queryClient.refetchQueries({ queryKey: ["banners"] });

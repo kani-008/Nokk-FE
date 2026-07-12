@@ -147,6 +147,10 @@ export default function HeroBanner({ banners }) {
     banners?.find((b) => b.imageUrl)?.imageUrl ||
     null;
 
+  useEffect(() => {
+    setVideoReady(false);
+  }, [videoUrl, currentSlide]);
+
   // ── DIAGNOSTIC LOGS ──
   console.log("[HeroBanner] banners prop:", banners);
   console.log("[HeroBanner] slides state:", slides);

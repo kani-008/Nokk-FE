@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2 } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hookqueries/useUsers";
@@ -9,6 +9,9 @@ import {
 import TableFormat from "../../components/admin/TableFormat.jsx";
 import Dropdown from "../../components/admin/Dropdown.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAdminOrderDetail } from "../../hookqueries/useOrders";
+import OrderDetailModal from "../../components/admin/OrderDetailModal.jsx";
 
 
 
@@ -19,8 +22,11 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const [acting, setActing] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
+  const queryClient = useQueryClient();
   const { data: detail, isLoading: loadingDetail } = useUserDetails(user.id);
+  const { data: fullOrderDetail, isLoading: loadingOrderDetail } = useAdminOrderDetail(selectedOrderId);
   const toggleStatusMutation = useToggleUserStatus();
   const deleteUserMutation   = useDeleteUser();
 
@@ -90,6 +96,11 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
   const orders = detail?.orders || [];
   const replacementRequests = detail?.replacementRequests || [];
   const hasReplacements = replacementRequests.length > 0;
+
+  const handleOrderStatusChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["orders", "admin", "detail", selectedOrderId] });
+    queryClient.invalidateQueries({ queryKey: ["user", user.id] });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-fade-in">
@@ -228,7 +239,11 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
                       </thead>
                       <tbody>
                         {orders.map((o) => (
-                          <tr key={o.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                          <tr
+                            key={o.id}
+                            className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 cursor-pointer"
+                            onClick={() => setSelectedOrderId(o.id)}
+                          >
                             <td className="px-4 py-3 font-semibold text-gray-900 font-body">#{o.id}</td>
                             <td className="px-4 py-3 text-xs text-gray-500 font-body">{fmtDate(o.created_at)}</td>
                             <td className="px-4 py-3 font-semibold text-gray-950 font-num">
@@ -305,6 +320,23 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
           )}
         </div>
       </div>
+
+      {selectedOrderId && loadingOrderDetail && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20">
+          <div className="bg-surface p-4 rounded-xl shadow-lg flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-body text-gray-600">Loading order details...</span>
+          </div>
+        </div>
+      )}
+
+      {selectedOrderId && !loadingOrderDetail && fullOrderDetail && (
+        <OrderDetailModal
+          order={fullOrderDetail}
+          onClose={() => setSelectedOrderId(null)}
+          onStatusChange={handleOrderStatusChange}
+        />
+      )}
     </div>
   );
 }
@@ -320,6 +352,30 @@ export default function UserManagement() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightUserId = searchParams.get("highlightUserId");
+
+  const { data: highlightDetail, isFetched: highlightFetched, isError: highlightError } = useUserDetails(highlightUserId);
+
+  useEffect(() => {
+    if (highlightUserId) {
+      if (highlightDetail && highlightDetail.user) {
+        setSelected(highlightDetail.user);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("highlightUserId");
+          return next;
+        }, { replace: true });
+      } else if (highlightFetched || highlightError) {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("highlightUserId");
+          return next;
+        }, { replace: true });
+      }
+    }
+  }, [highlightUserId, highlightDetail, highlightFetched, highlightError, setSearchParams]);
 
   const { registerSearch, unregisterSearch } = useOutletContext();
 

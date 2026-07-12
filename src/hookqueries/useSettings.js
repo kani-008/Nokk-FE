@@ -11,6 +11,6 @@ export function usePublicSettings() {
       const res = await API.get("/settings/get-all");
       return res.data.settings || {};
     },
-    staleTime: 60_000, // settings change rarely — cache 1 min
+    staleTime: 5 * 60_000, // settings change rarely — cache 5 mins
   });
 }

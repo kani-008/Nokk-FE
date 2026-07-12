@@ -438,7 +438,7 @@ export default function Login() {
             brandContent={brandContent}
             bottomLink={bottomLink}
             toast={{ message: displayedError, type: displayedType, visible: toastVisible }}
-            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
+            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-[calc(100vh-5.5rem)] px-3 py-1.5 lg:pb-10 overflow-hidden lg:overflow-visible"
             cardClassName="login-card-fluid max-h-[96%] lg:max-h-none"
             formPanelClassName="login-form-fluid flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
         >

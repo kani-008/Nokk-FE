@@ -330,7 +330,7 @@ export default function Register() {
                         <Link to="/login" className="text-amber-300 font-semibold hover:underline">Sign In</Link>
                     </p>
                 }
-                pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10"
+                pageClassName="h-[calc(100dvh-4rem)] lg:min-h-[calc(100vh-5.5rem)] px-3 py-1.5 lg:py-10"
             >
                 <div className="flex flex-col items-center justify-center gap-5 py-6 text-center">
                     <p className="font-body text-sm text-amber-700 max-w-xs">
@@ -353,7 +353,7 @@ export default function Register() {
             brandContent={brandContent}
             bottomLink={bottomLink}
             toast={{ message: displayedApiErr, type: "error", visible: toastVisible }}
-            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
+            pageClassName="h-[calc(100dvh-4rem)] lg:min-h-[calc(100vh-5.5rem)] px-3 py-1.5 lg:py-10 overflow-hidden lg:overflow-visible"
             cardClassName="reg-card-fluid max-h-[96%] lg:max-h-none"
             formPanelClassName="reg-form-fluid flex-1 min-h-0 overflow-y-auto lg:overflow-visible"
         >
