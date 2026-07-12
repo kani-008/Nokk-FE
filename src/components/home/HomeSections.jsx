@@ -86,16 +86,33 @@ export function CategoryScroll({ categories }) {
 // ══════════════════════════════════════════════════════════════════════
 function ProductSkeleton() {
   return (
-    <div className="card overflow-hidden">
+    <div className="card-hover overflow-hidden">
+      {/* Image */}
       <div className="aspect-square skeleton" />
-      <div className="p-4.5 space-y-2.5">
+
+      {/* Info — mirrors p-4.5 block in ProductCard */}
+      <div className="p-4.5 space-y-2">
+        {/* Category label */}
         <div className="skeleton h-2 w-1/3" />
+        {/* Title line 1 */}
         <div className="skeleton h-3 w-4/5" />
+        {/* Title line 2 (line-clamp-2 worst case) */}
         <div className="skeleton h-3 w-3/5" />
-        <div className="flex justify-between mt-3">
-          <div className="skeleton h-4.5 w-1/4" />
-          <div className="skeleton h-8 w-8 rounded-xl" />
+        {/* Tamil name row */}
+        <div className="skeleton h-2.5 w-2/5" />
+        {/* Star-rating row: 5 tiny squares + review-count pill */}
+        <div className="flex items-center gap-1 mt-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="skeleton h-2.5 w-2.5 rounded-sm" />
+          ))}
+          <div className="skeleton h-2.5 w-8 rounded ml-0.5" />
         </div>
+      </div>
+
+      {/* Price + cart — mirrors px-4.5 pb-4.5 section with border-t */}
+      <div className="px-4.5 pb-4.5 pt-3 flex items-center justify-between gap-2 border-t border-gray-100 mt-1">
+        <div className="skeleton h-4.5 w-1/4" />
+        <div className="skeleton h-8 w-8 rounded-xl" />
       </div>
     </div>
   );

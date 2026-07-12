@@ -139,7 +139,7 @@ export { DataTable };
 export function AdminCard({ children, className = "" }) {
   return (
     <div
-      className={`bg-surface border border-gray-100 rounded-2xl p-5 admin-padding-fluid ${className}`}
+      className={`bg-surface border border-gray-200 rounded-2xl p-5 admin-padding-fluid ${className}`}
     >
       {children}
     </div>

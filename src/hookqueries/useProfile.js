@@ -42,79 +42,28 @@ export function useAddresses() {
   });
 }
 
-// Helper for formatting state names (e.g. "TAMIL NADU" -> "Tamil Nadu")
-const formatState = (str) => {
-  if (!str) return "";
-  return str.toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-};
 
-async function fetchWithTimeout(url, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
+
+
 
 // ── Pincode lookup (not a query — called imperatively from forms) ────
 export async function lookupPincode(pincode) {
-  const apiKey = import.meta.env.VITE_GOV_API_KEY;
-  const resourceId = import.meta.env.VITE_GOV_PINCODE_RESOURCE_ID;
-  
   if (!pincode || !/^\d{6}$/.test(pincode)) {
     throw new Error("A valid 6-digit pincode is required");
   }
 
-  const url = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[pincode]=${pincode}`;
-  
   try {
-    console.log(`[FE] Direct lookupPincode requesting India Gov API for pincode: ${pincode}`);
-    const response = await fetchWithTimeout(url, 6000);
-    console.log(`[FE] Direct lookupPincode Response Status: ${response.status} ${response.statusText}`);
-    
-    if (!response.ok) {
-      const err = new Error("Failed to fetch pincode details");
-      err.status = response.status;
-      throw err;
-    }
-    
-    const result = await response.json();
-    const records = result.records || [];
-    console.log(`[FE] India Gov API Records Found: ${records.length}`);
-    
-    if (records.length === 0) {
-      const err = new Error("Pincode not found");
-      err.status = 404;
-      throw err;
-    }
-
-    let bestRecord = records.find((r) => r.deliverystatus === "Delivery" && r.taluk && r.taluk !== "NA");
-    if (!bestRecord) bestRecord = records.find((r) => r.taluk && r.taluk !== "NA");
-    if (!bestRecord) bestRecord = records.find((r) => r.deliverystatus === "Delivery");
-    if (!bestRecord) bestRecord = records[0];
-
-    const data = {
-      pincode,
-      district: bestRecord.districtname || "",
-      state: formatState(bestRecord.statename) || "",
-      taluk: bestRecord.taluk && bestRecord.taluk !== "NA" ? bestRecord.taluk : "",
-    };
-
-    return data;
+    console.log(`[FE] lookupPincode → backend /location/pincode for: ${pincode}`);
+    const res = await API.get("/location/pincode", { params: { pincode } });
+    console.log(`[FE] lookupPincode response:`, res.data);
+    return res.data.data; // { pincode, district, state, taluk }
   } catch (err) {
-    const timedOut = err.name === "AbortError";
-    const status = timedOut ? 504 : (err.status || 500);
-    console.error(`[FE] lookupPincode failed: status ${status}, message: ${err.message}`);
-    
-    if (timedOut) {
-      throw new Error("Pincode request timed out. Please try again or fill fields manually.");
-    }
-    if (status === 404) {
-      throw new Error("Pincode not found");
-    }
-    throw new Error(err.message || "Failed to fetch pincode details");
+    const status = err.response?.status;
+    const message = err.response?.data?.message || err.message;
+    console.error(`[FE] lookupPincode failed: status ${status}, message: ${message}`);
+    if (status === 404) throw new Error("Pincode not found");
+    if (status === 504) throw new Error("Pincode request timed out. Please try again or fill fields manually.");
+    throw new Error(message || "Failed to fetch pincode details");
   }
 }
 
@@ -195,53 +144,22 @@ export function useDeleteAddress() {
 export async function reverseGeocode(lat, lng) {
   const latitude = Number(lat);
   const longitude = Number(lng);
-  
+
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Valid lat and lng are required");
   }
 
-  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
-  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${apiKey}`;
-
   try {
-    console.log(`[FE] Direct reverseGeocode requesting Geoapify API with coords: lat=${lat}, lng=${lng}`);
-    const response = await fetchWithTimeout(url, 7000);
-    console.log(`[FE] Direct reverseGeocode Response Status: ${response.status} ${response.statusText}`);
-    
-    if (!response.ok) {
-      const err = new Error("Failed to detect location details");
-      err.status = response.status;
-      throw err;
-    }
-    
-    const geoData = await response.json();
-    const features = geoData.features || [];
-    console.log(`[FE] Geoapify Features Found: ${features.length}`);
-    
-    if (features.length === 0) {
-      const err = new Error("Location details not found");
-      err.status = 404;
-      throw err;
-    }
-
-    const properties = features[0].properties || {};
-    const data = {
-      pincode: properties.postcode || "",
-      city: properties.city || properties.county || "",
-      taluk: properties.suburb || properties.district || "",
-      state: properties.state || "",
-    };
-
-    return data;
+    console.log(`[FE] reverseGeocode → backend /location/reverse-geocode: lat=${latitude}, lng=${longitude}`);
+    const res = await API.get("/location/reverse-geocode", { params: { lat: latitude, lng: longitude } });
+    console.log(`[FE] reverseGeocode response:`, res.data);
+    return res.data.data; // { pincode, city, taluk, state }
   } catch (err) {
-    const timedOut = err.name === "AbortError";
-    const status = timedOut ? 504 : (err.status || 500);
-    console.error(`[FE] reverseGeocode failed: status ${status}, message: ${err.message}`);
-    
-    if (timedOut) {
-      throw new Error("Location detection timed out. Please try again or fill fields manually.");
-    }
-    throw new Error(err.message || "Failed to detect location details");
+    const status = err.response?.status;
+    const message = err.response?.data?.message || err.message;
+    console.error(`[FE] reverseGeocode failed: status ${status}, message: ${message}`);
+    if (status === 504) throw new Error("Location detection timed out. Please try again or fill fields manually.");
+    throw new Error(message || "Failed to detect location details");
   }
 }
 

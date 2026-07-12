@@ -361,7 +361,10 @@ body {
     color: var(--color-gray-800) !important;
   }
   .admin-modal-bg .border-b,
-  .admin-modal-bg .border-t {
+  .admin-modal-bg .border-t,
+  .admin-modal-bg .border,
+  .admin-modal-bg .border-l,
+  .admin-modal-bg .border-r {
     border-color: var(--color-gray-100) !important;
   }
   .admin-modal-bg h3,
