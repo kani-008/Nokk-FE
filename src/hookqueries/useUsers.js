@@ -19,7 +19,7 @@ export function useUserDetails(userId) {
     queryFn: async () => {
       if (!userId) return null;
       const res = await API.get(`/users/get-by-id?id=${userId}`);
-      return res.data.user;
+      return res.data;
     },
     enabled: !!userId,
   });

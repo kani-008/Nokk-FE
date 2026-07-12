@@ -91,18 +91,18 @@ function SuggestionsDropdown({
 // ── Nav items — single flat list, no section grouping/labels ───────────
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/products", label: "Products", icon: Package },
   { to: "/admin/categories", label: "Categories", icon: Grid3x3 },
   { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
-  { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
-  { to: "/admin/offers", label: "Offers", icon: Tag },
-  { to: "/admin/coupons", label: "Coupons", icon: Ticket },
-  { to: "/admin/banners", label: "Banners", icon: Image },
-  { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/users", label: "Customer", icon: Users },
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
+   { to: "/admin/offers", label: "Offers", icon: Tag },
+  { to: "/admin/coupons", label: "Coupons", icon: Ticket },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
+   { to: "/admin/banners", label: "Banners", icon: Image },
+   { to: "/admin/customer-videos", label: "Customer Videos", icon: Video },
   { to: "/admin/appearance", label: "Appearance", icon: Palette },
-  { to: "/admin/customer-videos", label: "Customer Videos", icon: Video },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
