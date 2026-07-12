@@ -6,6 +6,7 @@ import { useDeliverySettings } from "../../hookqueries/useHome.js";
 import { usePublicCoupons } from "../../hookqueries/useCoupons";
 import { useSubscribeNewsletter } from "../../hookqueries/useNewsletter";
 import { useActiveCustomerVideos } from "../../hookqueries/useActiveCustomerVideos";
+import { usePublicSettings } from "../../hookqueries/useSettings";
 
 const PH_CAT = "";
 
@@ -194,7 +195,9 @@ export function PromoBanner() {
 // WHY US
 // ══════════════════════════════════════════════════════════════════════
 export function WhyUs() {
-  const reasons = [
+  const { data: settings = {} } = usePublicSettings();
+  
+  const defaultReasons = [
     {
       emoji: "🎣",
       title: "Direct from Fishermen",
@@ -211,6 +214,19 @@ export function WhyUs() {
       desc: "Premium multi-layer, odour-proof packaging that seals in coastal freshness for months.",
     },
   ];
+
+  let reasons = defaultReasons;
+  if (settings.whyUsReasons) {
+    try {
+      const parsed = typeof settings.whyUsReasons === "string" ? JSON.parse(settings.whyUsReasons) : settings.whyUsReasons;
+      if (Array.isArray(parsed) && parsed.length === 3) {
+        reasons = parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to parse whyUsReasons:", e);
+    }
+  }
+
   return (
     <section className="bg-gray-900 py-16 px-4 home-section-pad-fluid border-t border-b border-gray-850 my-8">
       <div className="max-w-7xl mx-auto text-center">
@@ -221,8 +237,8 @@ export function WhyUs() {
           We don't just sell dry fish — we preserve a tradition of purity.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {reasons.map((r) => (
-            <div key={r.title} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 home-card-pad-fluid text-left">
+          {reasons.map((r, idx) => (
+            <div key={idx} className="bg-gray-800/50 border border-gray-850 rounded-2xl p-6.5 home-card-pad-fluid text-left">
               <span className="text-3xl block mb-4">{r.emoji}</span>
               <h3 className="font-display text-white font-bold text-lg mb-2">{r.title}</h3>
               <p className="font-body text-gray-400 text-sm leading-relaxed">{r.desc}</p>

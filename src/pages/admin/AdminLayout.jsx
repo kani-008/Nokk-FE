@@ -23,6 +23,7 @@ import {
   Loader2,
   Palette,
   Video,
+  FileText,
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
@@ -101,6 +102,7 @@ const NAV_ITEMS = [
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquare },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/appearance", label: "Appearance", icon: Palette },
+  { to: "/admin/content", label: "Site Content", icon: FileText },
   { to: "/admin/customer-videos", label: "Customer Videos", icon: Video },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
