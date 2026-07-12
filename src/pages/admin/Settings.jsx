@@ -369,7 +369,36 @@ export default function Settings() {
 
   return (
     <AdminPage
-    className="pt-4">
+      title="Settings"
+      action={
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold bg-green-50 border border-green-200 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg animate-fade-in">
+              <Check size={14} />
+              <span className="hidden sm:inline">Saved Successfully</span>
+            </span>
+          )}
+          <AdminButton
+            variant="primary"
+            onClick={handleSave}
+            disabled={saving}
+            className="cursor-pointer px-2.5 sm:px-4"
+          >
+            {saving ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                <span className="hidden sm:inline ml-1.5">Saving…</span>
+              </>
+            ) : (
+              <>
+                <Save size={15} />
+                <span className="hidden sm:inline ml-1.5">Save Settings</span>
+              </>
+            )}
+          </AdminButton>
+        </div>
+      }
+    >
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 font-body text-sm rounded-xl px-4 py-3 mb-5">{error}</div>
       )}
@@ -434,18 +463,6 @@ export default function Settings() {
         {/* Right Active Panel */}
         <div className="col-span-8 flex flex-col gap-5">
           {renderCategoryCard(currentActive)}
-
-          {/* Persistent save banner at bottom of active panel */}
-          <div className="flex items-center justify-between bg-surface border border-gray-100 rounded-2xl px-5 py-4 shadow-sm">
-            <p className="font-body text-xs text-gray-400">
-              {saved
-                ? <span className="text-green-600 font-semibold flex items-center gap-1.5"><Check size={14} /> All changes saved</span>
-                : "Unsaved changes will be lost on refresh"}
-            </p>
-            <AdminButton onClick={handleSave} disabled={saving} className="cursor-pointer">
-              {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : <><Save size={14} /> Save Settings</>}
-            </AdminButton>
-          </div>
         </div>
       </div>
 
@@ -519,16 +536,6 @@ export default function Settings() {
             {/* Panel Card */}
             <div>
               {renderCategoryCard(activeCategory)}
-            </div>
-
-            {/* Mobile bottom Save button */}
-            <div className="flex flex-col gap-2.5 bg-surface border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <p className="font-body text-xs text-gray-400 text-center">
-                {saved ? "All changes saved successfully." : "Unsaved changes will be lost on refresh."}
-              </p>
-              <AdminButton onClick={handleSave} disabled={saving} className="w-full cursor-pointer py-3 text-base">
-                {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Save size={16} /> Save Settings</>}
-              </AdminButton>
             </div>
           </div>
         )}

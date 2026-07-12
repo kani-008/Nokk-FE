@@ -197,30 +197,34 @@ export default function SiteContent() {
     <AdminPage
       title="Site Content"
       action={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {saved && (
-            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg animate-fade-in">
-              <Check size={14} /> Saved Successfully
+            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold bg-green-50 border border-green-200 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg animate-fade-in">
+              <Check size={14} />
+              <span className="hidden sm:inline">Saved Successfully</span>
             </span>
           )}
           {error && (
-            <span className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-              {error}
+            <span className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg">
+              <span className="hidden sm:inline">{error}</span>
+              <span className="sm:hidden">Error</span>
             </span>
           )}
           <AdminButton
             variant="primary"
             onClick={() => handleSaveTab(activeTab)}
             disabled={saving}
-            className="cursor-pointer"
+            className="cursor-pointer px-2.5 sm:px-4"
           >
             {saving ? (
               <>
-                <Loader2 size={15} className="animate-spin" /> Saving…
+                <Loader2 size={15} className="animate-spin" />
+                <span className="hidden sm:inline ml-1.5">Saving…</span>
               </>
             ) : (
               <>
-                <Save size={15} /> Save Changes
+                <Save size={15} />
+                <span className="hidden sm:inline ml-1.5">Save Changes</span>
               </>
             )}
           </AdminButton>
@@ -243,7 +247,7 @@ export default function SiteContent() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
-                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs. You can write text here directly, or copy-paste content from Word, Google Docs, or Notepad.
+                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs
               </p>
               <textarea
                 value={termsContent}

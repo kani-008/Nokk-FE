@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2 } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hookqueries/useUsers";
@@ -320,6 +320,30 @@ export default function UserManagement() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightUserId = searchParams.get("highlightUserId");
+
+  const { data: highlightDetail, isFetched: highlightFetched, isError: highlightError } = useUserDetails(highlightUserId);
+
+  useEffect(() => {
+    if (highlightUserId) {
+      if (highlightDetail && highlightDetail.user) {
+        setSelected(highlightDetail.user);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("highlightUserId");
+          return next;
+        }, { replace: true });
+      } else if (highlightFetched || highlightError) {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("highlightUserId");
+          return next;
+        }, { replace: true });
+      }
+    }
+  }, [highlightUserId, highlightDetail, highlightFetched, highlightError, setSearchParams]);
 
   const { registerSearch, unregisterSearch } = useOutletContext();
 
