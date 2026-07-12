@@ -1304,10 +1304,9 @@ body {
     font-size: clamp(0.95rem, 2vw, 1.125rem) !important;
   }
 
-  /* ── Admin fluid scaling (Part C) ── */
   .admin-content-fluid {
     width: 100% !important;
-    max-width: clamp(64rem, 95vw, 280rem) !important;
+    max-width: clamp(64rem, 95vw, 90rem) !important;
   }
   
   @media (min-width: 1440px) {
