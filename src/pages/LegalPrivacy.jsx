@@ -22,11 +22,11 @@ export default function LegalPrivacy() {
         </p>
 
         {privacyContent ? (
-          <div className="font-body text-sm text-amber-800 leading-relaxed">
-            <ReactMarkdown className="space-y-4 [&_h2]:font-display [&_h2]:text-lg [&_h2]:sm:text-xl [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mb-3 [&_h2]:mt-6 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950 [&_a]:text-brand-900 [&_a]:underline [&_a]:hover:text-amber-600 [&_a]:transition-colors">
-              {privacyContent}
-            </ReactMarkdown>
-          </div>
+            <div className="space-y-4 [&_h2]:font-display [&_h2]:text-lg [&_h2]:sm:text-xl [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mb-3 [&_h2]:mt-6 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950 [&_a]:text-brand-900 [&_a]:underline [&_a]:hover:text-amber-600 [&_a]:transition-colors">
+              <ReactMarkdown>
+                {privacyContent}
+              </ReactMarkdown>
+            </div>
         ) : (
           <div className="font-body text-sm text-amber-800 leading-relaxed space-y-6">
             <p>

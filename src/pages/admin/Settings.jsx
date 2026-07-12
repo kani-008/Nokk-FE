@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Save, Loader2, Check, Store, Truck, IndianRupee, Bell,
   Palette, RotateCcw, ShoppingCart,
   Camera, Share2, AtSign, MessageCircle, ShoppingBag,
   Globe, Crosshair, ShieldAlert, Megaphone,
+  FileText, ArrowRight,
 } from "lucide-react";
-
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 import { applyTheme, resetTheme, isValidHex } from "../../components/Theme.js";
 import API from "../../ApiCall/Api.jsx";
@@ -352,6 +353,21 @@ export default function Settings() {
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100">
             <p className="font-body text-xs text-gray-400">These toggle entries in the admin bell — not customer-facing SMS/email (coming soon).</p>
+          </div>
+        </SectionCard>
+
+        {/* ── Site Content ── */}
+        <SectionCard icon={FileText} title="Site Content" sub="Legal policies and home page static sections">
+          <div className="space-y-4">
+            <p className="font-body text-xs text-gray-500 leading-relaxed">
+              Edit Terms & Conditions, Privacy Policy, and "Why Choose Us" cards that are displayed on the home page.
+            </p>
+            <Link to="/admin/content" className="block">
+              <AdminButton variant="outline" className="w-full justify-between group cursor-pointer">
+                <span>Manage Site Content</span>
+                <ArrowRight size={14} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </AdminButton>
+            </Link>
           </div>
         </SectionCard>
 

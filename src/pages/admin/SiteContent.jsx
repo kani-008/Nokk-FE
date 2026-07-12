@@ -259,9 +259,11 @@ export default function SiteContent() {
               <div className="min-h-[492px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 max-h-[550px] overflow-y-auto">
                 <h1 className="font-display text-2xl font-bold text-brand-900 mb-2">Terms & Conditions</h1>
                 <p className="font-body text-xs text-amber-600 mb-6 uppercase tracking-wider">Last updated: (Dynamic)</p>
-                <ReactMarkdown className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
-                  {termsContent}
-                </ReactMarkdown>
+                <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
+                  <ReactMarkdown>
+                    {termsContent}
+                  </ReactMarkdown>
+                </div>
               </div>
             </AdminCard>
           </div>
@@ -293,9 +295,11 @@ export default function SiteContent() {
               <div className="min-h-[492px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 max-h-[550px] overflow-y-auto">
                 <h1 className="font-display text-2xl font-bold text-brand-900 mb-2">Privacy Policy</h1>
                 <p className="font-body text-xs text-amber-600 mb-6 uppercase tracking-wider">Last updated: (Dynamic)</p>
-                <ReactMarkdown className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
-                  {privacyContent}
-                </ReactMarkdown>
+                <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
+                  <ReactMarkdown>
+                    {privacyContent}
+                  </ReactMarkdown>
+                </div>
               </div>
             </AdminCard>
           </div>
