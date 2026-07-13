@@ -372,7 +372,7 @@ export default function Appearance() {
       </div>
 
       {/* ── Bottom save bar ── */}
-      <div className="flex items-center justify-between bg-surface border border-gray-100 rounded-2xl px-5 py-3.5 mt-6">
+      <div className="flex items-center justify-between bg-surface border border-gray-200 rounded-2xl px-5 py-3.5 mt-6">
         <p className="font-body text-sm text-gray-500">
           {saved
             ? <span className="text-green-600 font-semibold flex items-center gap-1.5"><Check size={14} /> All changes saved</span>

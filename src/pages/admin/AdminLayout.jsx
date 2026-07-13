@@ -66,10 +66,10 @@ function SuggestionsDropdown({
               <img
                 src={s.primaryImage}
                 alt=""
-                className="w-8 h-8 rounded-lg object-cover border border-gray-100 shrink-0"
+                className="w-8 h-8 rounded-lg object-cover border border-gray-200 shrink-0"
               />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-200">
                 <Search size={14} className="text-gray-300" />
               </div>
             )}
@@ -513,7 +513,7 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
         </button>
 
         {profileOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-surface border border-gray-100 rounded-xl shadow-lg py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute right-0 mt-2 w-56 bg-surface border border-gray-200 rounded-xl shadow-lg py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
             {/* User Profile Card */}
             <div className="flex items-center gap-2.5 px-4 py-2 border-b border-gray-50 pb-3">
               <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-white font-num text-xs font-bold shrink-0">

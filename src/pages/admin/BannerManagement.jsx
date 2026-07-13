@@ -438,7 +438,7 @@ function BannerCard({ banner, onEdit, onDelete, onToggle }) {
           openEdit();
         }
       }}
-      className={`bg-surface border rounded-2xl overflow-hidden transition-opacity cursor-pointer ${banner.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
+      className={`bg-surface border rounded-2xl overflow-hidden transition-opacity cursor-pointer ${banner.isActive ? "border-gray-200" : "border-gray-200 opacity-60"}`}
     >
       {/* thumbnail */}
       <div className="relative h-36 bg-gray-100">
@@ -706,7 +706,7 @@ function OverlayCard({ overlay, onEdit, onDelete, onToggled }) {
           openEdit();
         }
       }}
-      className={`bg-surface border rounded-2xl p-5 flex flex-col justify-between transition-opacity cursor-pointer ${overlay.isActive ? "border-gray-100" : "border-gray-100 opacity-60"}`}
+      className={`bg-surface border rounded-2xl p-5 flex flex-col justify-between transition-opacity cursor-pointer ${overlay.isActive ? "border-gray-200" : "border-gray-200 opacity-60"}`}
     >
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
@@ -995,7 +995,7 @@ export default function BannerManagement() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-2xl overflow-hidden border border-gray-100 animate-pulse"
+                  className="rounded-2xl overflow-hidden border border-gray-200 animate-pulse"
                 >
                   <div className="h-36 skeleton" />
                   <div className="p-4 space-y-2">
@@ -1069,7 +1069,7 @@ export default function BannerManagement() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-2xl border border-gray-100 p-5 animate-pulse space-y-3"
+                  className="rounded-2xl border border-gray-200 p-5 animate-pulse space-y-3"
                 >
                   <div className="h-3 skeleton w-1/3" />
                   <div className="h-4 skeleton w-3/4" />

@@ -189,7 +189,10 @@ function AddressForm({ initial, onSave, onCancel, setError, setSuccess }) {
         city:  data.district || f.city,
         state: matchedState  || f.state,
       }));
-    } catch { /* leave editable */ }
+    } catch (err) {
+      console.error("[Pincode lookup failed]", err);
+      setError("Pincode lookup failed. Please fill manually or try again.");
+    }
     finally { setPinLoading(false); }
   };
 

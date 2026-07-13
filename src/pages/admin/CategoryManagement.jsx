@@ -311,7 +311,7 @@ export default function CategoryManagement() {
       label: "Thumbnail",
       width: "80px",
       render: (r) => (
-        <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 bg-gray-50 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
           {r.imageUrl ? (
             <img src={r.imageUrl} alt={r.nameEn} className="w-full h-full object-cover" />
           ) : (

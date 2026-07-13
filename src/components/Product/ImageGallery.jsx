@@ -32,12 +32,12 @@ export default function ImageGallery({ images, onShare }) {
   };
 
   const prev = () => {
-    const nextIdx = (active - 1 + showList.length) % showList.length;
+    const nextIdx = Math.max(active - 1, 0);
     scrollToImage(nextIdx);
   };
 
   const next = () => {
-    const nextIdx = (active + 1) % showList.length;
+    const nextIdx = Math.min(active + 1, showList.length - 1);
     scrollToImage(nextIdx);
   };
 
@@ -79,13 +79,23 @@ export default function ImageGallery({ images, onShare }) {
           <>
             <button
               onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+              disabled={active === 0}
+              className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm transition-opacity z-10 ${
+                active === 0
+                  ? "opacity-0 group-hover:opacity-20 pointer-events-none"
+                  : "opacity-0 group-hover:opacity-100 cursor-pointer"
+              }`}
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+              disabled={active === showList.length - 1}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-surface rounded-full p-2 shadow-sm transition-opacity z-10 ${
+                active === showList.length - 1
+                  ? "opacity-0 group-hover:opacity-20 pointer-events-none"
+                  : "opacity-0 group-hover:opacity-100 cursor-pointer"
+              }`}
             >
               <ChevronRight size={16} />
             </button>

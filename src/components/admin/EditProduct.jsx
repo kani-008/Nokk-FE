@@ -118,7 +118,7 @@ function VariantRow({ v, idx, canRemove, isBase, onChange, onRemove, variants = 
   };
 
   return (
-    <div className={`border rounded-xl p-3 sm:border-0 sm:p-0 ${isBase ? "border-sandal-200 bg-sandal-50/30 sm:bg-transparent sm:border-transparent" : "border-gray-100"}`}>
+    <div className={`border rounded-xl p-3 sm:border-0 sm:p-0 ${isBase ? "border-sandal-200 bg-sandal-50/30 sm:bg-transparent sm:border-transparent" : "border-gray-200"}`}>
       {isBase && (
         <p className="font-body text-[10px] font-bold text-sandal-700 mb-1.5 sm:hidden">Base unit — sets the per-gram rate</p>
       )}
@@ -593,7 +593,7 @@ export default function EditProduct({ product, categories, onClose, onSaved }) {
               )}
             </div>
             {/* ── Description, How to Use, Storage Tips ── */}
-            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+            <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
               <div>
                 <label className="field-label">Description</label>
                 <textarea value={form.description || ""} onChange={(e) => setF("description", e.target.value)} rows={3} placeholder="Product description…" className="field-input resize-none" />

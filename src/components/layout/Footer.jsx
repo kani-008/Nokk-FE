@@ -19,7 +19,7 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 import API from "../../ApiCall/Api.jsx";
-import { useDeliverySettings } from "../../hookqueries/useHome.js";
+import { useDeliverySettings, useHomeCategories } from "../../hookqueries/useHome.js";
 
 const QUICK_LINKS = [
   { label: "All Products", to: "/products" },
@@ -41,13 +41,7 @@ const POLICY_LINKS = [
   { label: "FAQ", href: "#" },
 ];
 
-const CATEGORIES = [
-  { label: "Nethili (Anchovy)", to: "/products?category=nethili" },
-  { label: "Sura (Shark)", to: "/products?category=sura" },
-  { label: "Kelanga (Catfish)", to: "/products?category=kelanga" },
-  { label: "Vanjaram (Kingfish)", to: "/products?category=vanjaram" },
-  { label: "Pickles & Chutneys", to: "/products?category=pickles" },
-];
+
 
 function useTrustItems() {
   const { data: delivery } = useDeliverySettings();
@@ -102,6 +96,7 @@ export default function Footer() {
   const [subMsg, setSubMsg] = useState("");
   const [settings, setSettings] = useState({});
   const trustItems = useTrustItems();
+  const { data: categoriesData, isLoading: categoriesLoading } = useHomeCategories();
 
   useEffect(() => {
     API.get("/settings/get-all")
@@ -261,21 +256,28 @@ export default function Footer() {
               ))}
             </ul>
             {/* Categories list */}
-            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
-              Categories
-            </h4>
-            <ul className="space-y-2">
-              {CATEGORIES.map((c) => (
-                <li key={c.to}>
-                  <Link
-                    to={c.to}
-                    className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
-                  >
-                    › {c.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {!categoriesLoading && categoriesData && categoriesData.length > 0 && (
+              <>
+                <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
+                  Categories
+                </h4>
+                <ul className="space-y-2">
+                  {categoriesData.slice(0, 5).map((cat) => {
+                    const toPath = `/products?category=${cat.slug}`;
+                    return (
+                      <li key={toPath}>
+                        <Link
+                          to={toPath}
+                          className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
+                        >
+                          › {cat.nameEn}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
           </div>
 
           {/* My Account */}

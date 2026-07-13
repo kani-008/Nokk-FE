@@ -203,7 +203,7 @@ function UserModal({ user, onClose, onBlock, onUnblock, onDelete }) {
                 {addresses.length > 0 ? (
                   <div className="space-y-2">
                     {addresses.map((addr) => (
-                      <div key={addr.id} className="text-xs border border-gray-100 p-2.5 rounded-xl bg-gray-50/40">
+                      <div key={addr.id} className="text-xs border border-gray-200 p-2.5 rounded-xl bg-gray-50/40">
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-semibold text-amber-950">{addr.label || "Address"}</span>
                           {addr.is_default && <span className="inline-flex items-center text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-md border border-green-200">Default</span>}

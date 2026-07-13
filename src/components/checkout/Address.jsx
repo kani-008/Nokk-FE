@@ -102,7 +102,10 @@ export function SavedAddressEditForm({ address, onSaved, onCancel }) {
         city:  data.district || f.city,
         state: matchedState  || f.state,
       }));
-    } catch { /* not found — leave fields editable */ }
+    } catch (err) {
+      console.error("[Pincode lookup failed]", err);
+      setError("Pincode lookup failed. Please fill manually or try again.");
+    }
     finally { setPinLoading(false); }
   };
 
@@ -362,7 +365,10 @@ export default function Address({
       if (data.taluk && data.taluk !== "NA") onChangeNew("taluk", data.taluk);
       if (data.district)  onChangeNew("city",  data.district);
       if (matchedState)   onChangeNew("state", matchedState);
-    } catch { /* pincode not in directory — user fills manually */ }
+    } catch (err) {
+      console.error("[Pincode lookup failed]", err);
+      setError("Pincode lookup failed. Please fill manually or try again.");
+    }
     finally { setPinLoading(false); }
   };
 
