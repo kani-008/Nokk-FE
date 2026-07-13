@@ -311,42 +311,6 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
-          {/* Newsletter */}
-          <div>
-            <h4 className="font-body text-sm font-bold text-white mb-1.5 tracking-wider uppercase">
-              Stay Updated
-            </h4>
-            <p className="font-body text-xs text-gray-400 mb-4 leading-relaxed">
-              Get deals, seasonal arrivals & fishing updates delivered straight
-              to your inbox.
-            </p>
-            <form onSubmit={handleSub} className="flex flex-col gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSubMsg("");
-                }}
-                placeholder="your@email.com"
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
-              />
-              <button
-                type="submit"
-                className="w-full bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold py-2.5 rounded-xl text-sm transition-all"
-              >
-                Subscribe
-              </button>
-            </form>
-            {subMsg && (
-              <p
-                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
-              >
-                {subMsg}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* ── Mobile accordion (visible on mobile only) ──────────────── */}
@@ -444,38 +408,6 @@ export default function Footer() {
               </li>
             </ul>
           </AccordionSection>
-
-          {/* Mobile newsletter */}
-          <div className="pt-2 -mb-4">
-            <p className="font-body text-sm font-bold text-white mb-2">
-              Stay Updated
-            </p>
-            <form onSubmit={handleSub} className="flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSubMsg("");
-                }}
-                placeholder="your@email.com"
-                className="flex-1 bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400"
-              />
-              <button
-                type="submit"
-                className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-4 py-2.5 rounded-xl text-sm transition-all shrink-0"
-              >
-                Go
-              </button>
-            </form>
-            {subMsg && (
-              <p
-                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
-              >
-                {subMsg}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* ── Copyright ──────────────────────────────────────── */}
