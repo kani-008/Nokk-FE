@@ -38,8 +38,32 @@ export default function Home() {
   const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  const title = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
-  const description = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai. Fresh, authentic, delivered to your doorstep.";
+  const title = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  const description = "Shop authentic karuvadu (dry fish) — சுவை மிக்க கருவாடு — and traditional pickles online. Sourced directly from fishermen and delivered across Tamil Nadu.";
+
+  // Dynamic social profiles from settings
+  const sameAs = [
+    settings.instagramUrl,
+    settings.facebookUrl,
+    settings.youtubeUrl,
+    settings.twitterUrl,
+  ].filter(Boolean);
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Namma Oor Karuvattu Kadai",
+    "url": SITE_URL,
+    "logo": `${SITE_URL}/logo.png`,
+    ...(sameAs.length > 0 && { "sameAs": sameAs }),
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Cuddalore Old Town, Cuddalore",
+      "addressRegion": "Tamil Nadu",
+      "postalCode": "607003",
+      "addressCountry": "IN"
+    }
+  };
 
   return (
     <div className="min-h-screen bg-sandal-50">
@@ -51,6 +75,9 @@ export default function Home() {
         <meta property="og:image" content={`${SITE_URL}/og-home.jpg`} />
         <meta property="og:url" content={SITE_URL} />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify(organizationSchema)}
+        </script>
       </Helmet>
 
       {/* 1 – Hero */}

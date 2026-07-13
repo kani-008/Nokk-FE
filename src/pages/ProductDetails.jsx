@@ -115,8 +115,8 @@ export default function ProductDetails() {
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  const DEFAULT_TITLE = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
-  const DEFAULT_DESC = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai.";
+  const DEFAULT_TITLE = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  const DEFAULT_DESC = "Shop premium sun-dried karuvadu (dry fish), traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sourced directly and delivered across Tamil Nadu.";
 
   if (loading) return (
     <>
@@ -334,10 +334,16 @@ export default function ProductDetails() {
     setShareModalOpen(false);
   };
 
-  const productTitle = `${product.nameEn} — Namma Oor Karuvattu Kadai`;
-  const productDesc = product.description
+  const productTitle = product.nameTa
+    ? `${product.nameEn} (${product.nameTa}) — Buy Online | Namma Oor Karuvattu Kadai`
+    : `${product.nameEn} — Buy Online | Namma Oor Karuvattu Kadai`;
+
+  const categorySnippet = product.categoryName ? `under ${product.categoryName}` : "";
+  const nameTaSnippet = product.nameTa ? `— ${product.nameTa} —` : "";
+  const baseDesc = product.description
     ? product.description.slice(0, 160).trimEnd()
     : DEFAULT_DESC;
+  const productDesc = `Buy authentic ${product.nameEn} ${categorySnippet} online. ${nameTaSnippet} Sourced directly and prepared traditionally. ${baseDesc}`;
   const productUrl = `${SITE_URL}/products/${product.slug}`;
   const productImage = product.primaryImage || null;
 

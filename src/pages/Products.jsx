@@ -489,8 +489,22 @@ export default function Products() {
     isNew,
   };
 
-  const pageTitle = "Shop All Products — Namma Oor Karuvattu Kadai";
-  const pageDescription = "Browse our full catalog of authentic sun-dried fish, traditional seafood, and coastal delicacies. Filter by category, weight, price, and more.";
+  let pageTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  let pageDescription = "Shop authentic karuvadu (dry fish), nethili, sura, and traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sun-dried the traditional way, delivered across Tamil Nadu.";
+
+  if (category && categories.length > 0) {
+    const activeCat = categories.find((c) => c.slug === category);
+    if (activeCat) {
+      const en = activeCat.nameEn || "";
+      const ta = activeCat.nameTa || "";
+      const namesCombo = ta ? `${en} (${ta})` : en;
+      pageTitle = `Buy ${namesCombo} Online | Namma Oor Karuvattu Kadai`;
+      pageDescription = `Shop authentic ${namesCombo} — ${ta ? `${ta} ` : ""}prepared the traditional way. Premium quality, authentic taste, delivered across Tamil Nadu.`;
+    }
+  } else if (search) {
+    pageTitle = `Search results for "${search}" | Namma Oor Karuvattu Kadai`;
+    pageDescription = `Browse authentic karuvadu (dry fish) and pickles matching your search for "${search}". Authentic taste, delivered across Tamil Nadu.`;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-2 pb-6 md:py-6">
