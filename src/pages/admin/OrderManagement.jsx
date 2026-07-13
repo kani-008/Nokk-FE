@@ -190,7 +190,7 @@ export default function OrderManagement() {
       key: "id", label: "Order", width: "140px",
       render: (r) => (
         <div>
-          <span className="font-num text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg block w-fit">
+          <span className="font-num font-medium text-sm text-gray-900  w-fit">
             #{String(r.id).slice(0, 8).toUpperCase()}
           </span>
           <span className="font-body text-[10px] text-gray-400 mt-0.5 block">{fmtDate(r.createdAt)}</span>
@@ -201,16 +201,34 @@ export default function OrderManagement() {
       key: "customerName", label: "Customer",
       render: (r) => (
         <div>
-          <p className="font-body text-sm font-medium text-gray-900">{r.customerName || r.user?.name || "—"}</p>
+          <p className="font-body text-sm font-medium text-gray-800">{r.customerName || r.user?.name || "—"}</p>
           <p className="font-body text-xs text-gray-400">{r.customerPhone || r.user?.phone || ""}</p>
         </div>
       ),
+    },
+    {
+      key: "address", label: "Address", className: "hidden md:table-cell",
+      render: (r) => {
+        const ad = r.address || {};
+        if (!ad.addressLine1 && !ad.city) return <span className="text-gray-400">—</span>;
+        return (
+          <div className="max-w-[250px] text-xs text-gray-500 font-body leading-normal break-words">
+            <p className="text-gray-800 font-medium">
+              {ad.addressLine1}
+              {ad.addressLine2 ? `, ${ad.addressLine2}` : ""}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              {ad.city}, {ad.state} - {ad.pincode}
+            </p>
+          </div>
+        );
+      }
     },
     { key: "total",   label: "Amount",  width: "100px", render: (r) => <span className="font-num text-sm font-bold text-gray-900">{rupee(r.total)}</span> },
     { key: "paymentMethod", label: "Payment", width: "80px", render: (r) => <span className="font-num text-xs uppercase text-gray-500">{r.paymentMethod || "—"}</span> },
     { key: "status",  label: "Status",  width: "160px", render: (r) => <StatusBadge status={r.status} /> },
     {
-      key: "action", label: "", width: "60px",
+      key: "action", label: "Action", width: "80px",
       render: (r) => (
         <IconButton onClick={() => setSelected(r)} variant="brand" aria-label="View order">
           <Eye size={15} />

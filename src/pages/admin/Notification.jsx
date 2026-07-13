@@ -154,7 +154,7 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
       </div>
 
       {/* ── Desktop: absolute dropdown ── */}
-      <div className="hidden md:block absolute right-0 top-full mt-2 w-80 bg-surface border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
+      <div className="hidden md:block absolute right-0 top-full mt-2 w-80 bg-surface border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
         <div className="flex flex-col">
           {panelHeader}
           {panelList}

@@ -95,7 +95,7 @@ export default function ComboItemPicker({ items = [], onChange }) {
                 className="flex items-center gap-2.5 cursor-pointer"
                 onClick={() => { setSelectedProductId(p.id); setSelectedVariantId(""); }}
               >
-                <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+                <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 shrink-0">
                   {p.primaryImage ? (
                     <img src={p.primaryImage} alt={p.nameEn} className="w-full h-full object-cover" />
                   ) : (
@@ -141,7 +141,7 @@ export default function ComboItemPicker({ items = [], onChange }) {
         <div className="border border-gray-200 rounded-xl divide-y divide-gray-100">
           {items.map((i) => (
             <div key={i.variantId} className="flex items-center gap-2.5 p-2.5">
-              <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+              <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 shrink-0">
                 {i.primaryImage ? (
                   <img src={i.primaryImage} alt={i.productName} className="w-full h-full object-cover" />
                 ) : (

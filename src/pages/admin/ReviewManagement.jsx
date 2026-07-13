@@ -86,7 +86,7 @@ function ReviewModal({ review, onClose, onToggleApprove, onDelete }) {
           {review.comment && (
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Comment</span>
-              <p className="font-body text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 leading-relaxed whitespace-pre-wrap">
+              <p className="font-body text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200 leading-relaxed whitespace-pre-wrap">
                 {review.comment}
               </p>
             </div>
@@ -294,7 +294,7 @@ export default function ReviewManagement() {
       label: "Product",
       render: (p) => (
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shrink-0">
             {p.primaryImage ? (
               <img src={p.primaryImage} alt={p.nameEn} className="w-full h-full object-cover" />
             ) : (

@@ -406,7 +406,7 @@ export default function Settings() {
       {/* ── DESKTOP LAYOUT (>= 1024px) ── */}
       <div className="hidden lg:grid grid-cols-12 gap-6 items-start">
         {/* Left Sidebar Menu */}
-        <div className="col-span-4 bg-surface border border-gray-100 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
+        <div className="col-span-4 bg-surface border border-gray-200 rounded-2xl p-4 flex flex-col gap-1 shadow-sm">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = currentActive === cat.key;
@@ -470,7 +470,7 @@ export default function Settings() {
       <div className="lg:hidden">
         {activeCategory === null ? (
           /* Mobile settings home menu */
-          <div className="bg-surface border border-gray-100 rounded-2xl p-3.5 flex flex-col gap-1 shadow-sm">
+          <div className="bg-surface border border-gray-200 rounded-2xl p-3.5 flex flex-col gap-1 shadow-sm">
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               if (cat.type === "link") {
@@ -519,7 +519,7 @@ export default function Settings() {
           /* Mobile full-screen active panel view */
           <div className="space-y-4">
             {/* Header bar */}
-            <div className="flex items-center gap-3 bg-surface border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-3 bg-surface border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
               <button
                 type="button"
                 onClick={() => setActiveCategory(null)}

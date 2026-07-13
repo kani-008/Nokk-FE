@@ -361,7 +361,10 @@ body {
     color: var(--color-gray-800) !important;
   }
   .admin-modal-bg .border-b,
-  .admin-modal-bg .border-t {
+  .admin-modal-bg .border-t,
+  .admin-modal-bg .border,
+  .admin-modal-bg .border-l,
+  .admin-modal-bg .border-r {
     border-color: var(--color-gray-100) !important;
   }
   .admin-modal-bg h3,
@@ -1333,4 +1336,13 @@ body {
 @keyframes announcement-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-12.5%); }
+}
+
+/* Utility: hide scrollbars */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Newer Edge */
 }

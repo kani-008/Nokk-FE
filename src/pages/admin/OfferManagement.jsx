@@ -185,7 +185,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
               />
             </div>
             {/* Announcement Options */}
-            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-200/50">
               <div className="space-y-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Toggle
@@ -206,7 +206,7 @@ function OfferModal({ offer, categories, products, onClose, onSaved }) {
             </div>
 
             {/* Banner Options */}
-            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100/50">
+            <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-200/50">
               <div className="space-y-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Toggle

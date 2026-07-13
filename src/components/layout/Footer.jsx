@@ -19,7 +19,7 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 import API from "../../ApiCall/Api.jsx";
-import { useDeliverySettings } from "../../hookqueries/useHome.js";
+import { useDeliverySettings, useHomeCategories } from "../../hookqueries/useHome.js";
 
 const QUICK_LINKS = [
   { label: "All Products", to: "/products" },
@@ -41,13 +41,7 @@ const POLICY_LINKS = [
   { label: "FAQ", href: "#" },
 ];
 
-const CATEGORIES = [
-  { label: "Nethili (Anchovy)", to: "/products?category=nethili" },
-  { label: "Sura (Shark)", to: "/products?category=sura" },
-  { label: "Kelanga (Catfish)", to: "/products?category=kelanga" },
-  { label: "Vanjaram (Kingfish)", to: "/products?category=vanjaram" },
-  { label: "Pickles & Chutneys", to: "/products?category=pickles" },
-];
+
 
 function useTrustItems() {
   const { data: delivery } = useDeliverySettings();
@@ -98,26 +92,15 @@ function AccordionSection({ title, children }) {
 }
 
 export default function Footer() {
-  const [email, setEmail] = useState("");
-  const [subMsg, setSubMsg] = useState("");
   const [settings, setSettings] = useState({});
   const trustItems = useTrustItems();
+  const { data: categoriesData, isLoading: categoriesLoading } = useHomeCategories();
 
   useEffect(() => {
     API.get("/settings/get-all")
       .then((res) => setSettings(res.data.settings || {}))
       .catch(() => {});
   }, []);
-
-  const handleSub = (e) => {
-    e.preventDefault();
-    if (!email.includes("@")) {
-      setSubMsg("Enter a valid email");
-      return;
-    }
-    setSubMsg("Thank you for subscribing! 🎉");
-    setEmail("");
-  };
 
   const description =
     settings.storeDescription ||
@@ -191,7 +174,7 @@ export default function Footer() {
       {/* ── Main footer content ─────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
         {/* Desktop grid (hidden on mobile) */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-2">
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Brand col — 2 wide on lg */}
           <div className="lg:col-span-2">
             <Logo showText={true} inverse={true} className="mb-4" />
@@ -261,21 +244,28 @@ export default function Footer() {
               ))}
             </ul>
             {/* Categories list */}
-            <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
-              Categories
-            </h4>
-            <ul className="space-y-2">
-              {CATEGORIES.map((c) => (
-                <li key={c.to}>
-                  <Link
-                    to={c.to}
-                    className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
-                  >
-                    › {c.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {!categoriesLoading && categoriesData && categoriesData.length > 0 && (
+              <>
+                <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
+                  Categories
+                </h4>
+                <ul className="space-y-2">
+                  {categoriesData.slice(0, 5).map((cat) => {
+                    const toPath = `/products?category=${cat.slug}`;
+                    return (
+                      <li key={toPath}>
+                        <Link
+                          to={toPath}
+                          className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
+                        >
+                          › {cat.nameEn}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
           </div>
 
           {/* My Account */}
@@ -320,42 +310,6 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* Newsletter */}
-          <div>
-            <h4 className="font-body text-sm font-bold text-white mb-1.5 tracking-wider uppercase">
-              Stay Updated
-            </h4>
-            <p className="font-body text-xs text-gray-400 mb-4 leading-relaxed">
-              Get deals, seasonal arrivals & fishing updates delivered straight
-              to your inbox.
-            </p>
-            <form onSubmit={handleSub} className="flex flex-col gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSubMsg("");
-                }}
-                placeholder="your@email.com"
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400 focus:ring-2 focus:ring-sandal-500/10"
-              />
-              <button
-                type="submit"
-                className="w-full bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold py-2.5 rounded-xl text-sm transition-all"
-              >
-                Subscribe
-              </button>
-            </form>
-            {subMsg && (
-              <p
-                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
-              >
-                {subMsg}
-              </p>
-            )}
           </div>
         </div>
 
@@ -454,38 +408,6 @@ export default function Footer() {
               </li>
             </ul>
           </AccordionSection>
-
-          {/* Mobile newsletter */}
-          <div className="pt-2 -mb-4">
-            <p className="font-body text-sm font-bold text-white mb-2">
-              Stay Updated
-            </p>
-            <form onSubmit={handleSub} className="flex gap-2">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSubMsg("");
-                }}
-                placeholder="your@email.com"
-                className="flex-1 bg-gray-800 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl px-4 py-2.5 text-sm font-body outline-none focus:border-sandal-400"
-              />
-              <button
-                type="submit"
-                className="bg-sandal-500 hover:bg-sandal-400 text-gray-950 font-body font-bold px-4 py-2.5 rounded-xl text-sm transition-all shrink-0"
-              >
-                Go
-              </button>
-            </form>
-            {subMsg && (
-              <p
-                className={`font-body text-xs mt-2 ${subMsg.includes("valid") ? "text-red-400" : "text-sandal-300"}`}
-              >
-                {subMsg}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* ── Copyright ──────────────────────────────────────── */}
