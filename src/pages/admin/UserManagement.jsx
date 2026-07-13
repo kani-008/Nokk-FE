@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
-import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2 } from "lucide-react";
+import { UserX, UserCheck, Mail, Phone, X, AlertTriangle, Trash2, Eye } from "lucide-react";
 import { useUserList, useToggleUserStatus, useDeleteUser, useUserDetails } from "../../hookqueries/useUsers";
 import {
   AdminPage, StatusBadge, AdminButton, AdminCard,
@@ -422,14 +422,11 @@ export default function UserManagement() {
     { key: "role", label: "Role", render: (r) => <StatusBadge status={r.role || "customer"} /> },
     { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status || "active"} /> },
     {
-      key: "action", label: "Action", width: "60px",
+      key: "action", label: "Action", width: "80px",
       render: (r) => (
-        <button
-          onClick={() => setSelected(r)}
-          className="font-body text-xs text-brand-700 hover:underline font-medium"
-        >
-          View
-        </button>
+        <IconButton onClick={() => setSelected(r)} variant="brand" aria-label="View user">
+          <Eye size={15} />
+        </IconButton>
       ),
     },
   ];

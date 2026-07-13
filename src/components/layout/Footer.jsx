@@ -92,8 +92,6 @@ function AccordionSection({ title, children }) {
 }
 
 export default function Footer() {
-  const [email, setEmail] = useState("");
-  const [subMsg, setSubMsg] = useState("");
   const [settings, setSettings] = useState({});
   const trustItems = useTrustItems();
   const { data: categoriesData, isLoading: categoriesLoading } = useHomeCategories();
@@ -103,16 +101,6 @@ export default function Footer() {
       .then((res) => setSettings(res.data.settings || {}))
       .catch(() => {});
   }, []);
-
-  const handleSub = (e) => {
-    e.preventDefault();
-    if (!email.includes("@")) {
-      setSubMsg("Enter a valid email");
-      return;
-    }
-    setSubMsg("Thank you for subscribing! 🎉");
-    setEmail("");
-  };
 
   const description =
     settings.storeDescription ||
@@ -186,7 +174,7 @@ export default function Footer() {
       {/* ── Main footer content ─────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
         {/* Desktop grid (hidden on mobile) */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-2">
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Brand col — 2 wide on lg */}
           <div className="lg:col-span-2">
             <Logo showText={true} inverse={true} className="mb-4" />
