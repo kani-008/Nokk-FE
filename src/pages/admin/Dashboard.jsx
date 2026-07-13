@@ -26,13 +26,20 @@ function MiniBarChart({ data = [] }) {
   );
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="flex items-end gap-1.5 h-24">
+    <div className="flex items-end gap-1.5 h-24 mt-15">
       {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+        <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+          {/* Custom Tooltip */}
+          <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col items-center z-10 pointer-events-none">
+            <div className="bg-gray-900 text-white text-[13px] font-semibold font-num px-3 py-1 rounded shadow-md whitespace-nowrap">
+              {rupee(d.value)}
+            </div>
+            <div className="w-2 h-2 bg-gray-900 rotate-45 -mt-1" />
+          </div>
+
           <div
             className="w-full rounded-t-md bg-brand-700 group-hover:bg-brand-900 transition-all duration-200"
             style={{ height: `${Math.max((d.value / max) * 88, 4)}px` }}
-            title={`${d.label}: ${rupee(d.value)}`}
           />
           <span className="font-body text-[9px] text-gray-400 truncate w-full text-center">{d.label}</span>
         </div>
