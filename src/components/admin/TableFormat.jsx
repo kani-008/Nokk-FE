@@ -16,9 +16,9 @@ export default function TableFormat({ columns, rows, emptyText = "No data found.
 
   return (
     <div className="bg-surface border border-gray-200 rounded-2xl overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[65vh] scrollbar-hide">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
             <tr>
               {columns.map((col) => (
                 <th

@@ -190,7 +190,7 @@ export default function OrderManagement() {
       key: "id", label: "Order", width: "140px",
       render: (r) => (
         <div>
-          <span className="font-num text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg block w-fit">
+          <span className="font-num font-medium text-sm text-gray-900  w-fit">
             #{String(r.id).slice(0, 8).toUpperCase()}
           </span>
           <span className="font-body text-[10px] text-gray-400 mt-0.5 block">{fmtDate(r.createdAt)}</span>
@@ -201,7 +201,7 @@ export default function OrderManagement() {
       key: "customerName", label: "Customer",
       render: (r) => (
         <div>
-          <p className="font-body text-sm font-medium text-gray-900">{r.customerName || r.user?.name || "—"}</p>
+          <p className="font-body text-sm font-medium text-gray-800">{r.customerName || r.user?.name || "—"}</p>
           <p className="font-body text-xs text-gray-400">{r.customerPhone || r.user?.phone || ""}</p>
         </div>
       ),

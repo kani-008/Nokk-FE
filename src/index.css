@@ -1336,4 +1336,13 @@ body {
 @keyframes announcement-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-12.5%); }
+}
+
+/* Utility: hide scrollbars */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Newer Edge */
 }
