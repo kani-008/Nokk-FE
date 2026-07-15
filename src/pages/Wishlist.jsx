@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2, ArrowRight } from "lucide-react";
+import SEO from "../components/seo/SEO.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import API from "../ApiCall/Api";
@@ -126,10 +127,19 @@ export default function Wishlist() {
     }
   };
 
+  const seoBlock = (
+    <SEO
+      title="My Wishlist | Namma Oor Karuvattu Kadai"
+      description="View your saved products at Namma Oor Karuvattu Kadai. Keep track of your favorite dry fish, pickles, and traditional seafood delicacies."
+      url="https://nammaoorkaruvattukadai.com/wishlist"
+    />
+  );
+
   // ── Empty state ──────────────────────────────────────────────────────
   if (!ids.length && !loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
+        {seoBlock}
         <Heart size={56} className="text-amber-200 mb-4" />
         <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
@@ -144,6 +154,7 @@ export default function Wishlist() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {seoBlock}
 
       {/* header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">

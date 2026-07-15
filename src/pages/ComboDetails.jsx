@@ -305,6 +305,8 @@ export default function ComboDetails() {
                 : [{ imageUrl: combo.imageUrl, isPrimary: true }]
             }
             onShare={handleShare}
+            productName={combo.name}
+            categoryName="Combo Pack"
           />
         </div>
 

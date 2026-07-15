@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
 import { usePublicSettings } from "../hookqueries/useSettings";
 import ReactMarkdown from "react-markdown";
 
@@ -8,10 +8,11 @@ export default function TermsOfUse() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-      <Helmet>
-        <title>Terms of Use — Namma Oor Karuvattu Kadai</title>
-        <meta name="description" content="Terms of Use for Namma Oor Karuvattu Kadai. Read our terms and conditions for orders, payments, and shipping." />
-      </Helmet>
+      <SEO
+        title="Terms of Use — Namma Oor Karuvattu Kadai"
+        description="Terms of Use for Namma Oor Karuvattu Kadai. Read our terms and conditions for orders, payments, and shipping."
+        url="https://nammaoorkaruvattukadai.com/terms-of-use"
+      />
 
       <div className="bg-surface rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-2">

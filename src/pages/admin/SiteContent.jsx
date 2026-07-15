@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Loader2, Check, FileText, Sparkles, HelpCircle } from "lucide-react";
+import { Save, Loader2, Check, FileText, Sparkles, HelpCircle, Truck } from "lucide-react";
 import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 import TabToggle from "../../components/admin/TabToggle.jsx";
 import API from "../../ApiCall/Api.jsx";
@@ -90,6 +90,32 @@ We adopt reasonable technical and organizational security measures to prevent un
 ## 9. Changes to This Policy
 We may update this Privacy Policy periodically to reflect changes in our operational or regulatory practices. Continued use of our website after changes are posted constitutes your acceptance of the updated policy.`;
 
+const DEFAULT_SHIPPING = `At **Namma Oor Karuvattu Kadai**, we take great care to ensure your order reaches you fresh, safe, and on time. This Shipping Policy explains our delivery process, timeframes, and what happens if something goes wrong along the way.
+
+## 1. Delivery Areas
+We currently ship across India through our trusted courier and logistics partners. Deliveries to coastal Tamil Nadu and nearby regions are typically the fastest, given our proximity to the source.
+
+## 2. Order Processing Time
+Orders are packed and dispatched within **24-48 hours** of payment confirmation. Orders placed on Sundays or public holidays are processed on the next working day.
+
+## 3. Estimated Delivery Timeframe
+Once dispatched, orders typically arrive within **3-7 business days**, depending on your location. Metro cities and nearby regions may receive orders faster, while remote or rural areas may take slightly longer.
+
+## 4. Shipping Charges
+A flat shipping fee applies to orders below our free-shipping threshold. Orders above this threshold qualify for **free shipping**. Exact charges and thresholds are displayed at checkout.
+
+## 5. Order Tracking
+Once your order is shipped, you will receive tracking details via WhatsApp, SMS, or email so you can follow your package's journey until it arrives.
+
+## 6. Failed or Delayed Deliveries
+If a delivery attempt is unsuccessful, our courier partner will typically attempt redelivery or hold the package at a nearby facility for pickup. If you do not respond within a reasonable window, the order may be returned to us, and any applicable refund will be processed after deducting shipping costs. Delays due to weather, regional logistics disruptions, or unforeseen circumstances are occasionally unavoidable — we appreciate your patience and will keep you informed of any significant delay.
+
+## 7. Packaging
+All orders are sealed in premium, multi-layer, odour-proof packaging designed to preserve freshness and prevent damage during transit.
+
+## 8. Contact Us
+If you have questions about your shipment or a delivery issue, please reach out to us at nammaoorkaruvattukadai@gmail.com and we'll be happy to help.`;
+
 const DEFAULT_WHY_US = [
   {
     emoji: "🎣",
@@ -117,6 +143,7 @@ export default function SiteContent() {
 
   const [termsContent, setTermsContent] = useState("");
   const [privacyContent, setPrivacyContent] = useState("");
+  const [shippingContent, setShippingContent] = useState("");
   const [whyUsReasons, setWhyUsReasons] = useState(DEFAULT_WHY_US);
 
   useEffect(() => {
@@ -125,6 +152,7 @@ export default function SiteContent() {
         const s = res.settings || {};
         setTermsContent(s.termsContent || DEFAULT_TERMS);
         setPrivacyContent(s.privacyContent || DEFAULT_PRIVACY);
+        setShippingContent(s.shippingContent || DEFAULT_SHIPPING);
         if (s.whyUsReasons) {
           try {
             const parsed = typeof s.whyUsReasons === "string" ? JSON.parse(s.whyUsReasons) : s.whyUsReasons;
@@ -158,6 +186,8 @@ export default function SiteContent() {
         payload = { termsContent };
       } else if (tab === "privacy") {
         payload = { privacyContent };
+      } else if (tab === "shipping") {
+        payload = { shippingContent };
       } else if (tab === "whyus") {
         payload = { whyUsReasons: JSON.stringify(whyUsReasons) };
       }
@@ -182,6 +212,7 @@ export default function SiteContent() {
   const tabs = [
     { key: "terms", label: "Terms & Conditions", icon: FileText },
     { key: "privacy", label: "Privacy Policy", icon: FileText },
+    { key: "shipping", label: "Shipping Policy", icon: Truck },
     { key: "whyus", label: "Why Choose Us", icon: Sparkles },
   ];
 
@@ -301,6 +332,42 @@ export default function SiteContent() {
                 <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
                   <ReactMarkdown>
                     {privacyContent}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </AdminCard>
+          </div>
+        )}
+
+        {/* ── Tab Content: Shipping Policy ── */}
+        {activeTab === "shipping" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AdminCard className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="field-label block font-semibold text-gray-700">Markdown Editor</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <HelpCircle size={12} /> Supports Markdown
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
+                Use <code>## Heading</code> for sections, <code>**bold**</code> for emphasis, and blank lines to separate paragraphs
+              </p>
+              <textarea
+                value={shippingContent}
+                onChange={(e) => setShippingContent(e.target.value)}
+                className="field-input h-[500px] font-mono text-sm leading-relaxed p-4 bg-gray-50 border-gray-200 focus:bg-surface focus:border-brand-500 rounded-xl resize-none"
+                placeholder="Enter Shipping Policy content in Markdown..."
+              />
+            </AdminCard>
+
+            <AdminCard className="flex flex-col gap-3">
+              <span className="field-label block font-semibold text-gray-700 border-b border-gray-100 pb-2">Live Preview</span>
+              <div className="h-[500px] p-6 rounded-xl border border-amber-100 bg-amber-50/20 overflow-y-auto">
+                <h1 className="font-display text-2xl font-bold text-brand-900 mb-2">Shipping Policy</h1>
+                <p className="font-body text-xs text-amber-600 mb-6 uppercase tracking-wider">Last updated: (Dynamic)</p>
+                <div className="font-body text-sm text-amber-800 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-brand-900 [&_h2]:mt-5 [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:text-brand-950">
+                  <ReactMarkdown>
+                    {shippingContent}
                   </ReactMarkdown>
                 </div>
               </div>

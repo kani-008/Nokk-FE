@@ -427,7 +427,7 @@ export default function ProductDetails() {
 
         {/* Gallery — sticky on desktop */}
         <div className="max-w-xl w-full mx-auto md:sticky md:top-[104px] self-start">
-          <ImageGallery images={product.images} onShare={handleShare} />
+          <ImageGallery images={product.images} onShare={handleShare} productName={product.nameEn} categoryName={product.categoryName} />
         </div>
 
         {/* Right Column (Details + Description + Reviews) */}

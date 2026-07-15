@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Star, MessageSquare, ArrowRight } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
 import API from "../ApiCall/Api";
 const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
@@ -124,13 +124,11 @@ export default function ReviewsOverview() {
 
   return (
     <>
-      <Helmet>
-        <title>Product Reviews — Namma Oor Karuvattu Kadai</title>
-        <meta
-          name="description"
-          content="Browse customer ratings and reviews for all our products."
-        />
-      </Helmet>
+      <SEO
+        title="Product Reviews — Namma Oor Karuvattu Kadai"
+        description="Browse customer ratings and reviews for all our premium sun-dried fish, pickles, and traditional coastal delicacies."
+        url="https://nammaoorkaruvattukadai.com/reviews"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-20">
         {/* Header */}

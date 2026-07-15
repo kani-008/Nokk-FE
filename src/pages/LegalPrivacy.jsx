@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
 import { usePublicSettings } from "../hookqueries/useSettings";
 import ReactMarkdown from "react-markdown";
 
@@ -8,10 +8,11 @@ export default function LegalPrivacy() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-      <Helmet>
-        <title>Privacy Policy — Namma Oor Karuvattu Kadai</title>
-        <meta name="description" content="Privacy Policy for Namma Oor Karuvattu Kadai. Learn how we collect, use, and safeguard your data." />
-      </Helmet>
+      <SEO
+        title="Privacy Policy — Namma Oor Karuvattu Kadai"
+        description="Privacy Policy for Namma Oor Karuvattu Kadai. Learn how we collect, use, and safeguard your data."
+        url="https://nammaoorkaruvattukadai.com/privacy-policy"
+      />
 
       <div className="bg-surface rounded-2xl border border-amber-100 p-6 sm:p-10 shadow-sm">
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-2">
@@ -140,7 +141,7 @@ export default function LegalPrivacy() {
               </h2>
               <div className="p-5 bg-amber-50/50 rounded-xl border border-amber-100 text-xs sm:text-sm text-amber-900 font-body space-y-1">
                 <p className="font-bold text-brand-900 text-sm">Namma Oor Karuvattu Kadai</p>
-                <p>No: 13, North Street, Singarathoppu, Cuddalore Old Town,</p>
+                <p> Cuddalore Old Town,</p>
                 <p>Cuddalore - 607003, Tamil Nadu, India</p>
                 <p className="pt-2"><strong>Email:</strong> <a href="mailto:nammaoorkaruvattukadai@gmail.com" className="text-brand-900 underline hover:text-amber-600 transition-colors">nammaoorkaruvattukadai@gmail.com</a></p>
               </div>

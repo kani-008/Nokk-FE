@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronRight, ArrowLeft, MessageSquare, Star } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
 import API from "../ApiCall/Api";
 import {
   StarBadge,
@@ -198,19 +198,11 @@ export default function ProductReviewsPage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {product ? `Reviews — ${product.nameEn}` : "Reviews"} | Namma Oor Karuvattu Kadai
-        </title>
-        <meta
-          name="description"
-          content={
-            product
-              ? `Customer reviews and ratings for ${product.nameEn}.`
-              : "Product reviews"
-          }
-        />
-      </Helmet>
+      <SEO
+        title={product ? `Reviews — ${product.nameEn} | Namma Oor Karuvattu Kadai` : "Reviews | Namma Oor Karuvattu Kadai"}
+        description={product ? `Customer reviews and ratings for ${product.nameEn}.` : "Product reviews"}
+        url={product ? `https://nammaoorkaruvattukadai.com/products/${product.slug}/reviews` : "https://nammaoorkaruvattukadai.com"}
+      />
 
       {/* Lightbox */}
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />

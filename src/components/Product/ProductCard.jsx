@@ -242,7 +242,7 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
           {image ? (
             <img
               src={image}
-              alt={isCombo ? combo.name : product.nameEn}
+              alt={isCombo ? `${combo.name} - ${categoryLabel}` : `${product.nameEn} - ${product.categoryName || "Dry Fish"}`}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
