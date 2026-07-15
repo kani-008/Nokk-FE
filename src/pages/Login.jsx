@@ -4,6 +4,7 @@ import {
     Eye, EyeOff, Phone, Mail, Lock, ArrowRight, Loader2, KeyRound, ShieldCheck,
 } from "lucide-react";
 import API from "../ApiCall/Api";
+import SEO from "../components/seo/SEO.jsx";
 import { useAuthStore } from "../components/store/AuthStore";
 import { useToast } from "../components/useToast";
 import AuthLayout, { StepDots, OtpBoxes, fieldClass, GoogleAuthButton } from "../components/layout/AuthLayout";
@@ -430,6 +431,13 @@ export default function Login() {
         view === "forgot-reset" ? "Choose a new password for your account" : null;
 
     return (
+        <>
+        <SEO
+            title="Login | Namma Oor Karuvattu Kadai"
+            description="Log in to your Namma Oor Karuvattu Kadai account to track orders, manage your wishlist, and check out faster."
+            url="https://nammaoorkaruvattukadai.com/login"
+            noindex={true}
+        />
         <AuthLayout
             mode="login"
             step={step}
@@ -792,5 +800,6 @@ export default function Login() {
                 </form>
             )}
         </AuthLayout>
+        </>
     );
 }

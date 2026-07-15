@@ -38,28 +38,53 @@ export default function Wishlist() {
   // Track which IDs we've already fetched so we only ever make one call per set of ids
   const fetchedIdsRef = useRef(new Set());
 
-  // ── On mount: if authenticated, sync ordered IDs from server ────────
+  // ── Authenticated: single request gets ordered IDs AND full product
+  // data in one shot — /wishlist/get-wishlist now returns fully-hydrated
+  // products (same shape as /products/get-all), so no second round trip
+  // to /products/get-all is needed for this path. ───────────────────────
   useEffect(() => {
     if (!isAuthenticated || !token) return;
+
+    let active = true;
+    const timer = setTimeout(() => {
+      if (active && Object.keys(productMap).length === 0) setLoading(true);
+    }, 50);
 
     const load = async () => {
       try {
         const res = await API.get("/wishlist/get-wishlist");
+        if (!active) return;
+        const items = res.data.wishlist ?? [];
         // Sorted by addedAt descending (most recently added first) — matches
         // the backend ORDER BY w.created_at DESC
-        const ordered = (res.data.wishlist ?? []).map((i) => i.productId);
+        const ordered = items.map((p) => p.id);
         // Server is authoritative: replace local store IDs outright so stale
         // guest-persisted IDs can never resurrect deleted items on reload.
         setIds(ordered);
+        setProductMap((prev) => {
+          const next = { ...prev };
+          items.forEach((p) => { next[p.id] = p; });
+          return next;
+        });
+        ordered.forEach((id) => fetchedIdsRef.current.add(id));
       } catch (err) {
         console.error("loadFromServer failed:", err);
+      } finally {
+        if (active) setLoading(false);
       }
     };
     load();
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]);
 
-  // ── Fetch full product data for any IDs not yet in productMap ───────
+  // ── Guest fallback: hydrate productMap for locally-stored IDs ───────
+  // No wishlists table row to join against for a guest, so this is the
+  // only path that still needs to fetch product data separately.
   //
   // Notes on the /products/get-all?ids=... endpoint:
   //   • Public — no authentication required, safe to call here.
@@ -68,6 +93,8 @@ export default function Wishlist() {
   //   • Response order is not guaranteed to match request order — we
   //     re-order below using the store's authoritative `ids` array.
   useEffect(() => {
+    if (isAuthenticated) return; // authenticated path is fully handled above
+
     const needed = ids.filter((id) => !fetchedIdsRef.current.has(id));
     if (!needed.length) return;
 
@@ -104,7 +131,7 @@ export default function Wishlist() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids]);
+  }, [ids, isAuthenticated]);
 
   // ── Reactively derive the display list from the live store ───────────
   // When ProductCard's heart-toggle removes an id from the store, this
@@ -132,6 +159,7 @@ export default function Wishlist() {
       title="My Wishlist | Namma Oor Karuvattu Kadai"
       description="View your saved products at Namma Oor Karuvattu Kadai. Keep track of your favorite dry fish, pickles, and traditional seafood delicacies."
       url="https://nammaoorkaruvattukadai.com/wishlist"
+      noindex={true}
     />
   );
 

@@ -61,6 +61,7 @@ import ProductReviewsPage from "./pages/ProductReviewsPage";
 import LegalPrivacy from "./pages/LegalPrivacy";
 import TermsOfUse from "./pages/TermsOfUse";
 import ShippingPolicy from "./pages/ShippingPolicy";
+import ReturnPolicy from "./pages/ReturnPolicy";
 
 /* Cart & Checkout Features */
 import Cart from "./pages/Cart";
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="/privacy-policy" element={<LegalPrivacy />} />
           <Route path="/terms" element={<TermsOfUse />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/return-policy" element={<ReturnPolicy />} />
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>

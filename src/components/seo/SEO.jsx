@@ -13,7 +13,10 @@ export default function SEO({
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
   const defaultTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
   const defaultDesc = "Shop premium sun-dried karuvadu (dry fish), traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sourced directly and delivered across Tamil Nadu.";
-  const defaultImage = `${SITE_URL}/og-home.jpg`;
+  // No dedicated /og-home.jpg asset exists yet — fall back to a live admin-uploaded
+  // hero banner image so og:image is never a broken link. Swap for a real designed
+  // OG asset once one exists; this banner can be replaced/deleted from the admin panel.
+  const defaultImage = "https://ik.imagekit.io/Nokk/banner/1783838113096-se4sfs8y69l_uozwqqiMg.jpg";
 
   const finalTitle = title || defaultTitle;
   const finalDesc = description || defaultDesc;

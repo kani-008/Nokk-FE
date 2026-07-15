@@ -190,6 +190,7 @@ export default function MyOrders() {
         title="My Orders | Namma Oor Karuvattu Kadai"
         description="View your order history at Namma Oor Karuvattu Kadai. Track active order statuses and request returns."
         url="https://nammaoorkaruvattukadai.com/my-orders"
+        noindex={true}
       />
       {/* ── Mobile detail view (replaces list) ─────────────────────────── */}
       {isMobileDetail && (

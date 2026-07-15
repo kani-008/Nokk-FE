@@ -19,6 +19,7 @@ import AddressStep from "../components/checkout/Address";
 import PaymentStep from "../components/checkout/Payment";
 import OrderSummaryStep from "../components/checkout/OrderSummary";
 import AddressPickerSheet from "../components/checkout/AddressPickerSheet";
+import SEO from "../components/seo/SEO.jsx";
 
 const mapServerItems = (raw = []) =>
   raw.map((i) => ({
@@ -550,6 +551,12 @@ export default function Checkout() {
 
   return (
     <div className="checkout-page max-w-7xl mx-auto px-2 sm:px-6 pt-2 pb-28 sm:pt-3 sm:pb-8">
+      <SEO
+        title="Checkout | Namma Oor Karuvattu Kadai"
+        description="Complete your order at Namma Oor Karuvattu Kadai — enter your delivery address, review your order, and pay securely."
+        url="https://nammaoorkaruvattukadai.com/checkout"
+        noindex={true}
+      />
       {step === "address" && (
         <div className="hidden md:flex items-center gap-2 mb-3 max-w-xl mx-auto w-full px-1">
           <button

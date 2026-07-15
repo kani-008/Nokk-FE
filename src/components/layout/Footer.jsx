@@ -39,7 +39,7 @@ const POLICY_LINKS = [
   { label: "Privacy Policy", to: "/privacy-policy" },
   { label: "Terms and Condition ", to: "/terms" },
   // { label: "FAQ", href: "#" },
-  {label:"Return Policy",to:"/return"}
+  {label:"Return Policy",to:"/return-policy"}
 ];
 
 

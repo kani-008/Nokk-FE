@@ -20,6 +20,7 @@ import { useCartStore }      from "../components/store/CartStore.jsx";
 import { useToast }          from "../components/useToast.jsx";
 import Dropdown              from "../components/admin/Dropdown.jsx";
 import API                   from "../ApiCall/Api.jsx";
+import SEO                   from "../components/seo/SEO.jsx";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const INDIAN_STATES = [
@@ -452,14 +453,17 @@ export default function Profile() {
   const { data: addressesList = [], isLoading: addrLoading } = useAddresses();
   const { data: coupons = [],       isLoading: couponLoading } = usePublicCoupons();
 
+  // /wishlist/get-wishlist now returns fully-hydrated product data directly
+  // (same shape as /products/get-all), so no separate ids-based fetch is
+  // needed here. This section only ever renders for logged-in users (the
+  // whole /profile route is behind ProtectedRoute), so no guest fallback.
   const { data: wishProducts = [], isLoading: wishLoading } = useQuery({
-    queryKey: ["wishlist-products", wishIds?.join(",")],
+    queryKey: ["wishlist-products"],
     queryFn: async () => {
-      if (!wishIds?.length) return [];
-      const res = await API.get(`/products/get-all?ids=${wishIds.join(",")}`);
-      return res.data.products || [];
+      const res = await API.get("/wishlist/get-wishlist");
+      return res.data.wishlist || [];
     },
-    enabled: section === "wishlist" && (wishIds?.length ?? 0) > 0,
+    enabled: section === "wishlist",
     staleTime: 60_000,
   });
 
@@ -586,6 +590,12 @@ export default function Profile() {
 
   return (
     <div className="w-full">
+      <SEO
+        title="My Profile | Namma Oor Karuvattu Kadai"
+        description="Manage your Namma Oor Karuvattu Kadai profile, saved addresses, and account settings."
+        url="https://nammaoorkaruvattukadai.com/profile"
+        noindex={true}
+      />
 
       {/* ── Toast ── */}
       <div className={`fixed top-4 right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm transition-all duration-300 ease-out ${toastVisible ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"}`}>

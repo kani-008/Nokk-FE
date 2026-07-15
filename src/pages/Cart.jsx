@@ -520,6 +520,7 @@ export default function Cart() {
       title="Shopping Cart | Namma Oor Karuvattu Kadai"
       description="View your shopping cart at Namma Oor Karuvattu Kadai. Review your selected sun-dried fish, pickles, and traditional seafood delicacies before checkout."
       url="https://nammaoorkaruvattukadai.com/cart"
+      noindex={true}
     />
   );
 
