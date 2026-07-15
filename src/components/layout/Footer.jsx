@@ -37,8 +37,9 @@ const ACCOUNT_LINKS = [
 const POLICY_LINKS = [
   { label: "Shipping Policy", to: "/shipping-policy" },
   { label: "Privacy Policy", to: "/privacy-policy" },
-  { label: "Terms of Use", to: "/terms-of-use" },
-  { label: "FAQ", href: "#" },
+  { label: "Terms and Condition ", to: "/terms" },
+  // { label: "FAQ", href: "#" },
+  {label:"Return Policy",to:"/return"}
 ];
 
 

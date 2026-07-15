@@ -106,7 +106,7 @@ export default function App() {
           <Route path="/reviews" element={<ReviewsOverview />} />
           <Route path="/reviews/:slug" element={<ProductReviewsPage />} />
           <Route path="/privacy-policy" element={<LegalPrivacy />} />
-          <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/terms" element={<TermsOfUse />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
           {/* Protected Customer Routes */}
