@@ -189,7 +189,7 @@ export default function Wishlist() {
         <h1 className="font-display text-2xl font-bold text-brand-900">
           My Wishlist
           <span className="font-num text-base font-normal text-amber-500 ml-2">
-            ({ids.length} {ids.length === 1 ? "item" : "items"})
+            ({displayProducts.length} {displayProducts.length === 1 ? "item" : "items"})
           </span>
         </h1>
         {ids.length > 0 && (
