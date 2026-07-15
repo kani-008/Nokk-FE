@@ -1,4 +1,6 @@
-import { Helmet } from "react-helmet-async";
+import { useMemo } from "react";
+import SEO from "../components/seo/SEO.jsx";
+import { buildOrganizationSchema, buildLocalBusinessSchema, buildWebSiteSchema } from "../utils/seo.js";
 import HeroBanner from "../components/home/HeroBanner.jsx";
 import {
   CategoryScroll,
@@ -41,44 +43,20 @@ export default function Home() {
   const title = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
   const description = "Shop authentic karuvadu (dry fish) — சுவை மிக்க கருவாடு — and traditional pickles online. Sourced directly from fishermen and delivered across Tamil Nadu.";
 
-  // Dynamic social profiles from settings
-  const sameAs = [
-    settings.instagramUrl,
-    settings.facebookUrl,
-    settings.youtubeUrl,
-    settings.twitterUrl,
-  ].filter(Boolean);
-
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Namma Oor Karuvattu Kadai",
-    "url": SITE_URL,
-    "logo": `${SITE_URL}/logo.png`,
-    ...(sameAs.length > 0 && { "sameAs": sameAs }),
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Cuddalore Old Town, Cuddalore",
-      "addressRegion": "Tamil Nadu",
-      "postalCode": "607003",
-      "addressCountry": "IN"
-    }
-  };
+  const schemas = useMemo(() => [
+    buildOrganizationSchema(settings),
+    buildLocalBusinessSchema(settings),
+    buildWebSiteSchema()
+  ], [settings]);
 
   return (
     <div className="min-h-screen bg-sandal-50">
-      <Helmet>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={`${SITE_URL}/og-home.jpg`} />
-        <meta property="og:url" content={SITE_URL} />
-        <meta property="og:type" content="website" />
-        <script type="application/ld+json">
-          {JSON.stringify(organizationSchema)}
-        </script>
-      </Helmet>
+      <SEO
+        title={title}
+        description={description}
+        url={SITE_URL}
+        schemas={schemas}
+      />
 
       {/* 1 – Hero */}
       <HeroBanner banners={banners} />
