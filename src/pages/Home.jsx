@@ -40,7 +40,7 @@ export default function Home() {
   const loading = bannersLoading || categoriesLoading || bestsellersLoading || newestLoading;
 
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  const title = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  const title = "Namma Oor Karuvattu Kadai";
   const description = "Shop authentic karuvadu (dry fish) — சுவை மிக்க கருவாடு — and traditional pickles online. Sourced directly from fishermen and delivered across Tamil Nadu.";
 
   const schemas = useMemo(() => [

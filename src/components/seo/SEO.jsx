@@ -11,16 +11,19 @@ export default function SEO({
   schemas = []
 }) {
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  const defaultTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  const defaultTitle = "Namma Oor Karuvattu Kadai";
   const defaultDesc = "Shop premium sun-dried karuvadu (dry fish), traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sourced directly and delivered across Tamil Nadu.";
   // No dedicated /og-home.jpg asset exists yet — fall back to a live admin-uploaded
   // hero banner image so og:image is never a broken link. Swap for a real designed
   // OG asset once one exists; this banner can be replaced/deleted from the admin panel.
-  const defaultImage = "https://ik.imagekit.io/Nokk/banner/1783838113096-se4sfs8y69l_uozwqqiMg.jpg";
+  const defaultImage = "./logo2.png"
 
   const finalTitle = title || defaultTitle;
   const finalDesc = description || defaultDesc;
-  const finalImage = image || defaultImage;
+  const rawImage = image || defaultImage;
+  const finalImage = rawImage?.startsWith("http")
+    ? rawImage
+    : `${SITE_URL}${rawImage?.startsWith(".") ? rawImage.slice(1) : rawImage?.startsWith("/") ? rawImage : "/" + rawImage}`;
   const finalUrl = url || SITE_URL;
   const finalCanonical = canonical || finalUrl;
 
@@ -29,6 +32,7 @@ export default function SEO({
       {/* Basic metadata */}
       <title>{finalTitle}</title>
       <meta name="description" content={finalDesc} />
+      <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
       {/* Robots meta */}
       <meta name="robots" content={noindex ? "noindex,follow" : "index,follow"} />
