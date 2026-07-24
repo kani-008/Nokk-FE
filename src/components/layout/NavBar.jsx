@@ -293,10 +293,8 @@ export default function NavBar() {
               </button>
             )}
 
-            {/* Logo — always on desktop; hidden on mobile when search is open OR on /products
-                (on /products it moves to the sub-row below — see below) */}
-            <Logo className={`shrink-0 mr-2 ${(searchOpen || isProductsPage) ? "hidden md:flex" : ""}`} inverse />
-
+            {/* Logo — always on desktop; hidden on mobile when search is open OR on /products */}
+            <Logo className={`shrink-0 mr-2 md:pl-16 ${(searchOpen || isProductsPage) ? "hidden md:flex" : ""}`} inverse />
             {/* Mobile inline search — always visible on /products, toggle-triggered elsewhere */}
             {(isProductsPage || searchOpen) && (
               <form

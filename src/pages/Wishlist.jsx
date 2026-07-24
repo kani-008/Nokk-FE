@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2, ArrowRight } from "lucide-react";
+import SEO from "../components/seo/SEO.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore }     from "../components/store/AuthStore";
 import API from "../ApiCall/Api";
@@ -37,28 +38,53 @@ export default function Wishlist() {
   // Track which IDs we've already fetched so we only ever make one call per set of ids
   const fetchedIdsRef = useRef(new Set());
 
-  // ── On mount: if authenticated, sync ordered IDs from server ────────
+  // ── Authenticated: single request gets ordered IDs AND full product
+  // data in one shot — /wishlist/get-wishlist now returns fully-hydrated
+  // products (same shape as /products/get-all), so no second round trip
+  // to /products/get-all is needed for this path. ───────────────────────
   useEffect(() => {
     if (!isAuthenticated || !token) return;
+
+    let active = true;
+    const timer = setTimeout(() => {
+      if (active && Object.keys(productMap).length === 0) setLoading(true);
+    }, 50);
 
     const load = async () => {
       try {
         const res = await API.get("/wishlist/get-wishlist");
+        if (!active) return;
+        const items = res.data.wishlist ?? [];
         // Sorted by addedAt descending (most recently added first) — matches
         // the backend ORDER BY w.created_at DESC
-        const ordered = (res.data.wishlist ?? []).map((i) => i.productId);
+        const ordered = items.map((p) => p.id);
         // Server is authoritative: replace local store IDs outright so stale
         // guest-persisted IDs can never resurrect deleted items on reload.
         setIds(ordered);
+        setProductMap((prev) => {
+          const next = { ...prev };
+          items.forEach((p) => { next[p.id] = p; });
+          return next;
+        });
+        ordered.forEach((id) => fetchedIdsRef.current.add(id));
       } catch (err) {
         console.error("loadFromServer failed:", err);
+      } finally {
+        if (active) setLoading(false);
       }
     };
     load();
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]);
 
-  // ── Fetch full product data for any IDs not yet in productMap ───────
+  // ── Guest fallback: hydrate productMap for locally-stored IDs ───────
+  // No wishlists table row to join against for a guest, so this is the
+  // only path that still needs to fetch product data separately.
   //
   // Notes on the /products/get-all?ids=... endpoint:
   //   • Public — no authentication required, safe to call here.
@@ -67,6 +93,8 @@ export default function Wishlist() {
   //   • Response order is not guaranteed to match request order — we
   //     re-order below using the store's authoritative `ids` array.
   useEffect(() => {
+    if (isAuthenticated) return; // authenticated path is fully handled above
+
     const needed = ids.filter((id) => !fetchedIdsRef.current.has(id));
     if (!needed.length) return;
 
@@ -103,7 +131,7 @@ export default function Wishlist() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids]);
+  }, [ids, isAuthenticated]);
 
   // ── Reactively derive the display list from the live store ───────────
   // When ProductCard's heart-toggle removes an id from the store, this
@@ -126,10 +154,20 @@ export default function Wishlist() {
     }
   };
 
+  const seoBlock = (
+    <SEO
+      title="My Wishlist | Namma Oor Karuvattu Kadai"
+      description="View your saved products at Namma Oor Karuvattu Kadai. Keep track of your favorite dry fish, pickles, and traditional seafood delicacies."
+      url="https://nammaoorkaruvattukadai.com/wishlist"
+      noindex={true}
+    />
+  );
+
   // ── Empty state ──────────────────────────────────────────────────────
   if (!ids.length && !loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
+        {seoBlock}
         <Heart size={56} className="text-amber-200 mb-4" />
         <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
@@ -144,13 +182,14 @@ export default function Wishlist() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {seoBlock}
 
       {/* header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="font-display text-2xl font-bold text-brand-900">
           My Wishlist
           <span className="font-num text-base font-normal text-amber-500 ml-2">
-            ({ids.length} {ids.length === 1 ? "item" : "items"})
+            ({displayProducts.length} {displayProducts.length === 1 ? "item" : "items"})
           </span>
         </h1>
         {ids.length > 0 && (

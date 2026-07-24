@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2, Sparkles, X } from "lucide-react";
+import SEO from "../components/seo/SEO.jsx";
 import { useCartStore }  from "../components/store/CartStore";
 import { useAuthStore }  from "../components/store/AuthStore";
 import { useBuyNowStore } from "../components/store/BuyNowStore";
@@ -514,10 +515,25 @@ export default function Cart() {
   const ship = shipping();
   const tot  = total();
 
-  if (items.length === 0) return <EmptyCart />;
+  const seoBlock = (
+    <SEO
+      title="Shopping Cart | Namma Oor Karuvattu Kadai"
+      description="View your shopping cart at Namma Oor Karuvattu Kadai. Review your selected sun-dried fish, pickles, and traditional seafood delicacies before checkout."
+      url="https://nammaoorkaruvattukadai.com/cart"
+      noindex={true}
+    />
+  );
+
+  if (items.length === 0) return (
+    <>
+      {seoBlock}
+      <EmptyCart />
+    </>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {seoBlock}
       <h1 className="font-display text-2xl font-bold text-brand-900 mb-6">
         My Cart
         <span className="font-num text-base font-normal text-amber-500 ml-2">

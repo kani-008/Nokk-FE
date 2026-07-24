@@ -353,8 +353,7 @@ export default function HeroBanner({ banners }) {
       {posterUrl && (
         <img
           src={posterUrl}
-          alt=""
-          aria-hidden="true"
+          alt="Namma Oor Karuvattu Kadai — Premium Sun-Dried Fish & Pickles Banner"
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
             videoReady ? "opacity-0" : "opacity-100"
           }`}
@@ -384,7 +383,7 @@ export default function HeroBanner({ banners }) {
       )}
 
       {/* dark vignette overlay — sits above the video, below the text */}
-      <div className="absolute inset-0 z-[5] bg-black/25" />
+      <div className="absolute inset-0 z-[5] bg-black/45" />
 
       {/* slide track */}
       <div className="relative z-10 w-full overflow-hidden">

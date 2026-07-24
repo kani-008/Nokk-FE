@@ -43,15 +43,11 @@ function CustomerRoutes() {
   return <CustomerLayout />;
 }
 
-/* Core / Home Page */
-import Home from "./pages/Home";
 
-/* Authentication & Profile Features */
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/profile";
-
-/* Catalog & Shopping Features */
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetails";
 import ComboDetails from "./pages/ComboDetails";
@@ -60,8 +56,8 @@ import ReviewsOverview from "./pages/ReviewsOverview";
 import ProductReviewsPage from "./pages/ProductReviewsPage";
 import LegalPrivacy from "./pages/LegalPrivacy";
 import TermsOfUse from "./pages/TermsOfUse";
-
-/* Cart & Checkout Features */
+import ShippingPolicy from "./pages/ShippingPolicy";
+import ReturnPolicy from "./pages/ReturnPolicy";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import MyOrders from "./pages/MyOrders";
@@ -90,8 +86,6 @@ export default function App() {
     <HelmetProvider>
     <BrowserRouter>
       <Routes>
-
-        {/* Public Customer Routes — CustomerRoutes enforces maintenance mode */}
         <Route element={<CustomerRoutes />}>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
@@ -105,7 +99,9 @@ export default function App() {
           <Route path="/reviews" element={<ReviewsOverview />} />
           <Route path="/reviews/:slug" element={<ProductReviewsPage />} />
           <Route path="/privacy-policy" element={<LegalPrivacy />} />
-          <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/return-policy" element={<ReturnPolicy />} />
 
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>

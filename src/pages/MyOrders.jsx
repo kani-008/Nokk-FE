@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useMyOrders } from "../hookqueries/useOrders";
 import OrderDetail from "../components/orders/OrderDetail";
+import SEO from "../components/seo/SEO.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -185,6 +186,12 @@ export default function MyOrders() {
 
   return (
     <>
+      <SEO
+        title="My Orders | Namma Oor Karuvattu Kadai"
+        description="View your order history at Namma Oor Karuvattu Kadai. Track active order statuses and request returns."
+        url="https://nammaoorkaruvattukadai.com/my-orders"
+        noindex={true}
+      />
       {/* ── Mobile detail view (replaces list) ─────────────────────────── */}
       {isMobileDetail && (
         <div className="lg:hidden">

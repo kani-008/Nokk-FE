@@ -6,6 +6,7 @@ import { useActiveCombos } from "../hookqueries/useCombos";
 import { useCartStore } from "../components/store/CartStore";
 import { useAuthStore } from "../components/store/AuthStore";
 import API from "../ApiCall/Api.jsx";
+import SEO from "../components/seo/SEO.jsx";
 
 const rupee = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -219,6 +220,11 @@ export default function Offers() {
 
   return (
     <div className="page-wrap py-8">
+      <SEO
+        title="Offers & Deals | Namma Oor Karuvattu Kadai"
+        description="Explore exclusive discounts, coupons, and combo deals on premium sun-dried fish and traditional pickles at Namma Oor Karuvattu Kadai."
+        url="https://nammaoorkaruvattukadai.com/offers"
+      />
       <div className="mb-7">
         <h1 className="font-display text-2xl font-bold text-brand-900">Offers & Deals</h1>
         <p className="font-body text-amber-500 text-sm mt-1">

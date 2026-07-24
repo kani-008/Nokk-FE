@@ -5,6 +5,7 @@ import {
     ArrowRight, Loader2, CheckCircle2, Pencil, CheckCircle,
 } from "lucide-react";
 import API from "../ApiCall/Api.jsx";
+import SEO from "../components/seo/SEO.jsx";
 import { useToast } from "../components/useToast";
 import { useAuthStore } from "../components/store/AuthStore";
 import AuthLayout, { StepDots, OtpBoxes, fieldClass, GoogleAuthButton } from "../components/layout/AuthLayout";
@@ -345,6 +346,13 @@ export default function Register() {
     }
 
     return (
+        <>
+        <SEO
+            title="Register | Namma Oor Karuvattu Kadai"
+            description="Create a Namma Oor Karuvattu Kadai account to place orders, save addresses, and track your dry fish and pickle deliveries."
+            url="https://nammaoorkaruvattukadai.com/register"
+            noindex={true}
+        />
         <AuthLayout
             mode="register"
             step={step}
@@ -644,5 +652,6 @@ export default function Register() {
                 </form>
             )}
         </AuthLayout>
+        </>
     );
 }

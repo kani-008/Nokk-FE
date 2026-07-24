@@ -3,7 +3,7 @@ import { Share2, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PH = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
-export default function ImageGallery({ images, onShare }) {
+export default function ImageGallery({ images, onShare, productName = "", categoryName = "" }) {
   const list = images?.length ? images : [{ imageUrl: PH, isPrimary: true }];
   // Replicate primary image if only 1 exists, to demonstrate swipe transition & dots
   const showList = list.length === 1 ? [list[0], list[0], list[0]] : list;
@@ -141,7 +141,7 @@ export default function ImageGallery({ images, onShare }) {
               >
                 <img
                   src={img.imageUrl || PH}
-                  alt={`Product view ${i}`}
+                  alt={productName ? `${productName} - ${categoryName || "Seafood"} (Detail ${i})` : `Product view ${i}`}
                   loading="lazy"
                   className="w-full h-full object-cover"
                   onError={(e) => { e.target.src = PH; }}

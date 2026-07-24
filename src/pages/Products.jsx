@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
+import { buildBreadcrumbSchema } from "../utils/seo.js";
 import {
   SlidersHorizontal, X, ChevronDown, ChevronUp,
   Star,
@@ -489,19 +490,64 @@ export default function Products() {
     isNew,
   };
 
-  const pageTitle = "Shop All Products — Namma Oor Karuvattu Kadai";
-  const pageDescription = "Browse our full catalog of authentic sun-dried fish, traditional seafood, and coastal delicacies. Filter by category, weight, price, and more.";
+  let pageTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  let pageDescription = "Shop authentic karuvadu (dry fish), nethili, sura, and traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sun-dried the traditional way, delivered across Tamil Nadu.";
+
+  if (category && categories.length > 0) {
+    const activeCat = categories.find((c) => c.slug === category);
+    if (activeCat) {
+      const en = activeCat.nameEn || "";
+      const ta = activeCat.nameTa || "";
+      const namesCombo = ta ? `${en} (${ta})` : en;
+      pageTitle = `Buy ${namesCombo} Online | Namma Oor Karuvattu Kadai`;
+      pageDescription = `Shop authentic ${namesCombo} — ${ta ? `${ta} ` : ""}prepared the traditional way. Premium quality, authentic taste, delivered across Tamil Nadu.`;
+    }
+  } else if (search) {
+    pageTitle = `Search results for "${search}" | Namma Oor Karuvattu Kadai`;
+    pageDescription = `Browse authentic karuvadu (dry fish) and pickles matching your search for "${search}". Authentic taste, delivered across Tamil Nadu.`;
+  }
+
+  const canonicalUrl = useMemo(() => {
+    const base = "https://nammaoorkaruvattukadai.com/products";
+    if (category) {
+      return `${base}?category=${category}`;
+    }
+    return base;
+  }, [category]);
+
+  const breadcrumbItems = useMemo(() => {
+    const items = [
+      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" }
+    ];
+    if (category && categories.length > 0) {
+      const activeCat = categories.find((c) => c.slug === category);
+      if (activeCat) {
+        items.push({
+          name: activeCat.nameEn,
+          item: `https://nammaoorkaruvattukadai.com/products?category=${activeCat.slug}`
+        });
+      }
+    }
+    return items;
+  }, [category, categories]);
+
+  const schemas = useMemo(() => [
+    buildBreadcrumbSchema(breadcrumbItems)
+  ], [breadcrumbItems]);
+
+  const noindex = !!search;
 
   return (
     <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-2 pb-6 md:py-6">
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:url" content="https://nammaoorkaruvattukadai.com/products" />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      <SEO
+        title={pageTitle}
+        description={pageDescription}
+        url="https://nammaoorkaruvattukadai.com/products"
+        canonical={canonicalUrl}
+        noindex={noindex}
+        schemas={schemas}
+      />
 
       {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
       <div className="flex items-center justify-end mb-4 md:hidden px-4">
@@ -560,6 +606,11 @@ export default function Products() {
 
         {/* ── Product grid ─────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
+          <h1 className="sr-only">
+            {category && categories.length > 0
+              ? `${categories.find((c) => c.slug === category)?.nameEn || "Products"} Category`
+              : "Buy Authentic Dry Fish & Pickles Online"}
+          </h1>
 
           {loading ? (
             <div className="product-grid-compact">

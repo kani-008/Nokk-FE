@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight, ShoppingCart, Star, Truck, ShieldCheck,
@@ -6,7 +6,8 @@ import {
   AlertCircle, X
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
+import { buildBreadcrumbSchema } from "../utils/seo.js";
 import { useComboDetail } from "../hookqueries/useCombos";
 import { useSimilarProductsMulti } from "../hookqueries/useProducts";
 import { useDeliverySettings } from "../hookqueries/useHome";
@@ -74,6 +75,19 @@ export default function ComboDetails() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [comboId]);
+
+  const breadcrumbItems = useMemo(() => {
+    if (!combo) return [];
+    return [
+      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" },
+      { name: combo.name, item: `https://nammaoorkaruvattukadai.com/combos/${comboId}` }
+    ];
+  }, [combo, comboId]);
+
+  const schemas = useMemo(() => [
+    buildBreadcrumbSchema(breadcrumbItems)
+  ], [breadcrumbItems]);
 
   if (isLoading) return <DetailSkeleton />;
   if (!combo) {
@@ -227,16 +241,18 @@ export default function ComboDetails() {
   const pageTitle = `${combo.name} — Namma Oor Karuvattu Kadai`;
   const pageDescription = combo.description || `Special combo pack: ${combo.name}. Save with combined pricing on sun-dried fish delicacies.`;
 
+  const canonicalUrl = `https://nammaoorkaruvattukadai.com/combos/${comboId}`;
+
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={combo.imageUrl || ""} />
-        <meta property="og:type" content="product" />
-      </Helmet>
+      <SEO
+        title={pageTitle}
+        description={pageDescription}
+        image={combo.imageUrl || ""}
+        url={canonicalUrl}
+        type="product"
+        schemas={schemas}
+      />
 
       {/* Toast */}
       <div
@@ -289,6 +305,8 @@ export default function ComboDetails() {
                 : [{ imageUrl: combo.imageUrl, isPrimary: true }]
             }
             onShare={handleShare}
+            productName={combo.name}
+            categoryName="Combo Pack"
           />
         </div>
 

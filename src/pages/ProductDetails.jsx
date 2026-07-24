@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ChevronRight, ShoppingCart, Heart, Star,
@@ -7,7 +7,8 @@ import {
   AlertCircle, X,
 } from "lucide-react";
 import { FaWhatsapp, FaTelegramPlane, FaFacebook, FaTwitter, FaInstagram } from "react-icons/fa";
-import { Helmet } from "react-helmet-async";
+import SEO from "../components/seo/SEO.jsx";
+import { buildBreadcrumbSchema, buildProductSchema } from "../utils/seo.js";
 import { useProductDetail, useSimilarProducts } from "../hookqueries/useProducts";
 import { useDeliverySettings } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
@@ -115,15 +116,42 @@ export default function ProductDetails() {
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 
   const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  const DEFAULT_TITLE = "Namma Oor Karuvattu Kadai — Authentic Coastal Dry Fish & Seafood";
-  const DEFAULT_DESC = "Shop premium sun-dried fish, traditional seafood snacks, and coastal delicacies from Namma Oor Karuvattu Kadai.";
+  const DEFAULT_TITLE = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  const DEFAULT_DESC = "Shop premium sun-dried karuvadu (dry fish), traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sourced directly and delivered across Tamil Nadu.";
+
+  const breadcrumbItems = useMemo(() => {
+    if (!product) return [];
+    const items = [
+      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" }
+    ];
+    if (product.categoryName && product.categorySlug) {
+      items.push({
+        name: product.categoryName,
+        item: `https://nammaoorkaruvattukadai.com/products?category=${product.categorySlug}`
+      });
+    }
+    items.push({
+      name: product.nameEn,
+      item: `https://nammaoorkaruvattukadai.com/products/${product.slug}`
+    });
+    return items;
+  }, [product]);
+
+  const schemas = useMemo(() => {
+    if (!product) return [];
+    return [
+      buildBreadcrumbSchema(breadcrumbItems),
+      buildProductSchema(product)
+    ].filter(Boolean);
+  }, [breadcrumbItems, product]);
 
   if (loading) return (
     <>
-      <Helmet>
-        <title>{DEFAULT_TITLE}</title>
-        <meta name="description" content={DEFAULT_DESC} />
-      </Helmet>
+      <SEO
+        title={DEFAULT_TITLE}
+        description={DEFAULT_DESC}
+      />
       <DetailSkeleton />
     </>
   );
@@ -334,24 +362,29 @@ export default function ProductDetails() {
     setShareModalOpen(false);
   };
 
-  const productTitle = `${product.nameEn} — Namma Oor Karuvattu Kadai`;
-  const productDesc = product.description
+  const productTitle = product.nameTa
+    ? `${product.nameEn} (${product.nameTa}) — Buy Online | Namma Oor Karuvattu Kadai`
+    : `${product.nameEn} — Buy Online | Namma Oor Karuvattu Kadai`;
+
+  const categorySnippet = product.categoryName ? `under ${product.categoryName}` : "";
+  const nameTaSnippet = product.nameTa ? `— ${product.nameTa} —` : "";
+  const baseDesc = product.description
     ? product.description.slice(0, 160).trimEnd()
     : DEFAULT_DESC;
+  const productDesc = `Buy authentic ${product.nameEn} ${categorySnippet} online. ${nameTaSnippet} Sourced directly and prepared traditionally. ${baseDesc}`;
   const productUrl = `${SITE_URL}/products/${product.slug}`;
   const productImage = product.primaryImage || null;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">
-      <Helmet>
-        <title>{productTitle}</title>
-        <meta name="description" content={productDesc} />
-        <meta property="og:title" content={productTitle} />
-        <meta property="og:description" content={productDesc} />
-        {productImage && <meta property="og:image" content={productImage} />}
-        <meta property="og:url" content={productUrl} />
-        <meta property="og:type" content="product" />
-      </Helmet>
+      <SEO
+        title={productTitle}
+        description={productDesc}
+        image={productImage}
+        url={productUrl}
+        type="product"
+        schemas={schemas}
+      />
 
       {/* ── Toast (Red for Error, Green for Success) ── */}
       <div
@@ -398,7 +431,7 @@ export default function ProductDetails() {
 
         {/* Gallery — sticky on desktop */}
         <div className="max-w-xl w-full mx-auto md:sticky md:top-[104px] self-start">
-          <ImageGallery images={product.images} onShare={handleShare} />
+          <ImageGallery images={product.images} onShare={handleShare} productName={product.nameEn} categoryName={product.categoryName} />
         </div>
 
         {/* Right Column (Details + Description + Reviews) */}
