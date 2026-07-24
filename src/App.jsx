@@ -12,7 +12,7 @@ import { usePublicSettings } from "./hookqueries/useSettings";
 function MaintenancePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ backgroundColor: "var(--bg-page)" }}>
-      <span className="text-5xl mb-6">🐟</span>
+      <span className="text-5xl mb-6"><img src="./logo2.png" ></img></span>
       <h1 className="font-display text-2xl sm:text-3xl font-bold text-brand-900 mb-3">
         We'll be back soon!
       </h1>
