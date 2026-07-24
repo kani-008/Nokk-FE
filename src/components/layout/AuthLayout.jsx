@@ -211,7 +211,7 @@ export default function AuthLayout({
                             <img src={LOGO_URL} alt="NammaOor Logo" className="w-20 h-20 object-contain" />
                         ) : (
                             <div className="w-20 h-20 rounded-full bg-brand-700 flex items-center justify-center text-4xl shadow-lg ring-4 ring-white/10">
-                                🐟
+                                <img src="./logo2.png"></img>
                             </div>
                         )}
                         <div>
@@ -240,7 +240,7 @@ export default function AuthLayout({
                         <div className="relative mb-3">
                             <div className="absolute inset-0 rounded-full bg-brand-900/15 blur-md scale-110" />
                             <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
-                                🐟
+                                <img src="./logo2.png"></img>
                             </div>
                         </div>
 
