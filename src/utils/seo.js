@@ -14,6 +14,9 @@ export function applyActiveOffer(price, offer) {
   return null;
 }
 
+const SITE_URL = "https://nammaoorkaruvattukadai.com";
+const IMAGE_BASE = "https://ik.imagekit.io/Nokk";
+
 export function buildOrganizationSchema(settings = {}) {
   const sameAs = [
     settings.instagramUrl,
@@ -31,8 +34,8 @@ export function buildOrganizationSchema(settings = {}) {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Namma Oor Karuvattu Kadai",
-    "url": "https://nammaoorkaruvattukadai.com",
-    "logo": "https://nammaoorkaruvattukadai.com/logo.png",
+    "url": SITE_URL,
+    "logo": `${SITE_URL}/logo2.png`,
     "sameAs": sameAs,
     "telephone": settings.storePhone || "+91 98765 43210",
     "email": settings.storeEmail || "hello@nammakadai.com",
@@ -59,9 +62,9 @@ export function buildLocalBusinessSchema(settings = {}) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Namma Oor Karuvattu Kadai",
-    "url": "https://nammaoorkaruvattukadai.com",
-    "logo": "https://ik.imagekit.io/Nokk/logo/fav.png",
-    "image": "https://ik.imagekit.io/Nokk/logo/logo2.png",
+    "url": SITE_URL,
+    "logo": `${SITE_URL}/fav.png`,
+    "image": `${SITE_URL}/logo2.png`,
     "telephone": settings.storePhone || "+91 9344796606",
     "priceRange": "₹₹",
     "currenciesAccepted": "INR",
@@ -83,12 +86,12 @@ export function buildWebSiteSchema() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Namma Oor Karuvattu Kadai",
-    "url": "https://nammaoorkaruvattukadai.com",
+    "url": SITE_URL,
     "potentialAction": {
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": "https://nammaoorkaruvattukadai.com/products?search={search_term_string}"
+        "urlTemplate": `${SITE_URL}/products?search={search_term_string}`
       },
       "query-input": "required name=search_term_string"
     }
@@ -110,19 +113,49 @@ export function buildBreadcrumbSchema(items = []) {
 
 export function buildProductSchema(product, settings = {}) {
   if (!product) return null;
-  const SITE_URL = "https://nammaoorkaruvattukadai.com";
-  
+
   const rawPrice = product.variants?.[0]?.price ?? product.minPrice ?? 0;
   const offerPrice = product.activeOffer ? applyActiveOffer(rawPrice, product.activeOffer) : null;
   const price = offerPrice != null ? offerPrice : rawPrice;
   const inStock = product.variants?.[0]?.inStock ?? product.inStock ?? false;
 
+  // Helper to format images as absolute HTTPS URLs
+  const toAbsoluteUrl = (img) => {
+    if (!img) return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    const cleanPath = img.startsWith(".") ? img.slice(1) : img.startsWith("/") ? img : "/" + img;
+    if (cleanPath.startsWith("/logo") || cleanPath.startsWith("/fav")) {
+      return `${SITE_URL}${cleanPath}`;
+    }
+    return `${IMAGE_BASE}${cleanPath}`;
+  };
+
+  // Build array of image URLs
+  const imageList = [];
+  if (product.primaryImage) {
+    const mainImg = toAbsoluteUrl(product.primaryImage);
+    if (mainImg) imageList.push(mainImg);
+  }
+  if (Array.isArray(product.images)) {
+    product.images.forEach((i) => {
+      const url = toAbsoluteUrl(typeof i === "string" ? i : i?.imageUrl);
+      if (url && !imageList.includes(url)) imageList.push(url);
+    });
+  }
+  if (imageList.length === 0) {
+    imageList.push(`${SITE_URL}/logo2.png`);
+  }
+
+  const productName = product.nameEn || product.name || "Product";
+  const productUrl = `${SITE_URL}/products/${product.slug}`;
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": product.nameEn,
-    "image": product.primaryImage || `${SITE_URL}/logo.png`,
-    "description": product.description || `Buy authentic ${product.nameEn} online from Namma Oor Karuvattu Kadai.`,
+    "name": productName,
+    "url": productUrl,
+    "image": imageList,
+    "description": product.description || `Buy authentic ${productName} online from Namma Oor Karuvattu Kadai.`,
     "sku": String(product.id),
     "brand": {
       "@type": "Brand",
@@ -130,9 +163,9 @@ export function buildProductSchema(product, settings = {}) {
     },
     "offers": {
       "@type": "Offer",
-      "url": `${SITE_URL}/products/${product.slug}`,
+      "url": productUrl,
       "priceCurrency": "INR",
-      "price": price,
+      "price": String(price),
       "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "itemCondition": "https://schema.org/NewCondition"
     }

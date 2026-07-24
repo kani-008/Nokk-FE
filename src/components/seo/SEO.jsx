@@ -32,7 +32,7 @@ export default function SEO({
       {/* Basic metadata */}
       <title>{finalTitle}</title>
       <meta name="description" content={finalDesc} />
-      <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+      <link rel="icon" type="image/png" href="/fav.png" />
 
       {/* Robots meta */}
       <meta name="robots" content={noindex ? "noindex,follow" : "index,follow"} />
