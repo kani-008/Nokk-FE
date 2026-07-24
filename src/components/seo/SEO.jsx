@@ -16,7 +16,7 @@ export default function SEO({
   // No dedicated /og-home.jpg asset exists yet — fall back to a live admin-uploaded
   // hero banner image so og:image is never a broken link. Swap for a real designed
   // OG asset once one exists; this banner can be replaced/deleted from the admin panel.
-  const defaultImage = "./logo2.png"
+  const defaultImage = "./logo4.png"
 
   const finalTitle = title || defaultTitle;
   const finalDesc = description || defaultDesc;

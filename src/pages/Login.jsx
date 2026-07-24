@@ -130,19 +130,6 @@ export default function Login() {
 
         const trimmedId = form.identifier.trim().replace(/\s+/g, "");
 
-        // ── DEV BYPASS — remove before production ─────────────────────
-        const devAccounts = [
-            { id: "9999999999", pw: "admin123",    role: "admin",    name: "Dev Admin",    to: "/admin"   },
-            { id: "8888888888", pw: "customer123", role: "customer", name: "Dev Customer", to: redirectTo },
-        ];
-        const dev = devAccounts.find((a) => trimmedId === a.id && form.password === a.pw);
-        if (dev) {
-            login({ id: `dev-${dev.role}`, phone: dev.id, role: dev.role, name: dev.name }, `dev-token-${dev.role}`, null);
-            navigate(dev.to, { replace: true });
-            return;
-        }
-        // ─────────────────────────────────────────────────────────────
-
         setLoading(true);
         try {
             const payload = isPhoneLike(trimmedId)
@@ -584,7 +571,7 @@ export default function Login() {
                         )}
                     </button>
 
-                    <p className="font-body text-sm text-center text-amber-700">
+                    <p className="font-body text-sm text-center text-amber-700 -mt-2">
                         Don't have an account?{" "}
                         <Link to="/register" className="font-semibold text-brand-800 underline">
                             Register

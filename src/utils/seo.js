@@ -35,7 +35,7 @@ export function buildOrganizationSchema(settings = {}) {
     "@type": "Organization",
     "name": "Namma Oor Karuvattu Kadai",
     "url": SITE_URL,
-    "logo": `${SITE_URL}/logo2.png`,
+    "logo": `${SITE_URL}/logo4.png`,
     "sameAs": sameAs,
     "telephone": settings.storePhone || "+91 98765 43210",
     "email": settings.storeEmail || "hello@nammakadai.com",
@@ -64,7 +64,7 @@ export function buildLocalBusinessSchema(settings = {}) {
     "name": "Namma Oor Karuvattu Kadai",
     "url": SITE_URL,
     "logo": `${SITE_URL}/fav.png`,
-    "image": `${SITE_URL}/logo2.png`,
+    "image": `${SITE_URL}/logo4.png`,
     "telephone": settings.storePhone || "+91 9344796606",
     "priceRange": "₹₹",
     "currenciesAccepted": "INR",
@@ -143,7 +143,7 @@ export function buildProductSchema(product, settings = {}) {
     });
   }
   if (imageList.length === 0) {
-    imageList.push(`${SITE_URL}/logo2.png`);
+    imageList.push(`${SITE_URL}/logo4.png`);
   }
 
   const productName = product.nameEn || product.name || "Product";

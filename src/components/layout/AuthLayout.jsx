@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { AlertCircle, ShieldCheck } from "lucide-react";
 
 // ─── Logo URL — replace with real cloud URL when available ────────────
-const LOGO_URL = null;
+const LOGO_URL = "./logo4.png";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const GSI_SCRIPT_URL = "https://accounts.google.com/gsi/client";
@@ -202,16 +202,16 @@ export default function AuthLayout({
                 className={`relative z-10 w-full max-w-md lg:max-w-4xl bg-surface rounded-3xl lg:rounded-2xl border border-sandal-100 overflow-hidden flex flex-col lg:flex-row shadow-xl shadow-brand-900/5 ${cardClassName}`}
             >
                 {/* LEFT — Brand panel (desktop only) */}
-                <div className="hidden lg:flex relative lg:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-6 overflow-hidden">
+                <div className="hidden lg:flex relative lg:w-5/12 bg-brand-900 flex-col items-center justify-center px-8 py-12 gap-4 overflow-hidden">
                     <div className="absolute -top-16 -left-16 w-56 h-56 bg-brand-800 rounded-full opacity-40" />
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-800 rounded-full opacity-30" />
 
-                    <div className="relative z-10 flex flex-col items-center gap-4 text-center">
+                    <div className="relative z-10 flex flex-col items-center text-center">
                         {LOGO_URL ? (
-                            <img src={LOGO_URL} alt="NammaOor Logo" className="w-20 h-20 object-contain" />
+                            <img src={LOGO_URL} alt="NammaOor Logo" className="w-60 h-60 -mb-12 object-contain" />
                         ) : (
-                            <div className="w-20 h-20 rounded-full bg-brand-700 flex items-center justify-center text-4xl shadow-lg ring-4 ring-white/10">
-                                <img src="./logo2.png"></img>
+                            <div className="w-40 h-40 rounded-full bg-brand-700 flex items-center justify-center text-4xl shadow-lg ring-4 ring-white/10">
+                                <img src="./logo4.png"></img>
                             </div>
                         )}
                         <div>
@@ -236,11 +236,11 @@ export default function AuthLayout({
                     className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-6 py-6 lg:px-12 lg:py-12 bg-surface ${formPanelClassName}`}
                 >
                     {/* Mobile brand badge + wordmark — visible only on mobile */}
-                    <div className="flex flex-col items-center mb-5 lg:hidden">
-                        <div className="relative mb-3">
+                    <div className="flex flex-col items-center mb-3 lg:hidden">
+                        <div className="relative ">
                             <div className="absolute inset-0 rounded-full bg-brand-900/15 blur-md scale-110" />
-                            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
-                                <img src="./logo2.png"></img>
+                            <div className="relative w-25 h-25  rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
+                                <img className="w-25 h-30" src="./logo4.png"></img>
                             </div>
                         </div>
 

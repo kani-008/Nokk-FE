@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const IMAGEKIT_FALLBACK = "https://ik.imagekit.io/Nokk/logo/logo2.png";
+const IMAGEKIT_FALLBACK = "https://ik.imagekit.io/Nokk/logo/logo4.png";
 
 export default function Logo({ className = "", showText = true, inverse = false }) {
   const handleImageError = (e) => {
@@ -12,17 +12,17 @@ export default function Logo({ className = "", showText = true, inverse = false 
     <Link to="/" className={`flex items-center group select-none ${className}`}>
       {/* Mobile Logo */}
       <img
-        src="/logo2.png"
+        src="/logo4.png"
         onError={handleImageError}
         alt="Namma Oor Karuvattu Kadai"
         className="block md:hidden h-10 w-auto object-contain"
       />
       {/* Desktop Logo */}
       <img
-        src="/logo2.png"
+        src="/logo4.png"
         onError={handleImageError}
         alt="Namma Oor Karuvattu Kadai"
-        className="hidden md:block h-14 w-auto object-contain"
+        className="hidden md:block h-32 w-auto object-contain"
       />
     </Link>
   );
