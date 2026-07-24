@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export default function Logo({ className = "", showText = true, inverse = false }) {
   return (
-    <Link to="/" className={`flex items-center pl-16 group select-none ${className}`}>
+    <Link to="/" className={`flex items-center group select-none ${className}`}>
       {/* Mobile Logo: fav.png */}
       <img
         src="/logo2.png"

@@ -76,6 +76,19 @@ export default function ComboDetails() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [comboId]);
 
+  const breadcrumbItems = useMemo(() => {
+    if (!combo) return [];
+    return [
+      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" },
+      { name: combo.name, item: `https://nammaoorkaruvattukadai.com/combos/${comboId}` }
+    ];
+  }, [combo, comboId]);
+
+  const schemas = useMemo(() => [
+    buildBreadcrumbSchema(breadcrumbItems)
+  ], [breadcrumbItems]);
+
   if (isLoading) return <DetailSkeleton />;
   if (!combo) {
     return (
@@ -227,19 +240,6 @@ export default function ComboDetails() {
 
   const pageTitle = `${combo.name} — Namma Oor Karuvattu Kadai`;
   const pageDescription = combo.description || `Special combo pack: ${combo.name}. Save with combined pricing on sun-dried fish delicacies.`;
-
-  const breadcrumbItems = useMemo(() => {
-    if (!combo) return [];
-    return [
-      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
-      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" },
-      { name: combo.name, item: `https://nammaoorkaruvattukadai.com/combos/${comboId}` }
-    ];
-  }, [combo, comboId]);
-
-  const schemas = useMemo(() => [
-    buildBreadcrumbSchema(breadcrumbItems)
-  ], [breadcrumbItems]);
 
   const canonicalUrl = `https://nammaoorkaruvattukadai.com/combos/${comboId}`;
 

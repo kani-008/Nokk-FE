@@ -70,6 +70,17 @@
   --admin-control-h: 2.6875rem;
 }
 
+:root {
+  color-scheme: light !important;
+  supported-color-schemes: light !important;
+}
+
+html,
+body {
+  background-color: #f5eedf !important;
+  color-scheme: light !important;
+}
+
 /* Custom scrollbar — hidden on mobile, elegant sandal theme on desktop */
 @media (max-width: 767px) {
 

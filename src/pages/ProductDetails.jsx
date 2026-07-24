@@ -119,6 +119,33 @@ export default function ProductDetails() {
   const DEFAULT_TITLE = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
   const DEFAULT_DESC = "Shop premium sun-dried karuvadu (dry fish), traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sourced directly and delivered across Tamil Nadu.";
 
+  const breadcrumbItems = useMemo(() => {
+    if (!product) return [];
+    const items = [
+      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" }
+    ];
+    if (product.categoryName && product.categorySlug) {
+      items.push({
+        name: product.categoryName,
+        item: `https://nammaoorkaruvattukadai.com/products?category=${product.categorySlug}`
+      });
+    }
+    items.push({
+      name: product.nameEn,
+      item: `https://nammaoorkaruvattukadai.com/products/${product.slug}`
+    });
+    return items;
+  }, [product]);
+
+  const schemas = useMemo(() => {
+    if (!product) return [];
+    return [
+      buildBreadcrumbSchema(breadcrumbItems),
+      buildProductSchema(product)
+    ].filter(Boolean);
+  }, [breadcrumbItems, product]);
+
   if (loading) return (
     <>
       <SEO
@@ -347,29 +374,6 @@ export default function ProductDetails() {
   const productDesc = `Buy authentic ${product.nameEn} ${categorySnippet} online. ${nameTaSnippet} Sourced directly and prepared traditionally. ${baseDesc}`;
   const productUrl = `${SITE_URL}/products/${product.slug}`;
   const productImage = product.primaryImage || null;
-
-  const breadcrumbItems = useMemo(() => {
-    const items = [
-      { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
-      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" }
-    ];
-    if (product.categoryName && product.categorySlug) {
-      items.push({
-        name: product.categoryName,
-        item: `https://nammaoorkaruvattukadai.com/products?category=${product.categorySlug}`
-      });
-    }
-    items.push({
-      name: product.nameEn,
-      item: `https://nammaoorkaruvattukadai.com/products/${product.slug}`
-    });
-    return items;
-  }, [product]);
-
-  const schemas = useMemo(() => [
-    buildBreadcrumbSchema(breadcrumbItems),
-    buildProductSchema(product)
-  ].filter(Boolean), [breadcrumbItems, product]);
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-6">

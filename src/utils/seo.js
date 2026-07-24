@@ -60,16 +60,16 @@ export function buildLocalBusinessSchema(settings = {}) {
     "@type": "LocalBusiness",
     "name": "Namma Oor Karuvattu Kadai",
     "url": "https://nammaoorkaruvattukadai.com",
-    "logo": "https://nammaoorkaruvattukadai.com/logo.png",
-    "image": "https://nammaoorkaruvattukadai.com/og-home.jpg",
-    "telephone": settings.storePhone || "+91 98765 43210",
+    "logo": "https://ik.imagekit.io/Nokk/logo/fav.png",
+    "image": "https://ik.imagekit.io/Nokk/logo/logo2.png",
+    "telephone": settings.storePhone || "+91 9344796606",
     "priceRange": "₹₹",
     "currenciesAccepted": "INR",
     "paymentAccepted": paymentAcceptedString,
     "openingHours": "Mo-Su 09:00-21:00",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "No: 13, North Street, Singarathoppu",
+      "streetAddress": "Singarathoppu",
       "addressLocality": "Cuddalore Old Town, Cuddalore",
       "addressRegion": "Tamil Nadu",
       "postalCode": "607003",
@@ -135,7 +135,9 @@ export function buildProductSchema(product, settings = {}) {
       "price": price,
       "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "itemCondition": "https://schema.org/NewCondition"
-    },
+    }
+    /*
+    // PAUSED FOR PHASE 1 - Can be re-enabled in Phase 2
     ...(product.avgRating && product.reviewCount > 0 && {
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -143,5 +145,6 @@ export function buildProductSchema(product, settings = {}) {
         "reviewCount": product.reviewCount
       }
     })
+    */
   };
 }
