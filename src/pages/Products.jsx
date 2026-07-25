@@ -4,7 +4,7 @@ import SEO from "../components/seo/SEO.jsx";
 import { buildBreadcrumbSchema } from "../utils/seo.js";
 import {
   SlidersHorizontal, X, ChevronDown, ChevronUp,
-  Star,
+  Star, ArrowLeft, ArrowUpDown, Check
 } from "lucide-react";
 import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
 import { useActiveCombos } from "../hookqueries/useCombos";
@@ -21,13 +21,11 @@ const SORT_OPTIONS = [
 ];
 
 const PRICE_RANGES = [
-  { label: "Under ₹150", min: "", max: "150" },
-  { label: "₹150 - ₹300", min: "150", max: "300" },
-  { label: "₹300 - ₹500", min: "300", max: "500" },
-  { label: "Over ₹500", min: "500", max: "" },
+  { id: "under150", label: "Under ₹150", min: "", max: "150" },
+  { id: "150-300", label: "₹150 - ₹300", min: "150", max: "300" },
+  { id: "300-500", label: "₹300 - ₹500", min: "300", max: "500" },
+  { id: "over500", label: "Over ₹500", min: "500", max: "" },
 ];
-
-
 
 // ── skeleton card ──────────────────────────────────────────────────────
 function ProductSkeleton() {
@@ -47,7 +45,7 @@ function ProductSkeleton() {
   );
 }
 
-// ── filter section (collapsible on mobile and desktop alike) ──────────
+// ── filter section (collapsible on desktop sidebar) ───────────────────
 function FilterSection({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -68,9 +66,9 @@ function FilterSection({ title, children, defaultOpen = true }) {
 // ── active filter pill ─────────────────────────────────────────────────
 function FilterPill({ label, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-1 font-body text-xs bg-amber-100 text-brand-800 px-2.5 py-1 rounded-full">
+    <span className="inline-flex items-center gap-1 font-body text-xs bg-amber-100 text-brand-800 px-2.5 py-1 rounded-full border border-amber-200/80 shrink-0">
       {label}
-      <button onClick={onRemove} className="hover:text-red-500 transition-colors" aria-label="Remove filter">
+      <button onClick={onRemove} className="hover:text-red-500 transition-colors ml-0.5" aria-label="Remove filter">
         <X size={11} />
       </button>
     </span>
@@ -80,7 +78,7 @@ function FilterPill({ label, onRemove }) {
 // ── star rating filter row ─────────────────────────────────────────────
 function RatingRow({ value, checked, onChange }) {
   return (
-    <label className="filter-row group">
+    <label className="filter-row group cursor-pointer">
       <input
         type="checkbox"
         checked={checked}
@@ -96,12 +94,281 @@ function RatingRow({ value, checked, onChange }) {
           />
         ))}
       </span>
-      <span className="filter-row-label">& above</span>
+      <span className="filter-row-label">&amp; above</span>
     </label>
   );
 }
 
-// ── sidebar ───────────────────────────────────────────────────────
+// ── Sort Bottom Sheet Modal (Image 1 style) ───────────────────────────
+function SortBottomSheetModal({ open, onClose, sort, setParam }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      <div className="relative bg-surface rounded-t-2xl shadow-2xl p-4 w-full z-10 animate-in slide-in-from-bottom duration-200">
+        <div className="flex items-center justify-between border-b border-sandal-100 pb-3 mb-2">
+          <span className="font-body text-xs font-bold text-gray-500 uppercase tracking-wider">
+            Sort By
+          </span>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-1 py-1">
+          {SORT_OPTIONS.map((o) => {
+            const isSelected = sort === o.value || (sort === "popular" && o.value === "popular");
+            return (
+              <label
+                key={o.value}
+                onClick={() => {
+                  setParam("sort", o.value === "popular" ? "" : o.value);
+                  onClose();
+                }}
+                className="flex items-center justify-between px-3 py-3 rounded-xl cursor-pointer hover:bg-sandal-50 transition-colors"
+              >
+                <span className={`font-body text-sm ${isSelected ? "font-bold text-brand-900" : "text-gray-700"}`}>
+                  {o.label}
+                </span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  isSelected ? "border-brand-800 bg-brand-800" : "border-gray-300"
+                }`}>
+                  {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile 2-Column Filter Page / Drawer (Image 2 style) ──────────────
+function MobileFilterDrawer({
+  open,
+  onClose,
+  hasFilters,
+  removeAllFilters,
+  totalCount,
+  category,
+  categories,
+  minPrice,
+  maxPrice,
+  priceRanges,
+  rating,
+  allWeightLabels,
+  weights,
+  toggleListParam,
+  setParam,
+  inStock,
+  hasOffer,
+  isBest,
+  isNew,
+}) {
+  const [activeTab, setActiveTab] = useState("category");
+
+  if (!open) return null;
+
+  // Counts per tab section
+  const categoryCount = category ? 1 : 0;
+  const priceCount = priceRanges.length || (minPrice || maxPrice ? 1 : 0);
+  const weightCount = weights.length;
+  const ratingCount = rating ? 1 : 0;
+  const availabilityCount = (inStock ? 1 : 0) + (hasOffer ? 1 : 0) + (isBest ? 1 : 0) + (isNew ? 1 : 0);
+
+  const tabs = [
+    { id: "category", label: "Category", count: categoryCount },
+    { id: "price", label: "Price Range", count: priceCount },
+    { id: "weight", label: "Quantity", count: weightCount },
+    { id: "rating", label: "Rating", count: ratingCount },
+    { id: "availability", label: "Offers & Stock", count: availabilityCount },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-surface md:hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-sandal-100 bg-surface shrink-0">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2.5 font-body text-base font-bold text-brand-900"
+        >
+          <ArrowLeft size={20} className="text-brand-900" />
+          <span>Filters</span>
+        </button>
+
+        {hasFilters && (
+          <button
+            onClick={removeAllFilters}
+            className="font-body text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      {/* 2-Column Body */}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Left Column — Section Tabs */}
+        <div className="w-2/5 max-w-[150px] bg-sandal-50/70 border-r border-sandal-100 overflow-y-auto shrink-0">
+          {tabs.map((t) => {
+            const isActive = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`w-full flex items-center justify-between px-3 py-4 text-left font-body text-xs sm:text-sm font-semibold transition-all relative ${
+                  isActive
+                    ? "bg-surface text-brand-900 border-l-4 border-brand-800"
+                    : "text-amber-950/70 hover:bg-sandal-100/50"
+                }`}
+              >
+                <span className="truncate">{t.label}</span>
+                {t.count > 0 && (
+                  <span className="ml-1 text-[10px] font-bold bg-brand-800 text-white rounded-full w-4.5 h-4.5 flex items-center justify-center shrink-0">
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Column — Tab Options */}
+        <div className="flex-1 bg-surface p-4 overflow-y-auto">
+          {activeTab === "category" && (
+            <div className="space-y-1">
+              <button
+                onClick={() => setParam("category", "")}
+                className={`w-full text-left font-body text-sm px-3 py-2.5 rounded-xl transition-colors ${
+                  !category ? "bg-brand-800 text-white font-bold" : "text-brand-900 hover:bg-sandal-50"
+                }`}
+              >
+                All Products
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setParam("category", cat.slug)}
+                  className={`w-full text-left font-body text-sm px-3 py-2.5 rounded-xl transition-colors ${
+                    category === cat.slug ? "bg-brand-800 text-white font-bold" : "text-brand-900 hover:bg-sandal-50"
+                  }`}
+                >
+                  {cat.nameEn}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "price" && (
+            <div className="space-y-3">
+              {PRICE_RANGES.map((r) => {
+                const isSelected = priceRanges.includes(r.id) || (minPrice === r.min && maxPrice === r.max);
+                return (
+                  <label key={r.id} className="filter-row group cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleListParam("priceRange", priceRanges, r.id)}
+                      className="filter-checkbox"
+                    />
+                    <span className="filter-row-label">{r.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTab === "weight" && (
+            <div className="space-y-3">
+              {allWeightLabels.map((w) => (
+                <label key={w} className="filter-row group cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={weights.includes(w)}
+                    onChange={() => toggleListParam("weight", weights, w)}
+                    className="filter-checkbox"
+                  />
+                  <span className="filter-row-label">{w}</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "rating" && (
+            <div className="space-y-3">
+              {[4, 3, 2, 1].map((r) => (
+                <RatingRow
+                  key={r}
+                  value={r}
+                  checked={rating === String(r)}
+                  onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
+                />
+              ))}
+            </div>
+          )}
+
+          {activeTab === "availability" && (
+            <div className="space-y-3">
+              <label className="filter-row group cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={inStock}
+                  onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
+                  className="filter-checkbox"
+                />
+                <span className="filter-row-label">In Stock Only</span>
+              </label>
+              <label className="filter-row group cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasOffer}
+                  onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
+                  className="filter-checkbox"
+                />
+                <span className="filter-row-label">On Offer</span>
+              </label>
+              <label className="filter-row group cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isBest}
+                  onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
+                  className="filter-checkbox"
+                />
+                <span className="filter-row-label">Best Sellers</span>
+              </label>
+              <label className="filter-row group cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isNew}
+                  onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
+                  className="filter-checkbox"
+                />
+                <span className="filter-row-label">New Arrivals</span>
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Bar */}
+      <div className="flex items-center justify-between px-4 py-3 border-t border-sandal-100 bg-surface shrink-0">
+        <span className="font-body text-xs font-semibold text-amber-800">
+          {totalCount} products found
+        </span>
+        <button
+          onClick={onClose}
+          className="btn-md btn-primary px-8 py-2.5 rounded-xl font-bold"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── desktop sidebar ───────────────────────────────────────────────────────
 function Sidebar({
   hasFilters,
   removeAllFilters,
@@ -111,7 +378,7 @@ function Sidebar({
   categories,
   minPrice,
   maxPrice,
-  selectPriceRange,
+  priceRanges,
   rating,
   allWeightLabels,
   weights,
@@ -191,13 +458,13 @@ function Sidebar({
             <FilterSection title="Price Range">
               <div className="space-y-1.5">
                 {PRICE_RANGES.map((r) => {
-                  const isSelected = minPrice === r.min && maxPrice === r.max;
+                  const isSelected = priceRanges.includes(r.id) || (minPrice === r.min && maxPrice === r.max);
                   return (
-                    <label key={r.label} className="filter-row group cursor-pointer">
+                    <label key={r.id} className="filter-row group cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => selectPriceRange(r.min, r.max)}
+                        onChange={() => toggleListParam("priceRange", priceRanges, r.id)}
                         className="filter-checkbox"
                       />
                       <span className="filter-row-label">{r.label}</span>
@@ -223,10 +490,10 @@ function Sidebar({
 
             {/* Pack size / quantity */}
             {allWeightLabels.length > 0 && (
-              <FilterSection title="Pack Size">
+              <FilterSection title="Quantity">
                 <div className="space-y-1.5">
                   {allWeightLabels.map((w) => (
-                    <label key={w} className="filter-row group">
+                    <label key={w} className="filter-row group cursor-pointer">
                       <input
                         type="checkbox"
                         checked={weights.includes(w)}
@@ -241,9 +508,9 @@ function Sidebar({
             )}
 
             {/* Availability & offers */}
-            <FilterSection title="Availability & Offers" defaultOpen={true}>
+            <FilterSection title="Availability &amp; Offers" defaultOpen={true}>
               <div className="space-y-1.5">
-                <label className="filter-row group">
+                <label className="filter-row group cursor-pointer">
                   <input
                     type="checkbox"
                     checked={inStock}
@@ -252,7 +519,7 @@ function Sidebar({
                   />
                   <span className="filter-row-label">In Stock Only</span>
                 </label>
-                <label className="filter-row group">
+                <label className="filter-row group cursor-pointer">
                   <input
                     type="checkbox"
                     checked={hasOffer}
@@ -261,7 +528,7 @@ function Sidebar({
                   />
                   <span className="filter-row-label">On Offer</span>
                 </label>
-                <label className="filter-row group">
+                <label className="filter-row group cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isBest}
@@ -270,7 +537,7 @@ function Sidebar({
                   />
                   <span className="filter-row-label">Best Sellers</span>
                 </label>
-                <label className="filter-row group">
+                <label className="filter-row group cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isNew}
@@ -305,10 +572,20 @@ export default function Products() {
   const isNew = searchParams.get("isNew") === "true";
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
+  const priceRangeParam = searchParams.get("priceRange") || "";
   const rating = searchParams.get("rating") || "";
   const weightParam = searchParams.get("weight") || "";
   const hasOffer = searchParams.get("hasOffer") === "true";
   const page = parseInt(searchParams.get("page") || "1");
+
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [desktopSidebarOpen] = useState(true);
+
+  const priceRanges = useMemo(
+    () => priceRangeParam.split(",").filter(Boolean),
+    [priceRangeParam]
+  );
 
   // memoized so its identity is stable across renders unless weightParam actually changes —
   // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
@@ -325,15 +602,19 @@ export default function Products() {
     if (inStock) p.inStock = "true";
     if (isBest) p.isBestseller = "true";
     if (isNew) p.isNew = "true";
-    if (minPrice) p.minPrice = minPrice;
-    if (maxPrice) p.maxPrice = maxPrice;
+    if (priceRanges.length) {
+      p.priceRange = priceRanges.join(",");
+    } else {
+      if (minPrice) p.minPrice = minPrice;
+      if (maxPrice) p.maxPrice = maxPrice;
+    }
     if (rating) p.rating = rating;
     if (weights.length) p.weight = weights.join(",");
     if (hasOffer) p.hasOffer = "true";
     p.page = String(page);
     p.limit = "12";
     return p;
-  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
+  }, [search, category, sort, inStock, isBest, isNew, priceRanges, minPrice, maxPrice, rating, weights, hasOffer, page]);
 
   const { data: catData = [] } = useProductCategories();
   const categories = catData;
@@ -343,7 +624,7 @@ export default function Products() {
 
   const { data: combosData = [], isLoading: combosLoading } = useActiveCombos();
 
-  const { data: productsData, isLoading: productsLoading } = useProductList(queryParams);
+  const { data: productsData, isLoading: productsLoading, isFetching: productsFetching } = useProductList(queryParams);
   const products = useMemo(() => productsData?.products || [], [productsData]);
   const pagination = productsData?.pagination || null;
   const loading = productsLoading || (combosLoading && page === 1);
@@ -358,8 +639,24 @@ export default function Products() {
           c.description?.toLowerCase().includes(q)
       );
     }
+    if (priceRanges.length > 0) {
+      list = list.filter((c) => {
+        const p = c.comboPrice;
+        return priceRanges.some((id) => {
+          const r = PRICE_RANGES.find((pr) => pr.id === id);
+          if (!r) return false;
+          const min = r.min !== "" ? parseFloat(r.min) : 0;
+          const max = r.max !== "" ? parseFloat(r.max) : Infinity;
+          return p >= min && p <= max;
+        });
+      });
+    } else if (minPrice || maxPrice) {
+      const min = minPrice !== "" ? parseFloat(minPrice) : 0;
+      const max = maxPrice !== "" ? parseFloat(maxPrice) : Infinity;
+      list = list.filter((c) => c.comboPrice >= min && c.comboPrice <= max);
+    }
     return list;
-  }, [combosData, search]);
+  }, [combosData, search, priceRanges, minPrice, maxPrice]);
 
   const combinedItems = useMemo(() => {
     const isCombosCategory = category === "combos" || category?.toLowerCase() === "combos";
@@ -412,23 +709,6 @@ export default function Products() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [queryParams]);
 
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [desktopSidebarOpen] = useState(true);
-  const selectPriceRange = (min, max) => {
-    const p = new URLSearchParams(searchParams);
-    if (p.get("minPrice") === min && p.get("maxPrice") === max) {
-      p.delete("minPrice");
-      p.delete("maxPrice");
-    } else {
-      if (min) p.set("minPrice", min); else p.delete("minPrice");
-      if (max) p.set("maxPrice", max); else p.delete("maxPrice");
-    }
-    p.delete("page");
-    setSearchParams(p);
-  };
-
-
-
   // ── set a single URL param ────────────────────────────────────────
   const setParam = (key, value) => {
     const p = new URLSearchParams(searchParams);
@@ -443,17 +723,23 @@ export default function Products() {
     const next = currentList.includes(value)
       ? currentList.filter((v) => v !== value)
       : [...currentList, value];
-    setParam(key, next.join(","));
+    const p = new URLSearchParams(searchParams);
+    if (key === "priceRange") {
+      p.delete("minPrice");
+      p.delete("maxPrice");
+    }
+    if (next.length > 0) {
+      p.set(key, next.join(","));
+    } else {
+      p.delete(key);
+    }
+    p.delete("page");
+    setSearchParams(p);
   };
-
-
 
   const removeAllFilters = () => {
     setSearchParams({});
   };
-
-
-
 
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [
@@ -462,7 +748,19 @@ export default function Products() {
     inStock && { key: "inStock", label: "In Stock" },
     isBest && { key: "isBestseller", label: "Best Sellers" },
     isNew && { key: "isNew", label: "New Arrivals" },
-    (minPrice || maxPrice) && { key: "price", label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
+    ...priceRanges.map((id) => {
+      const r = PRICE_RANGES.find((p) => p.id === id);
+      return {
+        key: `priceRange:${id}`,
+        label: r ? r.label : id,
+        custom: () => toggleListParam("priceRange", priceRanges, id),
+      };
+    }),
+    (!priceRanges.length && (minPrice || maxPrice)) && {
+      key: "price",
+      label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`,
+      custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); }
+    },
     rating && { key: "rating", label: `${rating}★ & above` },
     hasOffer && { key: "hasOffer", label: "Has Offer" },
     ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
@@ -479,7 +777,7 @@ export default function Products() {
     categories,
     minPrice,
     maxPrice,
-    selectPriceRange,
+    priceRanges,
     rating,
     allWeightLabels,
     weights,
@@ -489,6 +787,19 @@ export default function Products() {
     isBest,
     isNew,
   };
+
+  const rawCount = pagination?.totalProducts ?? combinedItems.length;
+  const isFetching = productsLoading || productsFetching;
+
+  const [lastValidCount, setLastValidCount] = useState(rawCount);
+
+  useEffect(() => {
+    if (!isFetching && productsData) {
+      setLastValidCount(rawCount);
+    }
+  }, [isFetching, productsData, rawCount]);
+
+  const totalProductCount = isFetching ? (lastValidCount || rawCount) : rawCount;
 
   let pageTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
   let pageDescription = "Shop authentic karuvadu (dry fish), nethili, sura, and traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sun-dried the traditional way, delivered across Tamil Nadu.";
@@ -549,26 +860,123 @@ export default function Products() {
         schemas={schemas}
       />
 
-      {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
-      <div className="flex items-center justify-end mb-4 md:hidden px-4">
-        <button
-          type="button"
-          onClick={() => setFilterOpen((s) => !s)}
-          className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
-        >
-          <SlidersHorizontal size={14} className="text-sandal-500" />
-          <span>Sort &amp; Filter</span>
-          {activeFilters.length > 0 && (
-            <span className="bg-sandal-400 text-gray-900 font-num text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-              {activeFilters.length}
-            </span>
-          )}
-        </button>
+      {/* ── Mobile Split Sort & Filter Top Header Bar (Image 1 style) ────── */}
+      <div className="md:hidden border-b border-sandal-100 bg-surface mb-3">
+        <div className="grid grid-cols-2 divide-x divide-sandal-100">
+          <button
+            type="button"
+            onClick={() => setSortOpen(true)}
+            className="flex items-center justify-center gap-2 py-3 font-body text-sm font-bold text-brand-900 hover:bg-sandal-50 transition-colors"
+          >
+            <ArrowUpDown size={15} className="text-amber-500" />
+            <span>Sort</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            className="flex items-center justify-center gap-2 py-3 font-body text-sm font-bold text-brand-900 hover:bg-sandal-50 transition-colors relative"
+          >
+            <SlidersHorizontal size={15} className="text-amber-500" />
+            <span>Filter</span>
+            {activeFilters.length > 0 && (
+              <span className="bg-brand-800 text-white font-num text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shrink-0 ml-0.5">
+                {activeFilters.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Quick Filter Chips Strip */}
+        <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto no-scrollbar border-t border-sandal-100/50">
+          {activeFilters.map((f) => (
+            <FilterPill
+              key={f.key}
+              label={f.label}
+              onRemove={f.custom || (() => setParam(f.key, ""))}
+            />
+          ))}
+
+          <button
+            onClick={() => setParam("isBestseller", isBest ? "" : "true")}
+            className={`px-3 py-1 rounded-full font-body text-xs font-semibold whitespace-nowrap transition-colors border shrink-0 ${
+              isBest
+                ? "bg-brand-800 text-white border-brand-800"
+                : "bg-sandal-50 text-brand-900 border-sandal-200 hover:bg-sandal-100"
+            }`}
+          >
+            ⭐ Best Sellers
+          </button>
+
+          <button
+            onClick={() => setParam("inStock", inStock ? "" : "true")}
+            className={`px-3 py-1 rounded-full font-body text-xs font-semibold whitespace-nowrap transition-colors border shrink-0 ${
+              inStock
+                ? "bg-brand-800 text-white border-brand-800"
+                : "bg-sandal-50 text-brand-900 border-sandal-200 hover:bg-sandal-100"
+            }`}
+          >
+            📦 In Stock
+          </button>
+
+          <button
+            onClick={() => setParam("hasOffer", hasOffer ? "" : "true")}
+            className={`px-3 py-1 rounded-full font-body text-xs font-semibold whitespace-nowrap transition-colors border shrink-0 ${
+              hasOffer
+                ? "bg-brand-800 text-white border-brand-800"
+                : "bg-sandal-50 text-brand-900 border-sandal-200 hover:bg-sandal-100"
+            }`}
+          >
+            🏷️ On Offer
+          </button>
+
+          <button
+            onClick={() => setParam("isNew", isNew ? "" : "true")}
+            className={`px-3 py-1 rounded-full font-body text-xs font-semibold whitespace-nowrap transition-colors border shrink-0 ${
+              isNew
+                ? "bg-brand-800 text-white border-brand-800"
+                : "bg-sandal-50 text-brand-900 border-sandal-200 hover:bg-sandal-100"
+            }`}
+          >
+            ✨ New Arrivals
+          </button>
+        </div>
       </div>
 
-      {/* ── Active filter pills ───────────────────────────────────── */}
+      {/* ── Sort Bottom Sheet Modal (Image 1 style) ───────────────── */}
+      <SortBottomSheetModal
+        open={sortOpen}
+        onClose={() => setSortOpen(false)}
+        sort={sort}
+        setParam={setParam}
+      />
+
+      {/* ── Mobile 2-Column Filter Page / Drawer (Image 2 style) ──── */}
+      <MobileFilterDrawer
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        hasFilters={hasFilters}
+        removeAllFilters={removeAllFilters}
+        totalCount={totalProductCount}
+        category={category}
+        categories={categories}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        priceRanges={priceRanges}
+        rating={rating}
+        allWeightLabels={allWeightLabels}
+        weights={weights}
+        toggleListParam={toggleListParam}
+        setParam={setParam}
+        inStock={inStock}
+        hasOffer={hasOffer}
+        isBest={isBest}
+        isNew={isNew}
+      />
+
+      {/* ── Desktop Active filter pills ───────────────────────────── */}
       {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4 px-4 sm:px-0">
+        <div className="hidden md:flex flex-wrap gap-2 mb-4 px-4 sm:px-0">
           {activeFilters.map((f) => (
             <FilterPill
               key={f.key}
@@ -585,22 +993,6 @@ export default function Products() {
         {desktopSidebarOpen && (
           <div className="hidden md:block">
             <Sidebar {...sidebarProps} />
-          </div>
-        )}
-
-        {/* ── Mobile filter drawer ──────────────────────────────────── */}
-        {filterOpen && (
-          <div className="md:hidden fixed inset-0 z-50 flex">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setFilterOpen(false)} />
-            <div className="relative ml-auto w-72 bg-surface h-full overflow-y-auto p-4 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-body font-bold text-brand-900">Filters</span>
-                <button onClick={() => setFilterOpen(false)} className="text-amber-500 hover:text-brand-900">
-                  <X size={20} />
-                </button>
-              </div>
-              <Sidebar {...sidebarProps} />
-            </div>
           </div>
         )}
 
@@ -634,7 +1026,14 @@ export default function Products() {
                   item.type === "combo" ? (
                     <ProductCard key={`combo-${item.id}`} itemType="combo" combo={item.data} />
                   ) : (
-                    <ProductCard key={`prod-${item.id}`} product={item.data} selectedWeights={weights} />
+                    <ProductCard
+                      key={`prod-${item.id}`}
+                      product={item.data}
+                      selectedWeights={weights}
+                      priceRanges={priceRanges}
+                      minPrice={minPrice}
+                      maxPrice={maxPrice}
+                    />
                   )
                 )}
               </div>

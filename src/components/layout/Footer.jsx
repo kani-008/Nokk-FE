@@ -19,7 +19,10 @@ import {
 } from "react-icons/fa";
 import Logo from "./Logo";
 import API from "../../ApiCall/Api.jsx";
-import { useDeliverySettings, useHomeCategories } from "../../hookqueries/useHome.js";
+import {
+  useDeliverySettings,
+  useHomeCategories,
+} from "../../hookqueries/useHome.js";
 
 const QUICK_LINKS = [
   { label: "All Products", to: "/products" },
@@ -39,10 +42,8 @@ const POLICY_LINKS = [
   { label: "Privacy Policy", to: "/privacy-policy" },
   { label: "Terms and Condition ", to: "/terms" },
   // { label: "FAQ", href: "#" },
-  {label:"Return Policy",to:"/return-policy"}
+  { label: "Return Policy", to: "/return-policy" },
 ];
-
-
 
 function useTrustItems() {
   const { data: delivery } = useDeliverySettings();
@@ -95,7 +96,8 @@ function AccordionSection({ title, children }) {
 export default function Footer() {
   const [settings, setSettings] = useState({});
   const trustItems = useTrustItems();
-  const { data: categoriesData, isLoading: categoriesLoading } = useHomeCategories();
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useHomeCategories();
 
   useEffect(() => {
     API.get("/settings/get-all")
@@ -178,14 +180,19 @@ export default function Footer() {
         <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Brand col — 2 wide on lg */}
           <div className="lg:col-span-2">
-            <Logo showText={true} inverse={true} className="mb-4" />
-
-            <p className="font-body text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
+            <div className="h-20 overflow-hidden flex items-start mb-0">
+              <Logo
+                showText={true}
+                inverse={true}
+                imgClassName="h-44 object-contain -mt-11 -ml-3"
+              />
+              </div>
+            <p className="font-body text-sm text-gray-400 leading-relaxed mb-4 max-w-xs">
               {description}
             </p>
 
             {/* Social */}
-            <div className="flex gap-2.5 mb-6">
+            <div className="flex gap-2.5 mb-4">
               {socialLinks.map((s) => (
                 <a
                   key={s.label}
@@ -245,28 +252,30 @@ export default function Footer() {
               ))}
             </ul>
             {/* Categories list */}
-            {!categoriesLoading && categoriesData && categoriesData.length > 0 && (
-              <>
-                <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
-                  Categories
-                </h4>
-                <ul className="space-y-2">
-                  {categoriesData.slice(0, 5).map((cat) => {
-                    const toPath = `/products?category=${cat.slug}`;
-                    return (
-                      <li key={toPath}>
-                        <Link
-                          to={toPath}
-                          className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
-                        >
-                          › {cat.nameEn}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
+            {!categoriesLoading &&
+              categoriesData &&
+              categoriesData.length > 0 && (
+                <>
+                  <h4 className="font-body text-sm font-bold text-white mb-3 mt-6 tracking-wider uppercase">
+                    Categories
+                  </h4>
+                  <ul className="space-y-2">
+                    {categoriesData.slice(0, 5).map((cat) => {
+                      const toPath = `/products?category=${cat.slug}`;
+                      return (
+                        <li key={toPath}>
+                          <Link
+                            to={toPath}
+                            className="font-body text-xs text-gray-400 hover:text-sandal-300 transition-colors"
+                          >
+                            › {cat.nameEn}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
           </div>
 
           {/* My Account */}
@@ -315,12 +324,18 @@ export default function Footer() {
         </div>
 
         {/* ── Mobile accordion (visible on mobile only) ──────────────── */}
-        <div className="sm:hidden mb-8">
-          <Logo showText={true} inverse={true} className="mb-4" />
-          <p className="font-body text-sm text-gray-400 leading-relaxed mb-6">
+        <div className="sm:hidden mb-4">
+          <div className="h-16 overflow-hidden flex items-start mb-0">
+            <Logo
+              showText={true}
+              inverse={true}
+              imgClassName="h-36 object-contain -mt-9 -ml-2"
+            />
+          </div>
+          <p className="font-body text-sm text-gray-400 leading-relaxed mb-3">
             {description}
           </p>
-          <div className="flex gap-2.5 mb-6">
+          <div className="flex gap-2.5 mb-4">
             {socialLinks.map((s) => (
               <a
                 key={s.label}
@@ -411,13 +426,20 @@ export default function Footer() {
           </AccordionSection>
         </div>
 
-        {/* ── Copyright ──────────────────────────────────────── */}
-        <div className="border-t border-gray-800 pt-1 text-center">
-          <p className="font-body text-xs text-gray-500 leading-relaxed">
-            © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights
-            reserved.
-            <br className="sm:hidden" />
-            <span className="sm:ml-1">Made with ❤️ in Tamil Nadu</span>
+        {/* ── Desktop Copyright ─────────────────────────────────── */}
+        <div className="hidden sm:block border-t border-gray-900  text-center mt-2">
+          <p className="font-body text-xs text-gray-400 leading-relaxed">
+            © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights reserved.
+            {/* <span className="ml-1">Made with ❤️ in Tamil Nadu</span> */}
+          </p>
+        </div>
+
+        {/* ── Mobile Copyright ──────────────────────────────────── */}
+        <div className="sm:hidden pt-1 text-center -mt-2">
+          <p className="font-body text-xs text-gray-400 leading-relaxed">
+            <span className="block">© {new Date().getFullYear()} Namma Oor Karuvattu Kadai</span>
+            <span className="block">All rights reserved.</span>
+            {/* <span className="block text-[11px] text-gray-600 mt-0.5">Made with ❤️ in Tamil Nadu</span> */}
           </p>
         </div>
       </div>

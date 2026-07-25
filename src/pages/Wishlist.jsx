@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2, ArrowRight } from "lucide-react";
 import SEO from "../components/seo/SEO.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore }     from "../components/store/AuthStore";
+import { useHomeBestsellers } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
 import ProductCard from "../components/Product/ProductCard";
 
@@ -25,6 +26,37 @@ function WishSkeleton() {
   );
 }
 
+function WishlistRecommendations({ wishlistIds = [] }) {
+  const { data: bestsellers = [] } = useHomeBestsellers();
+
+  const wishSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
+  const recommended = useMemo(
+    () => bestsellers.filter((p) => !wishSet.has(p.id)).slice(0, 4),
+    [bestsellers, wishSet]
+  );
+
+  if (!recommended.length) return null;
+
+  return (
+    <div className="mt-12 border-t border-sandal-100 pt-8">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="font-display text-xl font-bold text-brand-900">You May Also Like</h2>
+          <p className="font-body text-xs text-amber-500 font-semibold mt-0.5">Top-rated coastal favorites for you</p>
+        </div>
+        <Link to="/products" className="font-body text-xs font-bold text-amber-700 hover:text-brand-900 flex items-center gap-1">
+          Explore All <ArrowRight size={13} />
+        </Link>
+      </div>
+      <div className="product-grid">
+        {recommended.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // WISHLIST PAGE
 // ══════════════════════════════════════════════════════════════════════
@@ -32,16 +64,10 @@ export default function Wishlist() {
   const { ids, setIds, clear } = useWishlistStore();
   const { token, isAuthenticated } = useAuthStore();
 
-  // productMap: id → full product object (fetched once, kept until page unmounts)
   const [productMap, setProductMap] = useState({});
   const [loading, setLoading] = useState(false);
-  // Track which IDs we've already fetched so we only ever make one call per set of ids
   const fetchedIdsRef = useRef(new Set());
 
-  // ── Authenticated: single request gets ordered IDs AND full product
-  // data in one shot — /wishlist/get-wishlist now returns fully-hydrated
-  // products (same shape as /products/get-all), so no second round trip
-  // to /products/get-all is needed for this path. ───────────────────────
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
@@ -55,101 +81,85 @@ export default function Wishlist() {
         const res = await API.get("/wishlist/get-wishlist");
         if (!active) return;
         const items = res.data.wishlist ?? [];
-        // Sorted by addedAt descending (most recently added first) — matches
-        // the backend ORDER BY w.created_at DESC
         const ordered = items.map((p) => p.id);
-        // Server is authoritative: replace local store IDs outright so stale
-        // guest-persisted IDs can never resurrect deleted items on reload.
         setIds(ordered);
-        setProductMap((prev) => {
-          const next = { ...prev };
-          items.forEach((p) => { next[p.id] = p; });
-          return next;
-        });
-        ordered.forEach((id) => fetchedIdsRef.current.add(id));
+        fetchedIdsRef.current = new Set(ordered);
+
+        const map = {};
+        for (const p of items) {
+          map[p.id] = p;
+        }
+        setProductMap(map);
       } catch (err) {
-        console.error("loadFromServer failed:", err);
+        console.error("Wishlist load error:", err);
       } finally {
         if (active) setLoading(false);
+        clearTimeout(timer);
       }
     };
+
     load();
 
     return () => {
       active = false;
       clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]);
 
-  // ── Guest fallback: hydrate productMap for locally-stored IDs ───────
-  // No wishlists table row to join against for a guest, so this is the
-  // only path that still needs to fetch product data separately.
-  //
-  // Notes on the /products/get-all?ids=... endpoint:
-  //   • Public — no authentication required, safe to call here.
-  //   • The server silently caps `limit` at 100 (Math.min(…, 100)), so
-  //     `limit=999` is treated as 100. For a wishlist this is sufficient.
-  //   • Response order is not guaranteed to match request order — we
-  //     re-order below using the store's authoritative `ids` array.
   useEffect(() => {
-    if (isAuthenticated) return; // authenticated path is fully handled above
+    if (isAuthenticated) return;
+    if (ids.length === 0) return;
 
-    const needed = ids.filter((id) => !fetchedIdsRef.current.has(id));
-    if (!needed.length) return;
+    const unmapped = ids.filter((id) => !fetchedIdsRef.current.has(id));
+    if (unmapped.length === 0) return;
 
     let active = true;
-    const timer = setTimeout(() => {
-      // Only show skeletons on the very first load (productMap is empty)
-      if (active && Object.keys(productMap).length === 0) setLoading(true);
-    }, 50);
+    setLoading(true);
 
-    const fetch_ = async () => {
+    const fetchUnmapped = async () => {
       try {
-        const res = await API.get(
-          `/products/get-all?ids=${needed.join(",")}&limit=100`
-        );
+        const res = await API.get("/products/get-all", {
+          params: { ids: unmapped.join(","), limit: unmapped.length },
+        });
         if (!active) return;
-        const fetched = res.data.products || [];
-        // Merge into existing map
+        const fetchedList = res.data.products || [];
+
         setProductMap((prev) => {
           const next = { ...prev };
-          fetched.forEach((p) => { next[p.id] = p; });
+          for (const p of fetchedList) {
+            next[p.id] = p;
+          }
           return next;
         });
-        needed.forEach((id) => fetchedIdsRef.current.add(id));
+
+        for (const id of unmapped) {
+          fetchedIdsRef.current.add(id);
+        }
       } catch (err) {
-        console.error("Failed to load wishlist products:", err);
+        console.error("Failed to fetch unmapped wishlist items:", err);
       } finally {
         if (active) setLoading(false);
       }
     };
-    fetch_();
+
+    fetchUnmapped();
 
     return () => {
       active = false;
-      clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids, isAuthenticated]);
 
-  // ── Reactively derive the display list from the live store ───────────
-  // When ProductCard's heart-toggle removes an id from the store, this
-  // list automatically shrinks — no separate onRemove callback needed.
-  const displayProducts = ids
-    .filter((id) => productMap[id])
-    .map((id) => productMap[id]);
+  const displayProducts = ids.map((id) => productMap[id]).filter(Boolean);
 
-  // ── Clear all ────────────────────────────────────────────────────────
   const handleClearAll = async () => {
     clear();
-    fetchedIdsRef.current = new Set();
     setProductMap({});
-    if (token) {
+    fetchedIdsRef.current.clear();
+    if (isAuthenticated && token) {
       try {
         await API.delete("/wishlist/clear");
       } catch (err) {
-        console.error("Failed to clear server wishlist:", err);
+        console.error("Failed to clear wishlist on server:", err);
       }
     }
   };
@@ -163,8 +173,7 @@ export default function Wishlist() {
     />
   );
 
-  // ── Empty state ──────────────────────────────────────────────────────
-  if (!ids.length && !loading) {
+  if (!loading && displayProducts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
         {seoBlock}
@@ -173,9 +182,10 @@ export default function Wishlist() {
         <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
           Tap the heart on any product to save it here.
         </p>
-        <Link to="/products" className="btn-lg btn-primary">
+        <Link to="/products" className="btn-lg btn-primary mb-12">
           Browse Products <ArrowRight size={16} />
         </Link>
+        <WishlistRecommendations wishlistIds={ids} />
       </div>
     );
   }
@@ -205,7 +215,7 @@ export default function Wishlist() {
       {/* grid */}
       {loading ? (
         <div className="product-grid">
-          {Array.from({ length: Math.min(ids.length, 8) }).map((_, i) => (
+          {Array.from({ length: Math.min(ids.length || 4, 8) }).map((_, i) => (
             <WishSkeleton key={i} />
           ))}
         </div>

@@ -154,6 +154,54 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
   );
 }
 
+import { useRecentlyViewedStore } from "../store/RecentlyViewedStore";
+
+// ══════════════════════════════════════════════════════════════════════
+// RECENTLY VIEWED & RECOMMENDED SECTION
+// ══════════════════════════════════════════════════════════════════════
+export function RecentlyViewedSection({ fallbackProducts = [] }) {
+  const { items: recentlyViewed } = useRecentlyViewedStore();
+
+  const displayProducts = useMemo(() => {
+    const rv = recentlyViewed || [];
+    if (rv.length >= 4) {
+      return rv.slice(0, 8);
+    }
+    const rvIds = new Set(rv.map((p) => p.id));
+    const extra = (fallbackProducts || []).filter((p) => !rvIds.has(p.id));
+    return [...rv, ...extra].slice(0, 8);
+  }, [recentlyViewed, fallbackProducts]);
+
+  if (!displayProducts.length) return null;
+
+  const hasRV = (recentlyViewed || []).length > 0;
+  const title = hasRV ? "Recently Viewed & Recommended" : "You May Also Like";
+  const subtitle = hasRV ? "Picked from your browsing history & coastal favorites" : "Handpicked popular coastal delicacies";
+
+  return (
+    <section className="page-wrap py-12 home-section-pad-fluid">
+      <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-gray-800 home-sec-title-fluid">{title}</h2>
+          <p className="font-body text-xs text-sandal-600 mt-1 font-semibold home-sec-subtitle-fluid">{subtitle}</p>
+        </div>
+        <Link
+          to="/products"
+          className="font-body text-xs sm:text-sm text-sandal-700 font-bold flex items-center gap-1 hover:text-gray-900 transition-colors"
+        >
+          Explore All <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      <div className="product-grid">
+        {displayProducts.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // PROMO BANNER
 // ══════════════════════════════════════════════════════════════════════

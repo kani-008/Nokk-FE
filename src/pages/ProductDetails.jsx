@@ -83,6 +83,8 @@ import ImageGallery from "../components/Product/ImageGallery.jsx";
 
 
 
+import { useRecentlyViewedStore } from "../components/store/RecentlyViewedStore";
+
 // ══════════════════════════════════════════════════════════════════════
 // PRODUCT DETAILS PAGE
 // ══════════════════════════════════════════════════════════════════════
@@ -91,6 +93,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const { addItem, items } = useCartStore();
   const { toggle, isWishlisted } = useWishlistStore();
+  const { addRecentlyViewed } = useRecentlyViewedStore();
   const { token } = useAuthStore();
   const { setError, setSuccess, displayedError, displayedType, toastVisible } = useToast();
 
@@ -110,8 +113,9 @@ export default function ProductDetails() {
   useEffect(() => {
     if (product) {
       setActiveVariant(product.variants?.[0] || null);
+      addRecentlyViewed(product);
     }
-  }, [product]);
+  }, [product, addRecentlyViewed]);
 
   const inCart = activeVariant ? items.some((item) => item.variantId === activeVariant.id) : false;
 

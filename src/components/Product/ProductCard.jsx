@@ -43,7 +43,15 @@ function applyActiveOffer(price, offer) {
 */
 import API from "../../ApiCall/Api.jsx";
 
-export default function ProductCard({ product, selectedWeights = [], itemType = "product", combo }) {
+export default function ProductCard({
+  product,
+  selectedWeights = [],
+  priceRanges = [],
+  minPrice = "",
+  maxPrice = "",
+  itemType = "product",
+  combo
+}) {
   const { items } = useCartStore();
   const { isWishlisted } = useWishlistStore();
   const { token, isAuthenticated } = useAuthStore();
@@ -57,13 +65,53 @@ export default function ProductCard({ product, selectedWeights = [], itemType = 
 
   const normWeight = (w) => String(w || "").toLowerCase().replace(/\s+/g, "");
 
-  // When a weight filter is active, show the matching variant's price/weight.
-  // Falls back to first variant when no filter is set or no match found.
-  const firstV = (!isCombo && selectedWeights.length > 0)
-    ? product.variants?.find((v) =>
-        selectedWeights.some((sw) => normWeight(sw) === normWeight(v.weightLabel))
-      )
-    : (!isCombo ? product.variants?.[0] : null);
+  const RANGE_MAP = {
+    "under150": { min: 0, max: 150 },
+    "150-300":  { min: 150, max: 300 },
+    "300-500":  { min: 300, max: 500 },
+    "over500":   { min: 500, max: Infinity }
+  };
+
+  const matchesPriceFilter = (variantPrice) => {
+    if (priceRanges.length > 0) {
+      return priceRanges.some((id) => {
+        const r = RANGE_MAP[id];
+        if (!r) return false;
+        return variantPrice >= r.min && variantPrice <= r.max;
+      });
+    }
+    if (minPrice || maxPrice) {
+      const min = minPrice !== "" ? parseFloat(minPrice) : 0;
+      const max = maxPrice !== "" ? parseFloat(maxPrice) : Infinity;
+      return variantPrice >= min && variantPrice <= max;
+    }
+    return true;
+  };
+
+  const matchesWeightFilter = (variantWeightLabel) => {
+    if (selectedWeights.length === 0) return true;
+    return selectedWeights.some((sw) => normWeight(sw) === normWeight(variantWeightLabel));
+  };
+
+  // Find variant matching active filters (weight + price, then price only, then weight only, fallback to first)
+  let firstV = null;
+  if (!isCombo && product.variants?.length > 0) {
+    const hasWeightFilter = selectedWeights.length > 0;
+    const hasPriceFilter = priceRanges.length > 0 || !!minPrice || !!maxPrice;
+
+    if (hasWeightFilter && hasPriceFilter) {
+      firstV = product.variants.find((v) => matchesWeightFilter(v.weightLabel) && matchesPriceFilter(v.price));
+    }
+    if (!firstV && hasPriceFilter) {
+      firstV = product.variants.find((v) => matchesPriceFilter(v.price));
+    }
+    if (!firstV && hasWeightFilter) {
+      firstV = product.variants.find((v) => matchesWeightFilter(v.weightLabel));
+    }
+    if (!firstV) {
+      firstV = product.variants[0];
+    }
+  }
 
   const rawPrice = !isCombo ? (firstV?.price ?? product.minPrice ?? 0) : 0;
   const rawCompare = !isCombo ? (firstV?.comparePrice ?? product.minComparePrice ?? 0) : 0;
