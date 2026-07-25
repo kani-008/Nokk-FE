@@ -1,56 +1,79 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2, ArrowRight } from "lucide-react";
 import SEO from "../components/seo/SEO.jsx";
 import { useWishlistStore } from "../components/store/WishlistStore";
 import { useAuthStore }     from "../components/store/AuthStore";
-import { useHomeBestsellers } from "../hookqueries/useHome";
+import { useHomeBestsellers, useHomeNewArrivals } from "../hookqueries/useHome";
 import API from "../ApiCall/Api";
 import ProductCard from "../components/Product/ProductCard";
 
-// ── Generic skeleton — mirrors ProductCard's own skeleton shape ──────────
+// ── Product skeleton — mirrors ProductCard's layout identically ──────────
 function WishSkeleton() {
   return (
-    <div className="card overflow-hidden animate-pulse">
-      <div className="aspect-square skeleton" />
-      <div className="p-4.5 space-y-2.5">
+    <div className="card-hover overflow-hidden animate-pulse">
+      <div className="aspect-square skeleton rounded-t-md" />
+      <div className="p-4.5 space-y-2">
         <div className="skeleton h-2 w-1/3" />
         <div className="skeleton h-3 w-4/5" />
         <div className="skeleton h-3 w-3/5" />
-        <div className="flex justify-between mt-3">
-          <div className="skeleton h-4.5 w-1/4" />
-          <div className="skeleton h-8 w-8 rounded-xl" />
+        <div className="skeleton h-2.5 w-2/5" />
+        <div className="flex items-center gap-1 mt-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="skeleton h-2.5 w-2.5 rounded-sm" />
+          ))}
+          <div className="skeleton h-2.5 w-8 rounded ml-0.5" />
         </div>
+      </div>
+      <div className="px-4.5 pb-4.5 pt-3 flex items-center justify-between gap-2 border-t border-gray-100 mt-1">
+        <div className="skeleton h-4.5 w-1/4" />
+        <div className="skeleton h-8 w-8 rounded-xl" />
       </div>
     </div>
   );
 }
 
-function WishlistRecommendations({ wishlistIds = [] }) {
+function WishlistRecommendations({ wishlistIds = [], onRegisterProducts }) {
   const { data: bestsellers = [] } = useHomeBestsellers();
+  const { data: newest = [] } = useHomeNewArrivals();
+
+  const allProducts = useMemo(() => {
+    const map = new Map();
+    [...bestsellers, ...newest].forEach((p) => map.set(p.id, p));
+    return Array.from(map.values());
+  }, [bestsellers, newest]);
+
+  useEffect(() => {
+    if (allProducts.length && onRegisterProducts) {
+      onRegisterProducts(allProducts);
+    }
+  }, [allProducts, onRegisterProducts]);
 
   const wishSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const recommended = useMemo(
-    () => bestsellers.filter((p) => !wishSet.has(p.id)).slice(0, 4),
-    [bestsellers, wishSet]
+    () => allProducts.filter((p) => !wishSet.has(p.id)).slice(0, 10),
+    [allProducts, wishSet]
   );
 
   if (!recommended.length) return null;
 
   return (
-    <div className="mt-12 border-t border-sandal-100 pt-8">
-      <div className="flex items-center justify-between mb-5">
+    <div className="mt-3 sm:mt-5 border-t border-sandal-100/80 pt-3.5 sm:pt-5">
+      <div className="flex items-center justify-between mb-3 px-0.5">
         <div>
-          <h2 className="font-display text-xl font-bold text-brand-900">You May Also Like</h2>
-          <p className="font-body text-xs text-amber-500 font-semibold mt-0.5">Top-rated coastal favorites for you</p>
+          <h2 className="font-display text-base sm:text-lg font-bold text-brand-900 leading-tight">You May Also Like</h2>
+          <p className="font-body text-[11px] sm:text-xs text-amber-500 font-semibold mt-0.5">Top-rated coastal favorites for you</p>
         </div>
-        <Link to="/products" className="font-body text-xs font-bold text-amber-700 hover:text-brand-900 flex items-center gap-1">
+        <Link to="/products" className="font-body text-xs font-bold text-amber-700 hover:text-brand-900 flex items-center gap-1 shrink-0">
           Explore All <ArrowRight size={13} />
         </Link>
       </div>
-      <div className="product-grid">
+
+      <div className="flex md:grid md:grid-cols-4 gap-3.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {recommended.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <div key={p.id} className="shrink-0 w-[210px] sm:w-[230px] md:w-auto snap-start">
+            <ProductCard product={p} />
+          </div>
         ))}
       </div>
     </div>
@@ -68,6 +91,21 @@ export default function Wishlist() {
   const [loading, setLoading] = useState(false);
   const fetchedIdsRef = useRef(new Set());
 
+  const handleRegisterProducts = useCallback((products) => {
+    setProductMap((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const p of products) {
+        if (!next[p.id]) {
+          next[p.id] = p;
+          fetchedIdsRef.current.add(p.id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
@@ -83,13 +121,15 @@ export default function Wishlist() {
         const items = res.data.wishlist ?? [];
         const ordered = items.map((p) => p.id);
         setIds(ordered);
-        fetchedIdsRef.current = new Set(ordered);
 
-        const map = {};
-        for (const p of items) {
-          map[p.id] = p;
-        }
-        setProductMap(map);
+        setProductMap((prev) => {
+          const next = { ...prev };
+          for (const p of items) {
+            next[p.id] = p;
+            fetchedIdsRef.current.add(p.id);
+          }
+          return next;
+        });
       } catch (err) {
         console.error("Wishlist load error:", err);
       } finally {
@@ -107,14 +147,10 @@ export default function Wishlist() {
   }, [isAuthenticated, token]);
 
   useEffect(() => {
-    if (isAuthenticated) return;
-    if (ids.length === 0) return;
-
-    const unmapped = ids.filter((id) => !fetchedIdsRef.current.has(id));
+    const unmapped = ids.filter((id) => !fetchedIdsRef.current.has(id) || !productMap[id]);
     if (unmapped.length === 0) return;
 
     let active = true;
-    setLoading(true);
 
     const fetchUnmapped = async () => {
       try {
@@ -128,17 +164,12 @@ export default function Wishlist() {
           const next = { ...prev };
           for (const p of fetchedList) {
             next[p.id] = p;
+            fetchedIdsRef.current.add(p.id);
           }
           return next;
         });
-
-        for (const id of unmapped) {
-          fetchedIdsRef.current.add(id);
-        }
       } catch (err) {
         console.error("Failed to fetch unmapped wishlist items:", err);
-      } finally {
-        if (active) setLoading(false);
       }
     };
 
@@ -147,7 +178,7 @@ export default function Wishlist() {
     return () => {
       active = false;
     };
-  }, [ids, isAuthenticated]);
+  }, [ids, productMap]);
 
   const displayProducts = ids.map((id) => productMap[id]).filter(Boolean);
 
@@ -175,28 +206,35 @@ export default function Wishlist() {
 
   if (!loading && displayProducts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36 md:py-12 px-4 text-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-4">
         {seoBlock}
-        <Heart size={56} className="text-amber-200 mb-4" />
-        <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your wishlist is empty</h2>
-        <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
-          Tap the heart on any product to save it here.
-        </p>
-        <Link to="/products" className="btn-lg btn-primary mb-12">
-          Browse Products <ArrowRight size={16} />
-        </Link>
-        <WishlistRecommendations wishlistIds={ids} />
+        <div className="flex flex-col items-center justify-center py-3 sm:py-6 px-4 text-center max-w-md mx-auto">
+          <div className="w-11 h-11 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-2">
+            <Heart size={22} />
+          </div>
+          <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-1">
+            Your wishlist is empty
+          </h2>
+          <p className="font-body text-amber-600 text-xs mb-3 max-w-xs leading-snug">
+            Tap the heart on any product to save it here.
+          </p>
+          <Link to="/products" className="btn-sm btn-primary inline-flex items-center gap-1.5">
+            Browse Products <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <WishlistRecommendations wishlistIds={ids} onRegisterProducts={handleRegisterProducts} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {seoBlock}
 
       {/* header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-display text-2xl font-bold text-brand-900">
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-900">
           My Wishlist
           <span className="font-num text-base font-normal text-amber-500 ml-2">
             ({displayProducts.length} {displayProducts.length === 1 ? "item" : "items"})
@@ -214,19 +252,24 @@ export default function Wishlist() {
 
       {/* grid */}
       {loading ? (
-        <div className="product-grid">
+        <div className="flex md:grid md:grid-cols-4 gap-3.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {Array.from({ length: Math.min(ids.length || 4, 8) }).map((_, i) => (
-            <WishSkeleton key={i} />
+            <div key={i} className="shrink-0 w-[210px] sm:w-[230px] md:w-auto snap-start">
+              <WishSkeleton />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="product-grid">
+        <div className="flex md:grid md:grid-cols-4 gap-3.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {displayProducts.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <div key={p.id} className="shrink-0 w-[210px] sm:w-[230px] md:w-auto snap-start">
+              <ProductCard product={p} />
+            </div>
           ))}
         </div>
       )}
 
+      <WishlistRecommendations wishlistIds={ids} onRegisterProducts={handleRegisterProducts} />
     </div>
   );
 }
