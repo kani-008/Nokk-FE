@@ -8,6 +8,7 @@ import {
   PromoBanner,
   WhyUs,
   Testimonials,
+  RecentlyViewedSection,
 } from "../components/home/HomeSections.jsx";
 import {
   useHomeBanners,
@@ -64,6 +65,9 @@ export default function Home() {
       {/* 3 – Categories */}
       <CategoryScroll categories={categories} />
 
+      {/* Recently Viewed (shown above Best Sellers when user has visited a product detail page) */}
+      <RecentlyViewedSection fallbackProducts={bestsellers} />
+
       {/* 4 – Best Sellers */}
       <ProductSection
         title="Best Sellers"
@@ -88,9 +92,6 @@ export default function Home() {
           emptyText=""
         />
       )}
-
-      {/* Recently Viewed & Recommended */}
-      <RecentlyViewedSection fallbackProducts={bestsellers} />
 
       {/* Why Us */}
       <WhyUs />

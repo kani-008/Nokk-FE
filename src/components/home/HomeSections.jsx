@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Star, ShieldCheck, Truck, Volume2, VolumeX, Play } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import ProductCard from "../Product/ProductCard.jsx";
 import { useDeliverySettings } from "../../hookqueries/useHome.js";
 import { usePublicCoupons } from "../../hookqueries/useCoupons";
@@ -157,13 +157,15 @@ export function ProductSection({ title, subtitle, viewAllTo, loading, products, 
 import { useRecentlyViewedStore } from "../store/RecentlyViewedStore";
 
 // ══════════════════════════════════════════════════════════════════════
-// RECENTLY VIEWED & RECOMMENDED SECTION
+// RECENTLY VIEWED SECTION
 // ══════════════════════════════════════════════════════════════════════
 export function RecentlyViewedSection({ fallbackProducts = [] }) {
   const { items: recentlyViewed } = useRecentlyViewedStore();
 
   const displayProducts = useMemo(() => {
     const rv = recentlyViewed || [];
+    if (rv.length === 0) return [];
+
     if (rv.length >= 4) {
       return rv.slice(0, 8);
     }
@@ -172,18 +174,19 @@ export function RecentlyViewedSection({ fallbackProducts = [] }) {
     return [...rv, ...extra].slice(0, 8);
   }, [recentlyViewed, fallbackProducts]);
 
-  if (!displayProducts.length) return null;
-
-  const hasRV = (recentlyViewed || []).length > 0;
-  const title = hasRV ? "Recently Viewed & Recommended" : "You May Also Like";
-  const subtitle = hasRV ? "Picked from your browsing history & coastal favorites" : "Handpicked popular coastal delicacies";
+  // Hide section completely when no items have been recently viewed!
+  if (!recentlyViewed || recentlyViewed.length === 0 || displayProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="page-wrap py-12 home-section-pad-fluid">
       <div className="flex items-end justify-between mb-6 border-b border-sandal-100 pb-3">
         <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800 home-sec-title-fluid">{title}</h2>
-          <p className="font-body text-xs text-sandal-600 mt-1 font-semibold home-sec-subtitle-fluid">{subtitle}</p>
+          <h2 className="font-display text-2xl font-bold text-gray-800 home-sec-title-fluid">Recently Viewed</h2>
+          <p className="font-body text-xs text-sandal-600 mt-1 font-semibold home-sec-subtitle-fluid">
+            Items you checked out recently & suggestions you might like
+          </p>
         </div>
         <Link
           to="/products"

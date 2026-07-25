@@ -3,13 +3,22 @@ import { useSearchParams } from "react-router-dom";
 import SEO from "../components/seo/SEO.jsx";
 import { buildBreadcrumbSchema } from "../utils/seo.js";
 import {
-  SlidersHorizontal, X, ChevronDown, ChevronUp,
-  Star, ArrowLeft, ArrowUpDown, Check
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  ArrowLeft,
+  ArrowUpDown,
+  Check,
 } from "lucide-react";
-import { useProductCategories, useWeightLabels, useProductList } from "../hookqueries/useProducts";
+import {
+  useProductCategories,
+  useWeightLabels,
+  useProductList,
+} from "../hookqueries/useProducts";
 import { useActiveCombos } from "../hookqueries/useCombos";
 import ProductCard from "../components/Product/ProductCard";
-
 
 // ── sort options — must match the backend getAllProducts sortMap keys ──
 const SORT_OPTIONS = [
@@ -56,7 +65,11 @@ function FilterSection({ title, children, defaultOpen = true }) {
         onClick={() => setOpen((s) => !s)}
       >
         {title}
-        {open ? <ChevronUp size={15} className="text-amber-400" /> : <ChevronDown size={15} className="text-amber-400" />}
+        {open ? (
+          <ChevronUp size={15} className="text-amber-400" />
+        ) : (
+          <ChevronDown size={15} className="text-amber-400" />
+        )}
       </button>
       {open && children}
     </div>
@@ -68,7 +81,11 @@ function FilterPill({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1 font-body text-xs bg-amber-100 text-brand-800 px-2.5 py-1 rounded-full border border-amber-200/80 shrink-0">
       {label}
-      <button onClick={onRemove} className="hover:text-red-500 transition-colors ml-0.5" aria-label="Remove filter">
+      <button
+        onClick={onRemove}
+        className="hover:text-red-500 transition-colors ml-0.5"
+        aria-label="Remove filter"
+      >
         <X size={11} />
       </button>
     </span>
@@ -90,7 +107,11 @@ function RatingRow({ value, checked, onChange }) {
           <Star
             key={s}
             size={13}
-            className={s <= value ? "fill-sandal-400 text-sandal-400" : "fill-gray-100 text-gray-300"}
+            className={
+              s <= value
+                ? "fill-sandal-400 text-sandal-400"
+                : "fill-gray-100 text-gray-300"
+            }
           />
         ))}
       </span>
@@ -105,20 +126,27 @@ function SortBottomSheetModal({ open, onClose, sort, setParam }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
       <div className="relative bg-surface rounded-t-2xl shadow-2xl p-4 w-full z-10 animate-in slide-in-from-bottom duration-200">
         <div className="flex items-center justify-between border-b border-sandal-100 pb-3 mb-2">
           <span className="font-body text-xs font-bold text-gray-500 uppercase tracking-wider">
             Sort By
           </span>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-gray-600"
+          >
             <X size={18} />
           </button>
         </div>
 
         <div className="space-y-1 py-1">
           {SORT_OPTIONS.map((o) => {
-            const isSelected = sort === o.value || (sort === "popular" && o.value === "popular");
+            const isSelected =
+              sort === o.value || (sort === "popular" && o.value === "popular");
             return (
               <label
                 key={o.value}
@@ -128,13 +156,21 @@ function SortBottomSheetModal({ open, onClose, sort, setParam }) {
                 }}
                 className="flex items-center justify-between px-3 py-3 rounded-xl cursor-pointer hover:bg-sandal-50 transition-colors"
               >
-                <span className={`font-body text-sm ${isSelected ? "font-bold text-brand-900" : "text-gray-700"}`}>
+                <span
+                  className={`font-body text-sm ${isSelected ? "font-bold text-brand-900" : "text-gray-700"}`}
+                >
                   {o.label}
                 </span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  isSelected ? "border-brand-800 bg-brand-800" : "border-gray-300"
-                }`}>
-                  {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    isSelected
+                      ? "border-brand-800 bg-brand-800"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-white" />
+                  )}
                 </div>
               </label>
             );
@@ -176,12 +212,13 @@ function MobileFilterDrawer({
   const priceCount = priceRanges.length || (minPrice || maxPrice ? 1 : 0);
   const weightCount = weights.length;
   const ratingCount = rating ? 1 : 0;
-  const availabilityCount = (inStock ? 1 : 0) + (hasOffer ? 1 : 0) + (isBest ? 1 : 0) + (isNew ? 1 : 0);
+  const availabilityCount =
+    (inStock ? 1 : 0) + (hasOffer ? 1 : 0) + (isBest ? 1 : 0) + (isNew ? 1 : 0);
 
   const tabs = [
     { id: "category", label: "Category", count: categoryCount },
     { id: "price", label: "Price Range", count: priceCount },
-    { id: "weight", label: "Quantity", count: weightCount },
+    { id: "weight", label: "Pack Size", count: weightCount },
     { id: "rating", label: "Rating", count: ratingCount },
     { id: "availability", label: "Offers & Stock", count: availabilityCount },
   ];
@@ -242,7 +279,9 @@ function MobileFilterDrawer({
               <button
                 onClick={() => setParam("category", "")}
                 className={`w-full text-left font-body text-sm px-3 py-2.5 rounded-xl transition-colors ${
-                  !category ? "bg-brand-800 text-white font-bold" : "text-brand-900 hover:bg-sandal-50"
+                  !category
+                    ? "bg-brand-800 text-white font-bold"
+                    : "text-brand-900 hover:bg-sandal-50"
                 }`}
               >
                 All Products
@@ -252,7 +291,9 @@ function MobileFilterDrawer({
                   key={cat.id}
                   onClick={() => setParam("category", cat.slug)}
                   className={`w-full text-left font-body text-sm px-3 py-2.5 rounded-xl transition-colors ${
-                    category === cat.slug ? "bg-brand-800 text-white font-bold" : "text-brand-900 hover:bg-sandal-50"
+                    category === cat.slug
+                      ? "bg-brand-800 text-white font-bold"
+                      : "text-brand-900 hover:bg-sandal-50"
                   }`}
                 >
                   {cat.nameEn}
@@ -264,13 +305,17 @@ function MobileFilterDrawer({
           {activeTab === "price" && (
             <div className="space-y-3">
               {PRICE_RANGES.map((r) => {
-                const isSelected = priceRanges.includes(r.id) || (minPrice === r.min && maxPrice === r.max);
+                const isSelected =
+                  priceRanges.includes(r.id) ||
+                  (minPrice === r.min && maxPrice === r.max);
                 return (
                   <label key={r.id} className="filter-row group cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => toggleListParam("priceRange", priceRanges, r.id)}
+                      onChange={() =>
+                        toggleListParam("priceRange", priceRanges, r.id)
+                      }
                       className="filter-checkbox"
                     />
                     <span className="filter-row-label">{r.label}</span>
@@ -303,7 +348,9 @@ function MobileFilterDrawer({
                   key={r}
                   value={r}
                   checked={rating === String(r)}
-                  onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
+                  onChange={() =>
+                    setParam("rating", rating === String(r) ? "" : String(r))
+                  }
                 />
               ))}
             </div>
@@ -315,7 +362,9 @@ function MobileFilterDrawer({
                 <input
                   type="checkbox"
                   checked={inStock}
-                  onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
+                  onChange={(e) =>
+                    setParam("inStock", e.target.checked ? "true" : "")
+                  }
                   className="filter-checkbox"
                 />
                 <span className="filter-row-label">In Stock Only</span>
@@ -324,7 +373,9 @@ function MobileFilterDrawer({
                 <input
                   type="checkbox"
                   checked={hasOffer}
-                  onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
+                  onChange={(e) =>
+                    setParam("hasOffer", e.target.checked ? "true" : "")
+                  }
                   className="filter-checkbox"
                 />
                 <span className="filter-row-label">On Offer</span>
@@ -333,7 +384,9 @@ function MobileFilterDrawer({
                 <input
                   type="checkbox"
                   checked={isBest}
-                  onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
+                  onChange={(e) =>
+                    setParam("isBestseller", e.target.checked ? "true" : "")
+                  }
                   className="filter-checkbox"
                 />
                 <span className="filter-row-label">Best Sellers</span>
@@ -342,7 +395,9 @@ function MobileFilterDrawer({
                 <input
                   type="checkbox"
                   checked={isNew}
-                  onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
+                  onChange={(e) =>
+                    setParam("isNew", e.target.checked ? "true" : "")
+                  }
                   className="filter-checkbox"
                 />
                 <span className="filter-row-label">New Arrivals</span>
@@ -388,13 +443,15 @@ function Sidebar({
   isBest,
   isNew,
 }) {
-  const isCombosView = category === "combos" || category?.toLowerCase() === "combos";
+  const isCombosView =
+    category === "combos" || category?.toLowerCase() === "combos";
   return (
     <aside className="w-full md:w-64 shrink-0">
       <div className="card p-4 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
-
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-body text-sm font-bold text-brand-900">Filters</h3>
+          <h3 className="font-body text-sm font-bold text-brand-900">
+            Filters
+          </h3>
           {hasFilters && !isCombosView && (
             <button
               onClick={removeAllFilters}
@@ -409,7 +466,9 @@ function Sidebar({
         <FilterSection title="Sort By">
           <div className="space-y-1.5">
             {(isCombosView
-              ? SORT_OPTIONS.filter((o) => ["popular", "newest"].includes(o.value))
+              ? SORT_OPTIONS.filter((o) =>
+                  ["popular", "newest"].includes(o.value),
+                )
               : SORT_OPTIONS
             ).map((o) => (
               <label key={o.value} className="filter-row group cursor-pointer">
@@ -417,7 +476,9 @@ function Sidebar({
                   type="radio"
                   name="sort"
                   checked={sort === o.value}
-                  onChange={() => setParam("sort", o.value === "popular" ? "" : o.value)}
+                  onChange={() =>
+                    setParam("sort", o.value === "popular" ? "" : o.value)
+                  }
                   className="filter-checkbox"
                 />
                 <span className="filter-row-label">{o.label}</span>
@@ -434,8 +495,11 @@ function Sidebar({
                 <li>
                   <button
                     onClick={() => setParam("category", "")}
-                    className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${!category ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                      }`}
+                    className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${
+                      !category
+                        ? "bg-brand-800 text-white"
+                        : "text-amber-800 hover:bg-amber-50"
+                    }`}
                   >
                     All Products
                   </button>
@@ -444,8 +508,11 @@ function Sidebar({
                   <li key={cat.id}>
                     <button
                       onClick={() => setParam("category", cat.slug)}
-                      className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${category === cat.slug ? "bg-brand-800 text-white" : "text-amber-800 hover:bg-amber-50"
-                        }`}
+                      className={`w-full text-left font-body text-sm px-2 py-1.5 rounded-lg transition-colors ${
+                        category === cat.slug
+                          ? "bg-brand-800 text-white"
+                          : "text-amber-800 hover:bg-amber-50"
+                      }`}
                     >
                       {cat.nameEn}
                     </button>
@@ -458,13 +525,20 @@ function Sidebar({
             <FilterSection title="Price Range">
               <div className="space-y-1.5">
                 {PRICE_RANGES.map((r) => {
-                  const isSelected = priceRanges.includes(r.id) || (minPrice === r.min && maxPrice === r.max);
+                  const isSelected =
+                    priceRanges.includes(r.id) ||
+                    (minPrice === r.min && maxPrice === r.max);
                   return (
-                    <label key={r.id} className="filter-row group cursor-pointer">
+                    <label
+                      key={r.id}
+                      className="filter-row group cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleListParam("priceRange", priceRanges, r.id)}
+                        onChange={() =>
+                          toggleListParam("priceRange", priceRanges, r.id)
+                        }
                         className="filter-checkbox"
                       />
                       <span className="filter-row-label">{r.label}</span>
@@ -482,7 +556,9 @@ function Sidebar({
                     key={r}
                     value={r}
                     checked={rating === String(r)}
-                    onChange={() => setParam("rating", rating === String(r) ? "" : String(r))}
+                    onChange={() =>
+                      setParam("rating", rating === String(r) ? "" : String(r))
+                    }
                   />
                 ))}
               </div>
@@ -490,7 +566,7 @@ function Sidebar({
 
             {/* Pack size / quantity */}
             {allWeightLabels.length > 0 && (
-              <FilterSection title="Quantity">
+              <FilterSection title="Pack Size">
                 <div className="space-y-1.5">
                   {allWeightLabels.map((w) => (
                     <label key={w} className="filter-row group cursor-pointer">
@@ -514,7 +590,9 @@ function Sidebar({
                   <input
                     type="checkbox"
                     checked={inStock}
-                    onChange={(e) => setParam("inStock", e.target.checked ? "true" : "")}
+                    onChange={(e) =>
+                      setParam("inStock", e.target.checked ? "true" : "")
+                    }
                     className="filter-checkbox"
                   />
                   <span className="filter-row-label">In Stock Only</span>
@@ -523,7 +601,9 @@ function Sidebar({
                   <input
                     type="checkbox"
                     checked={hasOffer}
-                    onChange={(e) => setParam("hasOffer", e.target.checked ? "true" : "")}
+                    onChange={(e) =>
+                      setParam("hasOffer", e.target.checked ? "true" : "")
+                    }
                     className="filter-checkbox"
                   />
                   <span className="filter-row-label">On Offer</span>
@@ -532,7 +612,9 @@ function Sidebar({
                   <input
                     type="checkbox"
                     checked={isBest}
-                    onChange={(e) => setParam("isBestseller", e.target.checked ? "true" : "")}
+                    onChange={(e) =>
+                      setParam("isBestseller", e.target.checked ? "true" : "")
+                    }
                     className="filter-checkbox"
                   />
                   <span className="filter-row-label">Best Sellers</span>
@@ -541,7 +623,9 @@ function Sidebar({
                   <input
                     type="checkbox"
                     checked={isNew}
-                    onChange={(e) => setParam("isNew", e.target.checked ? "true" : "")}
+                    onChange={(e) =>
+                      setParam("isNew", e.target.checked ? "true" : "")
+                    }
                     className="filter-checkbox"
                   />
                   <span className="filter-row-label">New Arrivals</span>
@@ -550,7 +634,6 @@ function Sidebar({
             </FilterSection>
           </>
         )}
-
       </div>
     </aside>
   );
@@ -584,14 +667,14 @@ export default function Products() {
 
   const priceRanges = useMemo(
     () => priceRangeParam.split(",").filter(Boolean),
-    [priceRangeParam]
+    [priceRangeParam],
   );
 
   // memoized so its identity is stable across renders unless weightParam actually changes —
   // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
   const weights = useMemo(
     () => weightParam.split(",").filter(Boolean),
-    [weightParam]
+    [weightParam],
   );
 
   const queryParams = useMemo(() => {
@@ -614,7 +697,21 @@ export default function Products() {
     p.page = String(page);
     p.limit = "12";
     return p;
-  }, [search, category, sort, inStock, isBest, isNew, priceRanges, minPrice, maxPrice, rating, weights, hasOffer, page]);
+  }, [
+    search,
+    category,
+    sort,
+    inStock,
+    isBest,
+    isNew,
+    priceRanges,
+    minPrice,
+    maxPrice,
+    rating,
+    weights,
+    hasOffer,
+    page,
+  ]);
 
   const { data: catData = [] } = useProductCategories();
   const categories = catData;
@@ -624,7 +721,11 @@ export default function Products() {
 
   const { data: combosData = [], isLoading: combosLoading } = useActiveCombos();
 
-  const { data: productsData, isLoading: productsLoading, isFetching: productsFetching } = useProductList(queryParams);
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    isFetching: productsFetching,
+  } = useProductList(queryParams);
   const products = useMemo(() => productsData?.products || [], [productsData]);
   const pagination = productsData?.pagination || null;
   const loading = productsLoading || (combosLoading && page === 1);
@@ -636,7 +737,7 @@ export default function Products() {
       list = list.filter(
         (c) =>
           c.name?.toLowerCase().includes(q) ||
-          c.description?.toLowerCase().includes(q)
+          c.description?.toLowerCase().includes(q),
       );
     }
     if (priceRanges.length > 0) {
@@ -659,23 +760,24 @@ export default function Products() {
   }, [combosData, search, priceRanges, minPrice, maxPrice]);
 
   const combinedItems = useMemo(() => {
-    const isCombosCategory = category === "combos" || category?.toLowerCase() === "combos";
+    const isCombosCategory =
+      category === "combos" || category?.toLowerCase() === "combos";
 
-    const productItems = products.map(p => ({
+    const productItems = products.map((p) => ({
       type: "product",
       id: p.id,
       data: p,
       price: p.variants?.[0]?.price ?? p.minPrice ?? 0,
-      createdAt: p.createdAt
+      createdAt: p.createdAt,
     }));
 
     if (isCombosCategory) {
-      return filteredCombos.map(c => ({
+      return filteredCombos.map((c) => ({
         type: "combo",
         id: c.id,
         data: c,
         price: c.comboPrice,
-        createdAt: c.createdAt
+        createdAt: c.createdAt,
       }));
     }
 
@@ -684,13 +786,16 @@ export default function Products() {
     }
 
     // Merge both (combos on Page 1 only)
-    const comboItems = page === 1 ? filteredCombos.map(c => ({
-      type: "combo",
-      id: c.id,
-      data: c,
-      price: c.comboPrice,
-      createdAt: c.createdAt
-    })) : [];
+    const comboItems =
+      page === 1
+        ? filteredCombos.map((c) => ({
+            type: "combo",
+            id: c.id,
+            data: c,
+            price: c.comboPrice,
+            createdAt: c.createdAt,
+          }))
+        : [];
 
     const merged = [...comboItems, ...productItems];
 
@@ -744,7 +849,10 @@ export default function Products() {
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [
     search && { key: "search", label: `"${search}"` },
-    category && { key: "category", label: categories.find((c) => c.slug === category)?.nameEn || category },
+    category && {
+      key: "category",
+      label: categories.find((c) => c.slug === category)?.nameEn || category,
+    },
     inStock && { key: "inStock", label: "In Stock" },
     isBest && { key: "isBestseller", label: "Best Sellers" },
     isNew && { key: "isNew", label: "New Arrivals" },
@@ -756,14 +864,22 @@ export default function Products() {
         custom: () => toggleListParam("priceRange", priceRanges, id),
       };
     }),
-    (!priceRanges.length && (minPrice || maxPrice)) && {
-      key: "price",
-      label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`,
-      custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); }
-    },
+    !priceRanges.length &&
+      (minPrice || maxPrice) && {
+        key: "price",
+        label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`,
+        custom: () => {
+          setParam("minPrice", "");
+          setParam("maxPrice", "");
+        },
+      },
     rating && { key: "rating", label: `${rating}★ & above` },
     hasOffer && { key: "hasOffer", label: "Has Offer" },
-    ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
+    ...weights.map((w) => ({
+      key: `weight:${w}`,
+      label: w,
+      custom: () => toggleListParam("weight", weights, w),
+    })),
   ].filter(Boolean);
 
   const hasFilters = activeFilters.length > 0 || sort !== "popular";
@@ -799,10 +915,12 @@ export default function Products() {
     }
   }, [isFetching, productsData, rawCount]);
 
-  const totalProductCount = isFetching ? (lastValidCount || rawCount) : rawCount;
+  const totalProductCount = isFetching ? lastValidCount || rawCount : rawCount;
 
-  let pageTitle = "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
-  let pageDescription = "Shop authentic karuvadu (dry fish), nethili, sura, and traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sun-dried the traditional way, delivered across Tamil Nadu.";
+  let pageTitle =
+    "Buy Dry Fish Online — Karuvadu, Pickles & Seafood | Namma Oor Karuvattu Kadai";
+  let pageDescription =
+    "Shop authentic karuvadu (dry fish), nethili, sura, and traditional pickles — சுவை மிக்க கருவாடு மற்றும் ஊறுகாய் — sun-dried the traditional way, delivered across Tamil Nadu.";
 
   if (category && categories.length > 0) {
     const activeCat = categories.find((c) => c.slug === category);
@@ -829,23 +947,24 @@ export default function Products() {
   const breadcrumbItems = useMemo(() => {
     const items = [
       { name: "Home", item: "https://nammaoorkaruvattukadai.com/" },
-      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" }
+      { name: "Products", item: "https://nammaoorkaruvattukadai.com/products" },
     ];
     if (category && categories.length > 0) {
       const activeCat = categories.find((c) => c.slug === category);
       if (activeCat) {
         items.push({
           name: activeCat.nameEn,
-          item: `https://nammaoorkaruvattukadai.com/products?category=${activeCat.slug}`
+          item: `https://nammaoorkaruvattukadai.com/products?category=${activeCat.slug}`,
         });
       }
     }
     return items;
   }, [category, categories]);
 
-  const schemas = useMemo(() => [
-    buildBreadcrumbSchema(breadcrumbItems)
-  ], [breadcrumbItems]);
+  const schemas = useMemo(
+    () => [buildBreadcrumbSchema(breadcrumbItems)],
+    [breadcrumbItems],
+  );
 
   const noindex = !!search;
 
@@ -988,7 +1107,6 @@ export default function Products() {
       )}
 
       <div className="flex gap-6">
-
         {/* ── Desktop sidebar ──────────────────────────────────────── */}
         {desktopSidebarOpen && (
           <div className="hidden md:block">
@@ -1006,25 +1124,33 @@ export default function Products() {
 
           {loading ? (
             <div className="product-grid-compact">
-              {Array.from({ length: 12 }).map((_, i) => <ProductSkeleton key={i} />)}
+              {Array.from({ length: 12 }).map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
             </div>
-
           ) : combinedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <span className="text-5xl mb-4">🐟</span>
-              <h3 className="font-display text-lg font-bold text-brand-900 mb-2">No products found</h3>
-              <p className="font-body text-sm text-amber-500 mb-5">Try different filters or search terms.</p>
+              <h3 className="font-display text-lg font-bold text-brand-900 mb-2">
+                No products found
+              </h3>
+              <p className="font-body text-sm text-amber-500 mb-5">
+                Try different filters or search terms.
+              </p>
               <button onClick={removeAllFilters} className="btn-md btn-primary">
                 Clear Filters
               </button>
             </div>
-
           ) : (
             <>
               <div className="product-grid-compact">
                 {combinedItems.map((item) =>
                   item.type === "combo" ? (
-                    <ProductCard key={`combo-${item.id}`} itemType="combo" combo={item.data} />
+                    <ProductCard
+                      key={`combo-${item.id}`}
+                      itemType="combo"
+                      combo={item.data}
+                    />
                   ) : (
                     <ProductCard
                       key={`prod-${item.id}`}
@@ -1034,7 +1160,7 @@ export default function Products() {
                       minPrice={minPrice}
                       maxPrice={maxPrice}
                     />
-                  )
+                  ),
                 )}
               </div>
 
@@ -1049,8 +1175,16 @@ export default function Products() {
                     ← Prev
                   </button>
 
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                    .filter((n) => n === 1 || n === pagination.totalPages || Math.abs(n - page) <= 1)
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, i) => i + 1,
+                  )
+                    .filter(
+                      (n) =>
+                        n === 1 ||
+                        n === pagination.totalPages ||
+                        Math.abs(n - page) <= 1,
+                    )
                     .reduce((acc, n, i, arr) => {
                       if (i > 0 && n - arr[i - 1] > 1) acc.push("…");
                       acc.push(n);
@@ -1058,7 +1192,12 @@ export default function Products() {
                     }, [])
                     .map((n, i) =>
                       n === "…" ? (
-                        <span key={`ellipsis-${i}`} className="font-num text-amber-400 px-1">…</span>
+                        <span
+                          key={`ellipsis-${i}`}
+                          className="font-num text-amber-400 px-1"
+                        >
+                          …
+                        </span>
                       ) : (
                         <button
                           key={n}
@@ -1067,7 +1206,7 @@ export default function Products() {
                         >
                           {n}
                         </button>
-                      )
+                      ),
                     )}
 
                   <button
@@ -1081,7 +1220,6 @@ export default function Products() {
               )}
             </>
           )}
-
         </div>
       </div>
     </div>

@@ -135,14 +135,16 @@ function ComboGroupCard({ comboId, comboName, comboImage, comboPrice, comboQty, 
 // ══════════════════════════════════════════════════════════════════════
 function EmptyCart() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] md:min-h-[60vh] pt-12 pb-36  md:py-12 px-4 text-center">
-      <ShoppingBag size={56} className="text-amber-200 mb-4" />
-      <h2 className="font-display text-2xl font-bold text-brand-900 mb-2">Your cart is empty</h2>
-      <p className="font-body text-amber-600 text-sm mb-7 max-w-xs">
+    <div className="flex flex-col items-center justify-center py-3 sm:py-6 px-4 text-center max-w-md mx-auto">
+      <div className="w-11 h-11 bg-sandal-100 text-sandal-700 rounded-full flex items-center justify-center mb-2">
+        <ShoppingBag size={22} />
+      </div>
+      <h2 className="font-display text-lg sm:text-xl font-bold text-brand-900 mb-1">Your cart is empty</h2>
+      <p className="font-body text-sandal-600 text-xs mb-3 max-w-xs leading-snug">
         Add some dry fish or pickles to get started!
       </p>
-      <Link to="/products" className="btn-lg btn-primary">
-        Browse Products <ArrowRight size={16} />
+      <Link to="/products" className="btn-sm btn-primary inline-flex items-center gap-1.5">
+        Browse Products <ArrowRight size={14} />
       </Link>
     </div>
   );
@@ -298,33 +300,55 @@ function CartItem({ item, onQty, onRemove, syncing }) {
 }
 
 import ProductCard from "../components/Product/ProductCard.jsx";
-import { useHomeBestsellers } from "../hookqueries/useHome";
+import { useHomeBestsellers, useHomeNewArrivals } from "../hookqueries/useHome";
 
 function CartRecommendations({ cartItems = [] }) {
   const { data: bestsellers = [] } = useHomeBestsellers();
+  const { data: newest = [] } = useHomeNewArrivals();
 
-  const cartProductIds = useMemo(() => new Set(cartItems.map((i) => i.productId)), [cartItems]);
-  const recommended = useMemo(
-    () => bestsellers.filter((p) => !cartProductIds.has(p.id)).slice(0, 4),
-    [bestsellers, cartProductIds]
-  );
+  const recommended = useMemo(() => {
+    const map = new Map();
+    [...bestsellers, ...newest].forEach((p) => map.set(p.id, p));
+    const allProducts = Array.from(map.values());
+
+    if (!allProducts.length) return [];
+    const cartProductIds = new Set(cartItems.map((i) => i.productId));
+    const cartCategories = new Set(cartItems.map((i) => i.categorySlug || i.categoryName).filter(Boolean));
+
+    const sameCategory = [];
+    const otherCategory = [];
+
+    for (const p of allProducts) {
+      if (cartProductIds.has(p.id)) continue;
+      if (cartCategories.has(p.categorySlug) || cartCategories.has(p.categoryName)) {
+        sameCategory.push(p);
+      } else {
+        otherCategory.push(p);
+      }
+    }
+
+    return [...sameCategory, ...otherCategory].slice(0, 12);
+  }, [bestsellers, newest, cartItems]);
 
   if (!recommended.length) return null;
 
   return (
-    <div className="mt-12 border-t border-sandal-100 pt-8">
-      <div className="flex items-center justify-between mb-5">
+    <div className="mt-3 sm:mt-5 border-t border-sandal-100/80 pt-3.5 sm:pt-5">
+      <div className="flex items-center justify-between mb-3 px-0.5">
         <div>
-          <h2 className="font-display text-xl font-bold text-gray-800">You May Also Like</h2>
-          <p className="font-body text-xs text-sandal-600 font-semibold mt-0.5">Popular items to complement your cart</p>
+          <h2 className="font-display text-base sm:text-lg font-bold text-gray-900 leading-tight">You May Also Like</h2>
+          <p className="font-body text-[11px] sm:text-xs text-sandal-600 font-semibold mt-0.5">Popular coastal items & category matches</p>
         </div>
-        <Link to="/products" className="font-body text-xs font-bold text-sandal-700 hover:text-gray-900 flex items-center gap-1">
+        <Link to="/products" className="font-body text-xs font-bold text-sandal-700 hover:text-gray-900 flex items-center gap-1 shrink-0">
           Explore All <ArrowRight size={13} />
         </Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+
+      <div className="flex md:grid md:grid-cols-4 gap-3.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {recommended.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <div key={p.id} className="shrink-0 w-[210px] sm:w-[230px] md:w-auto snap-start">
+            <ProductCard product={p} />
+          </div>
         ))}
       </div>
     </div>
@@ -556,11 +580,11 @@ export default function Cart() {
   );
 
   if (items.length === 0) return (
-    <>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {seoBlock}
       <EmptyCart />
-      <CartRecommendations />
-    </>
+      <CartRecommendations cartItems={items} />
+    </div>
   );
 
   return (
