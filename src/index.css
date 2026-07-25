@@ -73,12 +73,23 @@
 :root {
   color-scheme: light !important;
   supported-color-schemes: light !important;
+  forced-color-adjust: none !important;
 }
 
 html,
 body {
   background-color: #f5eedf !important;
   color-scheme: light !important;
+  forced-color-adjust: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root,
+  html,
+  body {
+    color-scheme: light !important;
+    forced-color-adjust: none !important;
+  }
 }
 
 /* Custom scrollbar — hidden on mobile, elegant sandal theme on desktop */

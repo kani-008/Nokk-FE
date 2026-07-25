@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../components/store/AuthStore";
 import API from "../../ApiCall/Api.jsx";
-import NotificationPanel from "./Notification.jsx";
 import IconButton from "../../components/admin/IconButton.jsx";
 import { useProductSuggestions } from "../../hookqueries/useProducts";
 
@@ -248,9 +247,11 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
   const mobileSearchInputRef = useRef(null);
 
   const title =
-    TITLE_LOOKUP.find((i) =>
-      i.exact ? pathname === i.to : pathname.startsWith(i.to),
-    )?.label ?? "Admin";
+    pathname.startsWith("/admin/notifications")
+      ? "Notification Center"
+      : (TITLE_LOOKUP.find((i) =>
+          i.exact ? pathname === i.to : pathname.startsWith(i.to),
+        )?.label ?? "Admin");
 
   const placeholder = searchConfig?.placeholder ?? "Quick search…";
   const searchValue = searchConfig?.value ?? localSearchVal;
@@ -475,13 +476,10 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
       )}
 
       {/* Notification bell + avatar — always visible on desktop; hidden on mobile while search is expanded */}
-      <div
-        className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`}
-        ref={notifRef}
-      >
+      <div className={`relative ${mobileSearchOpen ? "hidden md:block" : ""}`}>
         <button
-          onClick={toggleNotif}
-          className={`relative p-2 rounded-xl transition-colors ${notifOpen ? "bg-gray-100 text-gray-700" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+          onClick={() => navigate("/admin/notifications")}
+          className="relative p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           aria-label="Notifications"
         >
           <Bell size={18} />
@@ -491,13 +489,6 @@ function TopBar({ onMobileOpen, pathname, searchConfig }) {
             </span>
           )}
         </button>
-        {notifMounted && (
-          <NotificationPanel
-            open={notifOpen}
-            onClose={closeNotif}
-            onCountChange={setUnreadCount}
-          />
-        )}
       </div>
 
       <div
@@ -627,7 +618,7 @@ export default function AdminLayout() {
           searchConfig={searchConfig}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 admin-content-fluid mx-auto">
+          <div className="px-2 sm:px-4 md:px-6 pb-2 sm:pb-6 pt-0 sm:pt-0 max-w-[1440px] w-full mx-auto">
             <Outlet context={{ registerSearch, unregisterSearch }} />
           </div>
         </main>

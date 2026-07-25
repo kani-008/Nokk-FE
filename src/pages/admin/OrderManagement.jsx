@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate, useOutletContext } from "react-router-dom";
 import useViewportPageSize from "../../hookqueries/useViewportPageSize";
 import {
   X, Eye, RotateCcw, Check, Ban, Loader2,
@@ -151,13 +151,36 @@ function ReplacementsPanel() {
 // ORDER MANAGEMENT PAGE
 // ══════════════════════════════════════════════════════════════════════
 export default function OrderManagement() {
+  const navigate = useNavigate();
   const limit = useViewportPageSize(15, 25);
+  const { orderId: pathOrderId } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryOrderId = searchParams.get("orderId");
+  const targetOrderId = pathOrderId || queryOrderId;
+
   const [tab, setTab] = useState("orders");
   const [search,    setSearch]    = useState("");
   const [status,    setStatus]    = useState("");
   const [payment,   setPayment]   = useState("");
   const [page,      setPage]      = useState(1);
   const [selected,  setSelected]  = useState(null);
+  const [closedOrderId, setClosedOrderId] = useState(null);
+
+  useEffect(() => {
+    if (targetOrderId) {
+      setSearch(targetOrderId);
+    }
+  }, [targetOrderId]);
+
+  const handleCloseModal = () => {
+    if (selected) {
+      setClosedOrderId(selected.id);
+    }
+    setSelected(null);
+    if (targetOrderId) {
+      navigate("/admin/orders", { replace: true });
+    }
+  };
 
   const { registerSearch, unregisterSearch } = useOutletContext();
 
@@ -179,6 +202,19 @@ export default function OrderManagement() {
   const { data: ordersData, isLoading: loading } = useAdminOrders(queryParams);
   const orders = ordersData?.orders || [];
   const totalPages = ordersData?.pagination?.totalPages || 1;
+
+  useEffect(() => {
+    if (targetOrderId && orders.length > 0 && !selected) {
+      const match = orders.find(
+        (o) =>
+          String(o.id).toLowerCase() === String(targetOrderId).toLowerCase() ||
+          String(o.id).slice(0, 8).toLowerCase() === String(targetOrderId).toLowerCase()
+      );
+      if (match && match.id !== closedOrderId) {
+        setSelected(match);
+      }
+    }
+  }, [targetOrderId, orders, selected, closedOrderId]);
 
   const handleStatusChange = () => {};
 
@@ -321,7 +357,7 @@ export default function OrderManagement() {
 
           {/* detail modal */}
           {selected && (
-            <OrderDetailModal order={selected} onClose={() => setSelected(null)} onStatusChange={handleStatusChange} />
+            <OrderDetailModal order={selected} onClose={handleCloseModal} onStatusChange={handleStatusChange} />
           )}
         </>
       )}

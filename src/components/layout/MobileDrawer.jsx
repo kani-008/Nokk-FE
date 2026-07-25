@@ -3,20 +3,8 @@ import {
   X, User, Heart, LogOut, Settings,
   ClipboardList, ChevronDown, Grid3x3, // eslint-disable-line no-unused-vars -- kept for the commented-out "Shop by Category" block below; re-enable that block to use these again
 } from "lucide-react";
+import { useBodyScrollLock } from "../../hookqueries/useBodyScrollLock";
 
-/*
-  MOBILE DRAWER
-  ───────────────────────────────────────────────────────────────────
-  Extracted out of NavBar.jsx so the drawer's markup lives in its own
-  file. Slides in from the right, covering the right half of the
-  screen (w-80, capped at 85% viewport width on very small phones),
-  with a dimmed backdrop — same pattern as the Products page filter
-  drawer.
-
-  All state (open/closed, categories, auth info, counts) and handlers
-  are passed down as props from NavBar, which remains the single
-  source of truth for that state.
-*/
 export default function MobileDrawer({
   open,
   onClose,
@@ -26,13 +14,15 @@ export default function MobileDrawer({
   wishlistCount,
   onLogout,
 }) {
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   return (
-    <div className="md:hidden fixed inset-0 z-50 flex">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="md:hidden fixed inset-0 z-50 flex touch-none overscroll-none">
+      <div className="absolute inset-0 bg-black/40 touch-none" onClick={onClose} />
 
-      <div className="relative ml-auto w-55 max-w-[85vw] h-full bg-surface shadow-xl flex flex-col">
+      <div className="relative ml-auto w-55 max-w-[85vw] h-full bg-surface shadow-xl flex flex-col touch-pan-y overscroll-contain max-w-full overflow-x-hidden">
 
         {/* drawer header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-sandal-100 shrink-0">

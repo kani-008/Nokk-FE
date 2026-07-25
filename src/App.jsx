@@ -81,6 +81,8 @@ const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement")
 const CustomerVideoManagement = lazy(() => import("./pages/admin/CustomerVideoManagement"));
 const SiteContent = lazy(() => import("./pages/admin/SiteContent"));
 
+const Notification = lazy(() => import("./pages/admin/Notification"));
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -133,6 +135,7 @@ export default function App() {
             <Route path="products" element={<ProductManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="orders" element={<OrderManagement />} />
+            <Route path="orders/:orderId" element={<OrderManagement />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="reviews" element={<ReviewManagement />} />
             <Route path="reviews/:productId" element={<ReviewManagement />} />
@@ -145,6 +148,7 @@ export default function App() {
             <Route path="appearance" element={<Appearance />} />
             <Route path="content" element={<SiteContent />} />
             <Route path="customer-videos" element={<CustomerVideoManagement />} />
+            <Route path="notifications" element={<Notification />} />
           </Route>
         </Route>
         {/* Catch-all */}

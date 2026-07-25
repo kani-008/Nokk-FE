@@ -1,7 +1,7 @@
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import IconButton from "../../components/admin/IconButton.jsx";
 import {
-  Bell, RefreshCw, CheckCheck, X,
+  Bell, RefreshCw, CheckCheck,
   ShoppingCart, ShoppingBag, AlertCircle, RotateCcw,
   Tag, MessageSquare, Warehouse, UserPlus
 } from "lucide-react";
@@ -10,20 +10,20 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
 } from "../../hookqueries/useNotifications";
+import { AdminPage, AdminCard, AdminButton } from "../../components/admin/AdminUI.jsx";
 
-// ── Notification helpers ───────────────────────────────────────────────
 export const NOTIF_ICONS = {
-  new_order:               { Icon: ShoppingCart,   color: "text-amber-500",  bg: "bg-amber-50"  },
-  order_status_changed:    { Icon: ShoppingBag,    color: "text-blue-500",   bg: "bg-blue-50"   },
-  payment_failed:          { Icon: AlertCircle,    color: "text-red-500",    bg: "bg-red-50"    },
-  replacement_requested:   { Icon: RotateCcw,      color: "text-pink-500",   bg: "bg-pink-50"   },
-  replacement_completed:   { Icon: RotateCcw,      color: "text-teal-600",   bg: "bg-teal-50"   },
-  upi_reference_submitted: { Icon: Tag,            color: "text-indigo-500", bg: "bg-indigo-50" },
-  new_review:              { Icon: MessageSquare,  color: "text-purple-500", bg: "bg-purple-50" },
-  stock_changed:           { Icon: Warehouse,      color: "text-orange-500", bg: "bg-orange-50" },
-  new_signup:              { Icon: UserPlus,       color: "text-green-500",  bg: "bg-green-50"  },
-  coupon_limit_near:       { Icon: Tag,            color: "text-yellow-600", bg: "bg-yellow-50" },
-  default:                 { Icon: Bell,           color: "text-gray-500",   bg: "bg-gray-100"  },
+  new_order:               { Icon: ShoppingCart,   color: "text-amber-600",  bg: "bg-amber-100/70"  },
+  order_status_changed:    { Icon: ShoppingBag,    color: "text-blue-600",   bg: "bg-blue-100/70"   },
+  payment_failed:          { Icon: AlertCircle,    color: "text-red-600",    bg: "bg-red-100/70"    },
+  replacement_requested:   { Icon: RotateCcw,      color: "text-pink-600",   bg: "bg-pink-100/70"   },
+  replacement_completed:   { Icon: RotateCcw,      color: "text-teal-600",   bg: "bg-teal-100/70"   },
+  upi_reference_submitted: { Icon: Tag,            color: "text-indigo-600", bg: "bg-indigo-100/70" },
+  new_review:              { Icon: MessageSquare,  color: "text-purple-600", bg: "bg-purple-100/70" },
+  stock_changed:           { Icon: Warehouse,      color: "text-orange-600", bg: "bg-orange-100/70" },
+  new_signup:              { Icon: UserPlus,       color: "text-green-600",  bg: "bg-green-100/70"  },
+  coupon_limit_near:       { Icon: Tag,            color: "text-yellow-600", bg: "bg-yellow-100/70" },
+  default:                 { Icon: Bell,           color: "text-gray-600",   bg: "bg-gray-100"  },
 };
 
 export const fmtRelative = (d) => {
@@ -31,27 +31,23 @@ export const fmtRelative = (d) => {
   if (diff < 60_000)   return "just now";
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-// ── NotificationPanel ──────────────────────────────────────────────────
-// open         — animation state (true = slid in, false = slid out)
-// onClose       — called immediately by backdrop / close button; parent unmounts after 300 ms
-// onCountChange — called with latest unread count after load / mark-read actions
-export default function NotificationPanel({ open, onClose, onCountChange }) {
+// ── Full Page Notification Center for Desktop & Mobile ─────────────────
+export default function NotificationPage() {
   const navigate = useNavigate();
+  const [filter, setFilter] = useState("all");
 
   const { data: items = [], isLoading: loading, refetch } = useNotificationsList();
-  const markAllReadMutation   = useMarkAllNotificationsRead();
-  const markReadMutation      = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+  const markReadMutation = useMarkNotificationRead();
 
-  // Propagate unread count to parent whenever items change
   const unreadCount = items.filter((n) => !n.isRead).length;
 
   const markAllRead = async () => {
     try {
       await markAllReadMutation.mutateAsync();
-      onCountChange?.(0);
     } catch { /* */ }
   };
 
@@ -59,108 +55,111 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
     if (!item.isRead) {
       try {
         await markReadMutation.mutateAsync(item.id);
-        onCountChange?.((c) => Math.max(0, c - 1));
       } catch { /* */ }
     }
     if (item.link) navigate(item.link);
-    onClose();
   };
 
-  // ── shared inner content ──────────────────────────────────────────────
-  const panelHeader = (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-      <div className="flex items-center gap-2">
-        <span className="font-display text-sm font-bold text-gray-900">Notifications</span>
-        {unreadCount > 0 && (
-          <span className="bg-red-500 text-white font-num text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{unreadCount}</span>
-        )}
-      </div>
-      <div className="flex items-center gap-1">
-        <IconButton onClick={() => refetch()} title="Refresh"><RefreshCw size={13} /></IconButton>
-        {unreadCount > 0 && (
-          <IconButton onClick={markAllRead} title="Mark all read"><CheckCheck size={13} /></IconButton>
-        )}
-        <IconButton onClick={onClose} className="md:hidden ml-1" aria-label="Close"><X size={15} /></IconButton>
-      </div>
-    </div>
-  );
-
-  const panelList = (
-    <div className="flex-1 overflow-y-auto md:max-h-80">
-      {loading ? (
-        <div className="flex items-center justify-center py-10 text-gray-400">
-          <RefreshCw size={16} className="animate-spin mr-2" />
-          <span className="font-body text-sm">Loading…</span>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-10">
-          <Bell size={24} className="mx-auto text-gray-200 mb-2" />
-          <p className="font-body text-sm text-gray-400">All caught up!</p>
-        </div>
-      ) : (
-        items.map((item) => {
-          const { Icon, color, bg } = NOTIF_ICONS[item.eventType] ?? NOTIF_ICONS.default;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleClick(item)}
-              className={`w-full flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-50 last:border-0 ${!item.isRead ? "bg-blue-50/30" : ""}`}
-            >
-              <div className={`mt-0.5 p-2 rounded-xl ${bg} shrink-0`}>
-                <Icon size={14} className={color} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <p className={`font-body text-xs text-gray-900 ${!item.isRead ? "font-bold" : "font-semibold"}`}>{item.title}</p>
-                  <span className="font-num text-[10px] text-gray-400 shrink-0">{fmtRelative(item.createdAt)}</span>
-                </div>
-                <p className="font-body text-[11px] text-gray-500 mt-0.5 truncate">{item.message}</p>
-              </div>
-              {!item.isRead && <span className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
-            </button>
-          );
-        })
-      )}
-    </div>
-  );
-
-  const panelFooter = (
-    <div className="border-t border-gray-100 px-4 py-3 shrink-0">
-      <button
-        onClick={() => { navigate("/admin/orders"); onClose(); }}
-        className="w-full text-center font-body text-xs font-semibold text-brand-700 hover:text-brand-900 transition-colors"
-      >
-        View all orders →
-      </button>
-    </div>
-  );
+  const filteredItems = useMemo(() => {
+    if (filter === "unread") return items.filter((i) => !i.isRead);
+    if (filter === "orders") return items.filter((i) => i.eventType?.includes("order") || i.eventType?.includes("payment") || i.eventType?.includes("replacement"));
+    if (filter === "users") return items.filter((i) => i.eventType === "new_signup" || i.eventType === "new_review");
+    return items;
+  }, [items, filter]);
 
   return (
-    <>
-      {/* ── Mobile: full-height slide drawer from the right ── */}
-      <div className="md:hidden">
-        <div
-          aria-hidden="true"
-          onClick={onClose}
-          className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        />
-        <div
-          className={`fixed inset-y-0 right-0 z-50 w-3/4 flex flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
-        >
-          {panelHeader}
-          {panelList}
-          {panelFooter}
+    <div className="w-full max-w-[1440px] mx-auto space-y-2.5">
+      <AdminPage
+        // title="Notification Center" strictly don't enable this comment 
+        actions={
+          <div className="flex items-center gap-1.5">
+            <AdminButton variant="outline" size="sm" onClick={() => refetch()} className="px-2 py-1 text-xs">
+              <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
+            </AdminButton>
+            {unreadCount > 0 && (
+              <AdminButton size="sm" onClick={markAllRead} className="px-2 py-1 text-xs">
+                <CheckCheck size={13} /> Mark Read ({unreadCount})
+              </AdminButton>
+            )}
+          </div>
+        }
+      >
+        {/* Category Filter Tabs */}
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div className="flex items-center gap-1 bg-gray-100/80 p-0.5 rounded-xl overflow-x-auto w-full sm:w-auto scrollbar-hide">
+            {[
+              { id: "all", label: `All (${items.length})` },
+              { id: "unread", label: `Unread (${unreadCount})` },
+              { id: "orders", label: "Orders" },
+              { id: "users", label: "Customers" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setFilter(t.id)}
+                className={`px-2 py-1 rounded-lg text-[11px] sm:text-xs font-body font-semibold transition-all shrink-0 ${
+                  filter === t.id ? "bg-surface text-gray-900 shadow-xs" : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* ── Desktop: absolute dropdown ── */}
-      <div className="hidden md:block absolute right-0 top-full mt-2 w-80 bg-surface border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-        <div className="flex flex-col">
-          {panelHeader}
-          {panelList}
-          {panelFooter}
-        </div>
-      </div>
-    </>
+        {/* Main List */}
+        <AdminCard className="p-0 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-10 text-gray-400 gap-2 font-body text-xs">
+              <RefreshCw size={15} className="animate-spin text-amber-500" />
+              <span>Loading notifications...</span>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center py-10 px-2">
+              <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-2">
+                <Bell size={20} />
+              </div>
+              <h3 className="font-display text-sm font-bold text-gray-800">No notifications found</h3>
+              <p className="font-body text-[11px] text-gray-500 mt-0.5 max-w-xs mx-auto">
+                You are all caught up! New order alerts and system notifications will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredItems.map((item) => {
+                const { Icon, color, bg } = NOTIF_ICONS[item.eventType] ?? NOTIF_ICONS.default;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleClick(item)}
+                    className={`flex items-start gap-2 px-2 py-2 sm:px-3 sm:py-2.5 hover:bg-amber-50/40 cursor-pointer transition-colors ${
+                      !item.isRead ? "bg-amber-50/20" : ""
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg ${bg} shrink-0 shadow-2xs mt-0.5`}>
+                      <Icon size={15} className={color} />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <h4 className={`font-body text-xs sm:text-sm whitespace-nowrap truncate min-w-0 ${!item.isRead ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                          {item.title}
+                        </h4>
+                        {!item.isRead && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 ml-auto" title="Unread" />
+                        )}
+                      </div>
+                      <p className="font-body text-[11px] sm:text-xs text-gray-600 mt-0.5 leading-snug break-words">{item.message}</p>
+                      <div className="flex justify-end mt-0.5">
+                        <span className="font-num text-[10px] sm:text-xs text-gray-400 font-medium whitespace-nowrap">{fmtRelative(item.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </AdminCard>
+      </AdminPage>
+    </div>
   );
 }

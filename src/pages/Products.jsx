@@ -19,6 +19,7 @@ import {
 } from "../hookqueries/useProducts";
 import { useActiveCombos } from "../hookqueries/useCombos";
 import ProductCard from "../components/Product/ProductCard";
+import { useBodyScrollLock } from "../hookqueries/useBodyScrollLock";
 
 // ── sort options — must match the backend getAllProducts sortMap keys ──
 const SORT_OPTIONS = [
@@ -122,15 +123,17 @@ function RatingRow({ value, checked, onChange }) {
 
 // ── Sort Bottom Sheet Modal (Image 1 style) ───────────────────────────
 function SortBottomSheetModal({ open, onClose, sort, setParam }) {
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden touch-none select-none overscroll-none">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity touch-none"
         onClick={onClose}
       />
-      <div className="relative bg-surface rounded-t-2xl shadow-2xl p-4 w-full z-10 animate-in slide-in-from-bottom duration-200">
+      <div className="relative bg-surface rounded-t-2xl shadow-2xl p-4 w-full z-10 animate-in slide-in-from-bottom duration-200 touch-pan-y overscroll-contain max-w-full overflow-x-hidden">
         <div className="flex items-center justify-between border-b border-sandal-100 pb-3 mb-2">
           <span className="font-body text-xs font-bold text-gray-500 uppercase tracking-wider">
             Sort By
@@ -205,6 +208,8 @@ function MobileFilterDrawer({
 }) {
   const [activeTab, setActiveTab] = useState("category");
 
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   // Counts per tab section
@@ -224,7 +229,7 @@ function MobileFilterDrawer({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-surface md:hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-surface md:hidden touch-pan-y overscroll-contain max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-sandal-100 bg-surface shrink-0">
         <button

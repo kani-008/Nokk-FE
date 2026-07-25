@@ -4,6 +4,7 @@ import { useAddresses, useAddAddress, useDeleteAddress, lookupPincode, detectAdd
 import { Field, SavedAddressEditForm } from "./Address";
 import { INDIAN_STATES } from "./statesList.js";
 import { useAuthStore } from "../store/AuthStore";
+import { useBodyScrollLock } from "../../hookqueries/useBodyScrollLock";
 
 const norm = (s) => String(s).toLowerCase().replace(/[\s&]+/g, "");
 
@@ -275,6 +276,8 @@ function AddNewForm({ onSaved, onCancel }) {
 //   onSavedEdited {fn(updated)} — called when an existing address is edited
 // ══════════════════════════════════════════════════════════════════════
 export default function AddressPickerSheet({ open, onClose, selectedId, onSelect, onSavedEdited }) {
+  useBodyScrollLock(open);
+
   const { data: addresses = [], isLoading } = useAddresses();
   const deleteMutation = useDeleteAddress();
 

@@ -284,7 +284,7 @@ export default function NavBar() {
         {/* ── DESKTOP NAVIGATION BAR (Desktop Only) ────────────────── */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-10 sm:px-26">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-17">
               
               {/* Left: Logo */}
               <div className="shrink-0 flex items-center">
