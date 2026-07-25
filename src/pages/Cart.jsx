@@ -537,7 +537,7 @@ export default function Cart() {
       <h1 className="font-display text-2xl font-bold text-brand-900 mb-6">
         My Cart
         <span className="font-num text-base font-normal text-amber-500 ml-2">
-          ({items.reduce((n, i) => n + i.quantity, 0)} items)
+          ({items.length} {items.length === 1 ? "item" : "items"})
         </span>
       </h1>
 
