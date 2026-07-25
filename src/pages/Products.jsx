@@ -21,13 +21,11 @@ const SORT_OPTIONS = [
 ];
 
 const PRICE_RANGES = [
-  { label: "Under ₹150", min: "", max: "150" },
-  { label: "₹150 - ₹300", min: "150", max: "300" },
-  { label: "₹300 - ₹500", min: "300", max: "500" },
-  { label: "Over ₹500", min: "500", max: "" },
+  { id: "under150", label: "Under ₹150", min: "", max: "150" },
+  { id: "150-300", label: "₹150 - ₹300", min: "150", max: "300" },
+  { id: "300-500", label: "₹300 - ₹500", min: "300", max: "500" },
+  { id: "over500", label: "Over ₹500", min: "500", max: "" },
 ];
-
-
 
 // ── skeleton card ──────────────────────────────────────────────────────
 function ProductSkeleton() {
@@ -111,7 +109,7 @@ function Sidebar({
   categories,
   minPrice,
   maxPrice,
-  selectPriceRange,
+  priceRanges,
   rating,
   allWeightLabels,
   weights,
@@ -191,13 +189,13 @@ function Sidebar({
             <FilterSection title="Price Range">
               <div className="space-y-1.5">
                 {PRICE_RANGES.map((r) => {
-                  const isSelected = minPrice === r.min && maxPrice === r.max;
+                  const isSelected = priceRanges.includes(r.id) || (minPrice === r.min && maxPrice === r.max);
                   return (
-                    <label key={r.label} className="filter-row group cursor-pointer">
+                    <label key={r.id} className="filter-row group cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => selectPriceRange(r.min, r.max)}
+                        onChange={() => toggleListParam("priceRange", priceRanges, r.id)}
                         className="filter-checkbox"
                       />
                       <span className="filter-row-label">{r.label}</span>
@@ -305,10 +303,16 @@ export default function Products() {
   const isNew = searchParams.get("isNew") === "true";
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
+  const priceRangeParam = searchParams.get("priceRange") || "";
   const rating = searchParams.get("rating") || "";
   const weightParam = searchParams.get("weight") || "";
   const hasOffer = searchParams.get("hasOffer") === "true";
   const page = parseInt(searchParams.get("page") || "1");
+
+  const priceRanges = useMemo(
+    () => priceRangeParam.split(",").filter(Boolean),
+    [priceRangeParam]
+  );
 
   // memoized so its identity is stable across renders unless weightParam actually changes —
   // otherwise buildQuery's useCallback would never memoize and re-fetch on every render
@@ -325,15 +329,19 @@ export default function Products() {
     if (inStock) p.inStock = "true";
     if (isBest) p.isBestseller = "true";
     if (isNew) p.isNew = "true";
-    if (minPrice) p.minPrice = minPrice;
-    if (maxPrice) p.maxPrice = maxPrice;
+    if (priceRanges.length) {
+      p.priceRange = priceRanges.join(",");
+    } else {
+      if (minPrice) p.minPrice = minPrice;
+      if (maxPrice) p.maxPrice = maxPrice;
+    }
     if (rating) p.rating = rating;
     if (weights.length) p.weight = weights.join(",");
     if (hasOffer) p.hasOffer = "true";
     p.page = String(page);
     p.limit = "12";
     return p;
-  }, [search, category, sort, inStock, isBest, isNew, minPrice, maxPrice, rating, weights, hasOffer, page]);
+  }, [search, category, sort, inStock, isBest, isNew, priceRanges, minPrice, maxPrice, rating, weights, hasOffer, page]);
 
   const { data: catData = [] } = useProductCategories();
   const categories = catData;
@@ -358,8 +366,24 @@ export default function Products() {
           c.description?.toLowerCase().includes(q)
       );
     }
+    if (priceRanges.length > 0) {
+      list = list.filter((c) => {
+        const p = c.comboPrice;
+        return priceRanges.some((id) => {
+          const r = PRICE_RANGES.find((pr) => pr.id === id);
+          if (!r) return false;
+          const min = r.min !== "" ? parseFloat(r.min) : 0;
+          const max = r.max !== "" ? parseFloat(r.max) : Infinity;
+          return p >= min && p <= max;
+        });
+      });
+    } else if (minPrice || maxPrice) {
+      const min = minPrice !== "" ? parseFloat(minPrice) : 0;
+      const max = maxPrice !== "" ? parseFloat(maxPrice) : Infinity;
+      list = list.filter((c) => c.comboPrice >= min && c.comboPrice <= max);
+    }
     return list;
-  }, [combosData, search]);
+  }, [combosData, search, priceRanges, minPrice, maxPrice]);
 
   const combinedItems = useMemo(() => {
     const isCombosCategory = category === "combos" || category?.toLowerCase() === "combos";
@@ -414,20 +438,6 @@ export default function Products() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [desktopSidebarOpen] = useState(true);
-  const selectPriceRange = (min, max) => {
-    const p = new URLSearchParams(searchParams);
-    if (p.get("minPrice") === min && p.get("maxPrice") === max) {
-      p.delete("minPrice");
-      p.delete("maxPrice");
-    } else {
-      if (min) p.set("minPrice", min); else p.delete("minPrice");
-      if (max) p.set("maxPrice", max); else p.delete("maxPrice");
-    }
-    p.delete("page");
-    setSearchParams(p);
-  };
-
-
 
   // ── set a single URL param ────────────────────────────────────────
   const setParam = (key, value) => {
@@ -443,17 +453,23 @@ export default function Products() {
     const next = currentList.includes(value)
       ? currentList.filter((v) => v !== value)
       : [...currentList, value];
-    setParam(key, next.join(","));
+    const p = new URLSearchParams(searchParams);
+    if (key === "priceRange") {
+      p.delete("minPrice");
+      p.delete("maxPrice");
+    }
+    if (next.length > 0) {
+      p.set(key, next.join(","));
+    } else {
+      p.delete(key);
+    }
+    p.delete("page");
+    setSearchParams(p);
   };
-
-
 
   const removeAllFilters = () => {
     setSearchParams({});
   };
-
-
-
 
   // ── active filters for pill display ──────────────────────────────
   const activeFilters = [
@@ -462,7 +478,19 @@ export default function Products() {
     inStock && { key: "inStock", label: "In Stock" },
     isBest && { key: "isBestseller", label: "Best Sellers" },
     isNew && { key: "isNew", label: "New Arrivals" },
-    (minPrice || maxPrice) && { key: "price", label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`, custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); } },
+    ...priceRanges.map((id) => {
+      const r = PRICE_RANGES.find((p) => p.id === id);
+      return {
+        key: `priceRange:${id}`,
+        label: r ? r.label : id,
+        custom: () => toggleListParam("priceRange", priceRanges, id),
+      };
+    }),
+    (!priceRanges.length && (minPrice || maxPrice)) && {
+      key: "price",
+      label: `₹${minPrice || 0} – ₹${maxPrice || "∞"}`,
+      custom: () => { setParam("minPrice", ""); setParam("maxPrice", ""); }
+    },
     rating && { key: "rating", label: `${rating}★ & above` },
     hasOffer && { key: "hasOffer", label: "Has Offer" },
     ...weights.map((w) => ({ key: `weight:${w}`, label: w, custom: () => toggleListParam("weight", weights, w) })),
@@ -479,7 +507,7 @@ export default function Products() {
     categories,
     minPrice,
     maxPrice,
-    selectPriceRange,
+    priceRanges,
     rating,
     allWeightLabels,
     weights,
@@ -549,12 +577,21 @@ export default function Products() {
         schemas={schemas}
       />
 
-      {/* ── Mobile filter trigger — sort+filters live in the sidebar/drawer on all screen sizes ── */}
-      <div className="flex items-center justify-end mb-4 md:hidden px-4">
+      {/* ── Mobile top bar (First row: Active Filter Pills on left, Sort & Filter button on right) ── */}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-4 px-4 md:hidden">
+        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+          {activeFilters.map((f) => (
+            <FilterPill
+              key={f.key}
+              label={f.label}
+              onRemove={f.custom || (() => setParam(f.key, ""))}
+            />
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setFilterOpen((s) => !s)}
-          className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-sm cursor-pointer"
+          className="btn-md btn-outline flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm cursor-pointer ml-auto shrink-0"
         >
           <SlidersHorizontal size={14} className="text-sandal-500" />
           <span>Sort &amp; Filter</span>
@@ -566,9 +603,9 @@ export default function Products() {
         </button>
       </div>
 
-      {/* ── Active filter pills ───────────────────────────────────── */}
+      {/* ── Desktop Active filter pills ───────────────────────────── */}
       {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4 px-4 sm:px-0">
+        <div className="hidden md:flex flex-wrap gap-2 mb-4 px-4 sm:px-0">
           {activeFilters.map((f) => (
             <FilterPill
               key={f.key}
@@ -634,7 +671,14 @@ export default function Products() {
                   item.type === "combo" ? (
                     <ProductCard key={`combo-${item.id}`} itemType="combo" combo={item.data} />
                   ) : (
-                    <ProductCard key={`prod-${item.id}`} product={item.data} selectedWeights={weights} />
+                    <ProductCard
+                      key={`prod-${item.id}`}
+                      product={item.data}
+                      selectedWeights={weights}
+                      priceRanges={priceRanges}
+                      minPrice={minPrice}
+                      maxPrice={maxPrice}
+                    />
                   )
                 )}
               </div>
