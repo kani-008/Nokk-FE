@@ -147,9 +147,11 @@ export default function CustomerLayout() {
             but visible on desktop (needs md:pt-[88px] offset).
       */}
       <main className={`flex-1 ${
-        isCheckoutPage
-          ? announcementOn ? "md:pt-[86px]" : "md:pt-16"
-          : announcementOn ? "pt-[86px]" : "pt-16"
+        isAuthPage
+          ? "pt-14 sm:pt-16 lg:pt-[86px]"
+          : isCheckoutPage
+            ? announcementOn ? "md:pt-[86px]" : "md:pt-16"
+            : announcementOn ? "pt-[86px]" : "pt-16"
       }`}>
         <Outlet />
       </main>

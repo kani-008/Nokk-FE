@@ -266,12 +266,14 @@ export default function NavBar() {
     { label: "Bestsellers", to: "/products?isBestseller=true" },  
   ];
 
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 shadow-sm">
 
       {/* ── Announcement Bar — full-width strip, separate from nav ───── */}
       {settings.announcementEnabled && (
-        <div className="w-full bg-gray-900 overflow-hidden">
+        <div className={`w-full bg-gray-900 overflow-hidden ${isAuthPage ? "hidden lg:block" : "block"}`}>
           <AnnouncementBar settings={settings} />
         </div>
       )}

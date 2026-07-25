@@ -160,11 +160,11 @@ export default function AuthLayout({
     toast,
     cardClassName = "",
     formPanelClassName = "",
-    pageClassName = "min-h-screen px-4 pt-8 pb-10 md:py-10",
+    pageClassName = "min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)] lg:min-h-screen px-3 py-2 sm:px-4 sm:py-6 md:py-10",
     children,
 }) {
     return (
-        <div className={`flex flex-col items-center justify-center lg:flex-row lg:justify-center lg:items-center bg-sandal-50 relative ${pageClassName}`}>
+        <div className={`flex flex-col items-center justify-center lg:flex-row lg:justify-center lg:items-center bg-sandal-50 relative overflow-hidden ${pageClassName}`}>
 
             {/* ── Toast (Red for Error, Green for Success) ── */}
             <div
@@ -233,30 +233,30 @@ export default function AuthLayout({
 
                 {/* RIGHT — form panel */}
                 <div
-                    className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-6 py-6 lg:px-12 lg:py-12 bg-surface ${formPanelClassName}`}
+                    className={`w-full lg:w-7/12 flex flex-col justify-start lg:justify-center px-4 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-12 bg-surface ${formPanelClassName}`}
                 >
                     {/* Mobile brand badge + wordmark — visible only on mobile */}
-                    <div className="flex flex-col items-center mb-3 lg:hidden">
-                        <div className="relative ">
+                    <div className="flex flex-col items-center mb-2 sm:mb-3 lg:hidden">
+                        <div className="relative">
                             <div className="absolute inset-0 rounded-full bg-brand-900/15 blur-md scale-110" />
-                            <div className="relative w-25 h-25  rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-3xl shadow-lg ring-4 ring-white">
-                                <img className="w-25 h-30" src="./logo4.png"></img>
+                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-brand-800 to-brand-900 flex items-center justify-center text-2xl sm:text-3xl shadow-lg ring-4 ring-white">
+                                <img className="w-16 h-18 sm:w-20 sm:h-22 object-contain" src="./logo4.png" alt="Logo" />
                             </div>
                         </div>
 
-                        <h1 className="font-display text-gray-900 text-xl font-bold leading-tight tracking-tight text-center">
+                        <h1 className="font-display text-gray-900 text-lg sm:text-xl font-bold leading-tight tracking-tight text-center mt-1">
                             நம்ம ஊர் கருவாட்டு கடை
                         </h1>
-                        <p className="font-body text-sandal-600 text-[11px] font-semibold tracking-[0.15em] uppercase mt-1">
+                        <p className="font-body text-sandal-600 text-[10px] sm:text-[11px] font-semibold tracking-[0.15em] uppercase mt-0.5 sm:mt-1">
                             Namma Oor Karuvattu Kadai
                         </p>
                     </div>
 
                     {/* Heading and subtext */}
-                    <div className="flex flex-col items-center lg:items-start text-center lg:text-left mb-4 lg:mb-6 w-full">
+                    <div className="flex flex-col items-center lg:items-start text-center lg:text-left mb-2.5 sm:mb-4 lg:mb-6 w-full">
                         {title}
                         {subtitle && (
-                            <p className="font-body text-sm text-amber-600 mt-1 text-center lg:text-left">
+                            <p className="font-body text-xs sm:text-sm text-amber-600 mt-0.5 text-center lg:text-left">
                                 {subtitle}
                             </p>
                         )}

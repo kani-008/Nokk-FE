@@ -493,13 +493,13 @@ export default function Login() {
                     </div>
                 )}
 
-                <div className="flex items-center gap-3 my-1">
+                <div className="flex items-center gap-3 my-0.5 sm:my-1">
                     <div className="flex-1 h-px bg-sandal-200" />
                     <span className="font-body text-xs text-amber-500 uppercase tracking-wider">or</span>
                     <div className="flex-1 h-px bg-sandal-200" />
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 sm:gap-5">
                     <div>
                         <label className="field-label">Phone Number or Email</label>
                         <div className="relative">
