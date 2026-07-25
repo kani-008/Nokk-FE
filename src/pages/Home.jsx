@@ -89,6 +89,9 @@ export default function Home() {
         />
       )}
 
+      {/* Recently Viewed & Recommended */}
+      <RecentlyViewedSection fallbackProducts={bestsellers} />
+
       {/* Why Us */}
       <WhyUs />
 

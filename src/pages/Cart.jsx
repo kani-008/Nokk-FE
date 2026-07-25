@@ -291,10 +291,41 @@ function CartItem({ item, onQty, onRemove, syncing }) {
               <Plus size="clamp(12px,1.5vw,16px)" />
             </button>
           </div>
-          {/* {item.quantity >= 3 && (
-            <span className="font-body text-[10px] text-amber-500 ml-1">Max 3</span>
-          )} */}
         </div>
+      </div>
+    </div>
+  );
+}
+
+import ProductCard from "../components/Product/ProductCard.jsx";
+import { useHomeBestsellers } from "../hookqueries/useHome";
+
+function CartRecommendations({ cartItems = [] }) {
+  const { data: bestsellers = [] } = useHomeBestsellers();
+
+  const cartProductIds = useMemo(() => new Set(cartItems.map((i) => i.productId)), [cartItems]);
+  const recommended = useMemo(
+    () => bestsellers.filter((p) => !cartProductIds.has(p.id)).slice(0, 4),
+    [bestsellers, cartProductIds]
+  );
+
+  if (!recommended.length) return null;
+
+  return (
+    <div className="mt-12 border-t border-sandal-100 pt-8">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="font-display text-xl font-bold text-gray-800">You May Also Like</h2>
+          <p className="font-body text-xs text-sandal-600 font-semibold mt-0.5">Popular items to complement your cart</p>
+        </div>
+        <Link to="/products" className="font-body text-xs font-bold text-sandal-700 hover:text-gray-900 flex items-center gap-1">
+          Explore All <ArrowRight size={13} />
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {recommended.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
       </div>
     </div>
   );
@@ -528,6 +559,7 @@ export default function Cart() {
     <>
       {seoBlock}
       <EmptyCart />
+      <CartRecommendations />
     </>
   );
 
@@ -591,6 +623,8 @@ export default function Cart() {
           />
         </div>
       </div>
+
+      <CartRecommendations cartItems={items} />
     </div>
   );
 }
