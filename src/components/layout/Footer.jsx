@@ -41,7 +41,6 @@ const POLICY_LINKS = [
   { label: "Shipping Policy", to: "/shipping-policy" },
   { label: "Privacy Policy", to: "/privacy-policy" },
   { label: "Terms and Condition ", to: "/terms" },
-  // { label: "FAQ", href: "#" },
   { label: "Return Policy", to: "/return-policy" },
 ];
 
@@ -182,20 +181,6 @@ export default function Footer() {
         {/* Desktop grid (hidden on mobile) */}
         <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Brand col — 2 wide on lg */}
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-          <div className="lg:col-span-2">
-            <div className="h-20 overflow-hidden flex items-start mb-0">
-              <Logo
-                showText={true}
-                inverse={true}
-                imgClassName="h-44 object-contain -mt-11 -ml-3"
-=======
-=======
->>>>>>> 118c3af2d25561f85663ff19c53dbb19449ab0db
->>>>>>> Stashed changes
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div>
               <div className="h-20 overflow-hidden flex items-start mb-0">
@@ -204,10 +189,6 @@ export default function Footer() {
                   inverse={true}
                   imgClassName="h-44 object-contain -mt-11 -ml-3"
                 />
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> Stashed changes
               </div>
               <p className="font-body text-sm text-gray-400 leading-relaxed mb-4 max-w-xs">
                 {description}
@@ -257,76 +238,12 @@ export default function Footer() {
             </div>
 
             {/* FSSAI Badge — Placed in empty space on right */}
-            <div className="md:pt-0 flex flex-col items-start gap-1  md:pl-6">
+            <div className="md:pt-0 flex flex-col items-start gap-1 md:pl-6">
               <img
-<<<<<<< Updated upstream
-=======
                 src={settings.fssaiLogoUrl || "/fssai.png"}
                 alt="FSSAI Licensed Brand"
                 className="h-14 object-contain -ml-2 rounded shrink-0 mb-0.5"
->>>>>>> Stashed changes
               />
-=======
->>>>>>> 118c3af2d25561f85663ff19c53dbb19449ab0db
-              </div>
-              <p className="font-body text-sm text-gray-400 leading-relaxed mb-4 max-w-xs">
-                {description}
-              </p>
-
-              {/* Social */}
-              <div className="flex gap-2.5 mb-4">
-                {socialLinks.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    aria-label={s.label}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-8 h-8 rounded-full bg-gray-800 hover:bg-sandal-600 flex items-center justify-center text-sandal-300 hover:text-white transition-all"
-                  >
-                    {s.icon}
-                  </a>
-                ))}
-              </div>
-
-              {/* Contact */}
-              <ul className="space-y-2.5 text-sm text-gray-400">
-                <li className="flex items-center gap-2">
-                  <Phone size={13} className="shrink-0 text-sandal-400" />
-                  <a
-                    href={`tel:${phone}`}
-                    className="hover:text-white transition-colors"
-                  >
-                    {phone}
-                  </a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail size={13} className="shrink-0 text-sandal-400" />
-                  <a
-                    href={`mailto:${email_c}`}
-                    className="hover:text-white transition-colors"
-                  >
-                    {email_c}
-                  </a>
-                </li>
-                <li className="flex items-start gap-2">
-                  <MapPin size={13} className="shrink-0 text-sandal-400 mt-0.5" />
-                  <span>{address}</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* FSSAI Badge — Placed in empty space on right */}
-            <div className="md:pt-0 flex flex-col items-start gap-1  md:pl-6">
-              <img
->>>>>>> Stashed changes
-                src={settings.fssaiLogoUrl || "./fssai.png"}
-                alt="FSSAI Licensed Brand"
-                className="h-14 object-contain -ml-2 rounded shrink-0 mb-0.5"
-              />
-              {/* <span className="text-gray-200 font-body text-xs font-bold uppercase tracking-wider">
-                FSSAI Certified
-              </span> */}
               <span className="text-sandal-300 font-num text-xs tracking-wide">
                 License No: {fssaiNo}
               </span>
@@ -449,25 +366,10 @@ export default function Footer() {
             ))}
           </div>
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
           {/* FSSAI Badge — Mobile (Right below Social Media) */}
           <div className="mb-3 flex flex-col items-start gap-0.5">
             <img
               src={settings.fssaiLogoUrl || "/fssai.png"}
-=======
->>>>>>> Stashed changes
-          {/* FSSAI Badge — Mobile (Right below Social Media) */}
-          <div className="mb-3 flex flex-col items-start gap-0.5">
-            <img
-              src={settings.fssaiLogoUrl || "./fssai.png"}
-<<<<<<< Updated upstream
-=======
->>>>>>> 118c3af2d25561f85663ff19c53dbb19449ab0db
->>>>>>> Stashed changes
               alt="FSSAI Licensed Brand"
               className="h-10 object-contain -ml-1 rounded shrink-0"
             />
@@ -476,13 +378,6 @@ export default function Footer() {
             </span>
           </div>
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> 118c3af2d25561f85663ff19c53dbb19449ab0db
->>>>>>> Stashed changes
           <AccordionSection title="Shop">
             <ul className="space-y-3 pl-2">
               {QUICK_LINKS.map((l) => (
@@ -560,10 +455,9 @@ export default function Footer() {
         </div>
 
         {/* ── Desktop Copyright ─────────────────────────────────── */}
-        <div className="hidden sm:block border-t border-gray-900  text-center mt-2">
+        <div className="hidden sm:block border-t border-gray-900 text-center mt-2 pt-3">
           <p className="font-body text-xs text-gray-400 leading-relaxed">
             © {new Date().getFullYear()} Namma Oor Karuvattu Kadai. All rights reserved.
-            {/* <span className="ml-1">Made with ❤️ in Tamil Nadu</span> */}
           </p>
         </div>
 
@@ -572,7 +466,6 @@ export default function Footer() {
           <p className="font-body text-xs text-gray-400 leading-relaxed">
             <span className="block">© {new Date().getFullYear()} Namma Oor Karuvattu Kadai</span>
             <span className="block">All rights reserved.</span>
-            {/* <span className="block text-[11px] text-gray-600 mt-0.5">Made with ❤️ in Tamil Nadu</span> */}
           </p>
         </div>
       </div>
