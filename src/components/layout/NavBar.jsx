@@ -408,7 +408,7 @@ export default function NavBar() {
 
         {/* ── MOBILE NAVIGATION BAR (Mobile Only) ─────────────────── */}
         <div className="md:hidden">
-          <div className="pl-2 pr-1">
+          <div className="pl-0 pr-1">
             <div className="flex items-center justify-between h-16 gap-2">
               
               {/* Back arrow — mobile /products page only */}
