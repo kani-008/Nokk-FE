@@ -16,6 +16,7 @@ const DEFAULTS = {
   storeEmail: "",
   storePhone: "",
   storeAddress: "",
+  fssaiLicenseNo: "",
   freeShippingThreshold: 499,
   shippingCharge: 60,
   codEnabled: true,
@@ -218,6 +219,11 @@ export default function Settings() {
       setSaving(false);
       return;
     }
+    if (coercedForm.fssaiLicenseNo && !/^\d{14}$/.test(String(coercedForm.fssaiLicenseNo).trim())) {
+      setError("FSSAI License Number must be exactly 14 numeric digits");
+      setSaving(false);
+      return;
+    }
     if (coercedForm.themeColor && !isValidHex(coercedForm.themeColor)) {
       setError("Brand / Accent Colour must be a valid hex color");
       setSaving(false);
@@ -260,6 +266,7 @@ export default function Settings() {
               <Field label="Support Email" name="storeEmail"   value={form.storeEmail}   onChange={setE} placeholder="hello@store.com" type="email" />
               <Field label="Phone"         name="storePhone"   value={form.storePhone}   onChange={setE} placeholder="+91 98765 43210" type="tel" />
               <Field label="Store Address" name="storeAddress" value={form.storeAddress} onChange={setE} placeholder="Full address…" rows={2} />
+              <Field label="FSSAI License Number" name="fssaiLicenseNo" value={form.fssaiLicenseNo} onChange={setE} placeholder="12423000000000" type="text" maxLength={14} />
             </div>
           </SectionCard>
         );
