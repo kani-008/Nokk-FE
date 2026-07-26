@@ -208,7 +208,7 @@ export default function Footer() {
             </div>
 
             {/* Contact */}
-            <ul className="space-y-2.5 text-sm text-gray-400">
+            <ul className="space-y-2.5 text-sm text-gray-400 mb-4">
               <li className="flex items-center gap-2">
                 <Phone size={13} className="shrink-0 text-sandal-400" />
                 <a
@@ -232,6 +232,21 @@ export default function Footer() {
                 <span>{address}</span>
               </li>
             </ul>
+
+            {/* FSSAI Badge — Desktop */}
+            <div className="mt-4 pt-3.5 pb-3 border-y border-gray-800/80 max-w-xs flex flex-col items-start gap-1">
+              <img
+                src={settings.fssaiLogoUrl || "https://upload.wikimedia.org/wikipedia/commons/e/e0/FSSAI_logo.svg"}
+                alt="FSSAI Licensed Brand"
+                className="h-8 object-contain bg-white/90 px-2 py-0.5 rounded shrink-0 mb-0.5"
+              />
+              <span className="text-gray-200 font-body text-xs font-bold uppercase tracking-wider">
+                FSSAI Certified
+              </span>
+              <span className="text-sandal-300 font-num text-xs tracking-wide">
+                Licence No. {settings.fssaiLicenseNo || settings.fssaiNumber || settings.fssaiNo || settings.fssaiLicenseNumber || "12423000000000"}
+              </span>
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -405,7 +420,7 @@ export default function Footer() {
           </AccordionSection>
 
           <AccordionSection title="Contact Us">
-            <ul className="space-y-3 pl-2 text-sm text-gray-400">
+            <ul className="space-y-3 pl-2 text-sm text-gray-400 mb-3">
               <li className="flex items-center gap-2.5">
                 <Phone size={13} className="text-sandal-400" />
                 <a href={`tel:${phone}`} className="hover:text-white">
@@ -423,6 +438,21 @@ export default function Footer() {
                 <span>{address}</span>
               </li>
             </ul>
+
+            {/* FSSAI Badge — Mobile */}
+            <div className="mt-3 pt-3 pb-2.5 border-y border-gray-800/80 pl-2 flex flex-col items-start gap-1">
+              <img
+                src={settings.fssaiLogoUrl || "https://upload.wikimedia.org/wikipedia/commons/e/e0/FSSAI_logo.svg"}
+                alt="FSSAI Licensed Brand"
+                className="h-7 object-contain bg-white/90 px-1.5 py-0.5 rounded shrink-0 mb-0.5"
+              />
+              <span className="text-gray-200 font-body text-[11px] font-bold uppercase tracking-wider">
+                FSSAI Certified
+              </span>
+              <span className="text-sandal-300 font-num text-[11px] tracking-wide">
+                Licence No. {settings.fssaiLicenseNo || settings.fssaiNumber || settings.fssaiNo || settings.fssaiLicenseNumber || "12423000000000"}
+              </span>
+            </div>
           </AccordionSection>
         </div>
 
